@@ -16,6 +16,12 @@ export default [
       '.vite',
       '.vitest-cache',
       'src/routeTree.gen.ts',
+      // tsc -b composite emit (artifacts from build script — gitignored too)
+      '*.tsbuildinfo',
+      'vite.config.js',
+      'vite.config.d.ts',
+      'playwright.config.js',
+      'playwright.config.d.ts',
     ],
   },
   js.configs.recommended,
