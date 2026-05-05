@@ -1,0 +1,25 @@
+# ============================================
+# Claude Code artifacts (append to your .gitignore)
+# ============================================
+
+# Claude Code local state (keep settings.json and commands/ committed)
+.claude/cache/
+.claude/logs/
+.claude/sessions/
+.claude/.local/
+
+# Local-only Claude settings overrides
+.claude/settings.local.json
+
+# Editor / AI tool caches
+.cursor/
+.cody/
+.aider*
+.continue/
+
+# ============================================
+# What to KEEP committed in .claude/
+# ============================================
+# - .claude/settings.json       (team config)
+# - .claude/commands/*.md       (shared slash commands)
+# - .claude/agents/*.md         (shared subagents)
