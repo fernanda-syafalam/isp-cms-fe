@@ -1,5 +1,47 @@
 # ============================================
-# Claude Code artifacts (append to your .gitignore)
+# Dependencies
+# ============================================
+node_modules/
+.pnpm-store/
+
+# ============================================
+# Build output
+# ============================================
+dist/
+build/
+
+# ============================================
+# Env (never commit — use .env.example as template)
+# ============================================
+.env
+.env.local
+.env.*.local
+
+# ============================================
+# Test artifacts
+# ============================================
+coverage/
+playwright-report/
+test-results/
+.vitest-cache/
+
+# ============================================
+# Logs
+# ============================================
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# ============================================
+# OS / editor
+# ============================================
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ============================================
+# Claude Code artifacts
 # ============================================
 
 # Claude Code local state (keep settings.json and commands/ committed)

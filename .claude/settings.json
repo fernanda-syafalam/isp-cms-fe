@@ -34,7 +34,13 @@
       "Bash(git reset --hard:*)",
       "Bash(npm publish:*)",
       "Bash(pnpm publish:*)",
-      "Edit(.env*)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.test)",
+      "Edit(.env.*.local)",
       "Edit(node_modules/**)",
       "Edit(dist/**)",
       "Edit(build/**)",
@@ -45,7 +51,12 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "pnpm lint --fix --quiet || true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm lint --fix --quiet || true"
+          }
+        ]
       }
     ]
   },
