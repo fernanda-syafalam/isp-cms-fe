@@ -16,6 +16,8 @@ export function TenantsListPage() {
   const { data, isLoading, isError } = useTenantsList(filter)
   const suspendMutation = useSuspendTenant()
 
+  const pageIndex = filter.page - 1
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -27,8 +29,12 @@ export function TenantsListPage() {
         <TenantFilterBar value={filter} onChange={setFilter} />
         <TenantsTable
           tenants={data?.items}
+          total={data?.total ?? 0}
           isLoading={isLoading}
           isError={isError}
+          pageIndex={pageIndex}
+          pageSize={filter.pageSize}
+          onPageChange={(nextPageIndex) => setFilter({ ...filter, page: nextPageIndex + 1 })}
           onSuspend={(id) => suspendMutation.mutate(id)}
         />
       </CardContent>

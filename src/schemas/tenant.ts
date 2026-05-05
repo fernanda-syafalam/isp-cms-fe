@@ -20,6 +20,10 @@ export const TenantFilterSchema = z.object({
   status: z.enum(['active', 'suspended', 'pending']).optional(),
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().positive().max(100).default(20),
+  // Server-side sort. Client-side sort within a page is also supported via
+  // TanStack Table; for true cross-page sort, pass these to the API instead.
+  sortBy: z.enum(['name', 'email', 'status', 'createdAt']).optional(),
+  sortDir: z.enum(['asc', 'desc']).optional(),
 })
 
 export const CreateTenantSchema = z.object({
