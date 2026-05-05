@@ -5,7 +5,19 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 
 export default [
-  { ignores: ['dist', 'build', 'node_modules', 'coverage', 'playwright-report'] },
+  {
+    ignores: [
+      'dist',
+      'build',
+      'node_modules',
+      'coverage',
+      'playwright-report',
+      'test-results',
+      '.vite',
+      '.vitest-cache',
+      'src/routeTree.gen.ts',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],

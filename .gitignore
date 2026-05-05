@@ -23,6 +23,7 @@ build/
 coverage/
 playwright-report/
 test-results/
+.vite/
 .vitest-cache/
 
 # ============================================
