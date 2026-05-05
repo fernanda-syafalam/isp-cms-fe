@@ -10,6 +10,13 @@ node_modules/
 dist/
 build/
 
+# tsc -b composite build emit (config file outputs + buildinfo)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+playwright.config.js
+playwright.config.d.ts
+
 # ============================================
 # Env (never commit — use .env.example as template)
 # ============================================
