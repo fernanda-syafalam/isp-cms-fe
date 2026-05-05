@@ -116,7 +116,7 @@ export function TenantsTable({
     [onSuspend],
   )
 
-  const table = useReactTable({
+  const table = useReactTable<Tenant>({
     data: tenants ?? [],
     columns,
     state: { sorting },

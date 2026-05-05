@@ -32,14 +32,14 @@
 
 ## Project Context
 
-**Fill this section per project before first use:**
+**This is a template — fork it and replace this section per real project before first use.**
 
-- **Project name**: [TO FILL]
-- **Domain**: [TO FILL — e.g., admin dashboard, e-commerce, SaaS]
-- **Primary users**: [TO FILL]
-- **Backend**: [TO FILL — separate API, e.g., Go REST, Node tRPC, etc.]
-- **Deployment target**: [TO FILL]
-- **Compliance requirements**: [TO FILL — none, GDPR, HIPAA, PCI, etc.]
+- **Project name**: boilerplate-dashboard
+- **Domain**: Generic admin dashboard template (currently demonstrates a tenants/clinic CRUD as a worked example)
+- **Primary users**: Internal operators (template assumption — replace with the real audience)
+- **Backend**: Separate REST API expected at `VITE_API_BASE_URL` (auth contract documented in `docs/ADR/0002-auth-strategy.md`)
+- **Deployment target**: Static SPA (Vercel / Netlify / Cloudflare Pages / S3 + CloudFront)
+- **Compliance requirements**: None at the template level — fill in when forked
 
 ---
 
@@ -48,29 +48,37 @@
 These are not slogans. Each principle translates to enforceable rules below.
 
 ### 1. Boring code wins
+
 Predictable beats clever. If a junior engineer cannot read a function in 30 seconds and understand its purpose, rewrite it.
 
 ### 2. Optimize for the reader, not the writer
+
 Code is read 10x more than written. Verbose-but-clear beats terse-and-cryptic.
 
 ### 3. Make the wrong thing hard
+
 Use the type system, lint rules, and architecture to prevent mistakes — not documentation alone.
 
 ### 4. Single source of truth
+
 Each piece of state, config, or knowledge lives in exactly one place. Duplication is a bug waiting to happen.
 
 ### 5. YAGNI before DRY before SOLID
+
 - **YAGNI first**: don't build what you don't need today.
 - **DRY second**: when you have 3+ duplications, extract.
 - **SOLID third**: apply when complexity demands it, not preemptively.
 
 ### 6. Explicit over implicit
+
 Magic is debt. Prefer named, traceable patterns over framework magic when the cost is low.
 
 ### 7. Fail loud, fail fast
+
 Errors should surface immediately and clearly. Silent failures are worse than crashes.
 
 ### 8. Composition over configuration
+
 A component with 12 boolean props is broken. Split it.
 
 ---
@@ -78,12 +86,14 @@ A component with 12 boolean props is broken. Split it.
 ## Tech Stack & Tooling
 
 **Mandatory (non-negotiable):**
+
 - **TypeScript**: strict mode, `noUncheckedIndexedAccess: true`
 - **ESLint** + **Prettier**: with `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y`, `@typescript-eslint`
 - **Package manager**: pnpm (or npm/yarn — pick one and commit)
 - **Node**: latest LTS
 
 **Recommended (use unless project has reason otherwise):**
+
 - **Build**: Vite (or Next.js if SSR/SSG needed)
 - **Test**: Vitest + Testing Library + Playwright for E2E
 - **Validation**: Zod
@@ -93,6 +103,7 @@ A component with 12 boolean props is broken. Split it.
 - **UI primitives**: Radix UI or shadcn/ui (vendored)
 
 **Banned outright:**
+
 - Class components (use functions + hooks)
 - Default exports for components (use named exports — refactoring + grep friendly)
 - `any` type (use `unknown` and narrow)
@@ -115,6 +126,7 @@ routes/pages/  →  features/  →  components/  →  hooks/  →  api/  →  sc
 ```
 
 **Rules:**
+
 - `lib/` and `types/` import nothing from app code (pure utilities and types).
 - `schemas/` imports only from Zod and `types/`.
 - `api/` imports schemas, types, lib — never components or hooks.
@@ -136,23 +148,24 @@ routes/pages/  →  features/  →  components/  →  hooks/  →  api/  →  sc
 
 ## Naming Conventions
 
-| Item | Convention | Example |
-|---|---|---|
-| Files (component) | PascalCase | `TenantTable.tsx` |
-| Files (hook) | camelCase, `use` prefix | `useTenants.ts` |
-| Files (utility) | camelCase | `formatCurrency.ts` |
-| Files (route) | per router convention | `_auth.tenants.index.tsx` |
-| Components | PascalCase | `function TenantTable()` |
-| Hooks | camelCase, `use` prefix | `function useTenants()` |
-| Functions | camelCase, verb-first | `formatDate`, `parseTenantFilter` |
-| Constants | UPPER_SNAKE | `MAX_PAGE_SIZE` |
-| Types/Interfaces | PascalCase, no `I` prefix | `type Tenant`, `type TenantProps` |
-| Enums (avoid) | PascalCase | use `as const` objects instead |
-| Booleans | `is`/`has`/`can`/`should` prefix | `isLoading`, `hasError` |
-| Event handlers (props) | `on` prefix | `onClick`, `onChange` |
-| Event handlers (impl) | `handle` prefix | `handleSubmit` |
+| Item                   | Convention                       | Example                           |
+| ---------------------- | -------------------------------- | --------------------------------- |
+| Files (component)      | PascalCase                       | `TenantTable.tsx`                 |
+| Files (hook)           | camelCase, `use` prefix          | `useTenants.ts`                   |
+| Files (utility)        | camelCase                        | `formatCurrency.ts`               |
+| Files (route)          | per router convention            | `_auth.tenants.index.tsx`         |
+| Components             | PascalCase                       | `function TenantTable()`          |
+| Hooks                  | camelCase, `use` prefix          | `function useTenants()`           |
+| Functions              | camelCase, verb-first            | `formatDate`, `parseTenantFilter` |
+| Constants              | UPPER_SNAKE                      | `MAX_PAGE_SIZE`                   |
+| Types/Interfaces       | PascalCase, no `I` prefix        | `type Tenant`, `type TenantProps` |
+| Enums (avoid)          | PascalCase                       | use `as const` objects instead    |
+| Booleans               | `is`/`has`/`can`/`should` prefix | `isLoading`, `hasError`           |
+| Event handlers (props) | `on` prefix                      | `onClick`, `onChange`             |
+| Event handlers (impl)  | `handle` prefix                  | `handleSubmit`                    |
 
 **File naming bans:**
+
 - No `index.ts` re-exports of components (use direct file imports — better for refactoring tools).
 - No `utils.ts` catch-all files. If utilities don't share a clear domain, separate files.
 - No `types.ts` in feature folders unless type is shared by 3+ files in that folder.
@@ -182,6 +195,7 @@ src/
 ```
 
 **When to create a `feature/` folder:**
+
 - Domain has 3+ components, OR
 - Domain has its own state machine, OR
 - Domain is likely to be extracted to a separate package.
@@ -220,9 +234,7 @@ If a domain is just one component + one hook, keep it flat under `components/` a
 type Result = { ok: boolean; data?: string; error?: string }
 
 // GOOD
-type Result =
-  | { ok: true; data: string }
-  | { ok: false; error: string }
+type Result = { ok: true; data: string } | { ok: false; error: string }
 ```
 
 - **`as const` for literal arrays/objects** when you want narrow types.
@@ -360,14 +372,14 @@ Always arrays, hierarchical, predictable:
 
 ```ts
 // GOOD
-['tenants']                              // all tenants
-['tenants', 'list', filterObject]        // filtered list
-['tenants', 'detail', tenantId]          // single tenant
-['tenants', 'detail', tenantId, 'metrics'] // sub-resource
-
-// BAD
-['tenant-list', filter]                  // inconsistent
-[`tenant-${id}`]                         // string concat
+;['tenants'][('tenants', 'list', filterObject)][('tenants', 'detail', tenantId)][ // all tenants // filtered list // single tenant
+  ('tenants', 'detail', tenantId, 'metrics')
+][ // sub-resource
+  // BAD
+  ('tenant-list', filter)
+][ // inconsistent
+  `tenant-${id}`
+] // string concat
 ```
 
 ### API layer pattern
@@ -376,7 +388,7 @@ Always arrays, hierarchical, predictable:
 // api/tenants.ts — pure functions, no React
 export async function listTenants(filter: TenantFilter): Promise<TenantList> {
   const res = await api.get('tenants', { searchParams: filter }).json()
-  return TenantListSchema.parse(res)  // ALWAYS validate at boundary
+  return TenantListSchema.parse(res) // ALWAYS validate at boundary
 }
 
 // hooks/useTenants.ts — React glue
@@ -475,7 +487,7 @@ export class AppError extends Error {
   constructor(
     public code: ErrorCode,
     message: string,
-    public cause?: unknown
+    public cause?: unknown,
   ) {
     super(message)
   }
@@ -662,53 +674,63 @@ These are absolute. AI must not generate code that violates these without explic
 ### "Should this be a custom hook?"
 
 Yes if:
+
 - It uses other hooks AND
 - It's used in 2+ components OR contains non-trivial logic that obscures the component.
 
 No if:
+
 - It's pure logic with no hooks -> make it a utility in `lib/`.
 - It's used once and is short -> keep inline.
 
 ### "Should this be in context?"
 
 Yes if:
+
 - 3+ components in a subtree need it AND
 - It changes infrequently OR consumers tolerate re-renders.
 
 No if:
+
 - Only 1-2 components need it -> pass props.
 - It changes frequently and many consumers re-render -> use a store with selectors.
 
 ### "Should I extract this into a component?"
 
 Yes if:
+
 - It's reused in 2+ places, OR
 - The parent component exceeds 200 lines, OR
 - The JSX has its own state/effects that can be encapsulated.
 
 No if:
+
 - It's a one-off and small -> keep inline.
 - Extraction would require >5 props to recreate the same behavior -> keep inline.
 
 ### "Memoize or not?"
 
 Memoize if:
+
 - React Profiler shows it's a bottleneck, OR
 - It's a dependency of another hook (correctness), OR
 - It's passed to a `memo`'d child that re-renders frequently.
 
 Don't memoize if:
+
 - "Just to be safe" — `useMemo` itself has cost.
 - Computation is trivial (simple arithmetic, string concat).
 
 ### "Server state or client state?"
 
 Server state if:
+
 - The data lives on a server you don't fully control timing for.
 - Other clients can change it.
 - It must be refetched, cached, or synchronized.
 
 Client state if:
+
 - It's UI-only (modal open, selected tab, form draft).
 - It does not need to survive a refresh.
 

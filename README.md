@@ -1,114 +1,86 @@
-# AI-Assisted Development Setup
+# Boilerplate Dashboard
 
-This repo is configured for **AI-first development** with [Claude Code](https://claude.com/claude-code). Every AI agent (Claude Code, and compatible tools) reads `CLAUDE.md` and operates under its rules.
+AI-first React + Vite + TanStack admin dashboard template. Fork it, replace the worked example, and ship.
 
-## Files in this setup
+Every AI agent that opens this repo (Claude Code, and compatible tools) reads `CLAUDE.md` and operates under its rules — that file is the project constitution.
+
+## What's inside
+
+- **Build & dev**: Vite 6, TypeScript 5.7 in strict mode (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`)
+- **Framework**: React 19, TanStack Router (file-based) + TanStack Query 5
+- **UI**: Tailwind 4 (CSS-first config) + shadcn/ui (new-york) + lucide-react
+- **Validation**: Zod 4 with branded ID types
+- **HTTP client**: ky with `AppError` normalization
+- **Auth**: in-memory access token (Zustand) + HttpOnly refresh cookie + single-flight 401 refresh — see `docs/ADR/0002-auth-strategy.md`
+- **State**: Zustand for true cross-component client state, TanStack Query for server state
+- **Forms**: React Hook Form + Zod resolver
+- **Tests**: Vitest 3 + Testing Library + MSW (node mode); Playwright 1.49 for E2E
+- **Lint/format**: ESLint 9 flat config + Prettier
+- **CI**: GitHub Actions running lint → typecheck → test → build → bundle-size budget per PR
+
+## Tags
+
+| Tag      | Milestone                                                |
+| -------- | -------------------------------------------------------- |
+| `v0.1.0` | Scaffold (Vite + React + Tailwind + shadcn primitives)   |
+| `v0.2.0` | UI primitives + tenants list example (Form/Table/Dialog) |
+| `v0.3.0` | Auth scaffold                                            |
+| `v0.4.0` | Auth tests + bug fixes                                   |
+| `v0.5.0` | Code splitting                                           |
+| `v1.0.0` | Stable template (this commit)                            |
+
+Fork from any tag to skip features you don't need.
+
+## Layout (high-level)
 
 ```
-.
-├── CLAUDE.md                          # Project constitution — rules for AI agents
-├── .claude/
-│   ├── settings.json                  # Permissions, model, hooks
-│   ├── commands/                      # Custom slash commands
-│   │   ├── review.md                  #   /review  - review recent changes
-│   │   ├── component.md               #   /component - scaffold new component
-│   │   ├── refactor.md                #   /refactor - apply refactor principle
-│   │   ├── audit.md                   #   /audit - security/perf/a11y audit
-│   │   ├── test.md                    #   /test - generate tests
-│   │   └── adr.md                     #   /adr - create ADR
-│   └── agents/                        # Subagent definitions
-│       ├── code-reviewer.md           #   @code-reviewer
-│       ├── refactorer.md              #   @refactorer
-│       └── test-writer.md             #   @test-writer
-├── docs/ADR/                          # Architecture Decision Records
-│   ├── README.md                      # ADR index and guide
-│   └── template.md                    # ADR template
-├── .github/
-│   ├── PULL_REQUEST_TEMPLATE.md       # PR checklist tied to CLAUDE.md
-│   └── COMMIT_CONVENTION.md           # Conventional Commits guide
-└── .gitignore.additions               # Append to your .gitignore
+src/
+├── routes/        # TanStack Router file-based routes (eager + .lazy split)
+├── features/      # Domain bundles — one folder per feature
+│   ├── auth/      # In-memory token, login, protected layout
+│   └── tenants/   # CRUD example demonstrating Form/Table/Dialog pattern
+├── components/ui/ # shadcn primitives (vendored, edit freely)
+├── api/           # Pure async fetch functions, no React
+├── schemas/       # Zod schemas (single source of truth)
+├── hooks/         # Cross-feature hooks
+├── lib/           # Pure utilities (cn, errors, ...)
+├── types/         # Branded IDs and pure type defs
+└── test/          # Vitest setup + MSW handlers + helpers
 ```
 
-## Getting started (new developer)
+See `CLAUDE.md` for the full architecture rules and `docs/ADR/` for decisions.
 
-1. **Read `CLAUDE.md` once.** It's the single source of truth for how this codebase works.
-2. **Skim `docs/ADR/`.** The "why" behind major decisions lives there.
-3. **Install Claude Code** (or your AI tool of choice).
-4. **Start coding.** When using AI:
-   - Use `/review` before opening a PR.
-   - Use `/component` to scaffold new components.
-   - Use `/test` to generate behavior-focused tests.
-   - Use `/audit` periodically for security/perf/a11y health checks.
-   - Use `@code-reviewer`, `@refactorer`, or `@test-writer` for focused subagent help.
+## Getting started
 
-## How CLAUDE.md works
+```bash
+pnpm install
+cp .env.example .env       # edit VITE_API_BASE_URL to point at your backend
+pnpm dev
+```
 
-Claude Code reads `CLAUDE.md` automatically at session start. The file defines:
+Then:
 
-- **Engineering principles** — boring code wins, optimize for readers, fail loud.
-- **Architecture rules** — strict layering, dependency direction, where things live.
-- **Conventions** — naming, file organization, component anatomy.
-- **NEVER and ALWAYS lists** — the most important sections. AI must not violate NEVER rules.
-- **Decision rubrics** — how to choose state location, when to memoize, etc.
-- **Communication protocol** — when AI should ask vs proceed.
-- **Definition of Done** — checklist before claiming a task is complete.
+- Open http://localhost:5173
+- Sign in via `/login` (MSW will mock the backend in dev once you wire it; until then, use the Vitest mocks as reference and replace with your real backend contract from `src/api/`)
 
-If you find yourself fighting the AI, the fix is usually one of:
+## How to fork this
 
-1. CLAUDE.md is missing a rule — add it.
-2. CLAUDE.md is contradicting itself — resolve the conflict.
-3. The task is genuinely ambiguous — clarify in the prompt.
+1. Replace `features/tenants/` with your first real domain feature using the same shape
+2. Update `CLAUDE.md > Project Context` to reflect your project (name, domain, users, backend, compliance)
+3. Replace `routes/index.tsx` placeholder with a real landing/dashboard
+4. Sanitize `routes/__root.tsx` nav for your real app
+5. Add ADRs to `docs/ADR/` as you make decisions worth remembering 6 months later
+6. Ship
 
-## When to update CLAUDE.md
+## Available slash commands and agents
 
-Update CLAUDE.md when:
+- `/review`, `/component`, `/refactor`, `/audit`, `/test`, `/adr` — see `.claude/commands/`
+- `@code-reviewer`, `@refactorer`, `@test-writer` — see `.claude/agents/`
 
-- A new pattern emerges that should be repeated (e.g., "we use X for forms").
-- An anti-pattern is spotted that should be banned.
-- A rule turns out to be wrong or impractical (delete or revise — don't keep zombie rules).
-- A library or convention changes.
+## Why this exists
 
-**Don't update CLAUDE.md when:**
+Most "boilerplates" ship a blank canvas. This one ships **patterns**: every common admin-dashboard concern (auth, list pages, forms, tables, validation, error toasts) has one canonical implementation a contributor (or AI agent) can copy. Strict TypeScript, layered imports, and a single source of truth for every shape mean you can grow the codebase without it growing fractal.
 
-- The change affects only one file (just fix the file).
-- The rule applies only to a specific feature (use the feature's README or ADR instead).
-- You're trying to enforce personal style (use ESLint/Prettier instead).
+## License
 
-## Slash commands cheat sheet
-
-| Command | When to use |
-|---|---|
-| `/review` | Before opening a PR, after finishing a feature |
-| `/component <Name> [feature]` | Creating a new component |
-| `/refactor <file> [principle]` | Cleaning up a file or applying SOLID/DRY |
-| `/audit [security\|performance\|a11y\|all]` | Periodic health check, before release |
-| `/test <file> [type]` | Adding tests to untested code |
-| `/adr <title>` | Documenting a significant decision |
-
-## Subagents cheat sheet
-
-| Agent | Use when |
-|---|---|
-| `@code-reviewer` | You want a skeptical, principal-engineer-level review |
-| `@refactorer` | You want structure improved without behavior change |
-| `@test-writer` | You want behavior-focused tests added |
-
-## Discipline expectations
-
-This setup is **opinionated** and **strict**. The bar is high because:
-
-- Code we ship now will be maintained for 5+ years.
-- Disciplined input from AI yields disciplined output. Loose rules yield loose code.
-- The cost of a NEVER-list violation in production is far higher than the cost of catching it in review.
-
-If a rule feels wrong, **debate it in an ADR**, not by silently breaking it.
-
-## Maintenance
-
-- **Quarterly**: review CLAUDE.md against actual codebase. Delete dead rules. Add missing ones.
-- **On every CLAUDE.md change**: bump a small version note (`Last updated: YYYY-MM-DD`).
-- **On dependency upgrade**: check if any rule references a deprecated API.
-
-## Questions
-
-If something in CLAUDE.md is unclear or appears wrong, raise it. The constitution is a living document, but it's only useful if everyone trusts it.
+MIT — fork and use freely.
