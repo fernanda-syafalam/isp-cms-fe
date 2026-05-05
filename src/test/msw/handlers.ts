@@ -8,7 +8,25 @@ const TENANT_FIXTURE = {
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
+const USER_FIXTURE = {
+  id: '99999999-9999-9999-9999-999999999999',
+  email: 'admin@example.com',
+  name: 'Test Admin',
+}
+
+const SESSION_FIXTURE = {
+  accessToken: 'test-access-token',
+  user: USER_FIXTURE,
+}
+
 export const handlers = [
+  // Auth
+  http.post('*/api/auth/login', () => HttpResponse.json(SESSION_FIXTURE)),
+  http.post('*/api/auth/refresh', () => HttpResponse.json(SESSION_FIXTURE)),
+  http.post('*/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
+  http.get('*/api/me', () => HttpResponse.json(USER_FIXTURE)),
+
+  // Tenants
   http.get('*/api/tenants', () => HttpResponse.json({ items: [TENANT_FIXTURE], total: 1 })),
 
   http.get('*/api/tenants/:id', ({ params }) =>
