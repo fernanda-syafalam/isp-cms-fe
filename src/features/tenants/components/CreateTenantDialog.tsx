@@ -35,9 +35,14 @@ export function CreateTenantDialog() {
   })
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await createMutation.mutateAsync(values)
-    form.reset()
-    setOpen(false)
+    try {
+      await createMutation.mutateAsync(values)
+      form.reset()
+      setOpen(false)
+    } catch {
+      // useCreateTenant.onError already surfaces a toast; swallow here
+      // so the rejection does not bubble up as unhandled.
+    }
   })
 
   return (

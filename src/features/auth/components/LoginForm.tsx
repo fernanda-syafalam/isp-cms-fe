@@ -28,8 +28,13 @@ export function LoginForm({ onSuccess }: Props) {
   })
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await loginMutation.mutateAsync(values)
-    onSuccess()
+    try {
+      await loginMutation.mutateAsync(values)
+      onSuccess()
+    } catch {
+      // useLogin.onError already surfaces a toast; swallow here so
+      // the rejection does not bubble up as unhandled.
+    }
   })
 
   return (
