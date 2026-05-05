@@ -1,2 +1,3 @@
 export { TenantCard } from './components/TenantCard'
-export { useTenant, useTenantsList } from './hooks/useTenants'
+export { TenantsListPage } from './components/TenantsListPage'
+export { useTenant, useTenantsList, useCreateTenant, useSuspendTenant } from './hooks/useTenants'
