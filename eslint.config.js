@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin'
 import tsparser from '@typescript-eslint/parser'
 import reactHooks from 'eslint-plugin-react-hooks'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
+import globals from 'globals'
 
 export default [
   {
@@ -35,27 +36,11 @@ export default [
         ecmaFeatures: { jsx: true },
       },
       globals: {
-        // Browser
-        window: 'readonly',
-        document: 'readonly',
-        navigator: 'readonly',
-        fetch: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        FormData: 'readonly',
-        HTMLElement: 'readonly',
-        HTMLInputElement: 'readonly',
-        HTMLButtonElement: 'readonly',
-        // Timers (browser + node)
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        // Node (config files)
-        process: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        console: 'readonly',
+        // Source files run in the browser; vite.config.ts and
+        // playwright.config.ts run in node — covering both keeps the
+        // shared block simple without per-file overrides.
+        ...globals.browser,
+        ...globals.node,
       },
     },
     plugins: {
