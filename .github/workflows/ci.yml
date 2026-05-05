@@ -46,3 +46,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Bundle size budget
+        run: pnpm size
