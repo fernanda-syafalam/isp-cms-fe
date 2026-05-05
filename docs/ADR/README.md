@@ -4,9 +4,9 @@ This directory contains the Architecture Decision Records (ADRs) for this projec
 
 ## Index
 
-| # | Title | Status | Date |
-|---|---|---|---|
-| 0001 | _example: Use TanStack Query for server state_ | _Accepted_ | _YYYY-MM-DD_ |
+| #                                          | Title                    | Status   | Date       |
+| ------------------------------------------ | ------------------------ | -------- | ---------- |
+| [0001](./0001-frontend-stack-selection.md) | Frontend Stack Selection | Accepted | 2026-05-05 |
 
 (Add new entries here as ADRs are created. Newest at the bottom.)
 
