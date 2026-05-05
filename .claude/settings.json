@@ -12,6 +12,12 @@
       "Bash(git branch:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(gh:*)",
       "Bash(tsc:*)",
       "Bash(eslint:*)",
       "Bash(prettier:*)",
@@ -30,11 +36,34 @@
     ],
     "deny": [
       "Bash(rm -rf:*)",
-      "Bash(git push:*)",
+
+      "Bash(git push origin main)",
+      "Bash(git push origin main *)",
+      "Bash(git push * origin main)",
+      "Bash(git push * origin main *)",
+      "Bash(git push * HEAD:main)",
+      "Bash(git push * HEAD:main *)",
+      "Bash(git push * :main)",
+      "Bash(git push * :main *)",
+
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push * --force *)",
+      "Bash(git push * -f *)",
+      "Bash(git push * --force-with-lease *)",
+      "Bash(git push * --no-verify *)",
+
       "Bash(git reset --hard:*)",
       "Bash(npm publish:*)",
       "Bash(pnpm publish:*)",
-      "Edit(.env*)",
+
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.test)",
+      "Edit(.env.*.local)",
       "Edit(node_modules/**)",
       "Edit(dist/**)",
       "Edit(build/**)",
@@ -45,7 +74,12 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "pnpm lint --fix --quiet || true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm lint --fix --quiet || true"
+          }
+        ]
       }
     ]
   },
