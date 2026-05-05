@@ -22,6 +22,12 @@ export const TenantFilterSchema = z.object({
   pageSize: z.number().int().positive().max(100).default(20),
 })
 
+export const CreateTenantSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  email: z.email('Invalid email'),
+})
+
 export type Tenant = z.infer<typeof TenantSchema>
 export type TenantList = z.infer<typeof TenantListSchema>
 export type TenantFilter = z.infer<typeof TenantFilterSchema>
+export type CreateTenantInput = z.infer<typeof CreateTenantSchema>
