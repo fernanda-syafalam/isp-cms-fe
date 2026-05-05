@@ -4,9 +4,10 @@ This directory contains the Architecture Decision Records (ADRs) for this projec
 
 ## Index
 
-| #                                          | Title                    | Status   | Date       |
-| ------------------------------------------ | ------------------------ | -------- | ---------- |
-| [0001](./0001-frontend-stack-selection.md) | Frontend Stack Selection | Accepted | 2026-05-05 |
+| #                                          | Title                                                            | Status   | Date       |
+| ------------------------------------------ | ---------------------------------------------------------------- | -------- | ---------- |
+| [0001](./0001-frontend-stack-selection.md) | Frontend Stack Selection                                         | Accepted | 2026-05-05 |
+| [0002](./0002-auth-strategy.md)            | Auth Strategy — In-Memory Access Token + HttpOnly Refresh Cookie | Accepted | 2026-05-05 |
 
 (Add new entries here as ADRs are created. Newest at the bottom.)
 
