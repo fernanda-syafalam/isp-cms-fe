@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
 const TENANT_FIXTURE = {
-  id: '11111111-1111-1111-1111-111111111111',
+  id: '11111111-1111-4111-8111-111111111111',
   name: 'Acme Clinic',
   email: 'admin@acme.test',
   status: 'active' as const,
@@ -9,7 +9,7 @@ const TENANT_FIXTURE = {
 }
 
 const USER_FIXTURE = {
-  id: '99999999-9999-9999-9999-999999999999',
+  id: '99999999-9999-4999-8999-999999999999',
   email: 'admin@example.com',
   name: 'Test Admin',
 }
@@ -37,7 +37,7 @@ export const handlers = [
     const body = (await request.json()) as { name: string; email: string }
     return HttpResponse.json({
       ...TENANT_FIXTURE,
-      id: '22222222-2222-2222-2222-222222222222',
+      id: '22222222-2222-4222-8222-222222222222',
       name: body.name,
       email: body.email,
       status: 'pending',
