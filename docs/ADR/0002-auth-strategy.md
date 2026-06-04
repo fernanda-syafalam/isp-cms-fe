@@ -4,7 +4,7 @@
 - **Status**: Accepted (implemented end-to-end 2026-06-04)
 - **Deciders**: sanjit@xprogroup.com.au
 
-> **Implementation note 2026-06-04**: the `boilerplate-nestjs` backend now
+> **Implementation note 2026-06-04**: the `isp-cms-be` backend now
 > implements this exact cookie model — refresh token delivered as an httpOnly
 > cookie, rotated server-side, read from the cookie on `/auth/refresh`. The
 > **authoritative, versioned contract** (paths live under `/v1`, identity shape
@@ -14,7 +14,7 @@
 
 ## Context
 
-The `saas-clinic-controller` admin app authenticates internal operators of clinic tenants. We need a story for: how the access credential travels with each API call, where it lives between calls, how it survives a hard refresh, and how it gets cleared on logout. The decision shapes every API hook, the route guard, and the backend's session model — it has to be settled before any feature touches `/me`-gated data.
+The `isp-cms` admin app authenticates internal operators of clinic tenants. We need a story for: how the access credential travels with each API call, where it lives between calls, how it survives a hard refresh, and how it gets cleared on logout. The decision shapes every API hook, the route guard, and the backend's session model — it has to be settled before any feature touches `/me`-gated data.
 
 Constraints we are designing under:
 

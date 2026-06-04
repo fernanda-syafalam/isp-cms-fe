@@ -1,4 +1,4 @@
-# Boilerplate Dashboard
+# ISP CMS
 
 AI-first React + Vite + TanStack admin dashboard template. Fork it, replace the worked example, and ship.
 
@@ -79,7 +79,7 @@ Then:
 
 ## Why this exists
 
-Most "boilerplates" ship a blank canvas. This one ships **patterns**: every common admin-dashboard concern (auth, list pages, forms, tables, validation, error toasts) has one canonical implementation a contributor (or AI agent) can copy. Strict TypeScript, layered imports, and a single source of truth for every shape mean you can grow the codebase without it growing fractal.
+Most starter templates ship a blank canvas. This one ships **patterns**: every common admin-dashboard concern (auth, list pages, forms, tables, validation, error toasts) has one canonical implementation a contributor (or AI agent) can copy. Strict TypeScript, layered imports, and a single source of truth for every shape mean you can grow the codebase without it growing fractal.
 
 ## License
 

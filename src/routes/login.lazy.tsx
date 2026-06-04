@@ -23,7 +23,7 @@ function LoginPage() {
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
             <Building2Icon className="size-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Clinic Controller</h1>
+          <h1 className="text-2xl font-bold tracking-tight">ISP CMS</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
         </div>
 
@@ -38,7 +38,7 @@ function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Internal use only · Clinic Controller
+          Internal use only · ISP CMS
         </p>
       </div>
     </div>

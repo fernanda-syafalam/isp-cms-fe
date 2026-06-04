@@ -34,7 +34,7 @@
 
 **This is a template — fork it and replace this section per real project before first use.**
 
-- **Project name**: boilerplate-dashboard
+- **Project name**: isp-cms-fe
 - **Domain**: Generic admin dashboard template (currently demonstrates a tenants/clinic CRUD as a worked example)
 - **Primary users**: Internal operators (template assumption — replace with the real audience)
 - **Backend**: Separate REST API expected at `VITE_API_BASE_URL` (auth contract documented in `docs/ADR/0002-auth-strategy.md`)

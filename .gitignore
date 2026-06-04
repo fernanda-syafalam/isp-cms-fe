@@ -73,3 +73,6 @@ pnpm-debug.log*
 # - .claude/settings.json       (team config)
 # - .claude/commands/*.md       (shared slash commands)
 # - .claude/agents/*.md         (shared subagents)
+
+# Personal/global Claude skills must not live in the repo
+.claude/skills/

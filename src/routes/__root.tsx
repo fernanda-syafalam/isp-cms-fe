@@ -70,7 +70,7 @@ function Brand() {
       <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <Building2Icon className="size-4" />
       </span>
-      <span>Clinic Controller</span>
+      <span>ISP CMS</span>
     </Link>
   )
 }
