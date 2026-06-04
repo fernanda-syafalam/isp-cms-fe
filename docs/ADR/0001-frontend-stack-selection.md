@@ -1,8 +1,15 @@
 # ADR-0001: Frontend Stack Selection
 
 - **Date**: 2026-05-05
-- **Status**: Accepted
+- **Status**: Accepted (amended 2026-06-04)
 - **Deciders**: sanjit@xprogroup.com.au
+
+> **Amendment 2026-06-04**: the linter/formatter decision below (ESLint 9 +
+> Prettier) is superseded by **Biome** (single tool, `biome.json`). Rationale:
+> cross-repo consistency with the `boilerplate-nestjs` service, which already
+> standardised on Biome, and a faster single-binary lint+format step. The
+> a11y coverage previously provided by `eslint-plugin-jsx-a11y` is replaced by
+> Biome's `a11y` rule group. All other decisions in this ADR stand.
 
 ## Context
 
@@ -31,7 +38,7 @@ We will use the following frontend stack:
 > - **HTTP client**: ky
 > - **Forms**: React Hook Form + Zod resolver
 > - **Testing**: Vitest 3 + Testing Library + MSW (node mode); Playwright for E2E
-> - **Linting**: ESLint 9 (flat config) + Prettier
+> - **Linting & formatting**: Biome (`biome.json`) — see amendment above (was ESLint 9 + Prettier)
 > - **Package manager**: pnpm
 
 We will **not** introduce Next.js, Redux, Moment.js, Lodash (full bundle), or any CSS-in-JS runtime library. We will not store JWTs in localStorage or sessionStorage.

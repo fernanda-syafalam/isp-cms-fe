@@ -21,6 +21,6 @@ export async function refreshSession(): Promise<Session> {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const json = await api.get('me').json()
+  const json = await api.get('auth/me').json()
   return UserSchema.parse(json)
 }

@@ -10,7 +10,8 @@ import { UserSchema, type User } from '@/schemas/auth'
 export const TEST_USER: User = UserSchema.parse({
   id: '99999999-9999-4999-8999-999999999999',
   email: 'admin@example.com',
-  name: 'Test Admin',
+  fullName: 'Test Admin',
+  role: 'admin',
 })
 
 // Each test gets a fresh QueryClient so cache state cannot leak across tests.

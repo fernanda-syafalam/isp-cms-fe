@@ -55,7 +55,8 @@ describe('api client', () => {
           user: {
             id: '99999999-9999-4999-8999-999999999999',
             email: 'admin@example.com',
-            name: 'Test Admin',
+            fullName: 'Test Admin',
+            role: 'admin',
           },
         })
       }),

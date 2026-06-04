@@ -1,11 +1,11 @@
-import type { HTTPError } from 'ky';
+import type { HTTPError } from 'ky'
 import ky from 'ky'
 
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { AppError } from '@/lib/errors'
 import { SessionSchema } from '@/schemas/auth'
 
-const baseURL = import.meta.env['VITE_API_BASE_URL'] ?? '/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 // Single-flight refresh: many concurrent 401s share one /auth/refresh call.
 let refreshPromise: Promise<string | null> | null = null
@@ -60,13 +60,17 @@ export const api = ky.create({
       async (error: HTTPError) => {
         const { response } = error
         let message = error.message
+        let body: unknown = error
         try {
-          const body = (await response.json()) as { message?: string }
-          if (body?.message) message = body.message
+          const parsed = (await response.json()) as { message?: string }
+          body = parsed
+          if (parsed?.message) message = parsed.message
         } catch {
-          // body is not JSON — keep default message
+          // body is not JSON — keep default message and the original error as cause
         }
-        throw new AppError('HTTP_ERROR', message, error)
+        // Pass the parsed body as cause so callers can map structured field
+        // errors (e.g. { fieldErrors: { email: [...] } }) onto a form.
+        throw new AppError('HTTP_ERROR', message, body)
       },
     ],
   },

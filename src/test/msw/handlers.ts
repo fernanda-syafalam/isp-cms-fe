@@ -13,7 +13,8 @@ const TENANT_FIXTURES = Array.from({ length: 23 }, (_, i) => ({
 const USER_FIXTURE = {
   id: '99999999-9999-4999-8999-999999999999',
   email: 'admin@example.com',
-  name: 'Test Admin',
+  fullName: 'Test Admin',
+  role: 'admin' as const,
 }
 
 const SESSION_FIXTURE = {
@@ -21,12 +22,56 @@ const SESSION_FIXTURE = {
   user: USER_FIXTURE,
 }
 
+const USER_ROLE_CYCLE = ['admin', 'staff', 'customer'] as const
+
+// App-user fixtures for the /users feature (cursor pagination).
+const APP_USER_FIXTURES = Array.from({ length: 12 }, (_, i) => ({
+  id: `33333333-3333-4333-8333-${String(i).padStart(12, '0')}`,
+  email: `user${i}@example.com`,
+  fullName: `User ${String.fromCharCode(65 + (i % 26))}`,
+  role: USER_ROLE_CYCLE[i % USER_ROLE_CYCLE.length] ?? 'customer',
+  createdAt: new Date(2026, 0, 1 + i).toISOString(),
+}))
+
 export const handlers = [
   // Auth
   http.post('*/api/auth/login', () => HttpResponse.json(SESSION_FIXTURE)),
   http.post('*/api/auth/refresh', () => HttpResponse.json(SESSION_FIXTURE)),
   http.post('*/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
-  http.get('*/api/me', () => HttpResponse.json(USER_FIXTURE)),
+  http.get('*/api/auth/me', () => HttpResponse.json(USER_FIXTURE)),
+
+  // Users — cursor pagination (cursor?, limit? 1..100 default 50).
+  http.get('*/api/users', ({ request }) => {
+    const url = new URL(request.url)
+    const cursor = url.searchParams.get('cursor')
+    const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '50')))
+
+    const startIndex = cursor ? APP_USER_FIXTURES.findIndex((u) => u.id === cursor) + 1 : 0
+    const items = APP_USER_FIXTURES.slice(startIndex, startIndex + limit)
+    const lastItem = items.at(-1)
+    const hasMore = startIndex + limit < APP_USER_FIXTURES.length
+    const nextCursor = hasMore && lastItem ? lastItem.id : null
+
+    return HttpResponse.json({ items, nextCursor })
+  }),
+
+  http.post('*/api/users', async ({ request }) => {
+    const body = (await request.json()) as {
+      email: string
+      fullName: string
+      role?: 'admin' | 'staff' | 'customer'
+    }
+    return HttpResponse.json(
+      {
+        id: '44444444-4444-4444-8444-444444444444',
+        email: body.email,
+        fullName: body.fullName,
+        role: body.role ?? 'customer',
+        createdAt: new Date().toISOString(),
+      },
+      { status: 201 },
+    )
+  }),
 
   // Tenants — supports q, status, page, pageSize, sortBy, sortDir.
   http.get('*/api/tenants', ({ request }) => {
@@ -69,8 +114,8 @@ export const handlers = [
   }),
 
   http.get('*/api/tenants/:id', ({ params }) => {
-    const found = TENANT_FIXTURES.find((t) => t.id === params['id'])
-    return HttpResponse.json(found ?? { ...TENANT_FIXTURES[0], id: params['id'] })
+    const found = TENANT_FIXTURES.find((t) => t.id === params.id)
+    return HttpResponse.json(found ?? { ...TENANT_FIXTURES[0], id: params.id })
   }),
 
   http.post('*/api/tenants', async ({ request }) => {
@@ -85,7 +130,7 @@ export const handlers = [
   }),
 
   http.post('*/api/tenants/:id/suspend', ({ params }) => {
-    const found = TENANT_FIXTURES.find((t) => t.id === params['id']) ?? TENANT_FIXTURES[0]
-    return HttpResponse.json({ ...found, id: params['id'], status: 'suspended' })
+    const found = TENANT_FIXTURES.find((t) => t.id === params.id) ?? TENANT_FIXTURES[0]
+    return HttpResponse.json({ ...found, id: params.id, status: 'suspended' })
   }),
 ]

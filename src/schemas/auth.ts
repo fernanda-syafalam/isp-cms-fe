@@ -10,7 +10,8 @@ export const LoginSchema = z.object({
 export const UserSchema = z.object({
   id: userId,
   email: z.email(),
-  name: z.string().min(1),
+  fullName: z.string().min(1),
+  role: z.enum(['admin', 'staff', 'customer']),
 })
 
 export const SessionSchema = z.object({

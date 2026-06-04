@@ -88,7 +88,11 @@ A component with 12 boolean props is broken. Split it.
 **Mandatory (non-negotiable):**
 
 - **TypeScript**: strict mode, `noUncheckedIndexedAccess: true`
-- **ESLint** + **Prettier**: with `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y`, `@typescript-eslint`
+- **Biome**: single linter + formatter (`biome.json`). Recommended rules +
+  the `a11y` group + `style/useImportType` (correct here — `verbatimModuleSyntax`
+  is on). Replaced ESLint + Prettier on 2026-06-04 for cross-repo consistency
+  with the NestJS service (see `docs/ADR/0001-frontend-stack-selection.md` and
+  workspace `../docs/ADR/0002-shared-auth-contract.md`).
 - **Package manager**: pnpm (or npm/yarn — pick one and commit)
 - **Node**: latest LTS
 
@@ -231,18 +235,18 @@ If a domain is just one component + one hook, keep it flat under `components/` a
 
 ```ts
 // BAD
-type Result = { ok: boolean; data?: string; error?: string }
+type Result = { ok: boolean; data?: string; error?: string };
 
 // GOOD
-type Result = { ok: true; data: string } | { ok: false; error: string }
+type Result = { ok: true; data: string } | { ok: false; error: string };
 ```
 
 - **`as const` for literal arrays/objects** when you want narrow types.
 - **Branded types** for IDs that should not be interchangeable:
 
 ```ts
-type TenantId = string & { readonly __brand: 'TenantId' }
-type UserId = string & { readonly __brand: 'UserId' }
+type TenantId = string & { readonly __brand: "TenantId" };
+type UserId = string & { readonly __brand: "UserId" };
 // Function signature now refuses wrong ID type at compile time.
 ```
 
@@ -256,35 +260,35 @@ type UserId = string & { readonly __brand: 'UserId' }
 
 ```tsx
 // 1. Imports — external first, then internal, grouped
-import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
-import { useTenants } from '@/hooks/useTenants'
-import { TenantSchema } from '@/schemas/tenant'
-import { Button } from '@/components/ui/button'
+import { useTenants } from "@/hooks/useTenants";
+import { TenantSchema } from "@/schemas/tenant";
+import { Button } from "@/components/ui/button";
 
 // 2. Types co-located with component
 type Props = {
-  tenantId: string
-  onSuspend: (id: string) => void
-}
+  tenantId: string;
+  onSuspend: (id: string) => void;
+};
 
 // 3. Named export, function declaration
 export function TenantCard({ tenantId, onSuspend }: Props) {
   // 4. Hooks at top, in order: routing -> data -> state -> derived -> effects
-  const navigate = useNavigate()
-  const { data: tenant, isLoading } = useTenant(tenantId)
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  const navigate = useNavigate();
+  const { data: tenant, isLoading } = useTenant(tenantId);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // 5. Early returns for loading/error/empty
-  if (isLoading) return <TenantCardSkeleton />
-  if (!tenant) return <EmptyState message="Tenant not found" />
+  if (isLoading) return <TenantCardSkeleton />;
+  if (!tenant) return <EmptyState message="Tenant not found" />;
 
   // 6. Event handlers (handle* prefix)
   const handleSuspend = () => {
-    onSuspend(tenant.id)
-    setConfirmOpen(false)
-  }
+    onSuspend(tenant.id);
+    setConfirmOpen(false);
+  };
 
   // 7. Render
   return (
@@ -292,7 +296,7 @@ export function TenantCard({ tenantId, onSuspend }: Props) {
       <h2>{tenant.name}</h2>
       <Button onClick={() => setConfirmOpen(true)}>Suspend</Button>
     </article>
-  )
+  );
 }
 ```
 
@@ -326,10 +330,10 @@ export function TenantCard({ tenantId, onSuspend }: Props) {
 
 ```tsx
 type Props = {
-  header: ReactNode
-  children: ReactNode
-  footer?: ReactNode
-}
+  header: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+};
 ```
 
 ---
@@ -372,14 +376,14 @@ Always arrays, hierarchical, predictable:
 
 ```ts
 // GOOD
-;['tenants'][('tenants', 'list', filterObject)][('tenants', 'detail', tenantId)][ // all tenants // filtered list // single tenant
-  ('tenants', 'detail', tenantId, 'metrics')
+["tenants"][("tenants", "list", filterObject)][("tenants", "detail", tenantId)][ // all tenants // filtered list // single tenant
+  ("tenants", "detail", tenantId, "metrics")
 ][ // sub-resource
   // BAD
-  ('tenant-list', filter)
+  ("tenant-list", filter)
 ][ // inconsistent
   `tenant-${id}`
-] // string concat
+]; // string concat
 ```
 
 ### API layer pattern
@@ -387,17 +391,17 @@ Always arrays, hierarchical, predictable:
 ```ts
 // api/tenants.ts — pure functions, no React
 export async function listTenants(filter: TenantFilter): Promise<TenantList> {
-  const res = await api.get('tenants', { searchParams: filter }).json()
-  return TenantListSchema.parse(res) // ALWAYS validate at boundary
+  const res = await api.get("tenants", { searchParams: filter }).json();
+  return TenantListSchema.parse(res); // ALWAYS validate at boundary
 }
 
 // hooks/useTenants.ts — React glue
 export function useTenantsList(filter: TenantFilter) {
   return useQuery({
-    queryKey: ['tenants', 'list', filter],
+    queryKey: ["tenants", "list", filter],
     queryFn: () => listTenants(filter),
     staleTime: 30_000,
-  })
+  });
 }
 ```
 
@@ -405,15 +409,15 @@ export function useTenantsList(filter: TenantFilter) {
 
 ```ts
 export function useSuspendTenant() {
-  const qc = useQueryClient()
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, reason }: SuspendInput) => suspendTenant(id, reason),
     onSuccess: (data, vars) => {
-      qc.invalidateQueries({ queryKey: ['tenants'] })
-      qc.setQueryData(['tenants', 'detail', vars.id], data)
+      qc.invalidateQueries({ queryKey: ["tenants"] });
+      qc.setQueryData(["tenants", "detail", vars.id], data);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
-  })
+  });
 }
 ```
 
@@ -435,27 +439,27 @@ export function useSuspendTenant() {
 const FormSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(100),
-})
-type FormValues = z.infer<typeof FormSchema>
+});
+type FormValues = z.infer<typeof FormSchema>;
 
 export function TenantForm({ onSubmit }: Props) {
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { email: '', name: '' },
-  })
+    defaultValues: { email: "", name: "" },
+  });
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <Field
         label="Email"
         error={form.formState.errors.email?.message}
-        {...form.register('email')}
+        {...form.register("email")}
       />
       <Button type="submit" disabled={form.formState.isSubmitting}>
         Save
       </Button>
     </form>
-  )
+  );
 }
 ```
 
@@ -489,14 +493,14 @@ export class AppError extends Error {
     message: string,
     public cause?: unknown,
   ) {
-    super(message)
+    super(message);
   }
 }
 
 export function getErrorMessage(err: unknown): string {
-  if (err instanceof AppError) return err.message
-  if (err instanceof Error) return err.message
-  return 'An unexpected error occurred'
+  if (err instanceof AppError) return err.message;
+  if (err instanceof Error) return err.message;
+  return "An unexpected error occurred";
 }
 ```
 

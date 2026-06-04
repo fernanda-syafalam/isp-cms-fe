@@ -222,11 +222,13 @@ function SortableHeader({
   )
 }
 
+const SKELETON_ROW_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const
+
 function LoadingRows() {
   return (
     <>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <TableRow key={i}>
+      {SKELETON_ROW_KEYS.map((key) => (
+        <TableRow key={key}>
           <TableCell>
             <Skeleton className="h-4 w-32" />
           </TableCell>

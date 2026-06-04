@@ -30,13 +30,13 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="gap-2" aria-label="User menu">
           <UserIcon />
-          <span className="hidden sm:inline">{user.name}</span>
+          <span className="hidden sm:inline">{user.fullName}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuLabel>
           <div className="flex flex-col">
-            <span>{user.name}</span>
+            <span>{user.fullName}</span>
             <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
           </div>
         </DropdownMenuLabel>

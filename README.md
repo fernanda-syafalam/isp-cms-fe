@@ -15,7 +15,7 @@ Every AI agent that opens this repo (Claude Code, and compatible tools) reads `C
 - **State**: Zustand for true cross-component client state, TanStack Query for server state
 - **Forms**: React Hook Form + Zod resolver
 - **Tests**: Vitest 3 + Testing Library + MSW (node mode); Playwright 1.49 for E2E
-- **Lint/format**: ESLint 9 flat config + Prettier
+- **Lint/format**: Biome (`biome.json`) — single linter + formatter
 - **CI**: GitHub Actions running lint → typecheck → test → build → bundle-size budget per PR
 
 ## Tags

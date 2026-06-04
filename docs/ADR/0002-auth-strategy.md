@@ -1,8 +1,16 @@
 # ADR-0002: Auth Strategy — In-Memory Access Token + HttpOnly Refresh Cookie
 
 - **Date**: 2026-05-05
-- **Status**: Accepted
+- **Status**: Accepted (implemented end-to-end 2026-06-04)
 - **Deciders**: sanjit@xprogroup.com.au
+
+> **Implementation note 2026-06-04**: the `boilerplate-nestjs` backend now
+> implements this exact cookie model — refresh token delivered as an httpOnly
+> cookie, rotated server-side, read from the cookie on `/auth/refresh`. The
+> **authoritative, versioned contract** (paths live under `/v1`, identity shape
+> `{ id, email, fullName, role }`) is the workspace ADR
+> `../../../docs/ADR/0002-shared-auth-contract.md`. Where the endpoint paths in
+> this document omit `/v1`, the workspace ADR wins.
 
 ## Context
 

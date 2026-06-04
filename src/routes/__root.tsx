@@ -29,12 +29,20 @@ function RootLayout() {
             Home
           </Link>
           {isAuthed ? (
-            <Link
-              to="/tenants"
-              className="text-sm text-muted-foreground hover:text-foreground [&.active]:text-foreground"
-            >
-              Tenants
-            </Link>
+            <>
+              <Link
+                to="/tenants"
+                className="text-sm text-muted-foreground hover:text-foreground [&.active]:text-foreground"
+              >
+                Tenants
+              </Link>
+              <Link
+                to="/users"
+                className="text-sm text-muted-foreground hover:text-foreground [&.active]:text-foreground"
+              >
+                Users
+              </Link>
+            </>
           ) : null}
           <div className="ml-auto">
             {isAuthed ? (
