@@ -1,8 +1,5 @@
 import { useState } from 'react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-
 import { CreateUserDialog } from './CreateUserDialog'
 import { UsersTable } from './UsersTable'
 import { useUsersList } from '../hooks/useUsers'
@@ -32,13 +29,18 @@ export function UsersListPage() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Users</CardTitle>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-bold text-2xl tracking-tight">Users</h1>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Create and manage user accounts and roles.
+          </p>
+        </div>
         <CreateUserDialog />
-      </CardHeader>
-      <Separator />
-      <CardContent className="space-y-4 pt-6">
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4">
         <UsersTable
           users={data?.items}
           isLoading={isLoading}
@@ -48,7 +50,7 @@ export function UsersListPage() {
           onPrevious={handlePrevious}
           onNext={handleNext}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

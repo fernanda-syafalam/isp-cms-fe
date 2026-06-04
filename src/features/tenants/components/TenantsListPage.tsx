@@ -1,7 +1,5 @@
 import { useState } from 'react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { TenantFilterSchema, type TenantFilter } from '@/schemas/tenant'
 
 import { CreateTenantDialog } from './CreateTenantDialog'
@@ -19,13 +17,18 @@ export function TenantsListPage() {
   const pageIndex = filter.page - 1
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Tenants</CardTitle>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-bold text-2xl tracking-tight">Tenants</h1>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Onboard and manage clinic tenants and their status.
+          </p>
+        </div>
         <CreateTenantDialog />
-      </CardHeader>
-      <Separator />
-      <CardContent className="space-y-4 pt-6">
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-card p-4">
         <TenantFilterBar value={filter} onChange={setFilter} />
         <TenantsTable
           tenants={data?.items}
@@ -37,7 +40,7 @@ export function TenantsListPage() {
           onPageChange={(nextPageIndex) => setFilter({ ...filter, page: nextPageIndex + 1 })}
           onSuspend={(id) => suspendMutation.mutate(id)}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

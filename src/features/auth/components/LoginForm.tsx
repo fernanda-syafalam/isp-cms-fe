@@ -1,5 +1,6 @@
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2Icon, LockIcon, MailIcon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -46,9 +47,18 @@ export function LoginForm({ onSuccess }: Props) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" autoComplete="email" placeholder="you@example.com" {...field} />
-              </FormControl>
+              <div className="relative">
+                <MailIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                <FormControl>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    className="pl-9"
+                    {...field}
+                  />
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -59,15 +69,30 @@ export function LoginForm({ onSuccess }: Props) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} />
-              </FormControl>
+              <div className="relative">
+                <LockIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                <FormControl>
+                  <Input
+                    type="password"
+                    autoComplete="current-password"
+                    className="pl-9"
+                    {...field}
+                  />
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-          {form.formState.isSubmitting ? 'Signing in…' : 'Sign in'}
+          {form.formState.isSubmitting ? (
+            <>
+              <Loader2Icon className="size-4 animate-spin" />
+              Signing in…
+            </>
+          ) : (
+            'Sign in'
+          )}
         </Button>
       </form>
     </Form>
