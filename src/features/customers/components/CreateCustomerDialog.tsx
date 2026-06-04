@@ -62,12 +62,12 @@ export function CreateCustomerDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New customer</Button>
+        <Button>Pelanggan baru</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create customer</DialogTitle>
-          <DialogDescription>Register a new subscriber.</DialogDescription>
+          <DialogTitle>Buat pelanggan</DialogTitle>
+          <DialogDescription>Daftarkan pelanggan baru.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -76,7 +76,7 @@ export function CreateCustomerDialog() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nama</FormLabel>
                   <FormControl>
                     <Input placeholder="Budi Santoso" autoComplete="off" {...field} />
                   </FormControl>
@@ -89,7 +89,7 @@ export function CreateCustomerDialog() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Telepon</FormLabel>
                   <FormControl>
                     <Input placeholder="0812xxxxxxx" {...field} />
                   </FormControl>
@@ -102,7 +102,7 @@ export function CreateCustomerDialog() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email (optional)</FormLabel>
+                  <FormLabel>Email (opsional)</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="budi@example.com" {...field} />
                   </FormControl>
@@ -115,7 +115,7 @@ export function CreateCustomerDialog() {
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>Alamat</FormLabel>
                   <FormControl>
                     <Input placeholder="Jl. Merdeka No. 1" {...field} />
                   </FormControl>
@@ -128,11 +128,11 @@ export function CreateCustomerDialog() {
               name="planId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Plan</FormLabel>
+                  <FormLabel>Paket</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-full" aria-label="Plan">
-                        <SelectValue placeholder="Select a plan" />
+                      <SelectTrigger className="w-full" aria-label="Paket">
+                        <SelectValue placeholder="Pilih paket" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -154,10 +154,10 @@ export function CreateCustomerDialog() {
                 onClick={() => setOpen(false)}
                 disabled={form.formState.isSubmitting}
               >
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating…' : 'Create'}
+                {form.formState.isSubmitting ? 'Menyimpan…' : 'Buat'}
               </Button>
             </DialogFooter>
           </form>

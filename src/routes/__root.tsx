@@ -49,32 +49,32 @@ type NavGroup = {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Overview',
-    items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboardIcon, exact: true }],
+    label: 'Ringkasan',
+    items: [{ to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true }],
   },
   {
-    label: 'Operations',
+    label: 'Operasional',
     items: [
-      { to: '/customers', label: 'Customers', icon: UsersIcon },
-      { to: '/plans', label: 'Service Plans', icon: PackageIcon },
-      { to: '/invoices', label: 'Invoices', icon: ReceiptTextIcon },
-      { to: '/tickets', label: 'Tickets', icon: LifeBuoyIcon },
+      { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
+      { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
+      { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
+      { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
     ],
   },
   {
-    label: 'Network',
+    label: 'Jaringan',
     items: [
-      { to: '/network/devices', label: 'Devices', icon: RouterIcon },
-      { to: '/coverage', label: 'Coverage', icon: MapPinIcon },
+      { to: '/network/devices', label: 'Perangkat', icon: RouterIcon },
+      { to: '/coverage', label: 'Cakupan', icon: MapPinIcon },
     ],
   },
   {
-    label: 'Insights',
-    items: [{ to: '/reports', label: 'Reports', icon: BarChart3Icon }],
+    label: 'Analitik',
+    items: [{ to: '/reports', label: 'Laporan', icon: BarChart3Icon }],
   },
   {
     label: 'Admin',
-    items: [{ to: '/staff', label: 'Staff', icon: ShieldCheckIcon }],
+    items: [{ to: '/staff', label: 'Staf', icon: ShieldCheckIcon }],
   },
 ]
 
@@ -174,7 +174,7 @@ function MobileNav() {
     <div className="md:hidden">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Open navigation">
+          <Button variant="ghost" size="icon" aria-label="Buka navigasi">
             <MenuIcon className="size-4" />
           </Button>
         </DropdownMenuTrigger>

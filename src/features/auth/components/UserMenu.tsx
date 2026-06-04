@@ -28,7 +28,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2" aria-label="User menu">
+        <Button variant="ghost" size="sm" className="gap-2" aria-label="Menu pengguna">
           <UserIcon />
           <span className="hidden sm:inline">{user.fullName}</span>
         </Button>
@@ -43,7 +43,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleLogout} disabled={logoutMutation.isPending}>
           <LogOutIcon />
-          Sign out
+          Keluar
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

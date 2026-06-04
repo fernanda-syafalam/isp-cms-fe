@@ -44,7 +44,7 @@ export function RevenueChart({ data }: Props) {
           tickFormatter={(value: number) => formatCurrency(value)}
         />
         <Tooltip
-          formatter={(value) => [formatCurrency(Number(value)), 'Revenue']}
+          formatter={(value) => [formatCurrency(Number(value)), 'Pendapatan']}
           contentStyle={{
             background: 'var(--color-popover)',
             border: '1px solid var(--color-border)',

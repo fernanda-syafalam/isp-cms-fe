@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { statusLabel } from '@/lib/status-label'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -56,12 +57,12 @@ export function CreateTicketDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New ticket</Button>
+        <Button>Tiket baru</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create ticket</DialogTitle>
-          <DialogDescription>Log a new support issue.</DialogDescription>
+          <DialogTitle>Buat tiket</DialogTitle>
+          <DialogDescription>Catat keluhan dukungan baru.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -70,7 +71,7 @@ export function CreateTicketDialog() {
               name="subject"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Subject</FormLabel>
+                  <FormLabel>Subjek</FormLabel>
                   <FormControl>
                     <Input placeholder="No internet since morning" autoComplete="off" {...field} />
                   </FormControl>
@@ -83,7 +84,7 @@ export function CreateTicketDialog() {
               name="customerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer</FormLabel>
+                  <FormLabel>Pelanggan</FormLabel>
                   <FormControl>
                     <Input placeholder="Budi Santoso" {...field} />
                   </FormControl>
@@ -96,17 +97,17 @@ export function CreateTicketDialog() {
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Priority</FormLabel>
+                  <FormLabel>Prioritas</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-full" aria-label="Priority">
-                        <SelectValue placeholder="Select priority" />
+                      <SelectTrigger className="w-full" aria-label="Prioritas">
+                        <SelectValue placeholder="Pilih prioritas" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {PRIORITY_OPTIONS.map((p) => (
                         <SelectItem key={p} value={p}>
-                          {p}
+                          {statusLabel(p)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -122,10 +123,10 @@ export function CreateTicketDialog() {
                 onClick={() => setOpen(false)}
                 disabled={form.formState.isSubmitting}
               >
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating…' : 'Create'}
+                {form.formState.isSubmitting ? 'Menyimpan…' : 'Buat'}
               </Button>
             </DialogFooter>
           </form>

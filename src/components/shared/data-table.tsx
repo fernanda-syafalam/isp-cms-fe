@@ -29,8 +29,8 @@ export function DataTable<T>({
   data,
   isLoading,
   isError,
-  emptyMessage = 'No records found.',
-  errorMessage = 'Failed to load data. Try refreshing the page.',
+  emptyMessage = 'Tidak ada data.',
+  errorMessage = 'Gagal memuat data. Coba muat ulang halaman.',
 }: DataTableProps<T>) {
   const table = useReactTable({
     data: data ?? [],

@@ -24,13 +24,13 @@ function LoginPage() {
             <Building2Icon className="size-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">ISP CMS</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Sign in to your account</p>
+          <p className="mt-1 text-sm text-muted-foreground">Masuk ke akun Anda</p>
         </div>
 
         <Card className="shadow-xl">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl">Sign in</CardTitle>
-            <CardDescription>Enter your credentials to continue.</CardDescription>
+            <CardTitle className="text-xl">Masuk</CardTitle>
+            <CardDescription>Masukkan kredensial Anda untuk melanjutkan.</CardDescription>
           </CardHeader>
           <CardContent>
             <LoginForm onSuccess={handleSuccess} />
@@ -38,7 +38,7 @@ function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Internal use only · ISP CMS
+          Penggunaan internal · ISP CMS
         </p>
       </div>
     </div>

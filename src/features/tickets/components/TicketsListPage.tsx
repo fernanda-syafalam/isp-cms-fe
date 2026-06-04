@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { statusLabel } from '@/lib/status-label'
 import { useMemo } from 'react'
 
 import { DataTable } from '@/components/shared/data-table'
@@ -29,16 +30,16 @@ export function TicketsListPage() {
 
   const columns = useMemo<ColumnDef<Ticket>[]>(
     () => [
-      { accessorKey: 'code', header: 'Code' },
-      { accessorKey: 'subject', header: 'Subject' },
-      { accessorKey: 'customerName', header: 'Customer' },
+      { accessorKey: 'code', header: 'Kode' },
+      { accessorKey: 'subject', header: 'Subjek' },
+      { accessorKey: 'customerName', header: 'Pelanggan' },
       {
         accessorKey: 'priority',
-        header: 'Priority',
+        header: 'Prioritas',
         cell: ({ row }) => (
           <StatusBadge
             tone={PRIORITY_TONE[row.original.priority]}
-            label={row.original.priority}
+            label={statusLabel(row.original.priority)}
             dot={false}
           />
         ),
@@ -49,13 +50,13 @@ export function TicketsListPage() {
         cell: ({ row }) => (
           <StatusBadge
             tone={STATUS_TONE[row.original.status]}
-            label={row.original.status.replace('_', ' ')}
+            label={statusLabel(row.original.status)}
           />
         ),
       },
       {
         accessorKey: 'slaDueAt',
-        header: 'SLA due',
+        header: 'Batas SLA',
         cell: ({ row }) => formatDateTime(row.original.slaDueAt),
       },
     ],
@@ -65,8 +66,8 @@ export function TicketsListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Support Tickets"
-        description="Customer issues and SLA tracking."
+        title="Tiket Dukungan"
+        description="Keluhan pelanggan dan pelacakan SLA."
         actions={<CreateTicketDialog />}
       />
       <div className="rounded-lg border border-border bg-card p-4">
@@ -75,7 +76,7 @@ export function TicketsListPage() {
           data={data?.items}
           isLoading={isLoading}
           isError={isError}
-          emptyMessage="No tickets open."
+          emptyMessage="Belum ada tiket."
         />
       </div>
     </div>

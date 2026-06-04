@@ -19,13 +19,13 @@ describe('LoginForm', () => {
     const onSuccess = vi.fn()
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
-    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
 
     // Give React + RHF a tick to set the error state.
     await waitFor(() => {
       expect(screen.getByLabelText(/email/i)).toHaveAttribute('aria-invalid', 'true')
     })
-    expect(screen.getByLabelText(/password/i)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText(/kata sandi/i)).toHaveAttribute('aria-invalid', 'true')
     expect(onSuccess).not.toHaveBeenCalled()
     expect(useAuthStore.getState().accessToken).toBeNull()
   })
@@ -36,8 +36,8 @@ describe('LoginForm', () => {
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
     await user.type(screen.getByLabelText(/email/i), 'not-an-email')
-    await user.type(screen.getByLabelText(/password/i), 'super-secret')
-    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    await user.type(screen.getByLabelText(/kata sandi/i), 'super-secret')
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
 
     await waitFor(() => {
       expect(screen.getByLabelText(/email/i)).toHaveAttribute('aria-invalid', 'true')
@@ -51,8 +51,8 @@ describe('LoginForm', () => {
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
     await user.type(screen.getByLabelText(/email/i), 'admin@example.com')
-    await user.type(screen.getByLabelText(/password/i), 'super-secret')
-    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    await user.type(screen.getByLabelText(/kata sandi/i), 'super-secret')
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalledTimes(1)
@@ -74,8 +74,8 @@ describe('LoginForm', () => {
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
     await user.type(screen.getByLabelText(/email/i), 'admin@example.com')
-    await user.type(screen.getByLabelText(/password/i), 'wrong-password')
-    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    await user.type(screen.getByLabelText(/kata sandi/i), 'wrong-password')
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
 
     await waitFor(() => {
       expect(useAuthStore.getState().accessToken).toBeNull()

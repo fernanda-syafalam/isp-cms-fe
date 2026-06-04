@@ -26,6 +26,13 @@ const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   inactive: 'neutral',
 }
 
+const STATUS_LABEL: Record<CustomerStatus, string> = {
+  active: 'Aktif',
+  pending: 'Menunggu',
+  suspended: 'Ditangguhkan',
+  inactive: 'Nonaktif',
+}
+
 const STATUS_OPTIONS = ['all', 'active', 'pending', 'suspended', 'inactive'] as const
 
 export function CustomersListPage() {
@@ -41,7 +48,7 @@ export function CustomersListPage() {
       { accessorKey: 'customerNo', header: 'No.' },
       {
         accessorKey: 'fullName',
-        header: 'Name',
+        header: 'Nama',
         cell: ({ row }) => (
           <Link
             to="/customers/$customerId"
@@ -52,19 +59,22 @@ export function CustomersListPage() {
           </Link>
         ),
       },
-      { accessorKey: 'phone', header: 'Phone' },
+      { accessorKey: 'phone', header: 'Telepon' },
       { accessorKey: 'areaName', header: 'Area' },
-      { accessorKey: 'planName', header: 'Plan' },
+      { accessorKey: 'planName', header: 'Paket' },
       {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <StatusBadge tone={STATUS_TONE[row.original.status]} label={row.original.status} />
+          <StatusBadge
+            tone={STATUS_TONE[row.original.status]}
+            label={STATUS_LABEL[row.original.status]}
+          />
         ),
       },
       {
         accessorKey: 'joinedAt',
-        header: 'Joined',
+        header: 'Bergabung',
         cell: ({ row }) => formatDate(row.original.joinedAt),
       },
     ],
@@ -74,27 +84,27 @@ export function CustomersListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Customers"
-        description="Subscribers and their active plans."
+        title="Pelanggan"
+        description="Pelanggan dan paket aktif mereka."
         actions={<CreateCustomerDialog />}
       />
       <div className="space-y-4 rounded-lg border border-border bg-card p-4">
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
-            placeholder="Search by name or number…"
+            placeholder="Cari nama atau nomor…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="sm:max-w-xs"
-            aria-label="Search customers"
+            aria-label="Cari pelanggan"
           />
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="sm:w-44" aria-label="Filter by status">
+            <SelectTrigger className="sm:w-44" aria-label="Filter status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPTIONS.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'All statuses' : s}
+                  {s === 'all' ? 'Semua status' : STATUS_LABEL[s]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -105,9 +115,9 @@ export function CustomersListPage() {
           data={data?.items}
           isLoading={isLoading}
           isError={isError}
-          emptyMessage="No customers yet."
+          emptyMessage="Belum ada pelanggan."
         />
-        <p className="text-muted-foreground text-sm">{data ? `${data.total} customers` : ''}</p>
+        <p className="text-muted-foreground text-sm">{data ? `${data.total} pelanggan` : ''}</p>
       </div>
     </div>
   )

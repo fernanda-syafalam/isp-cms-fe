@@ -32,8 +32,8 @@ export function UsersListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-bold text-2xl tracking-tight">Staff</h1>
-          <p className="mt-1 text-muted-foreground text-sm">Internal staff and admin accounts.</p>
+          <h1 className="font-bold text-2xl tracking-tight">Staf</h1>
+          <p className="mt-1 text-muted-foreground text-sm">Akun staf dan admin internal.</p>
         </div>
         <CreateUserDialog />
       </div>

@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { statusLabel } from '@/lib/status-label'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 
@@ -36,7 +37,7 @@ export function InvoicesListPage() {
     () => [
       {
         accessorKey: 'invoiceNo',
-        header: 'Invoice',
+        header: 'No. Tagihan',
         cell: ({ row }) => (
           <Link
             to="/invoices/$invoiceId"
@@ -47,22 +48,25 @@ export function InvoicesListPage() {
           </Link>
         ),
       },
-      { accessorKey: 'customerName', header: 'Customer' },
+      { accessorKey: 'customerName', header: 'Pelanggan' },
       {
         accessorKey: 'amount',
-        header: 'Amount',
+        header: 'Jumlah',
         cell: ({ row }) => formatCurrency(row.original.amount),
       },
       {
         accessorKey: 'dueDate',
-        header: 'Due',
+        header: 'Jatuh tempo',
         cell: ({ row }) => formatDate(row.original.dueDate),
       },
       {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <StatusBadge tone={STATUS_TONE[row.original.status]} label={row.original.status} />
+          <StatusBadge
+            tone={STATUS_TONE[row.original.status]}
+            label={statusLabel(row.original.status)}
+          />
         ),
       },
     ],
@@ -71,16 +75,16 @@ export function InvoicesListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Invoices" description="Monthly subscriber billing." />
+      <PageHeader title="Tagihan" description="Penagihan bulanan pelanggan." />
       <div className="space-y-4 rounded-lg border border-border bg-card p-4">
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="sm:w-44" aria-label="Filter by status">
+          <SelectTrigger className="sm:w-44" aria-label="Filter status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((s) => (
               <SelectItem key={s} value={s}>
-                {s === 'all' ? 'All statuses' : s}
+                {s === 'all' ? 'Semua status' : statusLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -90,7 +94,7 @@ export function InvoicesListPage() {
           data={data?.items}
           isLoading={isLoading}
           isError={isError}
-          emptyMessage="No invoices yet."
+          emptyMessage="Belum ada tagihan."
         />
       </div>
     </div>

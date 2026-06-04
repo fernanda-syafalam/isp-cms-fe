@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { statusLabel } from '@/lib/status-label'
 import { useMemo } from 'react'
 
 import { DataTable } from '@/components/shared/data-table'
@@ -20,13 +21,13 @@ export function DevicesListPage() {
 
   const columns = useMemo<ColumnDef<Device>[]>(
     () => [
-      { accessorKey: 'name', header: 'Device' },
+      { accessorKey: 'name', header: 'Perangkat' },
       {
         accessorKey: 'type',
-        header: 'Type',
+        header: 'Tipe',
         cell: ({ row }) => <span className="uppercase">{row.original.type}</span>,
       },
-      { accessorKey: 'ipAddress', header: 'IP address' },
+      { accessorKey: 'ipAddress', header: 'Alamat IP' },
       { accessorKey: 'areaName', header: 'Area' },
       {
         accessorKey: 'uptimeHours',
@@ -35,14 +36,17 @@ export function DevicesListPage() {
       },
       {
         accessorKey: 'lastSeenAt',
-        header: 'Last seen',
+        header: 'Terakhir terlihat',
         cell: ({ row }) => formatDateTime(row.original.lastSeenAt),
       },
       {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <StatusBadge tone={STATUS_TONE[row.original.status]} label={row.original.status} />
+          <StatusBadge
+            tone={STATUS_TONE[row.original.status]}
+            label={statusLabel(row.original.status)}
+          />
         ),
       },
     ],
@@ -51,14 +55,14 @@ export function DevicesListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Network Devices" description="OLT, ONU, and Mikrotik devices." />
+      <PageHeader title="Perangkat Jaringan" description="Perangkat OLT, ONU, dan Mikrotik." />
       <div className="rounded-lg border border-border bg-card p-4">
         <DataTable
           columns={columns}
           data={data?.items}
           isLoading={isLoading}
           isError={isError}
-          emptyMessage="No devices registered."
+          emptyMessage="Belum ada perangkat."
         />
       </div>
     </div>

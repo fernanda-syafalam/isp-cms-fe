@@ -23,11 +23,11 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Reports" description="Revenue, growth, and churn analytics." />
+      <PageHeader title="Laporan" description="Analitik pendapatan, pertumbuhan, dan churn." />
 
       {isError ? (
         <p className="text-destructive" role="alert">
-          Failed to load reports.
+          Gagal memuat laporan.
         </p>
       ) : null}
 
@@ -42,13 +42,13 @@ export function ReportsPage() {
             <KpiCard
               label="ARPU"
               value={formatCurrency(summary.arpu)}
-              hint="Average revenue per user"
+              hint="Rata-rata pendapatan per pelanggan"
               icon={WalletIcon}
             />
             <KpiCard
-              label="Churn rate"
+              label="Tingkat churn"
               value={formatPercent(summary.churnRate)}
-              hint="Subscribers lost this month"
+              hint="Pelanggan hilang bulan ini"
               hintTone="negative"
               icon={TrendingDownIcon}
             />
@@ -58,7 +58,7 @@ export function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Revenue trend</CardTitle>
+          <CardTitle className="text-base">Tren pendapatan</CardTitle>
         </CardHeader>
         <CardContent>
           {summary ? (
@@ -71,7 +71,7 @@ export function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">New vs churned subscribers</CardTitle>
+          <CardTitle className="text-base">Pelanggan baru vs churn</CardTitle>
         </CardHeader>
         <CardContent>
           {summary ? (
@@ -105,13 +105,13 @@ export function ReportsPage() {
                 <Legend />
                 <Bar
                   dataKey="added"
-                  name="Added"
+                  name="Baru"
                   fill="var(--color-chart-2)"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="churned"
-                  name="Churned"
+                  name="Churn"
                   fill="var(--color-chart-5)"
                   radius={[4, 4, 0, 0]}
                 />

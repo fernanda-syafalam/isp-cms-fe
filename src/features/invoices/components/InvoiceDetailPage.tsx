@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { statusLabel } from '@/lib/status-label'
 import { ArrowLeftIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -39,21 +40,21 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
       <div className="space-y-4">
         <BackLink />
         <p className="text-destructive" role="alert">
-          Invoice not found.
+          Tagihan tidak ditemukan.
         </p>
       </div>
     )
   }
 
   const fields: Array<{ label: string; value: string }> = [
-    { label: 'Customer', value: invoice.customerName },
+    { label: 'Pelanggan', value: invoice.customerName },
     {
-      label: 'Period',
+      label: 'Periode',
       value: `${formatDate(invoice.periodStart)} – ${formatDate(invoice.periodEnd)}`,
     },
-    { label: 'Due date', value: formatDate(invoice.dueDate) },
+    { label: 'Jatuh tempo', value: formatDate(invoice.dueDate) },
     {
-      label: 'Paid at',
+      label: 'Dibayar pada',
       value: invoice.paidAt ? formatDateTime(invoice.paidAt) : '—',
     },
   ]
@@ -63,11 +64,13 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
       <BackLink />
       <PageHeader
         title={invoice.invoiceNo}
-        actions={<StatusBadge tone={STATUS_TONE[invoice.status]} label={invoice.status} />}
+        actions={
+          <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+        }
       />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Invoice details</CardTitle>
+          <CardTitle className="text-base">Detail tagihan</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <dl className="grid gap-4 sm:grid-cols-2">
@@ -79,7 +82,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
             ))}
           </dl>
           <div className="flex items-center justify-between border-border border-t pt-4">
-            <span className="text-muted-foreground text-sm">Amount due</span>
+            <span className="text-muted-foreground text-sm">Jumlah tagihan</span>
             <span className="font-bold text-2xl tracking-tight">
               {formatCurrency(invoice.amount)}
             </span>
@@ -95,7 +98,7 @@ function BackLink() {
     <Button asChild variant="ghost" size="sm" className="-ml-2">
       <Link to="/invoices">
         <ArrowLeftIcon className="size-4" />
-        Back to invoices
+        Kembali ke tagihan
       </Link>
     </Button>
   )

@@ -53,7 +53,7 @@ export function UsersTable({
         accessorKey: 'fullName',
         header: ({ column }) => (
           <SortableHeader
-            label="Name"
+            label="Nama"
             sort={column.getIsSorted()}
             onClick={() => column.toggleSorting()}
           />
@@ -73,7 +73,7 @@ export function UsersTable({
         accessorKey: 'role',
         header: ({ column }) => (
           <SortableHeader
-            label="Role"
+            label="Peran"
             sort={column.getIsSorted()}
             onClick={() => column.toggleSorting()}
           />
@@ -137,10 +137,10 @@ export function UsersTable({
           onClick={onPrevious}
           disabled={!hasPrevious || isLoading}
         >
-          Previous
+          Sebelumnya
         </Button>
         <Button variant="outline" size="sm" onClick={onNext} disabled={!hasNext || isLoading}>
-          Next
+          Berikutnya
         </Button>
       </div>
     </div>
@@ -165,7 +165,7 @@ function SortableHeader({
       size="sm"
       className="-ml-2 h-8 gap-1 px-2"
       onClick={onClick}
-      aria-label={`Sort by ${label}`}
+      aria-label={`Urutkan menurut ${label}`}
     >
       {label}
       <Icon className="size-3 opacity-60" />
@@ -199,7 +199,7 @@ function ErrorRow() {
   return (
     <TableRow>
       <TableCell colSpan={3} className="text-center text-destructive" role="alert">
-        Failed to load users. Try refreshing the page.
+        Gagal memuat staf. Coba muat ulang halaman.
       </TableCell>
     </TableRow>
   )
@@ -209,7 +209,7 @@ function EmptyRow() {
   return (
     <TableRow>
       <TableCell colSpan={3} className="text-center text-muted-foreground">
-        No users yet.
+        Belum ada staf.
       </TableCell>
     </TableRow>
   )

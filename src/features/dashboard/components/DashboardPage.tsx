@@ -18,14 +18,14 @@ export function DashboardPage() {
     <div className="space-y-8">
       <header>
         <h1 className="font-bold text-3xl tracking-tight">
-          Welcome{user ? `, ${user.fullName}` : ''}
+          Selamat datang{user ? `, ${user.fullName}` : ''}
         </h1>
-        <p className="mt-2 text-muted-foreground">Network, billing, and support at a glance.</p>
+        <p className="mt-2 text-muted-foreground">Jaringan, tagihan, dan dukungan sekilas.</p>
       </header>
 
       {isError ? (
         <p className="text-destructive" role="alert">
-          Failed to load dashboard metrics.
+          Gagal memuat metrik dasbor.
         </p>
       ) : null}
 
@@ -36,27 +36,27 @@ export function DashboardPage() {
         {summary ? (
           <>
             <KpiCard
-              label="Active subscribers"
+              label="Pelanggan aktif"
               value={formatNumber(summary.activeSubscribers)}
-              hint={`+${formatNumber(summary.newThisMonth)} this month`}
+              hint={`+${formatNumber(summary.newThisMonth)} bulan ini`}
               hintTone={summary.newThisMonth >= 0 ? 'positive' : 'negative'}
               icon={UsersIcon}
             />
             <KpiCard
               label="MRR"
               value={formatCurrency(summary.mrr)}
-              hint="Recurring monthly revenue"
+              hint="Pendapatan bulanan berulang"
               icon={BanknoteIcon}
             />
             <KpiCard
-              label="Overdue"
+              label="Terlambat"
               value={formatCurrency(summary.overdueAmount)}
-              hint={`${formatNumber(summary.overdueCount)} invoices`}
+              hint={`${formatNumber(summary.overdueCount)} tagihan`}
               hintTone="negative"
               icon={TriangleAlertIcon}
             />
             <KpiCard
-              label="Open tickets"
+              label="Tiket terbuka"
               value={formatNumber(summary.openTickets)}
               hint={`SLA ${formatPercent(summary.slaCompliance)}`}
               icon={LifeBuoyIcon}
@@ -68,7 +68,7 @@ export function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Revenue (last 6 months)</CardTitle>
+            <CardTitle className="text-base">Pendapatan (6 bulan terakhir)</CardTitle>
           </CardHeader>
           <CardContent>
             {summary ? (
@@ -81,7 +81,7 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Network status</CardTitle>
+            <CardTitle className="text-base">Status jaringan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {summary ? (
@@ -107,7 +107,7 @@ function NetworkStatus({ online, total }: { online: number; total: number }) {
         </span>
         <div>
           <p className="font-bold text-2xl tracking-tight">{formatPercent(ratio)}</p>
-          <p className="text-muted-foreground text-xs">devices online</p>
+          <p className="text-muted-foreground text-xs">perangkat online</p>
         </div>
       </div>
       <dl className="grid grid-cols-2 gap-2 text-sm">

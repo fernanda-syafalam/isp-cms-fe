@@ -18,6 +18,13 @@ const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   inactive: 'neutral',
 }
 
+const STATUS_LABEL: Record<CustomerStatus, string> = {
+  active: 'Aktif',
+  pending: 'Menunggu',
+  suspended: 'Ditangguhkan',
+  inactive: 'Nonaktif',
+}
+
 type Props = {
   customerId: string
 }
@@ -39,20 +46,20 @@ export function CustomerDetailPage({ customerId }: Props) {
       <div className="space-y-4">
         <BackLink />
         <p className="text-destructive" role="alert">
-          Customer not found.
+          Pelanggan tidak ditemukan.
         </p>
       </div>
     )
   }
 
   const fields: Array<{ label: string; value: string }> = [
-    { label: 'Customer No.', value: customer.customerNo },
-    { label: 'Phone', value: customer.phone },
+    { label: 'No. Pelanggan', value: customer.customerNo },
+    { label: 'Telepon', value: customer.phone },
     { label: 'Email', value: customer.email ?? '—' },
-    { label: 'Address', value: customer.address },
+    { label: 'Alamat', value: customer.address },
     { label: 'Area', value: customer.areaName },
-    { label: 'Plan', value: customer.planName },
-    { label: 'Joined', value: formatDate(customer.joinedAt) },
+    { label: 'Paket', value: customer.planName },
+    { label: 'Bergabung', value: formatDate(customer.joinedAt) },
   ]
 
   return (
@@ -60,11 +67,13 @@ export function CustomerDetailPage({ customerId }: Props) {
       <BackLink />
       <PageHeader
         title={customer.fullName}
-        actions={<StatusBadge tone={STATUS_TONE[customer.status]} label={customer.status} />}
+        actions={
+          <StatusBadge tone={STATUS_TONE[customer.status]} label={STATUS_LABEL[customer.status]} />
+        }
       />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Subscriber details</CardTitle>
+          <CardTitle className="text-base">Detail pelanggan</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 sm:grid-cols-2">
@@ -86,7 +95,7 @@ function BackLink() {
     <Button asChild variant="ghost" size="sm" className="-ml-2">
       <Link to="/customers">
         <ArrowLeftIcon className="size-4" />
-        Back to customers
+        Kembali ke pelanggan
       </Link>
     </Button>
   )

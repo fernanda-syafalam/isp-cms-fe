@@ -47,12 +47,12 @@ export function CreatePlanDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New plan</Button>
+        <Button>Paket baru</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create plan</DialogTitle>
-          <DialogDescription>Define a new internet package.</DialogDescription>
+          <DialogTitle>Buat paket</DialogTitle>
+          <DialogDescription>Tambahkan paket internet baru.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -61,7 +61,7 @@ export function CreatePlanDialog() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nama</FormLabel>
                   <FormControl>
                     <Input placeholder="Home 50" autoComplete="off" {...field} />
                   </FormControl>
@@ -74,7 +74,7 @@ export function CreatePlanDialog() {
               name="speedMbps"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Speed (Mbps)</FormLabel>
+                  <FormLabel>Kecepatan (Mbps)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -95,7 +95,7 @@ export function CreatePlanDialog() {
               name="priceMonthly"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price / month (IDR)</FormLabel>
+                  <FormLabel>Harga / bulan (IDR)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -118,10 +118,10 @@ export function CreatePlanDialog() {
                 onClick={() => setOpen(false)}
                 disabled={form.formState.isSubmitting}
               >
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating…' : 'Create'}
+                {form.formState.isSubmitting ? 'Menyimpan…' : 'Buat'}
               </Button>
             </DialogFooter>
           </form>

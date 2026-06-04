@@ -1,4 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { statusLabel } from '@/lib/status-label'
 import { useMemo } from 'react'
 
 import { DataTable } from '@/components/shared/data-table'
@@ -20,22 +21,25 @@ export function PlansListPage() {
 
   const columns = useMemo<ColumnDef<Plan>[]>(
     () => [
-      { accessorKey: 'name', header: 'Plan' },
+      { accessorKey: 'name', header: 'Paket' },
       {
         accessorKey: 'speedMbps',
-        header: 'Speed',
+        header: 'Kecepatan',
         cell: ({ row }) => `${formatNumber(row.original.speedMbps)} Mbps`,
       },
       {
         accessorKey: 'priceMonthly',
-        header: 'Price / month',
+        header: 'Harga / bulan',
         cell: ({ row }) => formatCurrency(row.original.priceMonthly),
       },
       {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <StatusBadge tone={STATUS_TONE[row.original.status]} label={row.original.status} />
+          <StatusBadge
+            tone={STATUS_TONE[row.original.status]}
+            label={statusLabel(row.original.status)}
+          />
         ),
       },
     ],
@@ -45,8 +49,8 @@ export function PlansListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Service Plans"
-        description="Internet packages offered to subscribers."
+        title="Paket Layanan"
+        description="Paket internet untuk pelanggan."
         actions={<CreatePlanDialog />}
       />
       <div className="rounded-lg border border-border bg-card p-4">
@@ -55,7 +59,7 @@ export function PlansListPage() {
           data={data?.items}
           isLoading={isLoading}
           isError={isError}
-          emptyMessage="No plans yet."
+          emptyMessage="Belum ada paket."
         />
       </div>
     </div>

@@ -44,6 +44,52 @@
 
 ---
 
+## Language Policy (UI = Bahasa Indonesia, code = English)
+
+This product is operated by Indonesian ISP staff, so **everything a user
+reads on screen is in Bahasa Indonesia**, while **everything a developer
+reads in the source stays in English**. This is binding for all new and
+edited UI.
+
+### Bahasa Indonesia (user-facing copy)
+
+Any string that renders to the screen or to assistive tech:
+
+- Headings, labels, descriptions, table column headers, nav items
+- Button text, menu items, placeholders, empty/error/loading text
+- Toast / notification messages
+- Zod **validation messages** (they are shown in the form)
+- `aria-label`, `aria-description`, and other accessible text (screen
+  readers are users too)
+- `<title>` / document titles, status labels shown to users
+
+Use natural, professional Indonesian (e.g. "Pelanggan", "Tagihan",
+"Paket Layanan", "Simpan", "Batal", "Cari pelanggan…", "Belum ada data",
+"Gagal memuat data"). Keep widely-understood technical terms when they are
+the norm in Indonesian ISP usage (e.g. "OLT", "Mikrotik", "SLA", "Mbps",
+"IP", "PPPoE", "ticket"→prefer "tiket").
+
+### English (everything in the code)
+
+- Identifiers: variables, functions, components, types, files, routes
+- Code comments and JSDoc
+- Commit messages, PR titles/descriptions, ADRs, this file and `docs/`
+- Object keys, enum _values_ from the API contract (e.g. status `active`,
+  `paid`), query keys, test descriptions
+- Domain status **values** stay as the API enum (`active`, `overdue`); only
+  the **displayed label** is translated (map enum → Indonesian at render).
+
+### How to apply
+
+- Map API enum values to Indonesian labels at the display boundary (a small
+  `Record<Status, string>` next to the component), never by renaming the
+  enum.
+- Prefer a single source for repeated copy; for now inline Indonesian
+  strings are fine (no i18n library yet — see Out of scope in
+  `docs/FEATURES.md`). If multi-language is ever needed, introduce i18n then.
+
+---
+
 ## Core Engineering Principles
 
 These are not slogans. Each principle translates to enforceable rules below.
@@ -671,6 +717,10 @@ These are absolute. AI must not generate code that violates these without explic
 24. Run lint + typecheck + tests before claiming done
 25. Update tests when behavior changes
 26. Update CLAUDE.md if a new pattern emerges (or propose update)
+27. Write user-facing copy (labels, buttons, placeholders, validation
+    messages, `aria-label`, toasts) in **Bahasa Indonesia**; keep all code,
+    identifiers, comments, and commits in **English** (see Language Policy).
+    Translate API enum values to Indonesian only at the display boundary.
 
 ---
 
