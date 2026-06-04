@@ -32,11 +32,12 @@
 
 ## Project Context
 
-**This is a template — fork it and replace this section per real project before first use.**
-
 - **Project name**: isp-cms-fe
-- **Domain**: Generic admin dashboard template (currently demonstrates a tenants/clinic CRUD as a worked example)
-- **Primary users**: Internal operators (template assumption — replace with the real audience)
+- **Domain**: Admin dashboard for an internal ISP operator — subscribers,
+  service plans, billing/invoices, network devices, support tickets, coverage,
+  reports. Feature spec: `docs/FEATURES.md`. ISP modules are mock-first
+  (`docs/ADR/0003-isp-modules-mock-first.md`); Staff uses the real `/v1/users`.
+- **Primary users**: Internal ISP staff (operations, billing, NOC, support)
 - **Backend**: Separate REST API expected at `VITE_API_BASE_URL` (auth contract documented in `docs/ADR/0002-auth-strategy.md`)
 - **Deployment target**: Static SPA (Vercel / Netlify / Cloudflare Pages / S3 + CloudFront)
 - **Compliance requirements**: None at the template level — fill in when forked

@@ -21,7 +21,10 @@ describe('useLogin', () => {
       ),
     })
 
-    await result.current.mutateAsync({ email: 'a@b.test', password: 'super-secret' })
+    await result.current.mutateAsync({
+      email: 'a@b.test',
+      password: 'super-secret',
+    })
 
     expect(useAuthStore.getState().accessToken).toBe('test-access-token')
     expect(queryClient.getQueryData(['auth', 'me'])).toMatchObject({
@@ -37,7 +40,10 @@ describe('useLogin', () => {
     })
 
     await expect(
-      result.current.mutateAsync({ email: 'a@b.test', password: 'super-secret' }),
+      result.current.mutateAsync({
+        email: 'a@b.test',
+        password: 'super-secret',
+      }),
     ).rejects.toThrow()
 
     expect(useAuthStore.getState().accessToken).toBeNull()
@@ -47,7 +53,10 @@ describe('useLogin', () => {
 describe('useLogout', () => {
   it('clears the store and the query cache', async () => {
     const queryClient = makeTestQueryClient()
-    queryClient.setQueryData(['tenants', 'list', {}], { items: [], total: 0 })
+    queryClient.setQueryData(['customers', 'list', {}], {
+      items: [],
+      total: 0,
+    })
     useAuthStore.setState({
       accessToken: 'token',
       user: TEST_USER,
@@ -63,7 +72,7 @@ describe('useLogout', () => {
 
     expect(useAuthStore.getState().accessToken).toBeNull()
     expect(useAuthStore.getState().user).toBeNull()
-    expect(queryClient.getQueryData(['tenants', 'list', {}])).toBeUndefined()
+    expect(queryClient.getQueryData(['customers', 'list', {}])).toBeUndefined()
   })
 
   it('still clears local state when the server logout call fails', async () => {

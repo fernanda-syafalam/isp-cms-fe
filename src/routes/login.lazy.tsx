@@ -13,7 +13,7 @@ function LoginPage() {
   const navigate = useNavigate()
 
   const handleSuccess = () => {
-    void navigate({ to: from ?? '/tenants', replace: true })
+    void navigate({ to: from ?? '/', replace: true })
   }
 
   return (

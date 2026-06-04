@@ -16,6 +16,7 @@
       "!**/.vite",
       "!**/.vitest-cache",
       "!**/src/routeTree.gen.ts",
+      "!**/public/mockServiceWorker.js",
       "!**/*.tsbuildinfo",
       "!**/*.css"
     ]

@@ -11,9 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthUsersRouteImport } from './routes/_auth.users'
-import { Route as AuthTenantsRouteImport } from './routes/_auth.tenants'
+import { Route as AuthIndexRouteImport } from './routes/_auth.index'
+import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
+import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
+import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
+import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
+import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
+import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
+import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
+import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
+import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
+import { Route as AuthNetworkDevicesRouteImport } from './routes/_auth.network.devices'
+import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
+import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth.customers.$customerId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -24,52 +34,171 @@ const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthRoute,
 } as any)
-const AuthUsersRoute = AuthUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const AuthTicketsRoute = AuthTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.users.lazy').then((d) => d.Route))
-const AuthTenantsRoute = AuthTenantsRouteImport.update({
-  id: '/tenants',
-  path: '/tenants',
+} as any)
+const AuthStaffRoute = AuthStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
   getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.tenants.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/_auth.staff.lazy').then((d) => d.Route))
+const AuthReportsRoute = AuthReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPlansRoute = AuthPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCustomersRoute = AuthCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCoverageRoute = AuthCoverageRouteImport.update({
+  id: '/coverage',
+  path: '/coverage',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthInvoicesRoute,
+} as any)
+const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthCustomersRoute,
+} as any)
+const AuthNetworkDevicesRoute = AuthNetworkDevicesRouteImport.update({
+  id: '/network/devices',
+  path: '/network/devices',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
+  id: '/$invoiceId',
+  path: '/$invoiceId',
+  getParentRoute: () => AuthInvoicesRoute,
+} as any)
+const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
+  id: '/$customerId',
+  path: '/$customerId',
+  getParentRoute: () => AuthCustomersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
-  '/tenants': typeof AuthTenantsRoute
-  '/users': typeof AuthUsersRoute
+  '/coverage': typeof AuthCoverageRoute
+  '/customers': typeof AuthCustomersRouteWithChildren
+  '/invoices': typeof AuthInvoicesRouteWithChildren
+  '/plans': typeof AuthPlansRoute
+  '/reports': typeof AuthReportsRoute
+  '/staff': typeof AuthStaffRoute
+  '/tickets': typeof AuthTicketsRoute
+  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/network/devices': typeof AuthNetworkDevicesRoute
+  '/customers/': typeof AuthCustomersIndexRoute
+  '/invoices/': typeof AuthInvoicesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/tenants': typeof AuthTenantsRoute
-  '/users': typeof AuthUsersRoute
+  '/coverage': typeof AuthCoverageRoute
+  '/plans': typeof AuthPlansRoute
+  '/reports': typeof AuthReportsRoute
+  '/staff': typeof AuthStaffRoute
+  '/tickets': typeof AuthTicketsRoute
+  '/': typeof AuthIndexRoute
+  '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/network/devices': typeof AuthNetworkDevicesRoute
+  '/customers': typeof AuthCustomersIndexRoute
+  '/invoices': typeof AuthInvoicesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
-  '/_auth/tenants': typeof AuthTenantsRoute
-  '/_auth/users': typeof AuthUsersRoute
+  '/_auth/coverage': typeof AuthCoverageRoute
+  '/_auth/customers': typeof AuthCustomersRouteWithChildren
+  '/_auth/invoices': typeof AuthInvoicesRouteWithChildren
+  '/_auth/plans': typeof AuthPlansRoute
+  '/_auth/reports': typeof AuthReportsRoute
+  '/_auth/staff': typeof AuthStaffRoute
+  '/_auth/tickets': typeof AuthTicketsRoute
+  '/_auth/': typeof AuthIndexRoute
+  '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
+  '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/_auth/network/devices': typeof AuthNetworkDevicesRoute
+  '/_auth/customers/': typeof AuthCustomersIndexRoute
+  '/_auth/invoices/': typeof AuthInvoicesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/tenants' | '/users'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/coverage'
+    | '/customers'
+    | '/invoices'
+    | '/plans'
+    | '/reports'
+    | '/staff'
+    | '/tickets'
+    | '/customers/$customerId'
+    | '/invoices/$invoiceId'
+    | '/network/devices'
+    | '/customers/'
+    | '/invoices/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/tenants' | '/users'
-  id: '__root__' | '/' | '/_auth' | '/login' | '/_auth/tenants' | '/_auth/users'
+  to:
+    | '/login'
+    | '/coverage'
+    | '/plans'
+    | '/reports'
+    | '/staff'
+    | '/tickets'
+    | '/'
+    | '/customers/$customerId'
+    | '/invoices/$invoiceId'
+    | '/network/devices'
+    | '/customers'
+    | '/invoices'
+  id:
+    | '__root__'
+    | '/_auth'
+    | '/login'
+    | '/_auth/coverage'
+    | '/_auth/customers'
+    | '/_auth/invoices'
+    | '/_auth/plans'
+    | '/_auth/reports'
+    | '/_auth/staff'
+    | '/_auth/tickets'
+    | '/_auth/'
+    | '/_auth/customers/$customerId'
+    | '/_auth/invoices/$invoiceId'
+    | '/_auth/network/devices'
+    | '/_auth/customers/'
+    | '/_auth/invoices/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
@@ -90,44 +219,155 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_auth/': {
+      id: '/_auth/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth/users': {
-      id: '/_auth/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthUsersRouteImport
+      preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/tenants': {
-      id: '/_auth/tenants'
-      path: '/tenants'
-      fullPath: '/tenants'
-      preLoaderRoute: typeof AuthTenantsRouteImport
+    '/_auth/tickets': {
+      id: '/_auth/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AuthTicketsRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_auth/staff': {
+      id: '/_auth/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AuthStaffRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports': {
+      id: '/_auth/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthReportsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/plans': {
+      id: '/_auth/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthPlansRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/invoices': {
+      id: '/_auth/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthInvoicesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/customers': {
+      id: '/_auth/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AuthCustomersRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/coverage': {
+      id: '/_auth/coverage'
+      path: '/coverage'
+      fullPath: '/coverage'
+      preLoaderRoute: typeof AuthCoverageRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/invoices/': {
+      id: '/_auth/invoices/'
+      path: '/'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthInvoicesIndexRouteImport
+      parentRoute: typeof AuthInvoicesRoute
+    }
+    '/_auth/customers/': {
+      id: '/_auth/customers/'
+      path: '/'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AuthCustomersIndexRouteImport
+      parentRoute: typeof AuthCustomersRoute
+    }
+    '/_auth/network/devices': {
+      id: '/_auth/network/devices'
+      path: '/network/devices'
+      fullPath: '/network/devices'
+      preLoaderRoute: typeof AuthNetworkDevicesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/invoices/$invoiceId': {
+      id: '/_auth/invoices/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/invoices/$invoiceId'
+      preLoaderRoute: typeof AuthInvoicesInvoiceIdRouteImport
+      parentRoute: typeof AuthInvoicesRoute
+    }
+    '/_auth/customers/$customerId': {
+      id: '/_auth/customers/$customerId'
+      path: '/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
+      parentRoute: typeof AuthCustomersRoute
     }
   }
 }
 
+interface AuthCustomersRouteChildren {
+  AuthCustomersCustomerIdRoute: typeof AuthCustomersCustomerIdRoute
+  AuthCustomersIndexRoute: typeof AuthCustomersIndexRoute
+}
+
+const AuthCustomersRouteChildren: AuthCustomersRouteChildren = {
+  AuthCustomersCustomerIdRoute: AuthCustomersCustomerIdRoute,
+  AuthCustomersIndexRoute: AuthCustomersIndexRoute,
+}
+
+const AuthCustomersRouteWithChildren = AuthCustomersRoute._addFileChildren(
+  AuthCustomersRouteChildren,
+)
+
+interface AuthInvoicesRouteChildren {
+  AuthInvoicesInvoiceIdRoute: typeof AuthInvoicesInvoiceIdRoute
+  AuthInvoicesIndexRoute: typeof AuthInvoicesIndexRoute
+}
+
+const AuthInvoicesRouteChildren: AuthInvoicesRouteChildren = {
+  AuthInvoicesInvoiceIdRoute: AuthInvoicesInvoiceIdRoute,
+  AuthInvoicesIndexRoute: AuthInvoicesIndexRoute,
+}
+
+const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
+  AuthInvoicesRouteChildren,
+)
+
 interface AuthRouteChildren {
-  AuthTenantsRoute: typeof AuthTenantsRoute
-  AuthUsersRoute: typeof AuthUsersRoute
+  AuthCoverageRoute: typeof AuthCoverageRoute
+  AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
+  AuthInvoicesRoute: typeof AuthInvoicesRouteWithChildren
+  AuthPlansRoute: typeof AuthPlansRoute
+  AuthReportsRoute: typeof AuthReportsRoute
+  AuthStaffRoute: typeof AuthStaffRoute
+  AuthTicketsRoute: typeof AuthTicketsRoute
+  AuthIndexRoute: typeof AuthIndexRoute
+  AuthNetworkDevicesRoute: typeof AuthNetworkDevicesRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthTenantsRoute: AuthTenantsRoute,
-  AuthUsersRoute: AuthUsersRoute,
+  AuthCoverageRoute: AuthCoverageRoute,
+  AuthCustomersRoute: AuthCustomersRouteWithChildren,
+  AuthInvoicesRoute: AuthInvoicesRouteWithChildren,
+  AuthPlansRoute: AuthPlansRoute,
+  AuthReportsRoute: AuthReportsRoute,
+  AuthStaffRoute: AuthStaffRoute,
+  AuthTicketsRoute: AuthTicketsRoute,
+  AuthIndexRoute: AuthIndexRoute,
+  AuthNetworkDevicesRoute: AuthNetworkDevicesRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   LoginRoute: LoginRoute,
 }

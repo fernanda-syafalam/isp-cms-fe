@@ -32,10 +32,8 @@ export function UsersListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-bold text-2xl tracking-tight">Users</h1>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Create and manage user accounts and roles.
-          </p>
+          <h1 className="font-bold text-2xl tracking-tight">Staff</h1>
+          <p className="mt-1 text-muted-foreground text-sm">Internal staff and admin accounts.</p>
         </div>
         <CreateUserDialog />
       </div>
