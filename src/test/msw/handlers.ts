@@ -302,6 +302,91 @@ const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
 const filterByStatus = <T extends { status: string }>(items: T[], status: string | null) =>
   status ? items.filter((item) => item.status === status) : items
 
+// Network topology: OLT → ODC → ODP → Tiang → Pelanggan, around Bandung.
+// Read-only mock dataset (ADR-0004); edges are derived from parentId.
+const TOPOLOGY_FIXTURES = (() => {
+  type TopoNode = {
+    id: string
+    name: string
+    type: 'olt' | 'odc' | 'odp' | 'pole' | 'customer'
+    status: 'up' | 'down' | 'unknown'
+    lat: number
+    lng: number
+    parentId: string | null
+  }
+  const nodes: TopoNode[] = []
+  const center = { lat: -6.9039, lng: 107.6186 }
+  const STATUS_CYCLE: TopoNode['status'][] = ['up', 'up', 'up', 'up', 'down', 'unknown', 'up', 'up']
+  let k = 0
+  for (let o = 0; o < 2; o++) {
+    const oltId = `olt-${o + 1}`
+    const oLat = center.lat + (o - 0.5) * 0.02
+    const oLng = center.lng + (o - 0.5) * 0.03
+    nodes.push({
+      id: oltId,
+      name: `OLT ${o + 1}`,
+      type: 'olt',
+      status: 'up',
+      lat: oLat,
+      lng: oLng,
+      parentId: null,
+    })
+    for (let c = 0; c < 2; c++) {
+      const odcId = `${oltId}-odc-${c + 1}`
+      const cLat = oLat + (c - 0.5) * 0.012
+      const cLng = oLng + (c - 0.5) * 0.016 + 0.006
+      nodes.push({
+        id: odcId,
+        name: `ODC ${o + 1}.${c + 1}`,
+        type: 'odc',
+        status: STATUS_CYCLE[k++ % STATUS_CYCLE.length] ?? 'up',
+        lat: cLat,
+        lng: cLng,
+        parentId: oltId,
+      })
+      for (let d = 0; d < 2; d++) {
+        const odpId = `${odcId}-odp-${d + 1}`
+        const dLat = cLat + (d - 0.5) * 0.008
+        const dLng = cLng + (d - 0.5) * 0.01 + 0.005
+        nodes.push({
+          id: odpId,
+          name: `ODP ${o + 1}.${c + 1}.${d + 1}`,
+          type: 'odp',
+          status: STATUS_CYCLE[k++ % STATUS_CYCLE.length] ?? 'up',
+          lat: dLat,
+          lng: dLng,
+          parentId: odcId,
+        })
+        const poleId = `${odpId}-pole`
+        const pLat = dLat + 0.0025
+        const pLng = dLng + 0.003
+        nodes.push({
+          id: poleId,
+          name: `Tiang ${o + 1}.${c + 1}.${d + 1}`,
+          type: 'pole',
+          status: 'up',
+          lat: pLat,
+          lng: pLng,
+          parentId: odpId,
+        })
+        for (let u = 0; u < 2; u++) {
+          const custId = `${poleId}-cust-${u + 1}`
+          nodes.push({
+            id: custId,
+            name: `Pelanggan ${String.fromCharCode(65 + (k % 26))}${k}`,
+            type: 'customer',
+            status: STATUS_CYCLE[k++ % STATUS_CYCLE.length] ?? 'up',
+            lat: pLat + (u - 0.5) * 0.003,
+            lng: pLng + (u - 0.5) * 0.004,
+            parentId: poleId,
+          })
+        }
+      }
+    }
+  }
+  return nodes
+})()
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -1007,4 +1092,12 @@ export const handlers = [
   // Analytics
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
+
+  // Network topology (read-only)
+  http.get('*/api/topology', () =>
+    HttpResponse.json({
+      items: TOPOLOGY_FIXTURES,
+      total: TOPOLOGY_FIXTURES.length,
+    }),
+  ),
 ]

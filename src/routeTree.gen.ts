@@ -25,6 +25,7 @@ import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
+import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
 import { Route as AuthNetworkRoutersRouteImport } from './routes/_auth.network.routers'
 import { Route as AuthNetworkDevicesRouteImport } from './routes/_auth.network.devices'
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
@@ -111,6 +112,13 @@ const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthCustomersRoute,
 } as any)
+const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
+  id: '/network/topology',
+  path: '/network/topology',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.topology.lazy').then((d) => d.Route),
+)
 const AuthNetworkRoutersRoute = AuthNetworkRoutersRouteImport.update({
   id: '/network/routers',
   path: '/network/routers',
@@ -162,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
   '/network/routers': typeof AuthNetworkRoutersRoute
+  '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -183,6 +192,7 @@ export interface FileRoutesByTo {
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
   '/network/routers': typeof AuthNetworkRoutersRoute
+  '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -208,6 +218,7 @@ export interface FileRoutesById {
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/_auth/network/devices': typeof AuthNetworkDevicesRouteWithChildren
   '/_auth/network/routers': typeof AuthNetworkRoutersRoute
+  '/_auth/network/topology': typeof AuthNetworkTopologyRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/network/devices'
     | '/network/routers'
+    | '/network/topology'
     | '/customers/'
     | '/invoices/'
     | '/network/devices/$deviceId'
@@ -254,6 +266,7 @@ export interface FileRouteTypes {
     | '/invoices/$invoiceId'
     | '/network/devices'
     | '/network/routers'
+    | '/network/topology'
     | '/customers'
     | '/invoices'
     | '/network/devices/$deviceId'
@@ -278,6 +291,7 @@ export interface FileRouteTypes {
     | '/_auth/invoices/$invoiceId'
     | '/_auth/network/devices'
     | '/_auth/network/routers'
+    | '/_auth/network/topology'
     | '/_auth/customers/'
     | '/_auth/invoices/'
     | '/_auth/network/devices/$deviceId'
@@ -402,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersIndexRouteImport
       parentRoute: typeof AuthCustomersRoute
     }
+    '/_auth/network/topology': {
+      id: '/_auth/network/topology'
+      path: '/network/topology'
+      fullPath: '/network/topology'
+      preLoaderRoute: typeof AuthNetworkTopologyRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/network/routers': {
       id: '/_auth/network/routers'
       path: '/network/routers'
@@ -503,6 +524,7 @@ interface AuthRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   AuthNetworkDevicesRoute: typeof AuthNetworkDevicesRouteWithChildren
   AuthNetworkRoutersRoute: typeof AuthNetworkRoutersRoute
+  AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -520,6 +542,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   AuthNetworkDevicesRoute: AuthNetworkDevicesRouteWithChildren,
   AuthNetworkRoutersRoute: AuthNetworkRoutersRoute,
+  AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
