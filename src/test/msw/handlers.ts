@@ -418,6 +418,35 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(plan, { status: 201 })
   }),
+  http.patch('*/api/plans/:id', async ({ params, request }) => {
+    const found = PLAN_FIXTURES.find((p) => p.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      name?: string
+      speedMbps?: number
+      priceMonthly?: number
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.speedMbps !== undefined) found.speedMbps = body.speedMbps
+    if (body.priceMonthly !== undefined) found.priceMonthly = body.priceMonthly
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.post('*/api/plans/:id/archive', ({ params }) => {
+    const found = PLAN_FIXTURES.find((p) => p.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'archived'
+    persistDb()
+    return HttpResponse.json(found)
+  }),
 
   // Customers
   http.get('*/api/customers', ({ request }) => {
