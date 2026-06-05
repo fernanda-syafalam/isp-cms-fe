@@ -1,4 +1,12 @@
-import { BanknoteIcon, PowerOffIcon, RouterIcon, TriangleAlertIcon, UsersIcon } from 'lucide-react'
+import {
+  BanknoteIcon,
+  LifeBuoyIcon,
+  PowerOffIcon,
+  RouterIcon,
+  TriangleAlertIcon,
+  UsersIcon,
+  WrenchIcon,
+} from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { KpiCard } from '@/components/shared/kpi-card'
@@ -20,6 +28,7 @@ import type { Payment } from '@/schemas/payment'
 import type { WorkOrder } from '@/schemas/workorder'
 
 import { useRecentPayments, useUpcomingInstalls } from '../hooks/useDashboardLists'
+import { AttentionPanel, type AttentionAlert } from './AttentionPanel'
 
 const KPI_SKELETON_KEYS = ['k1', 'k2', 'k3', 'k4'] as const
 
@@ -28,6 +37,44 @@ export function DashboardPage() {
   const { data: summary, isLoading, isError } = useDashboardSummary()
   const { data: recentPayments } = useRecentPayments()
   const { data: upcomingInstalls } = useUpcomingInstalls()
+
+  const alerts: AttentionAlert[] = summary
+    ? [
+        {
+          key: 'overdue',
+          icon: TriangleAlertIcon,
+          label: 'Tagihan jatuh tempo',
+          count: summary.overdueCount,
+          hint: formatCurrency(summary.overdueAmount),
+          to: '/invoices',
+          tone: 'danger',
+        },
+        {
+          key: 'tickets',
+          icon: LifeBuoyIcon,
+          label: 'Tiket terbuka',
+          count: summary.openTickets,
+          to: '/tickets',
+          tone: 'warning',
+        },
+        {
+          key: 'installs',
+          icon: WrenchIcon,
+          label: 'Instalasi terjadwal',
+          count: upcomingInstalls?.length ?? 0,
+          to: '/work-orders',
+          tone: 'info',
+        },
+        {
+          key: 'offline',
+          icon: RouterIcon,
+          label: 'Perangkat offline',
+          count: summary.devicesTotal - summary.devicesOnline,
+          to: '/network/devices',
+          tone: 'danger',
+        },
+      ]
+    : []
 
   return (
     <div className="space-y-8">
@@ -43,6 +90,8 @@ export function DashboardPage() {
           Gagal memuat metrik dasbor.
         </p>
       ) : null}
+
+      {summary ? <AttentionPanel alerts={alerts} /> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading || !summary
