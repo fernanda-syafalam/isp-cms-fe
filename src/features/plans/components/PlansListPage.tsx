@@ -7,6 +7,7 @@ import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatCurrency, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -29,6 +30,7 @@ const toCsvRow = (p: Plan) => ({
 
 export function PlansListPage() {
   const { data, isLoading, isError } = usePlansList()
+  const canManage = useCan('plans.manage')
 
   const columns = useMemo<ColumnDef<Plan>[]>(
     () => [
@@ -95,7 +97,7 @@ export function PlansListPage() {
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
-            <CreatePlanDialog />
+            {canManage ? <CreatePlanDialog /> : null}
           </>
         }
       />
