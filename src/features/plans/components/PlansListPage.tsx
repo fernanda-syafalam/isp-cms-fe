@@ -14,6 +14,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Plan, PlanStatus } from '@/schemas/plan'
 
 import { CreatePlanDialog } from './CreatePlanDialog'
+import { PlanRowActions } from './PlanRowActions'
 import { usePlansList } from '../hooks/usePlans'
 
 const STATUS_TONE: Record<PlanStatus, StatusTone> = {
@@ -70,6 +71,12 @@ export function PlansListPage() {
             label={statusLabel(row.original.status)}
           />
         ),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <PlanRowActions plan={row.original} />,
       },
     ],
     [],
