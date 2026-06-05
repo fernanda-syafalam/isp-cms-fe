@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { DownloadIcon, UserPlusIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -54,6 +55,7 @@ const toCsvRow = (c: Customer) => ({
 
 export function CustomersListPage() {
   const [status, setStatus] = useState<string>('all')
+  const canManage = useCan('customers.manage')
   const { data, isLoading, isError } = useCustomersList({
     status: status === 'all' ? undefined : status,
   })
@@ -151,7 +153,15 @@ export function CustomersListPage() {
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
-            <CreateCustomerDialog />
+            {canManage ? (
+              <Button asChild variant="outline" size="sm" className="h-8">
+                <Link to="/customers/onboarding">
+                  <UserPlusIcon className="size-4" />
+                  <span className="hidden sm:inline">Onboarding</span>
+                </Link>
+              </Button>
+            ) : null}
+            {canManage ? <CreateCustomerDialog /> : null}
           </>
         }
         bulkActions={(selected) => (
