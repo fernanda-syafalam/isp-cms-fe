@@ -53,3 +53,9 @@ export async function setOnuWifi(id: string, input: SetWifiInput): Promise<Custo
   const json = await api.post(`customers/${id}/onu/wifi`, { json: input }).json()
   return CustomerSchema.parse(json)
 }
+
+// Send a billing reminder via WhatsApp gateway (mock now).
+export async function notifyWhatsapp(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/notify/whatsapp`).json()
+  return CustomerSchema.parse(json)
+}

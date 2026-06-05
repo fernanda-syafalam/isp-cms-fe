@@ -47,6 +47,20 @@ const STATUS_LABELS: Record<string, string> = {
   ewallet: 'E-Wallet',
   transfer: 'Transfer',
   cash: 'Tunai',
+  // reseller
+  inactive: 'Nonaktif',
+  // work order type
+  install: 'Instalasi',
+  repair: 'Gangguan',
+  dismantle: 'Pencabutan',
+  // work order status
+  scheduled: 'Terjadwal',
+  done: 'Selesai',
+  cancelled: 'Batal',
+  // inventory status
+  warehouse: 'Gudang',
+  installed: 'Terpasang',
+  broken: 'Rusak',
 }
 
 /** Translate an API enum value to its Indonesian display label. */
