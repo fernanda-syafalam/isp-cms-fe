@@ -10,6 +10,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   RouterIcon,
+  ServerIcon,
   ShieldCheckIcon,
   UsersIcon,
   WalletIcon,
@@ -67,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Jaringan',
     items: [
       { to: '/network/devices', label: 'Perangkat', icon: RouterIcon },
+      { to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon },
       { to: '/coverage', label: 'Cakupan', icon: MapPinIcon },
     ],
   },

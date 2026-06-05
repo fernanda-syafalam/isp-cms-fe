@@ -158,15 +158,31 @@ const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid')
 
 const DEVICE_TYPES = ['olt', 'onu', 'mikrotik'] as const
 const DEVICE_STATUS = ['online', 'online', 'degraded', 'online', 'offline'] as const
-const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => ({
-  id: oid('eeeeeeee', i),
-  name: `${(DEVICE_TYPES[i % 3] ?? 'onu').toUpperCase()}-${String(i + 1).padStart(2, '0')}`,
-  type: DEVICE_TYPES[i % 3] ?? 'onu',
-  ipAddress: `10.10.${i}.1`,
-  status: DEVICE_STATUS[i % DEVICE_STATUS.length] ?? 'online',
-  uptimeHours: 120 + i * 37,
-  areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
-  lastSeenAt: iso(2026, 5, 5),
+const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
+  const type = DEVICE_TYPES[i % 3] ?? 'onu'
+  return {
+    id: oid('eeeeeeee', i),
+    name: `${type.toUpperCase()}-${String(i + 1).padStart(2, '0')}`,
+    type,
+    ipAddress: `10.10.${i}.1`,
+    status: DEVICE_STATUS[i % DEVICE_STATUS.length] ?? 'online',
+    uptimeHours: 120 + i * 37,
+    rxPower: type === 'onu' ? -19 - (i % 8) : null, // -19 .. -26 dBm
+    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+    lastSeenAt: iso(2026, 5, 5),
+  }
+})
+
+const ROUTER_STATUS = ['online', 'online', 'offline'] as const
+const ROUTER_MODELS = ['RB5009', 'CCR2004', 'RB4011', 'hAP ax3'] as const
+const ROUTER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
+  id: oid('a7a7a7a7', i),
+  name: `MIKROTIK-${AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota'}`,
+  address: `10.20.${i}.1`,
+  model: ROUTER_MODELS[i % ROUTER_MODELS.length] ?? 'RB5009',
+  status: ROUTER_STATUS[i % ROUTER_STATUS.length] ?? 'online',
+  secretCount: 80 + i * 35,
+  lastSyncAt: iso(2026, 5, 5),
 }))
 
 const TICKET_PRIORITY = ['low', 'medium', 'high', 'urgent'] as const
@@ -367,6 +383,25 @@ export const handlers = [
     found.outstanding = 0
     return HttpResponse.json(found)
   }),
+  // GenieACS / TR-069 ONU actions (mock): no state change, just acknowledge.
+  http.post('*/api/customers/:id/onu/reboot', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+  http.post('*/api/customers/:id/onu/wifi', async ({ params, request }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    await request.json() // { ssid, password } — accepted, not persisted in mock
+    return HttpResponse.json(found)
+  }),
 
   // Invoices
   http.get('*/api/invoices', ({ request }) => {
@@ -419,6 +454,30 @@ export const handlers = [
     HttpResponse.json({
       items: DEVICE_FIXTURES,
       total: DEVICE_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/devices/:id', ({ params }) => {
+    const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+  http.post('*/api/devices/:id/reboot', ({ params }) => {
+    const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+
+  // Routers (Mikrotik / RADIUS)
+  http.get('*/api/routers', () =>
+    HttpResponse.json({
+      items: ROUTER_FIXTURES,
+      total: ROUTER_FIXTURES.length,
     }),
   ),
 

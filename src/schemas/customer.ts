@@ -43,6 +43,12 @@ export const CustomerListSchema = z.object({
   total: z.number().int().nonnegative(),
 })
 
+// GenieACS WiFi change (TR-069 SetParameterValues) for a subscriber's ONU.
+export const SetWifiSchema = z.object({
+  ssid: z.string().min(1, 'SSID wajib diisi').max(32),
+  password: z.string().min(8, 'Kata sandi minimal 8 karakter').max(63),
+})
+
 export const CreateCustomerSchema = z.object({
   fullName: z.string().min(1, 'Nama wajib diisi').max(120),
   phone: z.string().min(6, 'Telepon wajib diisi').max(20),
@@ -57,3 +63,4 @@ export type Connection = z.infer<typeof ConnectionSchema>
 export type Customer = z.infer<typeof CustomerSchema>
 export type CustomerList = z.infer<typeof CustomerListSchema>
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>
+export type SetWifiInput = z.infer<typeof SetWifiSchema>

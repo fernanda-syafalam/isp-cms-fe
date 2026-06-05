@@ -7,6 +7,7 @@ export const planId = z.uuid().brand<'PlanId'>()
 export const invoiceId = z.uuid().brand<'InvoiceId'>()
 export const paymentId = z.uuid().brand<'PaymentId'>()
 export const deviceId = z.uuid().brand<'DeviceId'>()
+export const routerId = z.uuid().brand<'RouterId'>()
 export const ticketId = z.uuid().brand<'TicketId'>()
 export const areaId = z.uuid().brand<'AreaId'>()
 
@@ -16,5 +17,6 @@ export type PlanId = z.infer<typeof planId>
 export type InvoiceId = z.infer<typeof invoiceId>
 export type PaymentId = z.infer<typeof paymentId>
 export type DeviceId = z.infer<typeof deviceId>
+export type RouterId = z.infer<typeof routerId>
 export type TicketId = z.infer<typeof ticketId>
 export type AreaId = z.infer<typeof areaId>

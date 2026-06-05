@@ -13,6 +13,7 @@ import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
 import { useActivateCustomer, useCustomer, useIsolateCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
+import { OnuActions } from './OnuActions'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   prospek: 'neutral',
@@ -84,7 +85,7 @@ export function CustomerDetailPage({ customerId }: Props) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <ConnectionCard connection={customer.connection} />
+          <ConnectionCard customerId={customer.id} connection={customer.connection} />
           <InvoicesCard invoices={invoices} />
         </div>
         <div className="space-y-4">
@@ -179,13 +180,19 @@ function SubscriptionCard({ customer }: { customer: Customer }) {
   )
 }
 
-function ConnectionCard({ connection }: { connection: Connection | null }) {
+function ConnectionCard({
+  customerId,
+  connection,
+}: {
+  customerId: string
+  connection: Connection | null
+}) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Koneksi & Jaringan</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {connection ? (
           <dl className="grid gap-4 sm:grid-cols-2">
             <Field label="Tipe" value={statusLabel(connection.type)} />
@@ -215,6 +222,11 @@ function ConnectionCard({ connection }: { connection: Connection | null }) {
             Belum ada koneksi — pelanggan masih tahap prospek/instalasi.
           </p>
         )}
+        {connection?.onuSerial ? (
+          <div className="border-border border-t pt-4">
+            <OnuActions customerId={customerId} ssid={`WiFi-${connection.pppoeUsername}`} />
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   )
