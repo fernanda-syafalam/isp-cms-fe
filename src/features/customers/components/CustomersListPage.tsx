@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
+import { DownloadIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
-import { DataTable } from '@/components/shared/data-table'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
-import { Input } from '@/components/ui/input'
+import { DataTable } from '@/components/shared/table/data-table'
+import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -13,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { downloadCsv } from '@/lib/csv'
 import { formatDate } from '@/lib/format'
+import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CreateCustomerDialog } from './CreateCustomerDialog'
@@ -37,20 +41,34 @@ const STATUS_LABEL: Record<CustomerStatus, string> = {
 
 const STATUS_OPTIONS = ['all', 'aktif', 'isolir', 'instalasi', 'prospek', 'berhenti'] as const
 
+const toCsvRow = (c: Customer) => ({
+  No: c.customerNo,
+  Nama: c.fullName,
+  Telepon: c.phone,
+  Area: c.areaName,
+  Paket: c.planName,
+  Status: statusLabel(c.status),
+  Bergabung: formatDate(c.joinedAt),
+})
+
 export function CustomersListPage() {
-  const [q, setQ] = useState('')
   const [status, setStatus] = useState<string>('all')
   const { data, isLoading, isError } = useCustomersList({
-    q: q || undefined,
     status: status === 'all' ? undefined : status,
   })
 
   const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
-      { accessorKey: 'customerNo', header: 'No.' },
+      {
+        accessorKey: 'customerNo',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="No." />,
+        meta: { title: 'No.' },
+        cell: ({ row }) => <span className="font-mono text-sm">{row.original.customerNo}</span>,
+      },
       {
         accessorKey: 'fullName',
-        header: 'Nama',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
+        meta: { title: 'Nama' },
         cell: ({ row }) => (
           <Link
             to="/customers/$customerId"
@@ -61,12 +79,17 @@ export function CustomersListPage() {
           </Link>
         ),
       },
-      { accessorKey: 'phone', header: 'Telepon' },
-      { accessorKey: 'areaName', header: 'Area' },
-      { accessorKey: 'planName', header: 'Paket' },
+      { accessorKey: 'phone', header: 'Telepon', meta: { title: 'Telepon' } },
+      {
+        accessorKey: 'areaName',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Area" />,
+        meta: { title: 'Area' },
+      },
+      { accessorKey: 'planName', header: 'Paket', meta: { title: 'Paket' } },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        meta: { title: 'Status' },
         cell: ({ row }) => (
           <StatusBadge
             tone={STATUS_TONE[row.original.status]}
@@ -76,7 +99,8 @@ export function CustomersListPage() {
       },
       {
         accessorKey: 'joinedAt',
-        header: 'Bergabung',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Bergabung" />,
+        meta: { title: 'Bergabung' },
         cell: ({ row }) => formatDate(row.original.joinedAt),
       },
     ],
@@ -85,22 +109,18 @@ export function CustomersListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Pelanggan"
-        description="Pelanggan dan paket aktif mereka."
-        actions={<CreateCustomerDialog />}
-      />
-      <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            placeholder="Cari nama atau nomor…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="sm:max-w-xs"
-            aria-label="Cari pelanggan"
-          />
+      <PageHeader title="Pelanggan" description="Pelanggan dan paket aktif mereka." />
+      <DataTable
+        columns={columns}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage="Belum ada pelanggan."
+        searchPlaceholder="Cari pelanggan…"
+        enableSelection
+        toolbar={
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="sm:w-44" aria-label="Filter status">
+            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -111,16 +131,34 @@ export function CustomersListPage() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <DataTable
-          columns={columns}
-          data={data?.items}
-          isLoading={isLoading}
-          isError={isError}
-          emptyMessage="Belum ada pelanggan."
-        />
-        <p className="text-muted-foreground text-sm">{data ? `${data.total} pelanggan` : ''}</p>
-      </div>
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!data?.items.length}
+              onClick={() => downloadCsv('pelanggan', (data?.items ?? []).map(toCsvRow))}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <CreateCustomerDialog />
+          </>
+        }
+        bulkActions={(selected) => (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            onClick={() => downloadCsv('pelanggan-terpilih', selected.map(toCsvRow))}
+          >
+            <DownloadIcon className="size-4" />
+            Export terpilih
+          </Button>
+        )}
+      />
     </div>
   )
 }
