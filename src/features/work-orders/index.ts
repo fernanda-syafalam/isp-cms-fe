@@ -1,2 +1,2 @@
 export { WorkOrdersListPage } from './components/WorkOrdersListPage'
-export { useWorkOrdersList } from './hooks/useWorkOrders'
+export { useCompleteWorkOrder, useWorkOrdersList } from './hooks/useWorkOrders'
