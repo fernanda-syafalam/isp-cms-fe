@@ -65,7 +65,7 @@ const PLAN_FIXTURES = [
     priceMonthly: 150_000,
     status: 'archived',
   },
-] as const
+]
 
 const AREA_NAMES = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur'] as const
 const CUSTOMER_STATUS = [
@@ -301,6 +301,67 @@ const filterByStatus = <T extends { status: string }>(items: T[], status: string
   status ? items.filter((item) => item.status === status) : items
 
 // ---------------------------------------------------------------------------
+// Stateful store — collections persist to localStorage so CRUD survives a
+// refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
+// ---------------------------------------------------------------------------
+const DB_KEY = 'isp-cms-mock-db-v1'
+
+// All mutable collections, registered by name. Handlers read/write these
+// arrays in place; resetMockDb()/persistDb() operate over the whole registry.
+const COLLECTIONS: Record<string, unknown[]> = {
+  users: APP_USER_FIXTURES,
+  plans: PLAN_FIXTURES,
+  customers: CUSTOMER_FIXTURES,
+  invoices: INVOICE_FIXTURES,
+  payments: PAYMENT_FIXTURES,
+  devices: DEVICE_FIXTURES,
+  routers: ROUTER_FIXTURES,
+  workOrders: WORKORDER_FIXTURES,
+  resellers: RESELLER_FIXTURES,
+  inventory: INVENTORY_FIXTURES,
+  coverage: COVERAGE_FIXTURES,
+  tickets: TICKET_FIXTURES,
+}
+const COLLECTION_KEYS = Object.keys(COLLECTIONS)
+
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value))
+const SEED = clone(COLLECTIONS)
+
+const hasStorage = () => typeof window !== 'undefined' && !!window.localStorage
+
+function persistDb() {
+  if (!hasStorage()) return
+  window.localStorage.setItem(DB_KEY, JSON.stringify(COLLECTIONS))
+}
+
+// Replace each array's contents in place so existing references stay valid.
+function replaceAll(snapshot: Record<string, unknown[]>) {
+  for (const key of COLLECTION_KEYS) {
+    const target = COLLECTIONS[key]
+    const next = snapshot[key]
+    if (target && Array.isArray(next)) target.splice(0, target.length, ...next)
+  }
+}
+
+function hydrateDb() {
+  if (!hasStorage()) return
+  const raw = window.localStorage.getItem(DB_KEY)
+  if (!raw) return
+  try {
+    replaceAll(JSON.parse(raw))
+  } catch {
+    window.localStorage.removeItem(DB_KEY)
+  }
+}
+
+export function resetMockDb() {
+  replaceAll(clone(SEED))
+  persistDb()
+}
+
+hydrateDb()
+
+// ---------------------------------------------------------------------------
 // Handlers — base path is `*/api/*` (dev worker + node tests both use /api).
 // ---------------------------------------------------------------------------
 export const handlers = [
@@ -330,16 +391,16 @@ export const handlers = [
       fullName: string
       role?: 'admin' | 'staff' | 'customer'
     }
-    return HttpResponse.json(
-      {
-        id: '44444444-4444-4444-8444-444444444444',
-        email: body.email,
-        fullName: body.fullName,
-        role: body.role ?? 'customer',
-        createdAt: new Date().toISOString(),
-      },
-      { status: 201 },
-    )
+    const user = {
+      id: crypto.randomUUID(),
+      email: body.email,
+      fullName: body.fullName,
+      role: body.role ?? 'customer',
+      createdAt: new Date().toISOString(),
+    }
+    APP_USER_FIXTURES.unshift(user)
+    persistDb()
+    return HttpResponse.json(user, { status: 201 })
   }),
 
   // Plans
@@ -352,10 +413,10 @@ export const handlers = [
       speedMbps: number
       priceMonthly: number
     }
-    return HttpResponse.json(
-      { id: oid('bbbbbbbb', 90), ...body, status: 'active' },
-      { status: 201 },
-    )
+    const plan = { id: crypto.randomUUID(), ...body, status: 'active' }
+    PLAN_FIXTURES.unshift(plan)
+    persistDb()
+    return HttpResponse.json(plan, { status: 201 })
   }),
 
   // Customers
@@ -388,26 +449,26 @@ export const handlers = [
       planId: string
     }
     const plan = PLAN_FIXTURES.find((p) => p.id === body.planId) ?? PLAN_FIXTURES[0]
-    return HttpResponse.json(
-      {
-        id: oid('aaaaaaaa', 90),
-        customerNo: 'CUST-9001',
-        fullName: body.fullName,
-        phone: body.phone,
-        email: body.email === '' ? null : body.email,
-        address: body.address,
-        areaId: oid('dddddddd', 0),
-        areaName: AREA_NAMES[0],
-        planId: plan?.id ?? oid('bbbbbbbb', 1),
-        planName: plan?.name ?? 'Home 20',
-        status: 'prospek',
-        outstanding: 0,
-        resellerName: null,
-        connection: null,
-        joinedAt: new Date().toISOString(),
-      },
-      { status: 201 },
-    )
+    const customer = {
+      id: crypto.randomUUID(),
+      customerNo: `CUST-${9000 + CUSTOMER_FIXTURES.length}`,
+      fullName: body.fullName,
+      phone: body.phone,
+      email: body.email === '' ? null : body.email,
+      address: body.address,
+      areaId: oid('dddddddd', 0),
+      areaName: AREA_NAMES[0] ?? 'Bandung Kota',
+      planId: plan?.id ?? oid('bbbbbbbb', 1),
+      planName: plan?.name ?? 'Home 20',
+      status: 'prospek' as const,
+      outstanding: 0,
+      resellerName: null,
+      connection: null,
+      joinedAt: new Date().toISOString(),
+    }
+    CUSTOMER_FIXTURES.unshift(customer)
+    persistDb()
+    return HttpResponse.json(customer, { status: 201 })
   }),
   // Network enforcement (mock): flip lifecycle state for isolir/aktivasi.
   http.post('*/api/customers/:id/isolate', ({ params }) => {
@@ -418,6 +479,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    persistDb()
     return HttpResponse.json(found)
   }),
   http.post('*/api/customers/:id/activate', ({ params }) => {
@@ -429,6 +491,7 @@ export const handlers = [
     }
     found.status = 'aktif'
     found.outstanding = 0
+    persistDb()
     return HttpResponse.json(found)
   }),
   // GenieACS / TR-069 ONU actions (mock): no state change, just acknowledge.
@@ -487,13 +550,14 @@ export const handlers = [
     found.status = 'paid'
     found.paidAt = new Date().toISOString()
     PAYMENT_FIXTURES.unshift({
-      id: oid('a9a9a9a9', 90),
+      id: crypto.randomUUID(),
       invoiceNo: found.invoiceNo,
       customerName: found.customerName,
       amount: found.amount + found.lateFee,
       method: body.method,
       paidAt: found.paidAt,
     })
+    persistDb()
     return HttpResponse.json(found)
   }),
 
@@ -571,20 +635,26 @@ export const handlers = [
       customerName: string
       priority: 'low' | 'medium' | 'high' | 'urgent'
     }
-    return HttpResponse.json(
-      {
-        id: oid('ffffffff', 90),
-        code: 'TKT-9001',
-        subject: body.subject,
-        customerName: body.customerName,
-        priority: body.priority,
-        status: 'open',
-        assignee: null,
-        slaDueAt: new Date(Date.now() + 86_400_000).toISOString(),
-        createdAt: new Date().toISOString(),
-      },
-      { status: 201 },
-    )
+    const ticket = {
+      id: crypto.randomUUID(),
+      code: `TKT-${9000 + TICKET_FIXTURES.length}`,
+      subject: body.subject,
+      customerName: body.customerName,
+      priority: body.priority,
+      status: 'open' as const,
+      assignee: null,
+      slaDueAt: new Date(Date.now() + 86_400_000).toISOString(),
+      createdAt: new Date().toISOString(),
+    }
+    TICKET_FIXTURES.unshift(ticket)
+    persistDb()
+    return HttpResponse.json(ticket, { status: 201 })
+  }),
+
+  // Dev — reset the mock store back to seed.
+  http.post('*/api/_dev/reset', () => {
+    resetMockDb()
+    return new HttpResponse(null, { status: 204 })
   }),
 
   // Coverage
