@@ -1,7 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { DashboardPage } from '@/features/dashboard'
-
-export const Route = createFileRoute('/_auth/')({
-  component: DashboardPage,
-})
+// Route definition only — the component (and its recharts dependency) lives in
+// _auth.index.lazy.tsx so charts are code-split out of the critical-path bundle.
+export const Route = createFileRoute('/_auth/')({})

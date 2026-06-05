@@ -38,7 +38,7 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() => import('./routes/_auth.index.lazy').then((d) => d.Route))
 const AuthTicketsRoute = AuthTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -53,7 +53,7 @@ const AuthReportsRoute = AuthReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() => import('./routes/_auth.reports.lazy').then((d) => d.Route))
 const AuthPlansRoute = AuthPlansRouteImport.update({
   id: '/plans',
   path: '/plans',

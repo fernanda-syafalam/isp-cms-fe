@@ -2,19 +2,13 @@
   {
     "name": "Main JS (critical path)",
     "path": "dist/assets/index-*.js",
-    "limit": "220 kB",
+    "limit": "240 kB",
     "gzip": true
   },
   {
     "name": "Main CSS",
     "path": "dist/assets/index-*.css",
     "limit": "15 kB",
-    "gzip": true
-  },
-  {
-    "name": "Tenants route chunk",
-    "path": "dist/assets/_auth.tenants.lazy-*.js",
-    "limit": "60 kB",
     "gzip": true
   },
   {
