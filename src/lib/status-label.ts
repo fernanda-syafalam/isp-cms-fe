@@ -41,6 +41,12 @@ const STATUS_LABELS: Record<string, string> = {
   admin: 'Admin',
   staff: 'Staf',
   customer: 'Pelanggan',
+  // payment method
+  qris: 'QRIS',
+  va: 'Virtual Account',
+  ewallet: 'E-Wallet',
+  transfer: 'Transfer',
+  cash: 'Tunai',
 }
 
 /** Translate an API enum value to its Indonesian display label. */

@@ -12,6 +12,7 @@ import {
   RouterIcon,
   ShieldCheckIcon,
   UsersIcon,
+  WalletIcon,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -58,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
       { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
       { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
+      { to: '/payments', label: 'Pembayaran', icon: WalletIcon },
       { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
     ],
   },

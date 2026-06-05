@@ -135,15 +135,26 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
     id: oid('cccccccc', i),
     invoiceNo: `INV-2026-${String(100 + i)}`,
     customerId: customer?.id ?? oid('aaaaaaaa', 0),
-    customerName: customer?.fullName ?? 'Customer A0',
+    customerName: customer?.fullName ?? 'Pelanggan A0',
     periodStart: ymd(2026, 4, 1),
     periodEnd: ymd(2026, 4, 30),
     amount: 200_000 + (i % 4) * 150_000,
+    lateFee: status === 'overdue' ? 25_000 : 0,
     status,
     dueDate: ymd(2026, 5, 10),
     paidAt: status === 'paid' ? iso(2026, 5, 3 + (i % 5)) : null,
   }
 })
+
+const PAYMENT_METHODS = ['qris', 'va', 'ewallet', 'transfer', 'cash'] as const
+const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid').map((inv, i) => ({
+  id: oid('a9a9a9a9', i),
+  invoiceNo: inv.invoiceNo,
+  customerName: inv.customerName,
+  amount: inv.amount + inv.lateFee,
+  method: PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris',
+  paidAt: inv.paidAt ?? iso(2026, 5, 5),
+}))
 
 const DEVICE_TYPES = ['olt', 'onu', 'mikrotik'] as const
 const DEVICE_STATUS = ['online', 'online', 'degraded', 'online', 'offline'] as const
@@ -371,6 +382,37 @@ export const handlers = [
           status: 404,
         })
   }),
+  // Record a payment: mark invoice paid + append a payment record.
+  http.post('*/api/invoices/:id/pay', async ({ params, request }) => {
+    const found = INVOICE_FIXTURES.find((inv) => inv.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      method: (typeof PAYMENT_METHODS)[number]
+    }
+    found.status = 'paid'
+    found.paidAt = new Date().toISOString()
+    PAYMENT_FIXTURES.unshift({
+      id: oid('a9a9a9a9', 90),
+      invoiceNo: found.invoiceNo,
+      customerName: found.customerName,
+      amount: found.amount + found.lateFee,
+      method: body.method,
+      paidAt: found.paidAt,
+    })
+    return HttpResponse.json(found)
+  }),
+
+  // Payments
+  http.get('*/api/payments', () =>
+    HttpResponse.json({
+      items: PAYMENT_FIXTURES,
+      total: PAYMENT_FIXTURES.length,
+    }),
+  ),
 
   // Devices
   http.get('*/api/devices', () =>

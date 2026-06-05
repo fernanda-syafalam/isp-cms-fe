@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { statusLabel } from '@/lib/status-label'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ReceiptTextIcon, TriangleAlertIcon, WalletIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { DataTable } from '@/components/shared/data-table'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -13,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
+import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
 import { useInvoicesList } from '../hooks/useInvoices'
@@ -27,11 +30,26 @@ const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
 
 const STATUS_OPTIONS = ['all', 'paid', 'pending', 'overdue', 'draft'] as const
 
+const invoiceTotal = (inv: Invoice) => inv.amount + inv.lateFee
+
 export function InvoicesListPage() {
   const [status, setStatus] = useState('all')
+  // Unfiltered set powers the AR summary so it stays correct under any filter.
+  const all = useInvoicesList()
   const { data, isLoading, isError } = useInvoicesList({
     status: status === 'all' ? undefined : status,
   })
+
+  const ar = useMemo(() => {
+    const items = all.data?.items ?? []
+    const unpaid = items.filter((i) => i.status === 'pending' || i.status === 'overdue')
+    const overdue = items.filter((i) => i.status === 'overdue')
+    return {
+      outstanding: unpaid.reduce((sum, i) => sum + invoiceTotal(i), 0),
+      overdue: overdue.reduce((sum, i) => sum + invoiceTotal(i), 0),
+      unpaidCount: unpaid.length,
+    }
+  }, [all.data])
 
   const columns = useMemo<ColumnDef<Invoice>[]>(
     () => [
@@ -42,7 +60,7 @@ export function InvoicesListPage() {
           <Link
             to="/invoices/$invoiceId"
             params={{ invoiceId: row.original.id }}
-            className="font-medium hover:underline"
+            className="font-medium font-mono text-sm hover:underline"
           >
             {row.original.invoiceNo}
           </Link>
@@ -54,7 +72,9 @@ export function InvoicesListPage() {
         header: 'Jumlah',
         meta: { align: 'right' },
         cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{formatCurrency(row.original.amount)}</span>
+          <span className="font-mono tabular-nums">
+            {formatCurrency(invoiceTotal(row.original))}
+          </span>
         ),
       },
       {
@@ -78,7 +98,41 @@ export function InvoicesListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tagihan" description="Penagihan bulanan pelanggan." />
+      <PageHeader title="Tagihan" description="Penagihan bulanan & piutang (AR)." />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {all.isLoading || !all.data ? (
+          <>
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              label="Total piutang (AR)"
+              value={formatCurrency(ar.outstanding)}
+              hint={`${formatNumber(ar.unpaidCount)} tagihan belum bayar`}
+              accent="amber"
+              icon={WalletIcon}
+            />
+            <KpiCard
+              label="Terlambat"
+              value={formatCurrency(ar.overdue)}
+              hint="jatuh tempo terlewat"
+              hintTone="negative"
+              icon={TriangleAlertIcon}
+            />
+            <KpiCard
+              label="Total tagihan"
+              value={formatNumber(all.data.total)}
+              hint="periode berjalan"
+              icon={ReceiptTextIcon}
+            />
+          </>
+        )}
+      </div>
+
       <div className="space-y-4 rounded-lg border border-border bg-card p-4">
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="sm:w-44" aria-label="Filter status">
