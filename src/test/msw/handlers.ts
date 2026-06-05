@@ -834,6 +834,21 @@ export const handlers = [
       method: body.method,
       paidAt: found.paidAt,
     })
+    // Settling a bill recomputes the customer's outstanding and, if they were
+    // isolir and now have no overdue left, reactivates them + re-enables PPPoE.
+    const customer = CUSTOMER_FIXTURES.find((c) => c.id === found.customerId)
+    if (customer) {
+      const unpaid = INVOICE_FIXTURES.filter(
+        (inv) =>
+          inv.customerId === customer.id && (inv.status === 'pending' || inv.status === 'overdue'),
+      )
+      customer.outstanding = unpaid.reduce((sum, inv) => sum + inv.amount + inv.lateFee, 0)
+      const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
+      if (customer.status === 'isolir' && !hasOverdue) {
+        customer.status = 'aktif'
+        setSecretsDisabledByCustomer(customer.fullName, false)
+      }
+    }
     persistDb()
     return HttpResponse.json(found)
   }),

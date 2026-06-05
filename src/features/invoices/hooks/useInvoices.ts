@@ -27,8 +27,9 @@ export function usePayInvoice(id: string) {
       qc.setQueryData(['invoices', 'detail', id], invoice)
       qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
       qc.invalidateQueries({ queryKey: ['payments'] })
-      // payment can reactivate an isolated customer
+      // payment can reactivate an isolated customer + change AR
       qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['analytics'] })
       toast.success(`Pembayaran ${invoice.invoiceNo} dicatat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
