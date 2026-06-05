@@ -21,6 +21,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CreateCustomerDialog } from './CreateCustomerDialog'
+import { CustomerRowActions } from './CustomerRowActions'
 import { useCustomersList } from '../hooks/useCustomers'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
@@ -102,6 +103,12 @@ export function CustomersListPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="Bergabung" />,
         meta: { title: 'Bergabung' },
         cell: ({ row }) => formatDate(row.original.joinedAt),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <CustomerRowActions customer={row.original} />,
       },
     ],
     [],

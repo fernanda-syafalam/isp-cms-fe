@@ -440,6 +440,46 @@ export const handlers = [
           status: 404,
         })
   }),
+  http.patch('*/api/customers/:id', async ({ params, request }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      fullName?: string
+      phone?: string
+      email?: string
+      address?: string
+      planId?: string
+    }
+    if (body.fullName !== undefined) found.fullName = body.fullName
+    if (body.phone !== undefined) found.phone = body.phone
+    if (body.email !== undefined) found.email = body.email === '' ? null : body.email
+    if (body.address !== undefined) found.address = body.address
+    if (body.planId !== undefined) {
+      const plan = PLAN_FIXTURES.find((p) => p.id === body.planId)
+      if (plan) {
+        found.planId = plan.id
+        found.planName = plan.name
+      }
+    }
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // Soft-delete: mark the subscriber as churned (berhenti).
+  http.post('*/api/customers/:id/stop', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'berhenti'
+    persistDb()
+    return HttpResponse.json(found)
+  }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
       fullName: string
