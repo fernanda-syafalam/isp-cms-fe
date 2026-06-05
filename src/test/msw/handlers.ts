@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
 import { SLA_HOURS } from '@/lib/sla'
+import type { PppProfile, PppSecret } from '@/schemas/mikrotik'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -387,6 +388,44 @@ const TOPOLOGY_FIXTURES = (() => {
   return nodes
 })()
 
+// Mikrotik PPP: profiles + PPPoE secrets per router.
+const PROFILE_PRESETS = [
+  { suffix: 'home20', name: 'Home 20', rateLimit: '20M/20M', isIsolir: false },
+  { suffix: 'home50', name: 'Home 50', rateLimit: '50M/50M', isIsolir: false },
+  {
+    suffix: 'pro100',
+    name: 'Pro 100',
+    rateLimit: '100M/100M',
+    isIsolir: false,
+  },
+  { suffix: 'isolir', name: 'ISOLIR', rateLimit: '512k/512k', isIsolir: true },
+]
+const MIKROTIK_PROFILE_FIXTURES: PppProfile[] = ROUTER_FIXTURES.flatMap((r) =>
+  PROFILE_PRESETS.map((p) => ({
+    id: `${r.id}-prof-${p.suffix}`,
+    routerId: r.id,
+    name: p.name,
+    rateLimit: p.rateLimit,
+    isIsolir: p.isIsolir,
+  })),
+)
+const MIKROTIK_SECRET_FIXTURES: PppSecret[] = ROUTER_FIXTURES.flatMap((r, ri) =>
+  Array.from({ length: 4 }, (_, i) => {
+    const preset = PROFILE_PRESETS[i % 3] ?? PROFILE_PRESETS[0]
+    const customer = CUSTOMER_FIXTURES[(ri * 4 + i) % CUSTOMER_FIXTURES.length]
+    return {
+      id: `${r.id}-sec-${i + 1}`,
+      routerId: r.id,
+      username: `cust${1001 + ri * 4 + i}`,
+      profileId: `${r.id}-prof-${preset?.suffix ?? 'home20'}`,
+      profileName: preset?.name ?? 'Home 20',
+      customerName: customer?.fullName ?? null,
+      disabled: i === 3,
+      comment: null,
+    }
+  }),
+)
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -409,6 +448,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   coverage: COVERAGE_FIXTURES,
   tickets: TICKET_FIXTURES,
   topology: TOPOLOGY_FIXTURES,
+  mikrotikProfiles: MIKROTIK_PROFILE_FIXTURES,
+  mikrotikSecrets: MIKROTIK_SECRET_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -893,6 +934,129 @@ export const handlers = [
       total: ROUTER_FIXTURES.length,
     }),
   ),
+  http.get('*/api/routers/:id', ({ params }) => {
+    const found = ROUTER_FIXTURES.find((r) => r.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+  http.post('*/api/routers/:id/sync', ({ params }) => {
+    const found = ROUTER_FIXTURES.find((r) => r.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.status = 'online'
+    found.lastSyncAt = new Date().toISOString()
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.post('*/api/routers/:id/reboot', ({ params }) => {
+    const found = ROUTER_FIXTURES.find((r) => r.id === params.id)
+    return found ? HttpResponse.json(found) : new HttpResponse(null, { status: 404 })
+  }),
+  http.post('*/api/routers/:id/test', ({ params }) => {
+    const found = ROUTER_FIXTURES.find((r) => r.id === params.id)
+    return found ? HttpResponse.json(found) : new HttpResponse(null, { status: 404 })
+  }),
+  // PPP profiles
+  http.get('*/api/routers/:id/profiles', ({ params }) => {
+    const items = MIKROTIK_PROFILE_FIXTURES.filter((p) => p.routerId === params.id)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/routers/:id/profiles', async ({ params, request }) => {
+    const body = (await request.json()) as { name: string; rateLimit: string }
+    const profile = {
+      id: crypto.randomUUID(),
+      routerId: String(params.id),
+      name: body.name,
+      rateLimit: body.rateLimit,
+      isIsolir: false,
+    }
+    MIKROTIK_PROFILE_FIXTURES.push(profile)
+    persistDb()
+    return HttpResponse.json(profile, { status: 201 })
+  }),
+  http.patch('*/api/routers/:id/profiles/:pid', async ({ params, request }) => {
+    const found = MIKROTIK_PROFILE_FIXTURES.find((p) => p.id === params.pid)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as {
+      name?: string
+      rateLimit?: string
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.rateLimit !== undefined) found.rateLimit = body.rateLimit
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/routers/:id/profiles/:pid', ({ params }) => {
+    const idx = MIKROTIK_PROFILE_FIXTURES.findIndex((p) => p.id === params.pid)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    MIKROTIK_PROFILE_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // PPPoE secrets
+  http.get('*/api/routers/:id/secrets', ({ params }) => {
+    const items = MIKROTIK_SECRET_FIXTURES.filter((s) => s.routerId === params.id)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/routers/:id/secrets', async ({ params, request }) => {
+    const routerId = String(params.id)
+    const body = (await request.json()) as {
+      username: string
+      password?: string
+      profileId: string
+      customerName?: string
+      comment?: string
+    }
+    const profile = MIKROTIK_PROFILE_FIXTURES.find((p) => p.id === body.profileId)
+    const secret = {
+      id: crypto.randomUUID(),
+      routerId,
+      username: body.username,
+      profileId: body.profileId,
+      profileName: profile?.name ?? '—',
+      customerName: body.customerName ?? null,
+      disabled: false,
+      comment: body.comment ?? null,
+    }
+    MIKROTIK_SECRET_FIXTURES.push(secret)
+    const router = ROUTER_FIXTURES.find((r) => r.id === routerId)
+    if (router) router.secretCount += 1
+    persistDb()
+    return HttpResponse.json(secret, { status: 201 })
+  }),
+  http.patch('*/api/routers/:id/secrets/:sid', async ({ params, request }) => {
+    const found = MIKROTIK_SECRET_FIXTURES.find((s) => s.id === params.sid)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as {
+      username?: string
+      profileId?: string
+      customerName?: string | null
+      comment?: string | null
+      disabled?: boolean
+    }
+    if (body.username !== undefined) found.username = body.username
+    if (body.customerName !== undefined) found.customerName = body.customerName
+    if (body.comment !== undefined) found.comment = body.comment
+    if (body.disabled !== undefined) found.disabled = body.disabled
+    if (body.profileId !== undefined) {
+      found.profileId = body.profileId
+      const profile = MIKROTIK_PROFILE_FIXTURES.find((p) => p.id === body.profileId)
+      if (profile) found.profileName = profile.name
+    }
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/routers/:id/secrets/:sid', ({ params }) => {
+    const idx = MIKROTIK_SECRET_FIXTURES.findIndex((s) => s.id === params.sid)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    const [removed] = MIKROTIK_SECRET_FIXTURES.splice(idx, 1)
+    const router = ROUTER_FIXTURES.find((r) => r.id === removed?.routerId)
+    if (router && router.secretCount > 0) router.secretCount -= 1
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // Work orders
   http.get('*/api/work-orders', ({ request }) => {

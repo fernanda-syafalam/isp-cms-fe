@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -37,7 +38,15 @@ export function RoutersListPage() {
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Router" />,
         meta: { title: 'Router' },
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/network/routers/$routerId"
+            params={{ routerId: row.original.id }}
+            className="font-medium hover:underline"
+          >
+            {row.original.name}
+          </Link>
+        ),
       },
       {
         accessorKey: 'address',
