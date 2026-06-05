@@ -164,9 +164,9 @@ const DASHBOARD_SUMMARY = {
   devicesTotal: 10,
   revenueTrend: REVENUE_TREND,
   ticketsByStatus: [
-    { label: 'open', count: 9 },
-    { label: 'in progress', count: 5 },
-    { label: 'resolved', count: 31 },
+    { label: 'Terbuka', count: 9 },
+    { label: 'Diproses', count: 5 },
+    { label: 'Selesai', count: 31 },
   ],
 }
 

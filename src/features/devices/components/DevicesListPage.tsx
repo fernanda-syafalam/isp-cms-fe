@@ -27,12 +27,21 @@ export function DevicesListPage() {
         header: 'Tipe',
         cell: ({ row }) => <span className="uppercase">{row.original.type}</span>,
       },
-      { accessorKey: 'ipAddress', header: 'Alamat IP' },
+      {
+        accessorKey: 'ipAddress',
+        header: 'Alamat IP',
+        cell: ({ row }) => <span className="font-mono text-sm">{row.original.ipAddress}</span>,
+      },
       { accessorKey: 'areaName', header: 'Area' },
       {
         accessorKey: 'uptimeHours',
         header: 'Uptime',
-        cell: ({ row }) => `${formatNumber(Math.round(row.original.uptimeHours))} h`,
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">
+            {formatNumber(Math.round(row.original.uptimeHours))} j
+          </span>
+        ),
       },
       {
         accessorKey: 'lastSeenAt',

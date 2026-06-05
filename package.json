@@ -18,6 +18,8 @@
     "size": "size-limit"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@tanstack/react-query": "^5.62.0",

@@ -146,7 +146,7 @@ function SidebarLink({ item }: { item: NavItem }) {
     <Link
       to={item.to}
       activeOptions={{ exact: item.exact ?? false }}
-      className="flex items-center gap-3 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground [&.active]:bg-accent [&.active]:text-foreground"
+      className="flex items-center gap-3 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground [&.active]:bg-primary/10 [&.active]:font-semibold [&.active]:text-primary"
     >
       <Icon className="size-4 shrink-0" />
       {item.label}

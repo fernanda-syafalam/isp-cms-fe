@@ -25,12 +25,22 @@ export function PlansListPage() {
       {
         accessorKey: 'speedMbps',
         header: 'Kecepatan',
-        cell: ({ row }) => `${formatNumber(row.original.speedMbps)} Mbps`,
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">
+            {formatNumber(row.original.speedMbps)} Mbps
+          </span>
+        ),
       },
       {
         accessorKey: 'priceMonthly',
         header: 'Harga / bulan',
-        cell: ({ row }) => formatCurrency(row.original.priceMonthly),
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">
+            {formatCurrency(row.original.priceMonthly)}
+          </span>
+        ),
       },
       {
         accessorKey: 'status',

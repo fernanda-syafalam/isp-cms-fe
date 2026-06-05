@@ -52,7 +52,10 @@ export function InvoicesListPage() {
       {
         accessorKey: 'amount',
         header: 'Jumlah',
-        cell: ({ row }) => formatCurrency(row.original.amount),
+        meta: { align: 'right' },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">{formatCurrency(row.original.amount)}</span>
+        ),
       },
       {
         accessorKey: 'dueDate',

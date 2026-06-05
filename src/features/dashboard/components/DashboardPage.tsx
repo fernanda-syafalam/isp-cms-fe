@@ -1,4 +1,5 @@
 import { BanknoteIcon, LifeBuoyIcon, RouterIcon, TriangleAlertIcon, UsersIcon } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { KpiCard } from '@/components/shared/kpi-card'
 import { RevenueChart } from '@/components/shared/revenue-chart'
@@ -46,6 +47,7 @@ export function DashboardPage() {
               label="MRR"
               value={formatCurrency(summary.mrr)}
               hint="Pendapatan bulanan berulang"
+              accent="amber"
               icon={BanknoteIcon}
             />
             <KpiCard
@@ -92,6 +94,61 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Tiket per status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {summary ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={summary.ticketsByStatus}
+                layout="vertical"
+                margin={{ top: 4, right: 16, bottom: 4, left: 8 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--color-border)"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  allowDecimals={false}
+                  tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  width={96}
+                  tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: 'var(--color-muted)' }}
+                  contentStyle={{
+                    background: 'var(--color-popover)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 8,
+                    color: 'var(--color-popover-foreground)',
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  name="Tiket"
+                  fill="var(--color-chart-1)"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <Skeleton className="h-[220px] w-full" />
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
