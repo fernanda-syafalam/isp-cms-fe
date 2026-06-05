@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon, ReceiptTextIcon, TriangleAlertIcon, WalletIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
@@ -44,8 +44,14 @@ const toCsvRow = (inv: Invoice) => ({
   Status: statusLabel(inv.status),
 })
 
+const routeApi = getRouteApi('/_auth/invoices/')
+
 export function InvoicesListPage() {
-  const [status, setStatus] = useState('all')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
+  const setStatus = (value: string) =>
+    navigate({ search: value === 'all' ? {} : { status: value } })
   // Unfiltered set powers the AR summary so it stays correct under any filter.
   const all = useInvoicesList()
   const { data, isLoading, isError } = useInvoicesList({
