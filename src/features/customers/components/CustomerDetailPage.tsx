@@ -22,6 +22,7 @@ import {
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
 import { CustomerRowActions } from './CustomerRowActions'
+import { CustomerSummary } from './CustomerSummary'
 import { OnuActions } from './OnuActions'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
@@ -94,6 +95,8 @@ export function CustomerDetailPage({ customerId }: Props) {
           </div>
         }
       />
+
+      <CustomerSummary customer={customer} />
 
       <Tabs defaultValue="ringkasan">
         <TabsList>
