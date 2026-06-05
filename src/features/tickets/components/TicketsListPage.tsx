@@ -1,6 +1,7 @@
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -49,8 +50,14 @@ const toCsvRow = (t: Ticket) => ({
   'Batas SLA': formatDateTime(t.slaDueAt),
 })
 
+const routeApi = getRouteApi('/_auth/tickets')
+
 export function TicketsListPage() {
-  const [status, setStatus] = useState('all')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
+  const setStatus = (value: string) =>
+    navigate({ search: value === 'all' ? {} : { status: value } })
   const { data, isLoading, isError } = useTicketsList({
     status: status === 'all' ? undefined : status,
   })

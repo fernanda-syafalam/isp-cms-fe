@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -30,6 +30,9 @@ const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
 }
 
 const TYPE_OPTIONS = ['all', 'olt', 'onu', 'mikrotik'] as const
+const STATUS_OPTIONS = ['all', 'online', 'degraded', 'offline'] as const
+
+const routeApi = getRouteApi('/_auth/network/devices')
 
 // GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
 function rxTone(dbm: number): StatusTone {
@@ -51,11 +54,19 @@ const toCsvRow = (d: Device) => ({
 
 export function DevicesListPage() {
   const [type, setType] = useState('all')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
+  const setStatus = (value: string) =>
+    navigate({ search: value === 'all' ? {} : { status: value } })
   const { data, isLoading, isError } = useDevicesList()
 
   const items = useMemo(
-    () => (data?.items ?? []).filter((d) => type === 'all' || d.type === type),
-    [data, type],
+    () =>
+      (data?.items ?? []).filter(
+        (d) => (type === 'all' || d.type === type) && (status === 'all' || d.status === status),
+      ),
+    [data, type, status],
   )
 
   const columns = useMemo<ColumnDef<Device>[]>(
@@ -150,18 +161,32 @@ export function DevicesListPage() {
         emptyMessage="Belum ada perangkat."
         searchPlaceholder="Cari perangkat / IP…"
         toolbar={
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="h-8 w-40" aria-label="Filter tipe">
-              <SelectValue placeholder="Tipe" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_OPTIONS.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t === 'all' ? 'Semua tipe' : t.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="h-8 w-40" aria-label="Filter tipe">
+                <SelectValue placeholder="Tipe" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t === 'all' ? 'Semua tipe' : t.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s === 'all' ? 'Semua status' : statusLabel(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
         }
         actions={
           <Button

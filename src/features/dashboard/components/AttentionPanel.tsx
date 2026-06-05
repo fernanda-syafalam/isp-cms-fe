@@ -14,6 +14,7 @@ export type AttentionAlert = {
   count: number
   hint?: string
   to: '/invoices' | '/tickets' | '/work-orders' | '/network/devices'
+  search?: { status?: string }
   tone: Tone
 }
 
@@ -43,6 +44,7 @@ export function AttentionPanel({ alerts }: { alerts: AttentionAlert[] }) {
               <li key={a.key}>
                 <Link
                   to={a.to}
+                  search={a.search ?? {}}
                   className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent"
                 >
                   <span

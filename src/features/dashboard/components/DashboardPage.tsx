@@ -47,6 +47,7 @@ export function DashboardPage() {
           count: summary.overdueCount,
           hint: formatCurrency(summary.overdueAmount),
           to: '/invoices',
+          search: { status: 'overdue' },
           tone: 'danger',
         },
         {
@@ -55,6 +56,7 @@ export function DashboardPage() {
           label: 'Tiket terbuka',
           count: summary.openTickets,
           to: '/tickets',
+          search: { status: 'open' },
           tone: 'warning',
         },
         {
@@ -63,6 +65,7 @@ export function DashboardPage() {
           label: 'Instalasi terjadwal',
           count: upcomingInstalls?.length ?? 0,
           to: '/work-orders',
+          search: { status: 'scheduled' },
           tone: 'info',
         },
         {
@@ -71,6 +74,7 @@ export function DashboardPage() {
           label: 'Perangkat offline',
           count: summary.devicesTotal - summary.devicesOnline,
           to: '/network/devices',
+          search: { status: 'offline' },
           tone: 'danger',
         },
       ]
