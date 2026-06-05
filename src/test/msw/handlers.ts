@@ -67,7 +67,7 @@ const PLAN_FIXTURES = [
   },
 ]
 
-const AREA_NAMES = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur'] as const
+const AREA_NAMES: string[] = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur']
 const CUSTOMER_STATUS = [
   'aktif',
   'aktif',
@@ -254,7 +254,7 @@ const REPORTS_SUMMARY = {
 
 const WORKORDER_TYPE = ['install', 'repair', 'dismantle'] as const
 const WORKORDER_STATUS = ['scheduled', 'in_progress', 'done', 'cancelled'] as const
-const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko', null] as const
+const TECHNICIANS: (string | null)[] = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko', null]
 const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
   const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
   return {
@@ -536,6 +536,50 @@ export const handlers = [
       joinedAt: new Date().toISOString(),
     }
     CUSTOMER_FIXTURES.unshift(customer)
+    persistDb()
+    return HttpResponse.json(customer, { status: 201 })
+  }),
+  // Onboarding: create the subscriber (status "instalasi") + an install work order.
+  http.post('*/api/onboarding', async ({ request }) => {
+    const body = (await request.json()) as {
+      fullName: string
+      phone: string
+      email: string
+      address: string
+      areaName: string
+      planId: string
+      technician: string
+      scheduledAt: string
+    }
+    const plan = PLAN_FIXTURES.find((p) => p.id === body.planId) ?? PLAN_FIXTURES[0]
+    const customer = {
+      id: crypto.randomUUID(),
+      customerNo: `CUST-${9000 + CUSTOMER_FIXTURES.length}`,
+      fullName: body.fullName,
+      phone: body.phone,
+      email: body.email === '' ? null : body.email,
+      address: body.address,
+      areaId: oid('dddddddd', 0),
+      areaName: body.areaName || (AREA_NAMES[0] ?? 'Bandung Kota'),
+      planId: plan?.id ?? oid('bbbbbbbb', 1),
+      planName: plan?.name ?? 'Home 20',
+      status: 'instalasi' as const,
+      outstanding: 0,
+      resellerName: null,
+      connection: null,
+      joinedAt: new Date().toISOString(),
+    }
+    CUSTOMER_FIXTURES.unshift(customer)
+    WORKORDER_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
+      type: 'install' as const,
+      customerName: customer.fullName,
+      technician: body.technician,
+      scheduledAt: new Date(body.scheduledAt).toISOString(),
+      status: 'scheduled' as const,
+      createdAt: new Date().toISOString(),
+    })
     persistDb()
     return HttpResponse.json(customer, { status: 201 })
   }),

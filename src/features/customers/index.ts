@@ -1,5 +1,6 @@
 export { CustomersListPage } from './components/CustomersListPage'
 export { CustomerDetailPage } from './components/CustomerDetailPage'
+export { OnboardingWizard } from './components/OnboardingWizard'
 export {
   useActivateCustomer,
   useCustomer,
