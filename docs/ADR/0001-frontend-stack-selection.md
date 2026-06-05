@@ -6,14 +6,14 @@
 
 > **Amendment 2026-06-04**: the linter/formatter decision below (ESLint 9 +
 > Prettier) is superseded by **Biome** (single tool, `biome.json`). Rationale:
-> cross-repo consistency with the `boilerplate-nestjs` service, which already
+> cross-repo consistency with the `isp-cms-be` service, which already
 > standardised on Biome, and a faster single-binary lint+format step. The
 > a11y coverage previously provided by `eslint-plugin-jsx-a11y` is replaced by
 > Biome's `a11y` rule group. All other decisions in this ADR stand.
 
 ## Context
 
-We are bootstrapping the `saas-clinic-controller` admin dashboard from scratch in May 2026. The project is a private SaaS administration UI for clinics, primarily used by internal operators. There is no public-facing marketing surface, no SEO requirement, and no SSR requirement at this time. The team is small and ships AI-assisted, so the stack must be:
+We are bootstrapping the `isp-cms` admin dashboard from scratch in May 2026. The project is a private SaaS administration UI for clinics, primarily used by internal operators. There is no public-facing marketing surface, no SEO requirement, and no SSR requirement at this time. The team is small and ships AI-assisted, so the stack must be:
 
 - Easy for AI assistants to reason about (well-documented, widely-known idioms)
 - Strict enough to catch errors at compile time (the team cannot afford to debug runtime type bugs)
@@ -68,7 +68,7 @@ We will **not** introduce Next.js, Redux, Moment.js, Lodash (full bundle), or an
   - Tailwind 4 build is materially faster (claimed 5x) and the CSS-first config is simpler than the JS config
   - Zod 4 has roughly half the bundle size and ~3x faster type inference for large schemas
   - React 19 removes `forwardRef` boilerplate and ships `useFormStatus` / `useOptimistic` which simplify exactly the patterns this app needs
-- **Why rejected**: Stale at birth. The cost of upgrading later (compounded by the codebase growing) is worse than the cost of patching the small handful of upstream incompatibilities now (which we have already absorbed in the boilerplate PRs).
+- **Why rejected**: Stale at birth. The cost of upgrading later (compounded by the codebase growing) is worse than the cost of patching the small handful of upstream incompatibilities now (which we have already absorbed in the initial PRs).
 
 ### Alternative 3: Remix / React Router 7 framework mode
 
@@ -81,7 +81,7 @@ We will **not** introduce Next.js, Redux, Moment.js, Lodash (full bundle), or an
   - We would still want TanStack Query — mixing two data layers
 - **Why rejected**: TanStack Router covers our needs without dragging in framework-mode features we will not use.
 
-### Alternative 4: Do nothing (no shared boilerplate, each feature picks its tools)
+### Alternative 4: Do nothing (no shared foundation, each feature picks its tools)
 
 - **Pros**:
   - Zero upfront decision cost
@@ -89,7 +89,7 @@ We will **not** introduce Next.js, Redux, Moment.js, Lodash (full bundle), or an
   - Inconsistency compounds. By feature five we will have three styling systems and two state libraries
   - Onboarding gets harder over time — each contributor learns a different subset
   - AI assistants degrade in quality when there is no consistent pattern to follow
-- **Why rejected**: A boilerplate is a forcing function. Skipping it is technical debt collected on day one.
+- **Why rejected**: A shared foundation is a forcing function. Skipping it is technical debt collected on day one.
 
 ## Consequences
 
@@ -113,7 +113,7 @@ We will **not** introduce Next.js, Redux, Moment.js, Lodash (full bundle), or an
 
 ## Implementation Notes
 
-The boilerplate landed across PRs #1, #2, and #3:
+The foundation landed across PRs #1, #2, and #3:
 
 - PR #1 — Vite + TS + ESLint + Tailwind + base shadcn Button, layered architecture skeleton
 - PR #2 — 13 shadcn primitives + tenants list page demonstrating the canonical Form/Table/Dialog pattern

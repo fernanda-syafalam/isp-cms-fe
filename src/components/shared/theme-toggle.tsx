@@ -13,7 +13,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <Button variant="ghost" size="icon" aria-label="Toggle theme" onClick={handleToggle}>
+    <Button variant="ghost" size="icon" aria-label="Ganti tema" onClick={handleToggle}>
       <SunIcon className="size-4 dark:hidden" />
       <MoonIcon className="hidden size-4 dark:block" />
     </Button>

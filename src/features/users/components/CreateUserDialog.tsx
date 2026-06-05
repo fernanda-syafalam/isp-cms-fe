@@ -2,6 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
+import { statusLabel } from '@/lib/status-label'
+
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -83,12 +85,12 @@ export function CreateUserDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New user</Button>
+        <Button>Staf baru</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create user</DialogTitle>
-          <DialogDescription>Add a new user account to the platform.</DialogDescription>
+          <DialogTitle>Buat staf</DialogTitle>
+          <DialogDescription>Tambahkan akun staf baru.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -97,7 +99,7 @@ export function CreateUserDialog() {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nama</FormLabel>
                   <FormControl>
                     <Input placeholder="Jane Doe" autoComplete="off" {...field} />
                   </FormControl>
@@ -123,7 +125,7 @@ export function CreateUserDialog() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Kata sandi</FormLabel>
                   <FormControl>
                     <Input type="password" autoComplete="new-password" {...field} />
                   </FormControl>
@@ -136,17 +138,17 @@ export function CreateUserDialog() {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>Peran</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-full" aria-label="Role">
-                        <SelectValue placeholder="Select a role" />
+                      <SelectTrigger className="w-full" aria-label="Peran">
+                        <SelectValue placeholder="Pilih peran" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ROLE_OPTIONS.map((role) => (
                         <SelectItem key={role} value={role}>
-                          {role}
+                          {statusLabel(role)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -162,10 +164,10 @@ export function CreateUserDialog() {
                 onClick={() => setOpen(false)}
                 disabled={form.formState.isSubmitting}
               >
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating…' : 'Create'}
+                {form.formState.isSubmitting ? 'Menyimpan…' : 'Buat'}
               </Button>
             </DialogFooter>
           </form>

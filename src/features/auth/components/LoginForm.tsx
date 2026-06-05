@@ -68,7 +68,7 @@ export function LoginForm({ onSuccess }: Props) {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Kata sandi</FormLabel>
               <div className="relative">
                 <LockIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
                 <FormControl>
@@ -88,10 +88,10 @@ export function LoginForm({ onSuccess }: Props) {
           {form.formState.isSubmitting ? (
             <>
               <Loader2Icon className="size-4 animate-spin" />
-              Signing in…
+              Memproses…
             </>
           ) : (
-            'Sign in'
+            'Masuk'
           )}
         </Button>
       </form>
