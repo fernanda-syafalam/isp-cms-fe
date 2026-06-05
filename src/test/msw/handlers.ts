@@ -2,6 +2,7 @@ import { HttpResponse, http } from 'msw'
 
 import { SLA_HOURS } from '@/lib/sla'
 import type { PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
+import type { TicketEvent } from '@/schemas/ticket'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -449,6 +450,16 @@ const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =
   })),
 )
 
+// Ticket timeline: one "created" event seeded per ticket.
+const TICKET_EVENT_FIXTURES: TicketEvent[] = TICKET_FIXTURES.map((t) => ({
+  id: `${t.id}-ev-created`,
+  ticketId: t.id,
+  kind: 'created',
+  author: t.customerName,
+  body: t.subject,
+  at: t.createdAt,
+}))
+
 // Isolir integration: disable/enable a customer's PPPoE secrets by name.
 function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
   if (!name) return
@@ -483,6 +494,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   mikrotikSecrets: MIKROTIK_SECRET_FIXTURES,
   mikrotikSessions: MIKROTIK_SESSION_FIXTURES,
   mikrotikQueues: MIKROTIK_QUEUE_FIXTURES,
+  ticketEvents: TICKET_EVENT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1326,7 +1338,17 @@ export const handlers = [
       assignee?: string | null
     }
     if (body.subject !== undefined) found.subject = body.subject
-    if (body.assignee !== undefined) found.assignee = body.assignee
+    if (body.assignee !== undefined) {
+      found.assignee = body.assignee
+      TICKET_EVENT_FIXTURES.push({
+        id: crypto.randomUUID(),
+        ticketId: found.id,
+        kind: 'assign',
+        author: USER_FIXTURE.fullName,
+        body: body.assignee ? `Ditugaskan ke ${body.assignee}` : 'Assign dilepas',
+        at: new Date().toISOString(),
+      })
+    }
     if (body.priority !== undefined) {
       found.priority = body.priority
       // Recompute SLA deadline from creation when priority changes.
@@ -1341,9 +1363,71 @@ export const handlers = [
         body.status === 'resolved' && new Date(found.slaDueAt).getTime() < Date.now()
           ? 'breached'
           : body.status
+      TICKET_EVENT_FIXTURES.push({
+        id: crypto.randomUUID(),
+        ticketId: found.id,
+        kind: 'status',
+        author: USER_FIXTURE.fullName,
+        body: `Status → ${found.status}`,
+        at: new Date().toISOString(),
+      })
     }
     persistDb()
     return HttpResponse.json(found)
+  }),
+  http.get('*/api/tickets/:id', ({ params }) => {
+    const found = TICKET_FIXTURES.find((t) => t.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+  http.get('*/api/tickets/:id/events', ({ params }) => {
+    const items = TICKET_EVENT_FIXTURES.filter((e) => e.ticketId === params.id).sort((a, b) =>
+      a.at.localeCompare(b.at),
+    )
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/tickets/:id/comments', async ({ params, request }) => {
+    const ticket = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!ticket) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as { body: string }
+    TICKET_EVENT_FIXTURES.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      kind: 'comment',
+      author: USER_FIXTURE.fullName,
+      body: body.body,
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return new HttpResponse(null, { status: 201 })
+  }),
+  http.post('*/api/tickets/:id/work-order', ({ params }) => {
+    const ticket = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!ticket) return new HttpResponse(null, { status: 404 })
+    const wo = {
+      id: crypto.randomUUID(),
+      code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
+      type: 'repair' as const,
+      customerName: ticket.customerName,
+      technician: null,
+      scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
+      status: 'scheduled' as const,
+      createdAt: new Date().toISOString(),
+    }
+    WORKORDER_FIXTURES.unshift(wo)
+    TICKET_EVENT_FIXTURES.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      kind: 'workorder',
+      author: USER_FIXTURE.fullName,
+      body: `Work order ${wo.code} dibuat`,
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return HttpResponse.json(wo, { status: 201 })
   }),
 
   // Dev — reset the mock store back to seed.

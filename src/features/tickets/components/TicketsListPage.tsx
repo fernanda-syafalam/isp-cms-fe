@@ -1,4 +1,4 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CheckCircle2Icon, DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -51,7 +51,7 @@ const toCsvRow = (t: Ticket) => ({
   'Batas SLA': formatDateTime(t.slaDueAt),
 })
 
-const routeApi = getRouteApi('/_auth/tickets')
+const routeApi = getRouteApi('/_auth/tickets/')
 
 export function TicketsListPage() {
   const { status: statusParam } = routeApi.useSearch()
@@ -71,7 +71,15 @@ export function TicketsListPage() {
         accessorKey: 'code',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
         meta: { title: 'Kode' },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.code}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/tickets/$ticketId"
+            params={{ ticketId: row.original.id }}
+            className="font-medium font-mono text-sm hover:underline"
+          >
+            {row.original.code}
+          </Link>
+        ),
       },
       {
         accessorKey: 'subject',

@@ -1,9 +1,57 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { type TicketFilter, createTicket, listTickets, updateTicket } from '@/api/tickets'
+import {
+  type TicketFilter,
+  addTicketComment,
+  createTicket,
+  createWorkOrderFromTicket,
+  getTicket,
+  listTicketEvents,
+  listTickets,
+  updateTicket,
+} from '@/api/tickets'
 import { getErrorMessage } from '@/lib/errors'
-import type { CreateTicketInput, UpdateTicketInput } from '@/schemas/ticket'
+import type { AddCommentInput, CreateTicketInput, UpdateTicketInput } from '@/schemas/ticket'
+
+export function useTicket(id: string) {
+  return useQuery({
+    queryKey: ['tickets', 'detail', id] as const,
+    queryFn: () => getTicket(id),
+  })
+}
+
+export function useTicketEvents(id: string) {
+  return useQuery({
+    queryKey: ['tickets', id, 'events'] as const,
+    queryFn: () => listTicketEvents(id),
+  })
+}
+
+export function useAddComment(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AddCommentInput) => addTicketComment(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tickets', id, 'events'] })
+      toast.success('Komentar ditambahkan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useCreateWorkOrderFromTicket(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => createWorkOrderFromTicket(id),
+    onSuccess: (wo) => {
+      qc.invalidateQueries({ queryKey: ['tickets', id, 'events'] })
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`Work order ${wo.code} dibuat`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
 
 export function useTicketsList(filter: TicketFilter = {}) {
   return useQuery({
