@@ -77,3 +77,7 @@ pnpm-debug.log*
 
 # Personal/global Claude skills must not live in the repo
 .claude/skills/
+
+# graphify knowledge-graph output (local tooling, not source)
+graphify-out/
+.graphify/

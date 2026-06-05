@@ -23,6 +23,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
 import { useInvoicesList } from '../hooks/useInvoices'
+import { BillingActions } from './BillingActions'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
   paid: 'success',
@@ -175,16 +176,19 @@ export function InvoicesListPage() {
           </Select>
         }
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!data?.items.length}
-            onClick={() => downloadCsv('tagihan', (data?.items ?? []).map(toCsvRow))}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!data?.items.length}
+              onClick={() => downloadCsv('tagihan', (data?.items ?? []).map(toCsvRow))}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <BillingActions />
+          </>
         }
       />
     </div>
