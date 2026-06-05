@@ -1,2 +1,7 @@
 export { NetworkTopologyPage } from './components/NetworkTopologyPage'
-export { useTopology } from './hooks/useTopology'
+export {
+  useCreateNode,
+  useDeleteNode,
+  useTopology,
+  useUpdateNode,
+} from './hooks/useTopology'
