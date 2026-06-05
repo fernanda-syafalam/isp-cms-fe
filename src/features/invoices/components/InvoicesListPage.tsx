@@ -111,21 +111,23 @@ export function InvoicesListPage() {
           <>
             <KpiCard
               label="Total piutang (AR)"
-              value={formatCurrency(ar.outstanding)}
+              value={ar.outstanding}
+              format={formatCurrency}
               hint={`${formatNumber(ar.unpaidCount)} tagihan belum bayar`}
               accent="amber"
               icon={WalletIcon}
             />
             <KpiCard
               label="Terlambat"
-              value={formatCurrency(ar.overdue)}
+              value={ar.overdue}
+              format={formatCurrency}
               hint="jatuh tempo terlewat"
               hintTone="negative"
               icon={TriangleAlertIcon}
             />
             <KpiCard
               label="Total tagihan"
-              value={formatNumber(all.data.total)}
+              value={all.data.total}
               hint="periode berjalan"
               icon={ReceiptTextIcon}
             />

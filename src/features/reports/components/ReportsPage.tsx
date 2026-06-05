@@ -41,13 +41,15 @@ export function ReportsPage() {
           <>
             <KpiCard
               label="ARPU"
-              value={formatCurrency(summary.arpu)}
+              value={summary.arpu}
+              format={formatCurrency}
               hint="Rata-rata pendapatan per pelanggan"
               icon={WalletIcon}
             />
             <KpiCard
               label="Tingkat churn"
-              value={formatPercent(summary.churnRate)}
+              value={summary.churnRate}
+              format={formatPercent}
               hint="Pelanggan hilang bulan ini"
               hintTone="negative"
               icon={TrendingDownIcon}

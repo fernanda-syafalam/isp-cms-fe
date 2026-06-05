@@ -38,28 +38,31 @@ export function DashboardPage() {
           <>
             <KpiCard
               label="Pelanggan aktif"
-              value={formatNumber(summary.activeSubscribers)}
+              value={summary.activeSubscribers}
               hint={`+${formatNumber(summary.newThisMonth)} bulan ini`}
               hintTone={summary.newThisMonth >= 0 ? 'positive' : 'negative'}
               icon={UsersIcon}
             />
             <KpiCard
               label="Terisolir"
-              value={formatNumber(summary.isolatedSubscribers)}
+              value={summary.isolatedSubscribers}
               hint="pelanggan diisolir"
               hintTone="negative"
               icon={PowerOffIcon}
             />
             <KpiCard
               label="MRR"
-              value={formatCurrency(summary.mrr)}
+              value={summary.mrr}
+              format={formatCurrency}
               hint="Pendapatan bulanan berulang"
               accent="amber"
               icon={BanknoteIcon}
+              series={summary.revenueTrend.map((r) => r.revenue)}
             />
             <KpiCard
               label="Piutang (AR)"
-              value={formatCurrency(summary.arOutstanding)}
+              value={summary.arOutstanding}
+              format={formatCurrency}
               hint={`${formatNumber(summary.overdueCount)} tagihan telat`}
               hintTone="negative"
               icon={TriangleAlertIcon}
