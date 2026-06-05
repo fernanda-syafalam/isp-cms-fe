@@ -1,9 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { DataTable } from '@/components/shared/data-table'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { DataTable } from '@/components/shared/table/data-table'
+import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
+import { Button } from '@/components/ui/button'
+import { downloadCsv } from '@/lib/csv'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Router, RouterStatus } from '@/schemas/router'
@@ -15,34 +19,51 @@ const STATUS_TONE: Record<RouterStatus, StatusTone> = {
   offline: 'danger',
 }
 
+const toCsvRow = (r: Router) => ({
+  Router: r.name,
+  Alamat: r.address,
+  Model: r.model,
+  'Secret PPPoE': r.secretCount,
+  'Sinkron terakhir': formatDateTime(r.lastSyncAt),
+  Status: statusLabel(r.status),
+})
+
 export function RoutersListPage() {
   const { data, isLoading, isError } = useRoutersList()
 
   const columns = useMemo<ColumnDef<Router>[]>(
     () => [
-      { accessorKey: 'name', header: 'Router' },
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Router" />,
+        meta: { title: 'Router' },
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
       {
         accessorKey: 'address',
         header: 'Alamat',
+        meta: { title: 'Alamat' },
         cell: ({ row }) => <span className="font-mono text-sm">{row.original.address}</span>,
       },
-      { accessorKey: 'model', header: 'Model' },
+      { accessorKey: 'model', header: 'Model', meta: { title: 'Model' } },
       {
         accessorKey: 'secretCount',
-        header: 'Secret PPPoE',
-        meta: { align: 'right' },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Secret PPPoE" />,
+        meta: { title: 'Secret PPPoE', align: 'right' },
         cell: ({ row }) => (
           <span className="font-mono tabular-nums">{formatNumber(row.original.secretCount)}</span>
         ),
       },
       {
         accessorKey: 'lastSyncAt',
-        header: 'Sinkron terakhir',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Sinkron terakhir" />,
+        meta: { title: 'Sinkron terakhir' },
         cell: ({ row }) => formatDateTime(row.original.lastSyncAt),
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        meta: { title: 'Status' },
         cell: ({ row }) => (
           <StatusBadge
             tone={STATUS_TONE[row.original.status]}
@@ -60,15 +81,26 @@ export function RoutersListPage() {
         title="Router (Mikrotik)"
         description="RADIUS terpusat untuk banyak Mikrotik — satu aplikasi, banyak router."
       />
-      <div className="rounded-lg border border-border bg-card p-4">
-        <DataTable
-          columns={columns}
-          data={data?.items}
-          isLoading={isLoading}
-          isError={isError}
-          emptyMessage="Belum ada router."
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage="Belum ada router."
+        searchPlaceholder="Cari router…"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!data?.items.length}
+            onClick={() => downloadCsv('router', (data?.items ?? []).map(toCsvRow))}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+        }
+      />
     </div>
   )
 }
