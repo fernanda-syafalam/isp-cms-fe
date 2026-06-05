@@ -35,3 +35,19 @@ export function useUpdateTicket(id: string) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
+
+// Bulk resolve selected tickets (one summary toast).
+export function useBulkResolveTickets() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => updateTicket(id, { status: 'resolved' })))
+      return ids.length
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ['tickets'] })
+      toast.success(`${count} tiket ditandai selesai`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}

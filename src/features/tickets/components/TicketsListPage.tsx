@@ -1,6 +1,6 @@
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { CheckCircle2Icon, DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatDateTime } from '@/lib/format'
 import { slaState } from '@/lib/sla'
@@ -23,7 +24,7 @@ import type { Ticket, TicketPriority, TicketStatus } from '@/schemas/ticket'
 
 import { CreateTicketDialog } from './CreateTicketDialog'
 import { TicketRowActions } from './TicketRowActions'
-import { useTicketsList } from '../hooks/useTickets'
+import { useBulkResolveTickets, useTicketsList } from '../hooks/useTickets'
 
 const STATUS_TONE: Record<TicketStatus, StatusTone> = {
   open: 'info',
@@ -58,6 +59,8 @@ export function TicketsListPage() {
   const navigate = routeApi.useNavigate()
   const setStatus = (value: string) =>
     navigate({ search: value === 'all' ? {} : { status: value } })
+  const canManage = useCan('tickets.manage')
+  const bulkResolve = useBulkResolveTickets()
   const { data, isLoading, isError } = useTicketsList({
     status: status === 'all' ? undefined : status,
   })
@@ -169,6 +172,35 @@ export function TicketsListPage() {
             <CreateTicketDialog />
           </>
         }
+        enableSelection
+        bulkActions={(selected) => {
+          const open = selected.filter((t) => t.status === 'open' || t.status === 'in_progress')
+          return (
+            <>
+              {canManage && open.length > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={bulkResolve.isPending}
+                  onClick={() => bulkResolve.mutate(open.map((t) => t.id))}
+                >
+                  <CheckCircle2Icon className="size-4" />
+                  Tandai selesai ({open.length})
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => downloadCsv('tiket-terpilih', selected.map(toCsvRow))}
+              >
+                <DownloadIcon className="size-4" />
+                Export terpilih
+              </Button>
+            </>
+          )
+        }}
       />
     </div>
   )

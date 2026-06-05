@@ -72,6 +72,26 @@ export function useActivateCustomer() {
   })
 }
 
+// Bulk isolir / aktivasi over selected ids (one summary toast).
+export function useBulkCustomerStatus() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, action }: { ids: string[]; action: 'isolate' | 'activate' }) => {
+      const fn = action === 'isolate' ? isolateCustomer : activateCustomer
+      await Promise.all(ids.map((id) => fn(id)))
+      return { count: ids.length, action }
+    },
+    onSuccess: ({ count, action }) => {
+      qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['analytics'] })
+      toast.success(
+        action === 'isolate' ? `${count} pelanggan diisolir` : `${count} pelanggan diaktifkan`,
+      )
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
 export function useUpdateCustomer(id: string) {
   const qc = useQueryClient()
   return useMutation({
