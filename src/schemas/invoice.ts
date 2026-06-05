@@ -12,6 +12,7 @@ export const InvoiceSchema = z.object({
   periodStart: z.iso.date(),
   periodEnd: z.iso.date(),
   amount: z.number().int().nonnegative(),
+  lateFee: z.number().int().nonnegative(), // denda keterlambatan
   status: InvoiceStatusSchema,
   dueDate: z.iso.date(),
   paidAt: z.iso.datetime().nullable(),

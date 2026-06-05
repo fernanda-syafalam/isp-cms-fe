@@ -1,16 +1,24 @@
 import { Link } from '@tanstack/react-router'
-import { statusLabel } from '@/lib/status-label'
-import { ArrowLeftIcon } from 'lucide-react'
+import { ArrowLeftIcon, WalletIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
-import type { InvoiceStatus } from '@/schemas/invoice'
+import { statusLabel } from '@/lib/status-label'
+import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
+import { PaymentMethodSchema } from '@/schemas/payment'
 
-import { useInvoice } from '../hooks/useInvoices'
+import { useInvoice, usePayInvoice } from '../hooks/useInvoices'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
   paid: 'success',
@@ -46,6 +54,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     )
   }
 
+  const total = invoice.amount + invoice.lateFee
   const fields: Array<{ label: string; value: string }> = [
     { label: 'Pelanggan', value: invoice.customerName },
     {
@@ -65,7 +74,10 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
       <PageHeader
         title={invoice.invoiceNo}
         actions={
-          <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+          <div className="flex items-center gap-2">
+            <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+            {invoice.status !== 'paid' ? <PayMenu invoice={invoice} /> : null}
+          </div>
         }
       />
       <Card>
@@ -81,15 +93,54 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
               </div>
             ))}
           </dl>
-          <div className="flex items-center justify-between border-border border-t pt-4">
-            <span className="text-muted-foreground text-sm">Jumlah tagihan</span>
-            <span className="font-bold text-2xl tracking-tight">
-              {formatCurrency(invoice.amount)}
-            </span>
+          <div className="space-y-2 border-border border-t pt-4 text-sm">
+            <Row label="Subtotal" value={formatCurrency(invoice.amount)} />
+            {invoice.lateFee > 0 ? (
+              <Row label="Denda keterlambatan" value={formatCurrency(invoice.lateFee)} danger />
+            ) : null}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-muted-foreground">Total tagihan</span>
+              <span className="font-bold font-mono text-2xl tabular-nums tracking-tight">
+                {formatCurrency(total)}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function Row({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-mono tabular-nums ${danger ? 'text-red-600 dark:text-red-400' : ''}`}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function PayMenu({ invoice }: { invoice: Invoice }) {
+  const pay = usePayInvoice(invoice.id)
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" disabled={pay.isPending}>
+          <WalletIcon className="size-4" />
+          Catat pembayaran
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Metode</DropdownMenuLabel>
+        {PaymentMethodSchema.options.map((method) => (
+          <DropdownMenuItem key={method} onSelect={() => pay.mutate({ method })}>
+            {statusLabel(method)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

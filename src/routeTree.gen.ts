@@ -16,6 +16,7 @@ import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
+import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
 import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
@@ -57,6 +58,11 @@ const AuthReportsRoute = AuthReportsRouteImport.update({
 const AuthPlansRoute = AuthPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPaymentsRoute = AuthPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/coverage': typeof AuthCoverageRoute
   '/customers': typeof AuthCustomersRouteWithChildren
   '/invoices': typeof AuthInvoicesRouteWithChildren
+  '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
   '/staff': typeof AuthStaffRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/coverage': typeof AuthCoverageRoute
+  '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
   '/staff': typeof AuthStaffRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/_auth/coverage': typeof AuthCoverageRoute
   '/_auth/customers': typeof AuthCustomersRouteWithChildren
   '/_auth/invoices': typeof AuthInvoicesRouteWithChildren
+  '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/staff': typeof AuthStaffRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/coverage'
     | '/customers'
     | '/invoices'
+    | '/payments'
     | '/plans'
     | '/reports'
     | '/staff'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/coverage'
+    | '/payments'
     | '/plans'
     | '/reports'
     | '/staff'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_auth/coverage'
     | '/_auth/customers'
     | '/_auth/invoices'
+    | '/_auth/payments'
     | '/_auth/plans'
     | '/_auth/reports'
     | '/_auth/staff'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/plans'
       preLoaderRoute: typeof AuthPlansRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/payments': {
+      id: '/_auth/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthPaymentsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/invoices': {
@@ -345,6 +364,7 @@ interface AuthRouteChildren {
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
   AuthInvoicesRoute: typeof AuthInvoicesRouteWithChildren
+  AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
   AuthReportsRoute: typeof AuthReportsRoute
   AuthStaffRoute: typeof AuthStaffRoute
@@ -357,6 +377,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCoverageRoute: AuthCoverageRoute,
   AuthCustomersRoute: AuthCustomersRouteWithChildren,
   AuthInvoicesRoute: AuthInvoicesRouteWithChildren,
+  AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
   AuthReportsRoute: AuthReportsRoute,
   AuthStaffRoute: AuthStaffRoute,
