@@ -16,10 +16,12 @@ import {
 } from '@/components/ui/select'
 import { downloadCsv } from '@/lib/csv'
 import { formatDateTime } from '@/lib/format'
+import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
 import type { Ticket, TicketPriority, TicketStatus } from '@/schemas/ticket'
 
 import { CreateTicketDialog } from './CreateTicketDialog'
+import { TicketRowActions } from './TicketRowActions'
 import { useTicketsList } from '../hooks/useTickets'
 
 const STATUS_TONE: Record<TicketStatus, StatusTone> = {
@@ -96,10 +98,26 @@ export function TicketsListPage() {
         ),
       },
       {
-        accessorKey: 'slaDueAt',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Batas SLA" />,
-        meta: { title: 'Batas SLA' },
-        cell: ({ row }) => formatDateTime(row.original.slaDueAt),
+        id: 'sla',
+        header: 'SLA',
+        meta: { title: 'SLA' },
+        cell: ({ row }) => {
+          const sla = slaState(row.original.status, row.original.slaDueAt, Date.now())
+          return (
+            <div className="flex flex-col gap-0.5">
+              <StatusBadge tone={sla.tone} label={sla.label} dot={!sla.breached} />
+              <span className="text-muted-foreground text-xs">
+                {formatDateTime(row.original.slaDueAt)}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <TicketRowActions ticket={row.original} />,
       },
     ],
     [],

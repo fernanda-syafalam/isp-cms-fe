@@ -1,5 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
+import { SLA_HOURS } from '@/lib/sla'
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -856,6 +858,8 @@ export const handlers = [
       customerName: string
       priority: 'low' | 'medium' | 'high' | 'urgent'
     }
+    const now = Date.now()
+    const slaHours = SLA_HOURS[body.priority] ?? 24
     const ticket = {
       id: crypto.randomUUID(),
       code: `TKT-${9000 + TICKET_FIXTURES.length}`,
@@ -864,12 +868,46 @@ export const handlers = [
       priority: body.priority,
       status: 'open' as const,
       assignee: null,
-      slaDueAt: new Date(Date.now() + 86_400_000).toISOString(),
-      createdAt: new Date().toISOString(),
+      slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
+      createdAt: new Date(now).toISOString(),
     }
     TICKET_FIXTURES.unshift(ticket)
     persistDb()
     return HttpResponse.json(ticket, { status: 201 })
+  }),
+  // Update a ticket: assign, transition status, edit subject/priority.
+  http.patch('*/api/tickets/:id', async ({ params, request }) => {
+    const found = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      subject?: string
+      priority?: 'low' | 'medium' | 'high' | 'urgent'
+      status?: 'open' | 'in_progress' | 'resolved' | 'breached'
+      assignee?: string | null
+    }
+    if (body.subject !== undefined) found.subject = body.subject
+    if (body.assignee !== undefined) found.assignee = body.assignee
+    if (body.priority !== undefined) {
+      found.priority = body.priority
+      // Recompute SLA deadline from creation when priority changes.
+      const slaHours = SLA_HOURS[body.priority] ?? 24
+      found.slaDueAt = new Date(
+        new Date(found.createdAt).getTime() + slaHours * 3_600_000,
+      ).toISOString()
+    }
+    if (body.status !== undefined) {
+      // Resolving past the SLA deadline records a breach instead of resolved.
+      found.status =
+        body.status === 'resolved' && new Date(found.slaDueAt).getTime() < Date.now()
+          ? 'breached'
+          : body.status
+    }
+    persistDb()
+    return HttpResponse.json(found)
   }),
 
   // Dev — reset the mock store back to seed.
