@@ -13,7 +13,9 @@ import type { Router } from '@/schemas/router'
 
 import { useRebootRouter, useRouter, useSyncRouter, useTestRouter } from '../hooks/useMikrotik'
 import { ProfilesTab } from './ProfilesTab'
+import { QueuesTab } from './QueuesTab'
 import { SecretsTab } from './SecretsTab'
+import { SessionsTab } from './SessionsTab'
 
 export function RouterDetailPage({ routerId }: { routerId: string }) {
   const { data: router, isLoading, isError } = useRouter(routerId)
@@ -60,6 +62,8 @@ export function RouterDetailPage({ routerId }: { routerId: string }) {
           <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
           <TabsTrigger value="secrets">PPPoE Secret</TabsTrigger>
           <TabsTrigger value="profiles">Profil</TabsTrigger>
+          <TabsTrigger value="sessions">Sesi Aktif</TabsTrigger>
+          <TabsTrigger value="queues">Queue</TabsTrigger>
         </TabsList>
         <TabsContent value="ringkasan">
           <OverviewCard router={router} />
@@ -69,6 +73,12 @@ export function RouterDetailPage({ routerId }: { routerId: string }) {
         </TabsContent>
         <TabsContent value="profiles">
           <ProfilesTab routerId={routerId} />
+        </TabsContent>
+        <TabsContent value="sessions">
+          <SessionsTab routerId={routerId} />
+        </TabsContent>
+        <TabsContent value="queues">
+          <QueuesTab routerId={routerId} />
         </TabsContent>
       </Tabs>
     </div>
