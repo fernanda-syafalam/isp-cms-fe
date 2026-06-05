@@ -3,23 +3,31 @@ import { toast } from 'sonner'
 
 import {
   createProfile,
+  createQueue,
   createSecret,
   deleteProfile,
+  deleteQueue,
   deleteSecret,
+  disconnectSession,
   getRouter,
   listProfiles,
+  listQueues,
   listSecrets,
+  listSessions,
   rebootRouter,
   syncRouter,
   testRouter,
   updateProfile,
+  updateQueue,
   updateSecret,
 } from '@/api/mikrotik'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   CreateProfileInput,
+  CreateQueueInput,
   CreateSecretInput,
   UpdateProfileInput,
+  UpdateQueueInput,
   UpdateSecretInput,
 } from '@/schemas/mikrotik'
 
@@ -129,6 +137,68 @@ export function useDeleteSecret(routerId: string) {
       qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] })
       qc.invalidateQueries({ queryKey: ['routers', 'detail', routerId] })
       toast.success('Secret dihapus')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Sessions
+export function useSessions(routerId: string) {
+  return useQuery({
+    queryKey: ['routers', routerId, 'sessions'] as const,
+    queryFn: () => listSessions(routerId),
+  })
+}
+
+export function useDisconnectSession(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => disconnectSession(routerId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'sessions'] })
+      toast.success('Sesi diputus')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Queues
+export function useQueues(routerId: string) {
+  return useQuery({
+    queryKey: ['routers', routerId, 'queues'] as const,
+    queryFn: () => listQueues(routerId),
+  })
+}
+
+export function useCreateQueue(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateQueueInput) => createQueue(routerId, input),
+    onSuccess: (q) => {
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] })
+      toast.success(`Queue "${q.name}" dibuat`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useUpdateQueue(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateQueueInput }) =>
+      updateQueue(routerId, id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] }),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useDeleteQueue(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteQueue(routerId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] })
+      toast.success('Queue dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

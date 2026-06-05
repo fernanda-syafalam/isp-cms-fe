@@ -11,7 +11,15 @@ import {
   PppSecretListSchema,
   PppSecretSchema,
   type PppSecretList,
+  type CreateQueueInput,
+  PppSessionListSchema,
+  type PppSessionList,
+  type SimpleQueue,
+  SimpleQueueListSchema,
+  SimpleQueueSchema,
+  type SimpleQueueList,
   type UpdateProfileInput,
+  type UpdateQueueInput,
   type UpdateSecretInput,
 } from '@/schemas/mikrotik'
 
@@ -85,4 +93,38 @@ export async function updateSecret(
 
 export async function deleteSecret(routerId: string, id: string): Promise<void> {
   await api.delete(`routers/${routerId}/secrets/${id}`)
+}
+
+// Active sessions
+export async function listSessions(routerId: string): Promise<PppSessionList> {
+  const json = await api.get(`routers/${routerId}/sessions`).json()
+  return PppSessionListSchema.parse(json)
+}
+
+export async function disconnectSession(routerId: string, id: string): Promise<void> {
+  await api.post(`routers/${routerId}/sessions/${id}/disconnect`)
+}
+
+// Simple queues
+export async function listQueues(routerId: string): Promise<SimpleQueueList> {
+  const json = await api.get(`routers/${routerId}/queues`).json()
+  return SimpleQueueListSchema.parse(json)
+}
+
+export async function createQueue(routerId: string, input: CreateQueueInput): Promise<SimpleQueue> {
+  const json = await api.post(`routers/${routerId}/queues`, { json: input }).json()
+  return SimpleQueueSchema.parse(json)
+}
+
+export async function updateQueue(
+  routerId: string,
+  id: string,
+  input: UpdateQueueInput,
+): Promise<SimpleQueue> {
+  const json = await api.patch(`routers/${routerId}/queues/${id}`, { json: input }).json()
+  return SimpleQueueSchema.parse(json)
+}
+
+export async function deleteQueue(routerId: string, id: string): Promise<void> {
+  await api.delete(`routers/${routerId}/queues/${id}`)
 }

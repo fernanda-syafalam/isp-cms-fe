@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
 import { SLA_HOURS } from '@/lib/sla'
-import type { PppProfile, PppSecret } from '@/schemas/mikrotik'
+import type { PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -425,6 +425,29 @@ const MIKROTIK_SECRET_FIXTURES: PppSecret[] = ROUTER_FIXTURES.flatMap((r, ri) =>
     }
   }),
 )
+// Active sessions: one per enabled secret.
+const MIKROTIK_SESSION_FIXTURES: PppSession[] = MIKROTIK_SECRET_FIXTURES.filter(
+  (s) => !s.disabled,
+).map((s, i) => {
+  const hex = (n: number) => String((n * 37) % 256).padStart(2, '0')
+  return {
+    id: `${s.id}-sess`,
+    routerId: s.routerId,
+    username: s.username,
+    address: `100.64.${i % 200}.${(i % 50) + 2}`,
+    uptime: `${(i % 9) + 1}h${(i * 7) % 60}m`,
+    callerId: `AA:BB:CC:${hex(i + 1)}:${hex(i + 2)}:${hex(i + 3)}`,
+  }
+})
+const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =>
+  Array.from({ length: 3 }, (_, i) => ({
+    id: `${r.id}-q-${i + 1}`,
+    routerId: r.id,
+    name: `queue-${ri + 1}-${i + 1}`,
+    target: `100.64.${ri}.${i + 2}`,
+    maxLimit: ['20M/20M', '50M/50M', '100M/100M'][i] ?? '20M/20M',
+  })),
+)
 
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
@@ -450,6 +473,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   topology: TOPOLOGY_FIXTURES,
   mikrotikProfiles: MIKROTIK_PROFILE_FIXTURES,
   mikrotikSecrets: MIKROTIK_SECRET_FIXTURES,
+  mikrotikSessions: MIKROTIK_SESSION_FIXTURES,
+  mikrotikQueues: MIKROTIK_QUEUE_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1054,6 +1079,61 @@ export const handlers = [
     const [removed] = MIKROTIK_SECRET_FIXTURES.splice(idx, 1)
     const router = ROUTER_FIXTURES.find((r) => r.id === removed?.routerId)
     if (router && router.secretCount > 0) router.secretCount -= 1
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // Active sessions
+  http.get('*/api/routers/:id/sessions', ({ params }) => {
+    const items = MIKROTIK_SESSION_FIXTURES.filter((s) => s.routerId === params.id)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/routers/:id/sessions/:sid/disconnect', ({ params }) => {
+    const idx = MIKROTIK_SESSION_FIXTURES.findIndex((s) => s.id === params.sid)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    MIKROTIK_SESSION_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // Simple queues
+  http.get('*/api/routers/:id/queues', ({ params }) => {
+    const items = MIKROTIK_QUEUE_FIXTURES.filter((q) => q.routerId === params.id)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/routers/:id/queues', async ({ params, request }) => {
+    const body = (await request.json()) as {
+      name: string
+      target: string
+      maxLimit: string
+    }
+    const queue = {
+      id: crypto.randomUUID(),
+      routerId: String(params.id),
+      name: body.name,
+      target: body.target,
+      maxLimit: body.maxLimit,
+    }
+    MIKROTIK_QUEUE_FIXTURES.push(queue)
+    persistDb()
+    return HttpResponse.json(queue, { status: 201 })
+  }),
+  http.patch('*/api/routers/:id/queues/:qid', async ({ params, request }) => {
+    const found = MIKROTIK_QUEUE_FIXTURES.find((q) => q.id === params.qid)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as {
+      name?: string
+      target?: string
+      maxLimit?: string
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.target !== undefined) found.target = body.target
+    if (body.maxLimit !== undefined) found.maxLimit = body.maxLimit
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/routers/:id/queues/:qid', ({ params }) => {
+    const idx = MIKROTIK_QUEUE_FIXTURES.findIndex((q) => q.id === params.qid)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    MIKROTIK_QUEUE_FIXTURES.splice(idx, 1)
     persistDb()
     return new HttpResponse(null, { status: 204 })
   }),

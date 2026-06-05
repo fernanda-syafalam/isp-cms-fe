@@ -59,8 +59,55 @@ export const UpdateSecretSchema = z.object({
   disabled: z.boolean().optional(),
 })
 
+// Active PPPoE session (who is online now)
+export const PppSessionSchema = z.object({
+  id: z.string(),
+  routerId: z.string(),
+  username: z.string(),
+  address: z.string(), // assigned IP
+  uptime: z.string(), // e.g. "2h13m"
+  callerId: z.string(), // MAC
+})
+
+// Simple queue (bandwidth)
+export const SimpleQueueSchema = z.object({
+  id: z.string(),
+  routerId: z.string(),
+  name: z.string().min(1),
+  target: z.string(), // IP / subnet
+  maxLimit: z.string(), // "20M/20M"
+})
+
+export const PppSessionListSchema = z.object({
+  items: z.array(PppSessionSchema),
+  total: z.number().int().nonnegative(),
+})
+
+export const SimpleQueueListSchema = z.object({
+  items: z.array(SimpleQueueSchema),
+  total: z.number().int().nonnegative(),
+})
+
+export const CreateQueueSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(60),
+  target: z.string().min(1, 'Target wajib diisi').max(60),
+  maxLimit: z.string().min(1, 'Limit wajib diisi').max(40),
+})
+
+export const UpdateQueueSchema = z.object({
+  name: z.string().min(1).max(60).optional(),
+  target: z.string().min(1).max(60).optional(),
+  maxLimit: z.string().min(1).max(40).optional(),
+})
+
 export type PppProfile = z.infer<typeof PppProfileSchema>
 export type PppSecret = z.infer<typeof PppSecretSchema>
+export type PppSession = z.infer<typeof PppSessionSchema>
+export type SimpleQueue = z.infer<typeof SimpleQueueSchema>
+export type PppSessionList = z.infer<typeof PppSessionListSchema>
+export type SimpleQueueList = z.infer<typeof SimpleQueueListSchema>
+export type CreateQueueInput = z.infer<typeof CreateQueueSchema>
+export type UpdateQueueInput = z.infer<typeof UpdateQueueSchema>
 export type PppProfileList = z.infer<typeof PppProfileListSchema>
 export type PppSecretList = z.infer<typeof PppSecretListSchema>
 export type CreateProfileInput = z.infer<typeof CreateProfileSchema>
