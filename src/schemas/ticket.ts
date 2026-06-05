@@ -28,8 +28,16 @@ export const CreateTicketSchema = z.object({
   priority: TicketPrioritySchema,
 })
 
+export const UpdateTicketSchema = z.object({
+  subject: z.string().min(1, 'Subjek wajib diisi').max(160).optional(),
+  priority: TicketPrioritySchema.optional(),
+  status: TicketStatusSchema.optional(),
+  assignee: z.string().nullable().optional(),
+})
+
 export type TicketStatus = z.infer<typeof TicketStatusSchema>
 export type TicketPriority = z.infer<typeof TicketPrioritySchema>
 export type Ticket = z.infer<typeof TicketSchema>
 export type TicketList = z.infer<typeof TicketListSchema>
 export type CreateTicketInput = z.infer<typeof CreateTicketSchema>
+export type UpdateTicketInput = z.infer<typeof UpdateTicketSchema>
