@@ -8,9 +8,11 @@ import {
   getCustomer,
   isolateCustomer,
   listCustomers,
+  rebootOnu,
+  setOnuWifi,
 } from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
-import type { Customer, CreateCustomerInput } from '@/schemas/customer'
+import type { Customer, CreateCustomerInput, SetWifiInput } from '@/schemas/customer'
 
 export function useCustomersList(filter: CustomerFilter = {}) {
   return useQuery({
@@ -63,6 +65,22 @@ export function useActivateCustomer() {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" diaktifkan`)
     },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useRebootOnu(id: string) {
+  return useMutation({
+    mutationFn: () => rebootOnu(id),
+    onSuccess: () => toast.success('Perintah reboot ONU dikirim'),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useSetOnuWifi(id: string) {
+  return useMutation({
+    mutationFn: (input: SetWifiInput) => setOnuWifi(id, input),
+    onSuccess: () => toast.success('Pengaturan WiFi ONU diperbarui'),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }

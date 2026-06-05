@@ -6,4 +6,6 @@ export {
   useCustomersList,
   useCreateCustomer,
   useIsolateCustomer,
+  useRebootOnu,
+  useSetOnuWifi,
 } from './hooks/useCustomers'

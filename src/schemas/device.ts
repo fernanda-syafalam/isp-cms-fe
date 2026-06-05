@@ -12,6 +12,7 @@ export const DeviceSchema = z.object({
   ipAddress: z.string(),
   status: DeviceStatusSchema,
   uptimeHours: z.number().nonnegative(),
+  rxPower: z.number().nullable(), // optical RX power in dBm (ONU only)
   areaName: z.string(),
   lastSeenAt: z.iso.datetime(),
 })

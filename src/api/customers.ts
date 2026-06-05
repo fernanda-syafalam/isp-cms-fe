@@ -5,6 +5,7 @@ import {
   CustomerListSchema,
   CustomerSchema,
   type CustomerList,
+  type SetWifiInput,
 } from '@/schemas/customer'
 
 export type CustomerFilter = {
@@ -39,5 +40,16 @@ export async function isolateCustomer(id: string): Promise<Customer> {
 
 export async function activateCustomer(id: string): Promise<Customer> {
   const json = await api.post(`customers/${id}/activate`).json()
+  return CustomerSchema.parse(json)
+}
+
+// GenieACS / TR-069 actions against the subscriber's ONU (mock now).
+export async function rebootOnu(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/onu/reboot`).json()
+  return CustomerSchema.parse(json)
+}
+
+export async function setOnuWifi(id: string, input: SetWifiInput): Promise<Customer> {
+  const json = await api.post(`customers/${id}/onu/wifi`, { json: input }).json()
   return CustomerSchema.parse(json)
 }
