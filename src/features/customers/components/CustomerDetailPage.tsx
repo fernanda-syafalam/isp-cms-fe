@@ -21,6 +21,7 @@ import {
 } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
+import { CustomerRowActions } from './CustomerRowActions'
 import { OnuActions } from './OnuActions'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
@@ -89,6 +90,7 @@ export function CustomerDetailPage({ customerId }: Props) {
             <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
             <WhatsappButton customerId={customer.id} />
             <CustomerActions customer={customer} />
+            <CustomerRowActions customer={customer} />
           </div>
         }
       />

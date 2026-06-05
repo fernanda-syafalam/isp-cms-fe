@@ -9,4 +9,6 @@ export {
   useNotifyWhatsapp,
   useRebootOnu,
   useSetOnuWifi,
+  useStopCustomer,
+  useUpdateCustomer,
 } from './hooks/useCustomers'

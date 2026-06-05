@@ -11,6 +11,8 @@ import {
   notifyWhatsapp,
   rebootOnu,
   setOnuWifi,
+  stopCustomer,
+  updateCustomer,
 } from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
 import type { Customer, CreateCustomerInput, SetWifiInput } from '@/schemas/customer'
@@ -65,6 +67,30 @@ export function useActivateCustomer() {
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" diaktifkan`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useUpdateCustomer(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateCustomerInput) => updateCustomer(id, input),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" diperbarui`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useStopCustomer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => stopCustomer(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" dihentikan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

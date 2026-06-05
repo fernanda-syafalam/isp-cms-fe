@@ -31,6 +31,17 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
   return CustomerSchema.parse(json)
 }
 
+export async function updateCustomer(id: string, input: CreateCustomerInput): Promise<Customer> {
+  const json = await api.patch(`customers/${id}`, { json: input }).json()
+  return CustomerSchema.parse(json)
+}
+
+// Soft-delete: move the subscriber to the "berhenti" (churned) lifecycle state.
+export async function stopCustomer(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/stop`).json()
+  return CustomerSchema.parse(json)
+}
+
 // Network enforcement actions (mock now; real backend will hit Mikrotik/RADIUS).
 // Isolir blocks access; aktivasi restores it. Both return the updated customer.
 export async function isolateCustomer(id: string): Promise<Customer> {
