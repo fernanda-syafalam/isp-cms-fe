@@ -1,9 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { type CustomerFilter, createCustomer, getCustomer, listCustomers } from '@/api/customers'
+import {
+  type CustomerFilter,
+  activateCustomer,
+  createCustomer,
+  getCustomer,
+  isolateCustomer,
+  listCustomers,
+} from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
-import type { CreateCustomerInput } from '@/schemas/customer'
+import type { Customer, CreateCustomerInput } from '@/schemas/customer'
 
 export function useCustomersList(filter: CustomerFilter = {}) {
   return useQuery({
@@ -25,7 +32,36 @@ export function useCreateCustomer() {
     mutationFn: (input: CreateCustomerInput) => createCustomer(input),
     onSuccess: (customer) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
-      toast.success(`Customer "${customer.fullName}" created`)
+      toast.success(`Pelanggan "${customer.fullName}" dibuat`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+function syncCustomerCaches(qc: ReturnType<typeof useQueryClient>, customer: Customer) {
+  qc.setQueryData(['customers', 'detail', customer.id], customer)
+  qc.invalidateQueries({ queryKey: ['customers', 'list'] })
+}
+
+export function useIsolateCustomer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => isolateCustomer(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" diisolir`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useActivateCustomer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => activateCustomer(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" diaktifkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

@@ -68,22 +68,61 @@ const PLAN_FIXTURES = [
 ] as const
 
 const AREA_NAMES = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur'] as const
-const CUSTOMER_STATUS = ['active', 'active', 'pending', 'active', 'suspended', 'inactive'] as const
+const CUSTOMER_STATUS = [
+  'aktif',
+  'aktif',
+  'isolir',
+  'aktif',
+  'instalasi',
+  'prospek',
+  'aktif',
+  'berhenti',
+] as const
+const RESELLER_NAMES = ['Loket Andi', null, 'Agen Budi', null, 'Loket Citra'] as const
+
+type ConnectionFixture = {
+  type: 'pppoe' | 'gpon'
+  pppoeUsername: string
+  profile: string
+  ipAddress: string
+  onuSerial: string | null
+  olt: string | null
+  ponPort: string | null
+  rxPower: number | null
+}
 
 const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
   const plan = PLAN_FIXTURES[i % 3]
+  const status = CUSTOMER_STATUS[i % CUSTOMER_STATUS.length] ?? 'aktif'
+  const provisioned = status === 'aktif' || status === 'isolir'
+  const isGpon = i % 2 === 0
+  const connection: ConnectionFixture | null = provisioned
+    ? {
+        type: isGpon ? 'gpon' : 'pppoe',
+        pppoeUsername: `cust${1001 + i}`,
+        profile: plan?.name ?? 'Home 20',
+        ipAddress: `100.64.${i}.2`,
+        onuSerial: isGpon ? `ZTEG${String(10000000 + i)}` : null,
+        olt: isGpon ? `OLT-${(i % 2) + 1}` : null,
+        ponPort: isGpon ? `0/${i % 8}/${i % 16}` : null,
+        rxPower: isGpon ? -18 - (i % 9) : null, // -18 .. -26 dBm
+      }
+    : null
   return {
     id: oid('aaaaaaaa', i),
     customerNo: `CUST-${String(1001 + i)}`,
-    fullName: `Customer ${String.fromCharCode(65 + (i % 26))}${i}`,
+    fullName: `Pelanggan ${String.fromCharCode(65 + (i % 26))}${i}`,
     phone: `0812${String(10000000 + i)}`,
-    email: i % 3 === 0 ? null : `customer${i}@example.com`,
+    email: i % 3 === 0 ? null : `pelanggan${i}@example.com`,
     address: `Jl. Merdeka No. ${i + 1}`,
     areaId: oid('dddddddd', i % AREA_NAMES.length),
     areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
     planId: plan?.id ?? oid('bbbbbbbb', 1),
     planName: plan?.name ?? 'Home 20',
-    status: CUSTOMER_STATUS[i % CUSTOMER_STATUS.length] ?? 'active',
+    status,
+    outstanding: status === 'isolir' ? 200_000 + (i % 3) * 150_000 : 0,
+    resellerName: RESELLER_NAMES[i % RESELLER_NAMES.length] ?? null,
+    connection,
     joinedAt: iso(2025, i % 12, 1 + (i % 27)),
   }
 })
@@ -126,7 +165,7 @@ const TICKET_FIXTURES = Array.from({ length: 8 }, (_, i) => {
   return {
     id: oid('ffffffff', i),
     code: `TKT-${String(2001 + i)}`,
-    subject: i % 2 === 0 ? 'No internet connection' : 'Slow speed at night',
+    subject: i % 2 === 0 ? 'Internet mati total' : 'Koneksi lambat saat malam',
     customerName: customer?.fullName ?? 'Customer A0',
     priority: TICKET_PRIORITY[i % TICKET_PRIORITY.length] ?? 'medium',
     status: TICKET_STATUS[i % TICKET_STATUS.length] ?? 'open',
@@ -155,13 +194,15 @@ const REVENUE_TREND = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, i) 
 const DASHBOARD_SUMMARY = {
   activeSubscribers: 1284,
   newThisMonth: 48,
+  isolatedSubscribers: 37,
   mrr: 61_500_000,
+  arOutstanding: 18_900_000,
   overdueAmount: 7_350_000,
   overdueCount: 23,
   openTickets: 9,
   slaCompliance: 0.94,
-  devicesOnline: 8,
-  devicesTotal: 10,
+  devicesOnline: 142,
+  devicesTotal: 150,
   revenueTrend: REVENUE_TREND,
   ticketsByStatus: [
     { label: 'Terbuka', count: 9 },
@@ -284,11 +325,36 @@ export const handlers = [
         areaName: AREA_NAMES[0],
         planId: plan?.id ?? oid('bbbbbbbb', 1),
         planName: plan?.name ?? 'Home 20',
-        status: 'pending',
+        status: 'prospek',
+        outstanding: 0,
+        resellerName: null,
+        connection: null,
         joinedAt: new Date().toISOString(),
       },
       { status: 201 },
     )
+  }),
+  // Network enforcement (mock): flip lifecycle state for isolir/aktivasi.
+  http.post('*/api/customers/:id/isolate', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'isolir'
+    return HttpResponse.json(found)
+  }),
+  http.post('*/api/customers/:id/activate', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'aktif'
+    found.outstanding = 0
+    return HttpResponse.json(found)
   }),
 
   // Invoices

@@ -13,12 +13,14 @@ const StatusCountSchema = z.object({
 export const DashboardSummarySchema = z.object({
   activeSubscribers: z.number().int().nonnegative(),
   newThisMonth: z.number().int(),
+  isolatedSubscribers: z.number().int().nonnegative(),
   mrr: z.number().int().nonnegative(),
+  arOutstanding: z.number().int().nonnegative(), // total piutang
   overdueAmount: z.number().int().nonnegative(),
   overdueCount: z.number().int().nonnegative(),
   openTickets: z.number().int().nonnegative(),
   slaCompliance: z.number().min(0).max(1),
-  devicesOnline: z.number().int().nonnegative(),
+  devicesOnline: z.number().int().nonnegative(), // ONU online
   devicesTotal: z.number().int().nonnegative(),
   revenueTrend: z.array(MonthRevenueSchema),
   ticketsByStatus: z.array(StatusCountSchema),

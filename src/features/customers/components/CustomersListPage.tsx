@@ -20,20 +20,22 @@ import { CreateCustomerDialog } from './CreateCustomerDialog'
 import { useCustomersList } from '../hooks/useCustomers'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  active: 'success',
-  pending: 'warning',
-  suspended: 'danger',
-  inactive: 'neutral',
+  prospek: 'neutral',
+  instalasi: 'info',
+  aktif: 'success',
+  isolir: 'danger',
+  berhenti: 'neutral',
 }
 
 const STATUS_LABEL: Record<CustomerStatus, string> = {
-  active: 'Aktif',
-  pending: 'Menunggu',
-  suspended: 'Ditangguhkan',
-  inactive: 'Nonaktif',
+  prospek: 'Prospek',
+  instalasi: 'Instalasi',
+  aktif: 'Aktif',
+  isolir: 'Isolir',
+  berhenti: 'Berhenti',
 }
 
-const STATUS_OPTIONS = ['all', 'active', 'pending', 'suspended', 'inactive'] as const
+const STATUS_OPTIONS = ['all', 'aktif', 'isolir', 'instalasi', 'prospek', 'berhenti'] as const
 
 export function CustomersListPage() {
   const [q, setQ] = useState('')

@@ -2,15 +2,21 @@
 // data) to Bahasa Indonesia labels shown to users. See CLAUDE.md Language
 // Policy. Unknown values fall back to the raw value so nothing renders blank.
 const STATUS_LABELS: Record<string, string> = {
-  // customer
-  active: 'Aktif',
-  pending: 'Menunggu',
-  suspended: 'Ditangguhkan',
-  inactive: 'Nonaktif',
+  // customer lifecycle
+  prospek: 'Prospek',
+  instalasi: 'Instalasi',
+  aktif: 'Aktif',
+  isolir: 'Isolir',
+  berhenti: 'Berhenti',
+  // connection type
+  pppoe: 'PPPoE',
+  gpon: 'GPON',
   // plan
+  active: 'Aktif',
   archived: 'Arsip',
   // invoice
   paid: 'Lunas',
+  pending: 'Menunggu',
   overdue: 'Terlambat',
   draft: 'Draf',
   // device
