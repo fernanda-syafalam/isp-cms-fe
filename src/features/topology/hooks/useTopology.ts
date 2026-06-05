@@ -1,10 +1,48 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
-import { listTopology } from '@/api/topology'
+import { createNode, deleteNode, listTopology, updateNode } from '@/api/topology'
+import { getErrorMessage } from '@/lib/errors'
+import type { CreateNodeInput, UpdateNodeInput } from '@/schemas/topology'
 
 export function useTopology() {
   return useQuery({
     queryKey: ['topology', 'list'] as const,
     queryFn: listTopology,
+  })
+}
+
+export function useCreateNode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateNodeInput) => createNode(input),
+    onSuccess: (node) => {
+      qc.invalidateQueries({ queryKey: ['topology'] })
+      toast.success(`Node "${node.name}" ditambahkan`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useUpdateNode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateNodeInput }) => updateNode(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['topology'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useDeleteNode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteNode(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['topology'] })
+      toast.success('Node dihapus')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
   })
 }

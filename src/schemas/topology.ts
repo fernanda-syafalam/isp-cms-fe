@@ -22,7 +22,27 @@ export const TopologySchema = z.object({
   total: z.number().int().nonnegative(),
 })
 
+export const CreateNodeSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(120),
+  type: NodeTypeSchema,
+  status: NodeStatusSchema,
+  parentId: z.string().nullable(),
+  lat: z.number(),
+  lng: z.number(),
+})
+
+export const UpdateNodeSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
+  type: NodeTypeSchema.optional(),
+  status: NodeStatusSchema.optional(),
+  parentId: z.string().nullable().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+})
+
 export type NodeType = z.infer<typeof NodeTypeSchema>
 export type NodeStatus = z.infer<typeof NodeStatusSchema>
 export type NetworkNode = z.infer<typeof NetworkNodeSchema>
 export type Topology = z.infer<typeof TopologySchema>
+export type CreateNodeInput = z.infer<typeof CreateNodeSchema>
+export type UpdateNodeInput = z.infer<typeof UpdateNodeSchema>

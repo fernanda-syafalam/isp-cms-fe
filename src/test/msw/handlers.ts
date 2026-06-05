@@ -408,6 +408,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   inventory: INVENTORY_FIXTURES,
   coverage: COVERAGE_FIXTURES,
   tickets: TICKET_FIXTURES,
+  topology: TOPOLOGY_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1093,11 +1094,67 @@ export const handlers = [
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
 
-  // Network topology (read-only)
+  // Network topology
   http.get('*/api/topology', () =>
     HttpResponse.json({
       items: TOPOLOGY_FIXTURES,
       total: TOPOLOGY_FIXTURES.length,
     }),
   ),
+  http.post('*/api/topology', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string
+      type: 'olt' | 'odc' | 'odp' | 'pole' | 'customer'
+      status: 'up' | 'down' | 'unknown'
+      parentId: string | null
+      lat: number
+      lng: number
+    }
+    const node = { id: crypto.randomUUID(), ...body }
+    TOPOLOGY_FIXTURES.push(node)
+    persistDb()
+    return HttpResponse.json(node, { status: 201 })
+  }),
+  http.patch('*/api/topology/:id', async ({ params, request }) => {
+    const found = TOPOLOGY_FIXTURES.find((n) => n.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      name?: string
+      type?: 'olt' | 'odc' | 'odp' | 'pole' | 'customer'
+      status?: 'up' | 'down' | 'unknown'
+      parentId?: string | null
+      lat?: number
+      lng?: number
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.type !== undefined) found.type = body.type
+    if (body.status !== undefined) found.status = body.status
+    if (body.parentId !== undefined) found.parentId = body.parentId
+    if (body.lat !== undefined) found.lat = body.lat
+    if (body.lng !== undefined) found.lng = body.lng
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/topology/:id', ({ params }) => {
+    const idx = TOPOLOGY_FIXTURES.findIndex((n) => n.id === params.id)
+    if (idx === -1) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const removed = TOPOLOGY_FIXTURES[idx]
+    // Reparent any children up to the removed node's parent so the tree stays connected.
+    if (removed) {
+      for (const n of TOPOLOGY_FIXTURES) {
+        if (n.parentId === removed.id) n.parentId = removed.parentId
+      }
+    }
+    TOPOLOGY_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
 ]

@@ -1,7 +1,16 @@
 import 'leaflet/dist/leaflet.css'
 
+import L from 'leaflet'
 import { useEffect, useRef } from 'react'
-import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
 
@@ -20,14 +29,30 @@ const TILES = {
   },
 }
 
+function nodeIcon(node: NetworkNode, ring: boolean, dim: boolean): L.DivIcon {
+  const r = TYPE_RADIUS[node.type]
+  const size = r * 2
+  const border = ring ? `3px solid ${ACCENT}` : '2px solid #ffffff'
+  return L.divIcon({
+    className: 'topology-marker',
+    iconSize: [size, size],
+    iconAnchor: [r, r],
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:0 0 2px rgba(0,0,0,.5)"></span>`,
+  })
+}
+
 type Props = {
   nodes: NetworkNode[]
   byId: Map<string, NetworkNode>
   base: 'map' | 'satellite'
   selectedId: string | null
-  activeIds: Set<string> | null // null = no selection (nothing dimmed)
+  activeIds: Set<string> | null
   highlightIds: Set<string>
+  editMode: boolean
+  addMode: boolean
   onSelect: (id: string) => void
+  onMove: (id: string, lat: number, lng: number) => void
+  onMapClick: (lat: number, lng: number) => void
 }
 
 function FitBounds({ nodes }: { nodes: NetworkNode[] }) {
@@ -44,6 +69,21 @@ function FitBounds({ nodes }: { nodes: NetworkNode[] }) {
   return null
 }
 
+function MapClick({
+  enabled,
+  onClick,
+}: {
+  enabled: boolean
+  onClick: (lat: number, lng: number) => void
+}) {
+  useMapEvents({
+    click(e) {
+      if (enabled) onClick(e.latlng.lat, e.latlng.lng)
+    },
+  })
+  return null
+}
+
 export function TopologyMap({
   nodes,
   byId,
@@ -51,7 +91,11 @@ export function TopologyMap({
   selectedId,
   activeIds,
   highlightIds,
+  editMode,
+  addMode,
   onSelect,
+  onMove,
+  onMapClick,
 }: Props) {
   const tile = TILES[base]
   const center: [number, number] =
@@ -61,6 +105,7 @@ export function TopologyMap({
     <MapContainer center={center} zoom={13} className="h-full w-full" scrollWheelZoom>
       <TileLayer key={base} url={tile.url} attribution={tile.attribution} maxZoom={19} />
       <FitBounds nodes={nodes} />
+      <MapClick enabled={addMode} onClick={onMapClick} />
 
       {nodes.map((node) => {
         if (!node.parentId) return null
@@ -86,21 +131,19 @@ export function TopologyMap({
 
       {nodes.map((node) => {
         const dim = activeIds !== null && !activeIds.has(node.id)
-        const highlighted = highlightIds.has(node.id)
-        const selected = node.id === selectedId
-        const ring = selected || highlighted
+        const ring = node.id === selectedId || highlightIds.has(node.id)
         return (
-          <CircleMarker
+          <Marker
             key={node.id}
-            center={[node.lat, node.lng]}
-            radius={TYPE_RADIUS[node.type]}
-            eventHandlers={{ click: () => onSelect(node.id) }}
-            pathOptions={{
-              color: ring ? ACCENT : '#ffffff',
-              weight: ring ? 3 : 1.5,
-              fillColor: STATUS_COLOR[node.status],
-              fillOpacity: dim ? 0.2 : 0.95,
-              opacity: dim ? 0.3 : 1,
+            position={[node.lat, node.lng]}
+            icon={nodeIcon(node, ring, dim)}
+            draggable={editMode}
+            eventHandlers={{
+              click: () => onSelect(node.id),
+              dragend: (e) => {
+                const ll = e.target.getLatLng()
+                onMove(node.id, ll.lat, ll.lng)
+              },
             }}
           >
             <Tooltip>
@@ -108,7 +151,7 @@ export function TopologyMap({
               {' · '}
               {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
             </Tooltip>
-          </CircleMarker>
+          </Marker>
         )
       })}
     </MapContainer>
