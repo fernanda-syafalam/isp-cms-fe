@@ -19,6 +19,14 @@ export const ResellerListSchema = z.object({
   total: z.number().int().nonnegative(),
 })
 
+export const UpdateResellerSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
+  area: z.string().min(1, 'Area wajib diisi').max(120).optional(),
+  commissionPct: z.number().nonnegative().max(100).optional(),
+  status: ResellerStatusSchema.optional(),
+})
+
 export type ResellerStatus = z.infer<typeof ResellerStatusSchema>
 export type Reseller = z.infer<typeof ResellerSchema>
 export type ResellerList = z.infer<typeof ResellerListSchema>
+export type UpdateResellerInput = z.infer<typeof UpdateResellerSchema>

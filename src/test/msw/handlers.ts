@@ -770,6 +770,35 @@ export const handlers = [
           status: 404,
         })
   }),
+  http.patch('*/api/devices/:id', async ({ params, request }) => {
+    const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      name?: string
+      ipAddress?: string
+      areaName?: string
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.ipAddress !== undefined) found.ipAddress = body.ipAddress
+    if (body.areaName !== undefined) found.areaName = body.areaName
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/devices/:id', ({ params }) => {
+    const idx = DEVICE_FIXTURES.findIndex((d) => d.id === params.id)
+    if (idx === -1) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    DEVICE_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // Routers (Mikrotik / RADIUS)
   http.get('*/api/routers', () =>
@@ -838,12 +867,63 @@ export const handlers = [
       total: RESELLER_FIXTURES.length,
     }),
   ),
+  http.patch('*/api/resellers/:id', async ({ params, request }) => {
+    const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      name?: string
+      area?: string
+      commissionPct?: number
+      status?: 'active' | 'inactive'
+    }
+    if (body.name !== undefined) found.name = body.name
+    if (body.area !== undefined) found.area = body.area
+    if (body.commissionPct !== undefined) found.commissionPct = body.commissionPct
+    if (body.status !== undefined) found.status = body.status
+    persistDb()
+    return HttpResponse.json(found)
+  }),
 
   // Inventory
   http.get('*/api/inventory', ({ request }) => {
     const status = new URL(request.url).searchParams.get('status')
     const items = filterByStatus(INVENTORY_FIXTURES, status)
     return HttpResponse.json({ items, total: items.length })
+  }),
+  http.patch('*/api/inventory/:id', async ({ params, request }) => {
+    const found = INVENTORY_FIXTURES.find((it) => it.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      kind?: 'onu' | 'router' | 'mikrotik'
+      serial?: string
+      status?: 'warehouse' | 'installed' | 'broken'
+      assignedTo?: string | null
+    }
+    if (body.kind !== undefined) found.kind = body.kind
+    if (body.serial !== undefined) found.serial = body.serial
+    if (body.status !== undefined) found.status = body.status
+    if (body.assignedTo !== undefined) found.assignedTo = body.assignedTo
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.delete('*/api/inventory/:id', ({ params }) => {
+    const idx = INVENTORY_FIXTURES.findIndex((it) => it.id === params.id)
+    if (idx === -1) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    INVENTORY_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
   }),
 
   // Tickets

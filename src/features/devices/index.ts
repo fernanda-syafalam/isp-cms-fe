@@ -1,3 +1,9 @@
 export { DevicesListPage } from './components/DevicesListPage'
 export { DeviceDetailPage } from './components/DeviceDetailPage'
-export { useDevice, useDevicesList, useRebootDevice } from './hooks/useDevices'
+export {
+  useDeleteDevice,
+  useDevice,
+  useDevicesList,
+  useRebootDevice,
+  useUpdateDevice,
+} from './hooks/useDevices'
