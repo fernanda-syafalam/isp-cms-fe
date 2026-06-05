@@ -1,4 +1,4 @@
-import { BanknoteIcon, LifeBuoyIcon, RouterIcon, TriangleAlertIcon, UsersIcon } from 'lucide-react'
+import { BanknoteIcon, PowerOffIcon, RouterIcon, TriangleAlertIcon, UsersIcon } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { KpiCard } from '@/components/shared/kpi-card'
@@ -44,6 +44,13 @@ export function DashboardPage() {
               icon={UsersIcon}
             />
             <KpiCard
+              label="Terisolir"
+              value={formatNumber(summary.isolatedSubscribers)}
+              hint="pelanggan diisolir"
+              hintTone="negative"
+              icon={PowerOffIcon}
+            />
+            <KpiCard
               label="MRR"
               value={formatCurrency(summary.mrr)}
               hint="Pendapatan bulanan berulang"
@@ -51,17 +58,11 @@ export function DashboardPage() {
               icon={BanknoteIcon}
             />
             <KpiCard
-              label="Terlambat"
-              value={formatCurrency(summary.overdueAmount)}
-              hint={`${formatNumber(summary.overdueCount)} tagihan`}
+              label="Piutang (AR)"
+              value={formatCurrency(summary.arOutstanding)}
+              hint={`${formatNumber(summary.overdueCount)} tagihan telat`}
               hintTone="negative"
               icon={TriangleAlertIcon}
-            />
-            <KpiCard
-              label="Tiket terbuka"
-              value={formatNumber(summary.openTickets)}
-              hint={`SLA ${formatPercent(summary.slaCompliance)}`}
-              icon={LifeBuoyIcon}
             />
           </>
         ) : null}

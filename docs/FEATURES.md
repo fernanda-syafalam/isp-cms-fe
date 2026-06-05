@@ -1,109 +1,106 @@
-# ISP CMS — Feature Specification (Frontend)
+# ISP CMS — Feature Specification v2 (Frontend)
 
-Status: **draft / mock-first**. This document is the source of truth for what
-the `isp-cms-fe` admin dashboard does, which modules exist, and the order we
-build them. Each module's API is defined first as a Zod schema + MSW mock; the
-backend implements the contract afterwards (see
-`docs/ADR/0003-isp-modules-mock-first.md`).
+Status: **mock-first**, redesign in progress. Source of truth for what the
+`isp-cms-fe` admin dashboard does and how the ISP business flow is modelled.
+Grounded in competitor research (Splynx, UISP, Sonar, RL Radius, Sebilling,
+BayarInternet, ISPMate, GenieACS) — see memory `isp-domain-model`.
 
-## 1. Product
+Target ISP profile: **FTTH/GPON + PPPoE, postpaid + auto-isolir**, with
+Mikrotik/RADIUS + GenieACS + payment-gateway/WhatsApp + reseller + field
+technicians + inventory. Single-tenant. Backend mock-first (`docs/ADR/0003`).
 
-An internal admin dashboard for an **Internet Service Provider operator**.
-Single-tenant: one ISP's staff manage their own subscribers, plans, billing,
-network, and support. No customer-facing portal in this scope.
+## 1. The core idea: lifecycle is a billing-driven state machine
 
-### Personas
-
-| Persona           | Cares about                                                     |
-| ----------------- | --------------------------------------------------------------- |
-| Operations admin  | Subscribers, plans, activations, coverage                       |
-| Billing staff     | Invoices, payments, overdue collection, revenue                 |
-| NOC / network eng | Devices (OLT/ONU/Mikrotik), online/offline, IP/PPPoE, bandwidth |
-| Support agent     | Tickets, SLA, customer history                                  |
-| Owner / manager   | Reports: revenue, growth, churn, SLA                            |
-
-### Non-functional baseline
-
-- Locale **id-ID**, currency **IDR** (`Rp`); UI label text in English.
-- Theme **dark by default** (toggleable), brand accent **blue/indigo**.
-- Strict layering + Zod-at-boundary + a11y AA (see `CLAUDE.md`).
-- Data-dense tables, minimalism, status colours (green up / amber pending /
-  red down) — design direction per the `ui-ux-pro-max` skill.
-
-## 2. Information architecture (sitemap)
+A subscriber is **not** a row with a passive `status` — its state drives (and is
+driven by) billing and the network:
 
 ```
-/                       Dashboard (overview KPIs + charts)
-Operations
-  /customers            Subscribers list  → /customers/$id (detail)
-  /plans                Service plans
-  /invoices             Invoices list     → /invoices/$id (detail)
-  /tickets              Support tickets    → /tickets/$id (detail)
-Network
-  /network/devices      OLT / ONU / Mikrotik devices, online/offline
-  /coverage             Coverage areas / POPs
-Insights
-  /reports              Revenue / growth / churn / SLA analytics
-Admin
-  /staff                Internal staff & admin accounts (real /v1/users)
-/login                  Auth (public)
+prospek ──(survey ok)──> instalasi ──(install done + provision)──> aktif
+   aktif ──(overdue OR plan expired)──> isolir ──(payment)──> aktif
+   aktif/isolir ──(stop request / long unpaid)──> berhenti
 ```
 
-Sidebar is grouped: **Overview · Operations · Network · Insights · Admin**.
+- **Two isolir triggers** (modelled separately): payment **overdue** and plan
+  **expiry**. Reactivation is automatic on payment.
+- **Isolir is an action**, not a flag: it blocks network access (Mikrotik/RADIUS)
+  while whitelisting a payment page; mass-isolir runs on the billing date.
+- The FE exposes the **transitions as actions** (isolir / aktivasi) and shows the
+  state on the customer 360 + dashboard. Enforcement itself is backend/mock.
 
-## 3. Modules
+Status vocab (enum value → Indonesian label via `lib/status-label`):
+`prospek` Prospek · `instalasi` Instalasi · `aktif` Aktif · `isolir` Isolir ·
+`berhenti` Berhenti.
 
-Each module ships: Zod schema (`src/schemas/<m>.ts`), API + MSW mock
-(`src/api/<m>.ts`, `src/test/msw/handlers.ts`), feature folder
-(`src/features/<m>/`), and route(s). Depth column: **L** = list+filter+create,
-**LD** = list + detail.
-
-| #   | Module        | Route(s)            | Key entity fields                                                        | Depth | Data                 | Priority |
-| --- | ------------- | ------------------- | ------------------------------------------------------------------------ | ----- | -------------------- | -------- |
-| 1   | Dashboard     | `/`                 | KPI snapshot + revenue trend + network status                            | —     | mock                 | P0       |
-| 2   | Customers     | `/customers`, `$id` | name, customerNo, phone, address, area, plan, status, joinedAt           | LD    | mock                 | P0       |
-| 3   | Service Plans | `/plans`            | name, speedMbps, priceMonthly (IDR), status                              | L     | mock                 | P0       |
-| 4   | Invoices      | `/invoices`, `$id`  | invoiceNo, customer, period, amount, status, dueDate, paidAt             | LD    | mock                 | P0       |
-| 5   | Devices       | `/network/devices`  | name, type (olt/onu/mikrotik), ip, status (online/offline), uptime, area | L     | mock                 | P1       |
-| 6   | Tickets       | `/tickets`, `$id`   | subject, customer, priority, status, slaDueAt, assignee                  | LD    | mock                 | P1       |
-| 7   | Coverage/POP  | `/coverage`         | name, type (pop/area), region, capacity, utilisation, status             | L     | mock                 | P2       |
-| 8   | Reports       | `/reports`          | aggregates (revenue, new vs churned, ARPU, SLA)                          | —     | mock                 | P2       |
-| 9   | Staff         | `/staff`            | id, email, fullName, role (admin/staff/customer)                         | L     | **real** `/v1/users` | P0       |
-
-### Status vocabularies (→ `StatusBadge` tone)
-
-- Customer: `active` (success), `pending` (warning), `suspended` (danger), `inactive` (neutral)
-- Invoice: `paid` (success), `pending` (warning), `overdue` (danger), `draft` (neutral)
-- Device: `online` (success), `degraded` (warning), `offline` (danger)
-- Ticket: `open` (info), `in_progress` (warning), `resolved` (success), `breached` (danger)
-
-## 4. Data model sketch (FE contract)
-
-These are the FE-owned shapes (mirrored as Zod). Backend must conform.
+## 2. Domain model (FE contract; mock-first zod)
 
 ```
-Customer   { id, customerNo, fullName, phone, email?, address, areaId, planId, status, joinedAt }
-Plan       { id, name, speedMbps, priceMonthly, status }
-Invoice    { id, invoiceNo, customerId, periodStart, periodEnd, amount, status, dueDate, paidAt? }
-Device     { id, name, type, ipAddress, status, uptimeHours, areaId, lastSeenAt }
-Ticket     { id, code, subject, customerId, priority, status, assignee?, slaDueAt, createdAt }
-Coverage   { id, name, type, region, capacity, activeConnections, status }
-Staff      { id, email, fullName, role }   // === /v1/users
+Customer {
+  id, customerNo, fullName, phone, email?, address, areaName, resellerName?,
+  planId, planName, status (lifecycle), joinedAt,
+  outstanding,                         // piutang (IDR)
+  connection: Connection | null        // null while prospek/instalasi
+}
+Connection {
+  type 'pppoe' | 'gpon',
+  pppoeUsername, profile,              // profile = plan rate-limit profile
+  ipAddress,
+  onuSerial?, olt?, ponPort?, rxPower? // GPON optical: rxPower in dBm (redaman)
+}
+Plan { id, name, speedMbps, priceMonthly, fupGb?, status }   // carries network params
+Invoice { id, invoiceNo, customerId, customerName, periodStart, periodEnd,
+          amount, lateFee?, status (paid|pending|overdue|draft), dueDate, paidAt? }
+Payment { id, invoiceNo, customerName, amount, method, channel, paidAt }   // QRIS/VA/e-wallet/cash
+Device { id, name, type (olt|onu|mikrotik), ipAddress, status, rxPower?, areaName, lastSeenAt }
+Ticket { id, code, subject, customerName, priority, status, assignee?, slaDueAt, createdAt }
+WorkOrder { id, code, type (instalasi|gangguan|dismantle), customerName, technician?, scheduledAt, status }
+Reseller { id, name, area, balance, commissionPct, customerCount, status }
+InventoryItem { id, kind (onu|router|mikrotik), serial, status (gudang|terpasang|rusak), assignedTo? }
+Staff { id, email, fullName, role }   // real /v1/users
 ```
 
-IDs are branded (`types/ids.ts`) per the constitution.
+IDs are branded (`types/ids.ts`). RX Power range (GPON ITU-T) ≈ −8…−27 dBm;
+healthy ≳ −25 dBm (used for the optical badge).
 
-## 5. Roadmap / phasing
+## 3. Modules & flows
 
-- **Phase A (this change)** — design system (dark+blue), shell+nav, Dashboard
-  overview, and all modules scaffolded mock-first to the table above. Staff
-  wired to the real `/v1/users`.
-- **Phase B** — wire P0 modules (Customers, Plans, Invoices) to real backend
-  endpoints once they exist; replace MSW with live calls.
-- **Phase C** — Devices live status (SSE/poll), Tickets SLA timers, Reports
-  real aggregates, exports (CSV/PDF).
+| Module                   | Route               | Core flow                                                                                                                                                      |
+| ------------------------ | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**            | `/`                 | Aktif · Terisolir · MRR · **AR/piutang** · Tiket · **ONU offline** + revenue trend + ticket status                                                             |
+| **Pelanggan (360)**      | `/customers`, `$id` | List + filter by lifecycle; **360 detail**: data + koneksi (ONU/redaman/IP/PPPoE) + paket + tagihan terakhir + tiket + **timeline** + **aksi isolir/aktivasi** |
+| **Paket**                | `/plans`            | Profil + rate-limit + harga + FUP                                                                                                                              |
+| **Tagihan**              | `/invoices`, `$id`  | Siklus, jatuh tempo, denda, status; detail                                                                                                                     |
+| **Pembayaran**           | `/payments`         | Riwayat pembayaran + kanal (QRIS/VA/e-wallet/cash)                                                                                                             |
+| **Jaringan**             | `/network/devices`  | OLT/ONU/Mikrotik, online/offline, **redaman dBm**                                                                                                              |
+| **Instalasi/Work Order** | `/work-orders`      | Job order instalasi/gangguan, assign teknisi, jadwal                                                                                                           |
+| **Reseller**             | `/resellers`        | Saldo/komisi + jumlah pelanggan                                                                                                                                |
+| **Inventory**            | `/inventory`        | Stok perangkat (serial, gudang/terpasang/rusak)                                                                                                                |
+| **Laporan**              | `/reports`          | Revenue, pertumbuhan, churn, AR aging                                                                                                                          |
+| **Staf**                 | `/staff`            | Akun internal (real `/v1/users`)                                                                                                                               |
 
-## 6. Out of scope (this change)
+## 4. Gap vs v1 (what this redesign fixes)
 
-Customer self-service portal · multi-tenant/reseller · payment-gateway
-integration · real-time websockets · granular per-module RBAC · multi-language.
+- Lifecycle state-machine + **isolir/aktivasi actions** (was passive status).
+- Plans carry **network params** (rate-limit/FUP), not just price.
+- **Payments + AR/piutang**, late fee, billing cycle (was static invoices).
+- **Connection/ONU** model (PPPoE secret, IP, ONU SN/OLT/PON, **redaman**).
+- New modules: **Work Order**, **Reseller**, **Inventory**.
+- Dashboard reframed to ISP operations (terisolir, AR, ONU offline).
+
+## 5. Phasing (PR per phase)
+
+- **Phase 1 (this branch)**: this doc + design-system v2 + **Dashboard ISP** +
+  **Customer 360 + lifecycle + isolir/aktivasi**.
+- **Phase 2**: Billing (cycle/due/late-fee/proration) + Payments + AR.
+- **Phase 3**: Provisioning (PPPoE/IP/RADIUS+Mikrotik mock) + Network (ONU/OLT/
+  redaman, GenieACS actions mock).
+- **Phase 4**: Work Order/technician + Reseller/loket + Inventory + WhatsApp
+  notifications (mock).
+
+## 6. Out of scope / unverified
+
+Real integrations (Mikrotik/RADIUS/GenieACS/payment/WA) stay **mock**; real
+backend later. **Unverified by research** (modelled as flagged assumptions):
+exact proration arithmetic, late-fee formula, reseller commission hierarchy, and
+MRR/churn/ARPU as standard KPIs (revenue + AR/piutang + network status are the
+confirmed staples). Customer self-service portal and technician mobile app are
+out of scope.
