@@ -674,6 +674,69 @@ export const handlers = [
     return HttpResponse.json(found)
   }),
 
+  // Billing run: create current-period invoices for active subscribers.
+  http.post('*/api/billing/run', () => {
+    const now = new Date()
+    const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const periodStart = `${period}-01`
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+    const dueDate = new Date(now.getTime() + 10 * 86_400_000).toISOString().slice(0, 10)
+    let created = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      if (c.status !== 'aktif') continue
+      const exists = INVOICE_FIXTURES.some(
+        (inv) => inv.customerId === c.id && inv.periodStart === periodStart,
+      )
+      if (exists) continue
+      const plan = PLAN_FIXTURES.find((p) => p.name === c.planName)
+      INVOICE_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        invoiceNo: `INV-${now.getFullYear()}-${9000 + INVOICE_FIXTURES.length}`,
+        customerId: c.id,
+        customerName: c.fullName,
+        periodStart,
+        periodEnd,
+        amount: plan?.priceMonthly ?? 200_000,
+        lateFee: 0,
+        status: 'pending',
+        dueDate,
+        paidAt: null,
+      })
+      created++
+    }
+    persistDb()
+    return HttpResponse.json({ period, created })
+  }),
+  // Bulk isolir: flag past-due invoices (+denda) then suspend owing actives.
+  http.post('*/api/billing/isolir-overdue', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    let markedOverdue = 0
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'pending' && inv.dueDate < today) {
+        inv.status = 'overdue'
+        if (inv.lateFee === 0) inv.lateFee = 25_000
+        markedOverdue++
+      }
+    }
+    const owed = new Map<string, number>()
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'overdue') {
+        owed.set(inv.customerId, (owed.get(inv.customerId) ?? 0) + inv.amount + inv.lateFee)
+      }
+    }
+    let isolated = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      const due = owed.get(c.id)
+      if (c.status === 'aktif' && due !== undefined) {
+        c.status = 'isolir'
+        c.outstanding = due
+        isolated++
+      }
+    }
+    persistDb()
+    return HttpResponse.json({ markedOverdue, isolated })
+  }),
+
   // Payments
   http.get('*/api/payments', () =>
     HttpResponse.json({
