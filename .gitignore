@@ -27,7 +27,8 @@ playwright.config.d.ts
 # ============================================
 # Test artifacts
 # ============================================
-coverage/
+# Anchored to repo root so it doesn't swallow src/features/coverage/
+/coverage/
 playwright-report/
 test-results/
 .vite/
