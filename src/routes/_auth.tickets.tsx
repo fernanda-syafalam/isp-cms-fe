@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { TicketsListPage } from '@/features/tickets'
 import { statusSearch } from '@/lib/search'
 
+// Layout route (renders <Outlet/>) so the list (index) and detail ($ticketId)
+// are siblings; status filter is validated here and inherited by children.
 export const Route = createFileRoute('/_auth/tickets')({
-  component: TicketsListPage,
   validateSearch: statusSearch,
 })

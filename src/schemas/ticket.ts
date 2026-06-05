@@ -35,8 +35,31 @@ export const UpdateTicketSchema = z.object({
   assignee: z.string().nullable().optional(),
 })
 
+export const TicketEventKindSchema = z.enum(['created', 'comment', 'status', 'assign', 'workorder'])
+
+export const TicketEventSchema = z.object({
+  id: z.string(),
+  ticketId: z.string(),
+  kind: TicketEventKindSchema,
+  author: z.string(),
+  body: z.string(),
+  at: z.iso.datetime(),
+})
+
+export const TicketEventListSchema = z.object({
+  items: z.array(TicketEventSchema),
+  total: z.number().int().nonnegative(),
+})
+
+export const AddCommentSchema = z.object({
+  body: z.string().min(1, 'Komentar wajib diisi').max(500),
+})
+
 export type TicketStatus = z.infer<typeof TicketStatusSchema>
 export type TicketPriority = z.infer<typeof TicketPrioritySchema>
+export type TicketEvent = z.infer<typeof TicketEventSchema>
+export type TicketEventList = z.infer<typeof TicketEventListSchema>
+export type AddCommentInput = z.infer<typeof AddCommentSchema>
 export type Ticket = z.infer<typeof TicketSchema>
 export type TicketList = z.infer<typeof TicketListSchema>
 export type CreateTicketInput = z.infer<typeof CreateTicketSchema>

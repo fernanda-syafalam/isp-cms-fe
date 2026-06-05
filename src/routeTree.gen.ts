@@ -23,8 +23,10 @@ import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
+import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
+import { Route as AuthTicketsTicketIdRouteImport } from './routes/_auth.tickets.$ticketId'
 import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
 import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
@@ -103,6 +105,11 @@ const AuthCoverageRoute = AuthCoverageRouteImport.update({
   path: '/coverage',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthTicketsRoute,
+} as any)
 const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -112,6 +119,11 @@ const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthCustomersRoute,
+} as any)
+const AuthTicketsTicketIdRoute = AuthTicketsTicketIdRouteImport.update({
+  id: '/$ticketId',
+  path: '/$ticketId',
+  getParentRoute: () => AuthTicketsRoute,
 } as any)
 const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
   id: '/network/topology',
@@ -170,14 +182,16 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRoute
   '/staff': typeof AuthStaffRoute
-  '/tickets': typeof AuthTicketsRoute
+  '/tickets': typeof AuthTicketsRouteWithChildren
   '/work-orders': typeof AuthWorkOrdersRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
+  '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
+  '/tickets/': typeof AuthTicketsIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices/': typeof AuthNetworkDevicesIndexRoute
@@ -192,15 +206,16 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRoute
   '/staff': typeof AuthStaffRoute
-  '/tickets': typeof AuthTicketsRoute
   '/work-orders': typeof AuthWorkOrdersRoute
   '/': typeof AuthIndexRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
+  '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
+  '/tickets': typeof AuthTicketsIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices': typeof AuthNetworkDevicesIndexRoute
@@ -219,15 +234,17 @@ export interface FileRoutesById {
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRoute
   '/_auth/staff': typeof AuthStaffRoute
-  '/_auth/tickets': typeof AuthTicketsRoute
+  '/_auth/tickets': typeof AuthTicketsRouteWithChildren
   '/_auth/work-orders': typeof AuthWorkOrdersRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/_auth/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
+  '/_auth/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
+  '/_auth/tickets/': typeof AuthTicketsIndexRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/_auth/network/devices/': typeof AuthNetworkDevicesIndexRoute
@@ -253,8 +270,10 @@ export interface FileRouteTypes {
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
     | '/network/topology'
+    | '/tickets/$ticketId'
     | '/customers/'
     | '/invoices/'
+    | '/tickets/'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
     | '/network/devices/'
@@ -269,15 +288,16 @@ export interface FileRouteTypes {
     | '/reports'
     | '/resellers'
     | '/staff'
-    | '/tickets'
     | '/work-orders'
     | '/'
     | '/customers/$customerId'
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
     | '/network/topology'
+    | '/tickets/$ticketId'
     | '/customers'
     | '/invoices'
+    | '/tickets'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
     | '/network/devices'
@@ -302,8 +322,10 @@ export interface FileRouteTypes {
     | '/_auth/customers/onboarding'
     | '/_auth/invoices/$invoiceId'
     | '/_auth/network/topology'
+    | '/_auth/tickets/$ticketId'
     | '/_auth/customers/'
     | '/_auth/invoices/'
+    | '/_auth/tickets/'
     | '/_auth/network/devices/$deviceId'
     | '/_auth/network/routers/$routerId'
     | '/_auth/network/devices/'
@@ -415,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCoverageRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/tickets/': {
+      id: '/_auth/tickets/'
+      path: '/'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AuthTicketsIndexRouteImport
+      parentRoute: typeof AuthTicketsRoute
+    }
     '/_auth/invoices/': {
       id: '/_auth/invoices/'
       path: '/'
@@ -428,6 +457,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers/'
       preLoaderRoute: typeof AuthCustomersIndexRouteImport
       parentRoute: typeof AuthCustomersRoute
+    }
+    '/_auth/tickets/$ticketId': {
+      id: '/_auth/tickets/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/tickets/$ticketId'
+      preLoaderRoute: typeof AuthTicketsTicketIdRouteImport
+      parentRoute: typeof AuthTicketsRoute
     }
     '/_auth/network/topology': {
       id: '/_auth/network/topology'
@@ -518,6 +554,20 @@ const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
   AuthInvoicesRouteChildren,
 )
 
+interface AuthTicketsRouteChildren {
+  AuthTicketsTicketIdRoute: typeof AuthTicketsTicketIdRoute
+  AuthTicketsIndexRoute: typeof AuthTicketsIndexRoute
+}
+
+const AuthTicketsRouteChildren: AuthTicketsRouteChildren = {
+  AuthTicketsTicketIdRoute: AuthTicketsTicketIdRoute,
+  AuthTicketsIndexRoute: AuthTicketsIndexRoute,
+}
+
+const AuthTicketsRouteWithChildren = AuthTicketsRoute._addFileChildren(
+  AuthTicketsRouteChildren,
+)
+
 interface AuthRouteChildren {
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
@@ -528,7 +578,7 @@ interface AuthRouteChildren {
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRoute
   AuthStaffRoute: typeof AuthStaffRoute
-  AuthTicketsRoute: typeof AuthTicketsRoute
+  AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
   AuthWorkOrdersRoute: typeof AuthWorkOrdersRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
@@ -548,7 +598,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRoute,
   AuthStaffRoute: AuthStaffRoute,
-  AuthTicketsRoute: AuthTicketsRoute,
+  AuthTicketsRoute: AuthTicketsRouteWithChildren,
   AuthWorkOrdersRoute: AuthWorkOrdersRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
