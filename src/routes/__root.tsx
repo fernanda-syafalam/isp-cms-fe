@@ -1,25 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router'
-import {
-  BarChart3Icon,
-  BoxesIcon,
-  Building2Icon,
-  LayoutDashboardIcon,
-  LifeBuoyIcon,
-  MapPinIcon,
-  MenuIcon,
-  PackageIcon,
-  ReceiptTextIcon,
-  RouterIcon,
-  ServerIcon,
-  ShieldCheckIcon,
-  StoreIcon,
-  UsersIcon,
-  WalletIcon,
-  WrenchIcon,
-} from 'lucide-react'
-import type { ComponentType } from 'react'
+import { Link, Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
+import { Building2Icon, MenuIcon } from 'lucide-react'
 
+import { Breadcrumbs } from '@/components/shared/breadcrumbs'
+import { CommandMenu } from '@/components/shared/command-menu'
+import { type NavItem, NAV_GROUPS } from '@/components/shared/nav'
+import { Reveal } from '@/components/shared/reveal'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,61 +26,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
 })
 
-type NavItem = {
-  to: string
-  label: string
-  icon: ComponentType<{ className?: string }>
-  exact?: boolean
-}
-
-type NavGroup = {
-  label: string
-  items: NavItem[]
-}
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: 'Ringkasan',
-    items: [{ to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true }],
-  },
-  {
-    label: 'Operasional',
-    items: [
-      { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
-      { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
-      { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
-      { to: '/payments', label: 'Pembayaran', icon: WalletIcon },
-      { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
-      { to: '/resellers', label: 'Reseller', icon: StoreIcon },
-    ],
-  },
-  {
-    label: 'Lapangan',
-    items: [
-      { to: '/work-orders', label: 'Work Order', icon: WrenchIcon },
-      { to: '/inventory', label: 'Inventaris', icon: BoxesIcon },
-    ],
-  },
-  {
-    label: 'Jaringan',
-    items: [
-      { to: '/network/devices', label: 'Perangkat', icon: RouterIcon },
-      { to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon },
-      { to: '/coverage', label: 'Cakupan', icon: MapPinIcon },
-    ],
-  },
-  {
-    label: 'Analitik',
-    items: [{ to: '/reports', label: 'Laporan', icon: BarChart3Icon }],
-  },
-  {
-    label: 'Admin',
-    items: [{ to: '/staff', label: 'Staf', icon: ShieldCheckIcon }],
-  },
-]
-
 function RootLayout() {
   const isAuthed = useIsAuthenticated()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   if (!isAuthed) {
     return (
@@ -114,7 +48,9 @@ function RootLayout() {
         <Topbar />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
-            <Outlet />
+            <Reveal key={pathname}>
+              <Outlet />
+            </Reveal>
           </div>
         </main>
       </div>
@@ -125,7 +61,7 @@ function RootLayout() {
 function Brand() {
   return (
     <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
         <Building2Icon className="size-4" />
       </span>
       <span>ISP CMS</span>
@@ -135,14 +71,14 @@ function Brand() {
 
 function Sidebar() {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-border border-r bg-card md:flex">
-      <div className="flex h-16 items-center border-border border-b px-6">
+    <aside className="hidden w-60 shrink-0 flex-col border-sidebar-border border-r bg-sidebar md:flex">
+      <div className="flex h-16 items-center border-sidebar-border border-b px-6">
         <Brand />
       </div>
-      <nav className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
+      <nav className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="space-y-1">
-            <p className="px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            <p className="px-3 font-medium text-[11px] text-muted-foreground/70 uppercase tracking-wider">
               {group.label}
             </p>
             {group.items.map((item) => (
@@ -155,13 +91,16 @@ function Sidebar() {
   )
 }
 
+const SIDEBAR_LINK_CLASS =
+  'relative flex items-center gap-3 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-sidebar-accent hover:text-foreground [&.active]:bg-sidebar-accent [&.active]:text-foreground [&.active>svg]:text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-0 before:transition-opacity [&.active]:before:opacity-100'
+
 function SidebarLink({ item }: { item: NavItem }) {
   const Icon = item.icon
   return (
     <Link
       to={item.to}
       activeOptions={{ exact: item.exact ?? false }}
-      className="flex items-center gap-3 rounded-md px-3 py-2 font-medium text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground [&.active]:bg-primary/10 [&.active]:font-semibold [&.active]:text-primary"
+      className={SIDEBAR_LINK_CLASS}
     >
       <Icon className="size-4 shrink-0" />
       {item.label}
@@ -171,12 +110,16 @@ function SidebarLink({ item }: { item: NavItem }) {
 
 function Topbar() {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-border border-b bg-background/80 px-4 backdrop-blur md:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-border border-b bg-background/80 px-4 backdrop-blur md:px-6">
       <MobileNav />
       <div className="md:hidden">
         <Brand />
       </div>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="hidden md:block">
+        <Breadcrumbs />
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <CommandMenu />
         <ThemeToggle />
         <UserMenu />
       </div>
