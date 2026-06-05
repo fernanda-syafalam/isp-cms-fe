@@ -86,15 +86,15 @@ healthy ≳ −25 dBm (used for the optical badge).
 - New modules: **Work Order**, **Reseller**, **Inventory**.
 - Dashboard reframed to ISP operations (terisolir, AR, ONU offline).
 
-## 5. Phasing (PR per phase)
+## 5. Phasing (PR per phase) — all shipped
 
-- **Phase 1 (this branch)**: this doc + design-system v2 + **Dashboard ISP** +
-  **Customer 360 + lifecycle + isolir/aktivasi**.
-- **Phase 2**: Billing (cycle/due/late-fee/proration) + Payments + AR.
-- **Phase 3**: Provisioning (PPPoE/IP/RADIUS+Mikrotik mock) + Network (ONU/OLT/
-  redaman, GenieACS actions mock).
-- **Phase 4**: Work Order/technician + Reseller/loket + Inventory + WhatsApp
-  notifications (mock).
+- ✅ **Phase 1**: this doc + design-system v2 + **Dashboard ISP** + **Customer
+  360 + lifecycle + isolir/aktivasi**.
+- ✅ **Phase 2**: Billing (late fee) + Payments + AR/piutang.
+- ✅ **Phase 3**: Provisioning + Network (ONU/redaman, GenieACS reboot/WiFi
+  mock) + Mikrotik/RADIUS routers.
+- ✅ **Phase 4**: Work Order/technician + Reseller/loket + Inventory + WhatsApp
+  reminder (mock).
 
 ## 6. Out of scope / unverified
 

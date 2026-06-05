@@ -249,6 +249,51 @@ const REPORTS_SUMMARY = {
   churnRate: 0.021,
 }
 
+const WORKORDER_TYPE = ['install', 'repair', 'dismantle'] as const
+const WORKORDER_STATUS = ['scheduled', 'in_progress', 'done', 'cancelled'] as const
+const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko', null] as const
+const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
+  const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
+  return {
+    id: oid('a5a5a5a5', i),
+    code: `WO-${String(3001 + i)}`,
+    type: WORKORDER_TYPE[i % WORKORDER_TYPE.length] ?? 'install',
+    customerName: customer?.fullName ?? 'Pelanggan A0',
+    technician: TECHNICIANS[i % TECHNICIANS.length] ?? null,
+    scheduledAt: iso(2026, 5, 6 + (i % 5)),
+    status: WORKORDER_STATUS[i % WORKORDER_STATUS.length] ?? 'scheduled',
+    createdAt: iso(2026, 5, 3),
+  }
+})
+
+const RESELLER_STATUS = ['active', 'active', 'inactive'] as const
+const RESELLER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
+  id: oid('a3a3a3a3', i),
+  name:
+    i % 2 === 0
+      ? `Loket ${AREA_NAMES[i % AREA_NAMES.length]}`
+      : `Agen ${AREA_NAMES[i % AREA_NAMES.length]}`,
+  area: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+  balance: 500_000 + i * 250_000,
+  commissionPct: 0.05 + (i % 3) * 0.02,
+  customerCount: 12 + i * 7,
+  status: RESELLER_STATUS[i % RESELLER_STATUS.length] ?? 'active',
+}))
+
+const INVENTORY_KIND = ['onu', 'router', 'mikrotik'] as const
+const INVENTORY_STATUS = ['warehouse', 'installed', 'installed', 'broken'] as const
+const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
+  const status = INVENTORY_STATUS[i % INVENTORY_STATUS.length] ?? 'warehouse'
+  const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
+  return {
+    id: oid('a1a1a1a1', i),
+    kind: INVENTORY_KIND[i % INVENTORY_KIND.length] ?? 'onu',
+    serial: `SN-${String(500000 + i * 137)}`,
+    status,
+    assignedTo: status === 'installed' ? (customer?.fullName ?? 'Pelanggan A0') : null,
+  }
+})
+
 const filterByStatus = <T extends { status: string }>(items: T[], status: string | null) =>
   status ? items.filter((item) => item.status === status) : items
 
@@ -402,6 +447,14 @@ export const handlers = [
     await request.json() // { ssid, password } — accepted, not persisted in mock
     return HttpResponse.json(found)
   }),
+  http.post('*/api/customers/:id/notify/whatsapp', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
 
   // Invoices
   http.get('*/api/invoices', ({ request }) => {
@@ -480,6 +533,28 @@ export const handlers = [
       total: ROUTER_FIXTURES.length,
     }),
   ),
+
+  // Work orders
+  http.get('*/api/work-orders', ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status')
+    const items = filterByStatus(WORKORDER_FIXTURES, status)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+
+  // Resellers
+  http.get('*/api/resellers', () =>
+    HttpResponse.json({
+      items: RESELLER_FIXTURES,
+      total: RESELLER_FIXTURES.length,
+    }),
+  ),
+
+  // Inventory
+  http.get('*/api/inventory', ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status')
+    const items = filterByStatus(INVENTORY_FIXTURES, status)
+    return HttpResponse.json({ items, total: items.length })
+  }),
 
   // Tickets
   http.get('*/api/tickets', ({ request }) => {

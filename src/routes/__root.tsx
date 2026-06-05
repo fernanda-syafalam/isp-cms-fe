@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import {
   BarChart3Icon,
+  BoxesIcon,
   Building2Icon,
   LayoutDashboardIcon,
   LifeBuoyIcon,
@@ -12,8 +13,10 @@ import {
   RouterIcon,
   ServerIcon,
   ShieldCheckIcon,
+  StoreIcon,
   UsersIcon,
   WalletIcon,
+  WrenchIcon,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -62,6 +65,14 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
       { to: '/payments', label: 'Pembayaran', icon: WalletIcon },
       { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
+      { to: '/resellers', label: 'Reseller', icon: StoreIcon },
+    ],
+  },
+  {
+    label: 'Lapangan',
+    items: [
+      { to: '/work-orders', label: 'Work Order', icon: WrenchIcon },
+      { to: '/inventory', label: 'Inventaris', icon: BoxesIcon },
     ],
   },
   {

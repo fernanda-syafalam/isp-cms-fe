@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, PlugZapIcon, PowerOffIcon } from 'lucide-react'
+import { ArrowLeftIcon, MessageCircleIcon, PlugZapIcon, PowerOffIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -11,7 +11,12 @@ import { statusLabel } from '@/lib/status-label'
 import type { Connection, Customer, CustomerStatus } from '@/schemas/customer'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
-import { useActivateCustomer, useCustomer, useIsolateCustomer } from '../hooks/useCustomers'
+import {
+  useActivateCustomer,
+  useCustomer,
+  useIsolateCustomer,
+  useNotifyWhatsapp,
+} from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { OnuActions } from './OnuActions'
 
@@ -78,6 +83,7 @@ export function CustomerDetailPage({ customerId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
+            <WhatsappButton customerId={customer.id} />
             <CustomerActions customer={customer} />
           </div>
         }
@@ -124,6 +130,16 @@ function CustomerActions({ customer }: { customer: Customer }) {
     )
   }
   return null
+}
+
+function WhatsappButton({ customerId }: { customerId: string }) {
+  const notify = useNotifyWhatsapp(customerId)
+  return (
+    <Button variant="outline" size="sm" disabled={notify.isPending} onClick={() => notify.mutate()}>
+      <MessageCircleIcon className="size-4" />
+      Ingatkan (WA)
+    </Button>
+  )
 }
 
 function ProfileCard({ customer }: { customer: Customer }) {

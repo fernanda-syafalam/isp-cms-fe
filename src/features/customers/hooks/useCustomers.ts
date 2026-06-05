@@ -8,6 +8,7 @@ import {
   getCustomer,
   isolateCustomer,
   listCustomers,
+  notifyWhatsapp,
   rebootOnu,
   setOnuWifi,
 } from '@/api/customers'
@@ -81,6 +82,14 @@ export function useSetOnuWifi(id: string) {
   return useMutation({
     mutationFn: (input: SetWifiInput) => setOnuWifi(id, input),
     onSuccess: () => toast.success('Pengaturan WiFi ONU diperbarui'),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useNotifyWhatsapp(id: string) {
+  return useMutation({
+    mutationFn: () => notifyWhatsapp(id),
+    onSuccess: () => toast.success('Pengingat WhatsApp terkirim'),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
