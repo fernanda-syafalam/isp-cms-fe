@@ -1,6 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
-import { LogOutIcon, UserIcon } from 'lucide-react'
+import { LogOutIcon, RotateCcwIcon, UserIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
+import { resetMockData } from '@/api/dev'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -14,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 import { useCurrentUser, useLogout } from '../hooks/useAuth'
-import { useEffectiveRole } from '../hooks/useRole'
+import { useCan, useEffectiveRole } from '../hooks/useRole'
 import { useRoleStore } from '../store/roleStore'
 
 export function UserMenu() {
@@ -23,12 +25,19 @@ export function UserMenu() {
   const navigate = useNavigate()
   const effectiveRole = useEffectiveRole()
   const setOverride = useRoleStore((s) => s.setOverride)
+  const canReset = useCan('data.reset')
 
   if (!user) return null
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync()
     await navigate({ to: '/login' })
+  }
+
+  const handleReset = async () => {
+    await resetMockData()
+    toast.success('Data demo direset')
+    window.location.reload()
   }
 
   return (
@@ -60,6 +69,12 @@ export function UserMenu() {
           <DropdownMenuRadioItem value="staff">Staf</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
+        {canReset ? (
+          <DropdownMenuItem onSelect={handleReset}>
+            <RotateCcwIcon />
+            Reset data demo
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem onSelect={handleLogout} disabled={logoutMutation.isPending}>
           <LogOutIcon />
           Keluar
