@@ -8,7 +8,7 @@ import {
   YAxis,
 } from 'recharts'
 
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatCurrencyCompact } from '@/lib/format'
 
 type Point = {
   month: string
@@ -40,8 +40,8 @@ export function RevenueChart({ data }: Props) {
           tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
           tickLine={false}
           axisLine={false}
-          width={72}
-          tickFormatter={(value: number) => formatCurrency(value)}
+          width={56}
+          tickFormatter={(value: number) => formatCurrencyCompact(value)}
         />
         <Tooltip
           formatter={(value) => [formatCurrency(Number(value)), 'Pendapatan']}
@@ -58,6 +58,8 @@ export function RevenueChart({ data }: Props) {
           stroke="var(--color-chart-1)"
           strokeWidth={2}
           fill="url(#revenueFill)"
+          dot={false}
+          activeDot={{ r: 4, strokeWidth: 0 }}
         />
       </AreaChart>
     </ResponsiveContainer>

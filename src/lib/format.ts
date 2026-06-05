@@ -11,6 +11,13 @@ const idrFormatter = new Intl.NumberFormat(LOCALE, {
 
 const numberFormatter = new Intl.NumberFormat(LOCALE)
 
+const idrCompactFormatter = new Intl.NumberFormat(LOCALE, {
+  style: 'currency',
+  currency: 'IDR',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
 const dateFormatter = new Intl.DateTimeFormat(LOCALE, {
   dateStyle: 'medium',
 })
@@ -28,6 +35,11 @@ export function formatCurrency(amount: number): string {
 /** Format a plain number with id-ID grouping, e.g. `1.250`. */
 export function formatNumber(value: number): string {
   return numberFormatter.format(value)
+}
+
+/** Compact rupiah for axes/labels, e.g. `Rp62 jt`. */
+export function formatCurrencyCompact(amount: number): string {
+  return idrCompactFormatter.format(amount)
 }
 
 /** Format an ISO date string (or Date) as a medium id-ID date. */

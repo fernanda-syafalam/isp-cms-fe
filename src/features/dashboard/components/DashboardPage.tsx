@@ -42,6 +42,7 @@ export function DashboardPage() {
               hint={`+${formatNumber(summary.newThisMonth)} bulan ini`}
               hintTone={summary.newThisMonth >= 0 ? 'positive' : 'negative'}
               icon={UsersIcon}
+              series={summary.subscriberTrend}
             />
             <KpiCard
               label="Terisolir"
@@ -49,6 +50,7 @@ export function DashboardPage() {
               hint="pelanggan diisolir"
               hintTone="negative"
               icon={PowerOffIcon}
+              series={summary.isolatedTrend}
             />
             <KpiCard
               label="MRR"
@@ -66,6 +68,7 @@ export function DashboardPage() {
               hint={`${formatNumber(summary.overdueCount)} tagihan telat`}
               hintTone="negative"
               icon={TriangleAlertIcon}
+              series={summary.arTrend}
             />
           </>
         ) : null}
