@@ -449,6 +449,14 @@ const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =
   })),
 )
 
+// Isolir integration: disable/enable a customer's PPPoE secrets by name.
+function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
+  if (!name) return
+  for (const s of MIKROTIK_SECRET_FIXTURES) {
+    if (s.customerName === name) s.disabled = disabled
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -746,6 +754,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -758,6 +767,7 @@ export const handlers = [
     }
     found.status = 'aktif'
     found.outstanding = 0
+    setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -884,6 +894,7 @@ export const handlers = [
       if (c.status === 'aktif' && due !== undefined) {
         c.status = 'isolir'
         c.outstanding = due
+        setSecretsDisabledByCustomer(c.fullName, true)
         isolated++
       }
     }
