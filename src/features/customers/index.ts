@@ -3,6 +3,7 @@ export { CustomerDetailPage } from './components/CustomerDetailPage'
 export { OnboardingWizard } from './components/OnboardingWizard'
 export {
   useActivateCustomer,
+  useBulkCustomerStatus,
   useCustomer,
   useCustomersList,
   useCreateCustomer,

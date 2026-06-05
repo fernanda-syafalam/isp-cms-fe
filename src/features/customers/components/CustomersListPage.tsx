@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, UserPlusIcon } from 'lucide-react'
+import { DownloadIcon, PlugZapIcon, PowerOffIcon, UserPlusIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -23,7 +23,7 @@ import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CreateCustomerDialog } from './CreateCustomerDialog'
 import { CustomerRowActions } from './CustomerRowActions'
-import { useCustomersList } from '../hooks/useCustomers'
+import { useBulkCustomerStatus, useCustomersList } from '../hooks/useCustomers'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   prospek: 'neutral',
@@ -56,6 +56,8 @@ const toCsvRow = (c: Customer) => ({
 export function CustomersListPage() {
   const [status, setStatus] = useState<string>('all')
   const canManage = useCan('customers.manage')
+  const canNetwork = useCan('network.manage')
+  const bulkStatus = useBulkCustomerStatus()
   const { data, isLoading, isError } = useCustomersList({
     status: status === 'all' ? undefined : status,
   })
@@ -164,17 +166,57 @@ export function CustomersListPage() {
             {canManage ? <CreateCustomerDialog /> : null}
           </>
         }
-        bulkActions={(selected) => (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={() => downloadCsv('pelanggan-terpilih', selected.map(toCsvRow))}
-          >
-            <DownloadIcon className="size-4" />
-            Export terpilih
-          </Button>
-        )}
+        bulkActions={(selected) => {
+          const toIsolate = selected.filter((c) => c.status === 'aktif')
+          const toActivate = selected.filter((c) => c.status === 'isolir')
+          return (
+            <>
+              {canNetwork && toIsolate.length > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-destructive"
+                  disabled={bulkStatus.isPending}
+                  onClick={() =>
+                    bulkStatus.mutate({
+                      ids: toIsolate.map((c) => c.id),
+                      action: 'isolate',
+                    })
+                  }
+                >
+                  <PowerOffIcon className="size-4" />
+                  Isolir ({toIsolate.length})
+                </Button>
+              ) : null}
+              {canNetwork && toActivate.length > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={bulkStatus.isPending}
+                  onClick={() =>
+                    bulkStatus.mutate({
+                      ids: toActivate.map((c) => c.id),
+                      action: 'activate',
+                    })
+                  }
+                >
+                  <PlugZapIcon className="size-4" />
+                  Aktifkan ({toActivate.length})
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => downloadCsv('pelanggan-terpilih', selected.map(toCsvRow))}
+              >
+                <DownloadIcon className="size-4" />
+                Export terpilih
+              </Button>
+            </>
+          )
+        }}
       />
     </div>
   )
