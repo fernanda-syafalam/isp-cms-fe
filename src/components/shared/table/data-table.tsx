@@ -10,7 +10,7 @@ import {
   type VisibilityState,
   useReactTable,
 } from '@tanstack/react-table'
-import { InboxIcon, SearchIcon } from 'lucide-react'
+import { InboxIcon, SearchIcon, TriangleAlertIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 
 import { Checkbox } from '@/components/ui/checkbox'
@@ -185,12 +185,11 @@ export function DataTable<T>({
               : null}
             {!isLoading && isError ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell
-                  colSpan={headerColSpan}
-                  className="py-10 text-center text-destructive"
-                  role="alert"
-                >
-                  {errorMessage}
+                <TableCell colSpan={headerColSpan} className="py-12 text-center" role="alert">
+                  <div className="flex flex-col items-center gap-2 text-destructive">
+                    <TriangleAlertIcon className="size-6" />
+                    <span className="text-sm">{errorMessage}</span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : null}
