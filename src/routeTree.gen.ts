@@ -31,6 +31,7 @@ import { Route as AuthNetworkDevicesRouteImport } from './routes/_auth.network.d
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
 import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth.customers.$customerId'
+import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
 import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -144,6 +145,12 @@ const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   path: '/$customerId',
   getParentRoute: () => AuthCustomersRoute,
 } as any)
+const AuthNetworkRoutersRouterIdRoute =
+  AuthNetworkRoutersRouterIdRouteImport.update({
+    id: '/$routerId',
+    path: '/$routerId',
+    getParentRoute: () => AuthNetworkRoutersRoute,
+  } as any)
 const AuthNetworkDevicesDeviceIdRoute =
   AuthNetworkDevicesDeviceIdRouteImport.update({
     id: '/$deviceId',
@@ -169,11 +176,12 @@ export interface FileRoutesByFullPath {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/network/routers': typeof AuthNetworkRoutersRoute
+  '/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
+  '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -191,11 +199,12 @@ export interface FileRoutesByTo {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/network/routers': typeof AuthNetworkRoutersRoute
+  '/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
+  '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,11 +226,12 @@ export interface FileRoutesById {
   '/_auth/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/_auth/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/_auth/network/routers': typeof AuthNetworkRoutersRoute
+  '/_auth/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
+  '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/invoices/'
     | '/network/devices/$deviceId'
+    | '/network/routers/$routerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/invoices'
     | '/network/devices/$deviceId'
+    | '/network/routers/$routerId'
   id:
     | '__root__'
     | '/_auth'
@@ -295,6 +307,7 @@ export interface FileRouteTypes {
     | '/_auth/customers/'
     | '/_auth/invoices/'
     | '/_auth/network/devices/$deviceId'
+    | '/_auth/network/routers/$routerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -458,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthCustomersRoute
     }
+    '/_auth/network/routers/$routerId': {
+      id: '/_auth/network/routers/$routerId'
+      path: '/$routerId'
+      fullPath: '/network/routers/$routerId'
+      preLoaderRoute: typeof AuthNetworkRoutersRouterIdRouteImport
+      parentRoute: typeof AuthNetworkRoutersRoute
+    }
     '/_auth/network/devices/$deviceId': {
       id: '/_auth/network/devices/$deviceId'
       path: '/$deviceId'
@@ -509,6 +529,17 @@ const AuthNetworkDevicesRouteChildren: AuthNetworkDevicesRouteChildren = {
 const AuthNetworkDevicesRouteWithChildren =
   AuthNetworkDevicesRoute._addFileChildren(AuthNetworkDevicesRouteChildren)
 
+interface AuthNetworkRoutersRouteChildren {
+  AuthNetworkRoutersRouterIdRoute: typeof AuthNetworkRoutersRouterIdRoute
+}
+
+const AuthNetworkRoutersRouteChildren: AuthNetworkRoutersRouteChildren = {
+  AuthNetworkRoutersRouterIdRoute: AuthNetworkRoutersRouterIdRoute,
+}
+
+const AuthNetworkRoutersRouteWithChildren =
+  AuthNetworkRoutersRoute._addFileChildren(AuthNetworkRoutersRouteChildren)
+
 interface AuthRouteChildren {
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
@@ -523,7 +554,7 @@ interface AuthRouteChildren {
   AuthWorkOrdersRoute: typeof AuthWorkOrdersRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthNetworkDevicesRoute: typeof AuthNetworkDevicesRouteWithChildren
-  AuthNetworkRoutersRoute: typeof AuthNetworkRoutersRoute
+  AuthNetworkRoutersRoute: typeof AuthNetworkRoutersRouteWithChildren
   AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
 }
 
@@ -541,7 +572,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthWorkOrdersRoute: AuthWorkOrdersRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthNetworkDevicesRoute: AuthNetworkDevicesRouteWithChildren,
-  AuthNetworkRoutersRoute: AuthNetworkRoutersRoute,
+  AuthNetworkRoutersRoute: AuthNetworkRoutersRouteWithChildren,
   AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
 }
 
