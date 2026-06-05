@@ -720,6 +720,51 @@ export const handlers = [
     const items = filterByStatus(WORKORDER_FIXTURES, status)
     return HttpResponse.json({ items, total: items.length })
   }),
+  // Complete a WO; an install also activates + provisions + invoices the customer.
+  http.post('*/api/work-orders/:id/complete', ({ params }) => {
+    const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
+    if (!wo) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    wo.status = 'done'
+    if (wo.type === 'install') {
+      const customer = CUSTOMER_FIXTURES.find((c) => c.fullName === wo.customerName)
+      if (customer) {
+        const seq = CUSTOMER_FIXTURES.indexOf(customer)
+        customer.status = 'aktif'
+        customer.connection = {
+          type: 'gpon',
+          pppoeUsername: customer.customerNo.toLowerCase().replace('-', ''),
+          profile: customer.planName,
+          ipAddress: `100.64.${100 + (seq % 150)}.2`,
+          onuSerial: `ZTEG${String(20000000 + seq)}`,
+          olt: 'OLT-1',
+          ponPort: `0/${seq % 8}/${seq % 16}`,
+          rxPower: -20 - (seq % 6),
+        }
+        const plan = PLAN_FIXTURES.find((p) => p.name === customer.planName)
+        const now = new Date()
+        const due = new Date(now.getTime() + 10 * 86_400_000)
+        INVOICE_FIXTURES.unshift({
+          id: crypto.randomUUID(),
+          invoiceNo: `INV-${now.getFullYear()}-${9000 + INVOICE_FIXTURES.length}`,
+          customerId: customer.id,
+          customerName: customer.fullName,
+          periodStart: now.toISOString().slice(0, 10),
+          periodEnd: due.toISOString().slice(0, 10),
+          amount: plan?.priceMonthly ?? 200_000,
+          lateFee: 0,
+          status: 'pending',
+          dueDate: due.toISOString().slice(0, 10),
+          paidAt: null,
+        })
+      }
+    }
+    persistDb()
+    return HttpResponse.json(wo)
+  }),
 
   // Resellers
   http.get('*/api/resellers', () =>

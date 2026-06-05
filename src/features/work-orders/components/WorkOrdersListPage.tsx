@@ -20,6 +20,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { WorkOrder, WorkOrderStatus } from '@/schemas/workorder'
 
 import { useWorkOrdersList } from '../hooks/useWorkOrders'
+import { WorkOrderRowActions } from './WorkOrderRowActions'
 
 const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
   scheduled: 'info',
@@ -86,6 +87,12 @@ export function WorkOrdersListPage() {
             label={statusLabel(row.original.status)}
           />
         ),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <WorkOrderRowActions workOrder={row.original} />,
       },
     ],
     [],
