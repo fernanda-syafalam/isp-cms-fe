@@ -1,9 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { DownloadIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { DataTable } from '@/components/shared/data-table'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { DataTable } from '@/components/shared/table/data-table'
+import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -11,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { downloadCsv } from '@/lib/csv'
 import { statusLabel } from '@/lib/status-label'
 import type { InventoryItem, InventoryStatus } from '@/schemas/inventory'
 
@@ -24,6 +28,13 @@ const STATUS_TONE: Record<InventoryStatus, StatusTone> = {
 
 const STATUS_OPTIONS = ['all', 'warehouse', 'installed', 'broken'] as const
 
+const toCsvRow = (i: InventoryItem) => ({
+  Serial: i.serial,
+  Jenis: i.kind.toUpperCase(),
+  'Terpasang di': i.assignedTo ?? '—',
+  Status: statusLabel(i.status),
+})
+
 export function InventoryListPage() {
   const [status, setStatus] = useState('all')
   const { data, isLoading, isError } = useInventoryList({
@@ -34,22 +45,26 @@ export function InventoryListPage() {
     () => [
       {
         accessorKey: 'serial',
-        header: 'Serial',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Serial" />,
+        meta: { title: 'Serial' },
         cell: ({ row }) => <span className="font-mono text-sm">{row.original.serial}</span>,
       },
       {
         accessorKey: 'kind',
         header: 'Jenis',
+        meta: { title: 'Jenis' },
         cell: ({ row }) => <span className="uppercase">{row.original.kind}</span>,
       },
       {
         accessorKey: 'assignedTo',
         header: 'Terpasang di',
+        meta: { title: 'Terpasang di' },
         cell: ({ row }) => row.original.assignedTo ?? '—',
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        meta: { title: 'Status' },
         cell: ({ row }) => (
           <StatusBadge
             tone={STATUS_TONE[row.original.status]}
@@ -64,27 +79,40 @@ export function InventoryListPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Inventaris" description="Stok perangkat ONU, router, dan Mikrotik." />
-      <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="sm:w-44" aria-label="Filter status">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s === 'all' ? 'Semua status' : statusLabel(s)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DataTable
-          columns={columns}
-          data={data?.items}
-          isLoading={isLoading}
-          isError={isError}
-          emptyMessage="Belum ada perangkat di inventaris."
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage="Belum ada perangkat di inventaris."
+        searchPlaceholder="Cari serial / pelanggan…"
+        toolbar={
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s === 'all' ? 'Semua status' : statusLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!data?.items.length}
+            onClick={() => downloadCsv('inventaris', (data?.items ?? []).map(toCsvRow))}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+        }
+      />
     </div>
   )
 }
