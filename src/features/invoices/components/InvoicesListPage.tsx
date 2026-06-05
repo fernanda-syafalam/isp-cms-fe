@@ -1,12 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ReceiptTextIcon, TriangleAlertIcon, WalletIcon } from 'lucide-react'
+import { DownloadIcon, ReceiptTextIcon, TriangleAlertIcon, WalletIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { DataTable } from '@/components/shared/data-table'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { DataTable } from '@/components/shared/table/data-table'
+import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
@@ -15,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { downloadCsv } from '@/lib/csv'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
@@ -31,6 +34,14 @@ const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
 const STATUS_OPTIONS = ['all', 'paid', 'pending', 'overdue', 'draft'] as const
 
 const invoiceTotal = (inv: Invoice) => inv.amount + inv.lateFee
+
+const toCsvRow = (inv: Invoice) => ({
+  'No. Tagihan': inv.invoiceNo,
+  Pelanggan: inv.customerName,
+  Jumlah: formatCurrency(invoiceTotal(inv)),
+  'Jatuh tempo': formatDate(inv.dueDate),
+  Status: statusLabel(inv.status),
+})
 
 export function InvoicesListPage() {
   const [status, setStatus] = useState('all')
@@ -55,7 +66,8 @@ export function InvoicesListPage() {
     () => [
       {
         accessorKey: 'invoiceNo',
-        header: 'No. Tagihan',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="No. Tagihan" />,
+        meta: { title: 'No. Tagihan' },
         cell: ({ row }) => (
           <Link
             to="/invoices/$invoiceId"
@@ -66,11 +78,15 @@ export function InvoicesListPage() {
           </Link>
         ),
       },
-      { accessorKey: 'customerName', header: 'Pelanggan' },
+      {
+        accessorKey: 'customerName',
+        header: 'Pelanggan',
+        meta: { title: 'Pelanggan' },
+      },
       {
         accessorKey: 'amount',
-        header: 'Jumlah',
-        meta: { align: 'right' },
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
+        meta: { title: 'Jumlah', align: 'right' },
         cell: ({ row }) => (
           <span className="font-mono tabular-nums">
             {formatCurrency(invoiceTotal(row.original))}
@@ -79,12 +95,14 @@ export function InvoicesListPage() {
       },
       {
         accessorKey: 'dueDate',
-        header: 'Jatuh tempo',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Jatuh tempo" />,
+        meta: { title: 'Jatuh tempo' },
         cell: ({ row }) => formatDate(row.original.dueDate),
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        meta: { title: 'Status' },
         cell: ({ row }) => (
           <StatusBadge
             tone={STATUS_TONE[row.original.status]}
@@ -135,27 +153,40 @@ export function InvoicesListPage() {
         )}
       </div>
 
-      <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="sm:w-44" aria-label="Filter status">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s === 'all' ? 'Semua status' : statusLabel(s)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DataTable
-          columns={columns}
-          data={data?.items}
-          isLoading={isLoading}
-          isError={isError}
-          emptyMessage="Belum ada tagihan."
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage="Belum ada tagihan."
+        searchPlaceholder="Cari tagihan…"
+        toolbar={
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s === 'all' ? 'Semua status' : statusLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!data?.items.length}
+            onClick={() => downloadCsv('tagihan', (data?.items ?? []).map(toCsvRow))}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+        }
+      />
     </div>
   )
 }
