@@ -22,7 +22,14 @@ export const DeviceListSchema = z.object({
   total: z.number().int().nonnegative(),
 })
 
+export const UpdateDeviceSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
+  ipAddress: z.string().min(1, 'IP wajib diisi').max(60).optional(),
+  areaName: z.string().min(1, 'Area wajib diisi').max(120).optional(),
+})
+
 export type DeviceType = z.infer<typeof DeviceTypeSchema>
 export type DeviceStatus = z.infer<typeof DeviceStatusSchema>
 export type Device = z.infer<typeof DeviceSchema>
+export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>
 export type DeviceList = z.infer<typeof DeviceListSchema>

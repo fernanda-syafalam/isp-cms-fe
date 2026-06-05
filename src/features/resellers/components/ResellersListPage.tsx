@@ -13,6 +13,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Reseller, ResellerStatus } from '@/schemas/reseller'
 
 import { useResellersList } from '../hooks/useResellers'
+import { ResellerRowActions } from './ResellerRowActions'
 
 const STATUS_TONE: Record<ResellerStatus, StatusTone> = {
   active: 'success',
@@ -76,6 +77,12 @@ export function ResellersListPage() {
             label={statusLabel(row.original.status)}
           />
         ),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <ResellerRowActions reseller={row.original} />,
       },
     ],
     [],

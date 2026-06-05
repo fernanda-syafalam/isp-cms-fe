@@ -19,6 +19,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { InventoryItem, InventoryStatus } from '@/schemas/inventory'
 
 import { useInventoryList } from '../hooks/useInventory'
+import { InventoryRowActions } from './InventoryRowActions'
 
 const STATUS_TONE: Record<InventoryStatus, StatusTone> = {
   warehouse: 'info',
@@ -71,6 +72,12 @@ export function InventoryListPage() {
             label={statusLabel(row.original.status)}
           />
         ),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <InventoryRowActions item={row.original} />,
       },
     ],
     [],

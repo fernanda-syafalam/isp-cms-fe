@@ -1,2 +1,2 @@
 export { ResellersListPage } from './components/ResellersListPage'
-export { useResellersList } from './hooks/useResellers'
+export { useResellersList, useUpdateReseller } from './hooks/useResellers'

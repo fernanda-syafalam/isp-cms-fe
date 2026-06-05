@@ -21,6 +21,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Device, DeviceStatus } from '@/schemas/device'
 
 import { useDevicesList } from '../hooks/useDevices'
+import { DeviceRowActions } from './DeviceRowActions'
 
 const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
   online: 'success',
@@ -127,6 +128,12 @@ export function DevicesListPage() {
             label={statusLabel(row.original.status)}
           />
         ),
+      },
+      {
+        id: 'actions',
+        meta: { align: 'right' },
+        enableHiding: false,
+        cell: ({ row }) => <DeviceRowActions device={row.original} />,
       },
     ],
     [],
