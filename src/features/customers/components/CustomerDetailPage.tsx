@@ -6,10 +6,12 @@ import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Connection, Customer, CustomerStatus } from '@/schemas/customer'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
+import type { Ticket, TicketStatus } from '@/schemas/ticket'
 
 import {
   useActivateCustomer,
@@ -18,6 +20,7 @@ import {
   useNotifyWhatsapp,
 } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
+import { useCustomerTickets } from '../hooks/useCustomerTickets'
 import { OnuActions } from './OnuActions'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
@@ -50,6 +53,7 @@ type Props = {
 export function CustomerDetailPage({ customerId }: Props) {
   const { data: customer, isLoading, isError } = useCustomer(customerId)
   const { data: invoices } = useCustomerInvoices(customerId)
+  const { data: tickets } = useCustomerTickets(customer?.fullName)
 
   if (isLoading) {
     return (
@@ -89,17 +93,66 @@ export function CustomerDetailPage({ customerId }: Props) {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <Tabs defaultValue="ringkasan">
+        <TabsList>
+          <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+          <TabsTrigger value="koneksi">Koneksi</TabsTrigger>
+          <TabsTrigger value="tagihan">Tagihan</TabsTrigger>
+          <TabsTrigger value="tiket">Tiket</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ringkasan">
+          <div className="grid gap-4 md:grid-cols-2">
+            <ProfileCard customer={customer} />
+            <SubscriptionCard customer={customer} />
+          </div>
+        </TabsContent>
+        <TabsContent value="koneksi">
           <ConnectionCard customerId={customer.id} connection={customer.connection} />
+        </TabsContent>
+        <TabsContent value="tagihan">
           <InvoicesCard invoices={invoices} />
-        </div>
-        <div className="space-y-4">
-          <ProfileCard customer={customer} />
-          <SubscriptionCard customer={customer} />
-        </div>
-      </div>
+        </TabsContent>
+        <TabsContent value="tiket">
+          <TicketsCard tickets={tickets} />
+        </TabsContent>
+      </Tabs>
     </div>
+  )
+}
+
+const TICKET_TONE: Record<TicketStatus, StatusTone> = {
+  open: 'warning',
+  in_progress: 'info',
+  resolved: 'success',
+  breached: 'danger',
+}
+
+function TicketsCard({ tickets }: { tickets: Ticket[] | undefined }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Tiket terkait</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!tickets ? (
+          <Skeleton className="h-20 w-full" />
+        ) : tickets.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground text-sm">Belum ada tiket.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {tickets.map((ticket) => (
+              <li key={ticket.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{ticket.subject}</p>
+                  <p className="font-mono text-muted-foreground text-xs">{ticket.code}</p>
+                </div>
+                <StatusBadge tone={TICKET_TONE[ticket.status]} label={statusLabel(ticket.status)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
