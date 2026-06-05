@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -33,6 +34,7 @@ const toCsvRow = (u: AppUser) => ({
 
 export function UsersListPage() {
   const [role, setRole] = useState('all')
+  const canManage = useCan('staff.manage')
   const { data, isLoading, isError } = useUsersList({ limit: 100 })
 
   const items = useMemo(
@@ -106,7 +108,7 @@ export function UsersListPage() {
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
-            <CreateUserDialog />
+            {canManage ? <CreateUserDialog /> : null}
           </>
         }
       />
