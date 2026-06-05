@@ -32,7 +32,7 @@ const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
 const TYPE_OPTIONS = ['all', 'olt', 'onu', 'mikrotik'] as const
 const STATUS_OPTIONS = ['all', 'online', 'degraded', 'offline'] as const
 
-const routeApi = getRouteApi('/_auth/network/devices')
+const routeApi = getRouteApi('/_auth/network/devices/')
 
 // GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
 function rxTone(dbm: number): StatusTone {

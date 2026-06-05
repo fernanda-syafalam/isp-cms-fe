@@ -26,11 +26,11 @@ import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
 import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
-import { Route as AuthNetworkRoutersRouteImport } from './routes/_auth.network.routers'
-import { Route as AuthNetworkDevicesRouteImport } from './routes/_auth.network.devices'
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
 import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth.customers.$customerId'
+import { Route as AuthNetworkRoutersIndexRouteImport } from './routes/_auth.network.routers.index'
+import { Route as AuthNetworkDevicesIndexRouteImport } from './routes/_auth.network.devices.index'
 import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
 import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
 
@@ -120,16 +120,6 @@ const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.network.topology.lazy').then((d) => d.Route),
 )
-const AuthNetworkRoutersRoute = AuthNetworkRoutersRouteImport.update({
-  id: '/network/routers',
-  path: '/network/routers',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthNetworkDevicesRoute = AuthNetworkDevicesRouteImport.update({
-  id: '/network/devices',
-  path: '/network/devices',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
   id: '/$invoiceId',
   path: '/$invoiceId',
@@ -145,17 +135,27 @@ const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   path: '/$customerId',
   getParentRoute: () => AuthCustomersRoute,
 } as any)
+const AuthNetworkRoutersIndexRoute = AuthNetworkRoutersIndexRouteImport.update({
+  id: '/network/routers/',
+  path: '/network/routers/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthNetworkDevicesIndexRoute = AuthNetworkDevicesIndexRouteImport.update({
+  id: '/network/devices/',
+  path: '/network/devices/',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthNetworkRoutersRouterIdRoute =
   AuthNetworkRoutersRouterIdRouteImport.update({
-    id: '/$routerId',
-    path: '/$routerId',
-    getParentRoute: () => AuthNetworkRoutersRoute,
+    id: '/network/routers/$routerId',
+    path: '/network/routers/$routerId',
+    getParentRoute: () => AuthRoute,
   } as any)
 const AuthNetworkDevicesDeviceIdRoute =
   AuthNetworkDevicesDeviceIdRouteImport.update({
-    id: '/$deviceId',
-    path: '/$deviceId',
-    getParentRoute: () => AuthNetworkDevicesRoute,
+    id: '/network/devices/$deviceId',
+    path: '/network/devices/$deviceId',
+    getParentRoute: () => AuthRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -175,13 +175,13 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
-  '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
+  '/network/devices/': typeof AuthNetworkDevicesIndexRoute
+  '/network/routers/': typeof AuthNetworkRoutersIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -198,13 +198,13 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
-  '/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
+  '/network/devices': typeof AuthNetworkDevicesIndexRoute
+  '/network/routers': typeof AuthNetworkRoutersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -225,13 +225,13 @@ export interface FileRoutesById {
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/_auth/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
-  '/_auth/network/devices': typeof AuthNetworkDevicesRouteWithChildren
-  '/_auth/network/routers': typeof AuthNetworkRoutersRouteWithChildren
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
+  '/_auth/network/devices/': typeof AuthNetworkDevicesIndexRoute
+  '/_auth/network/routers/': typeof AuthNetworkRoutersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,13 +252,13 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
-    | '/network/devices'
-    | '/network/routers'
     | '/network/topology'
     | '/customers/'
     | '/invoices/'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
+    | '/network/devices/'
+    | '/network/routers/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -275,13 +275,13 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
-    | '/network/devices'
-    | '/network/routers'
     | '/network/topology'
     | '/customers'
     | '/invoices'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
+    | '/network/devices'
+    | '/network/routers'
   id:
     | '__root__'
     | '/_auth'
@@ -301,13 +301,13 @@ export interface FileRouteTypes {
     | '/_auth/customers/$customerId'
     | '/_auth/customers/onboarding'
     | '/_auth/invoices/$invoiceId'
-    | '/_auth/network/devices'
-    | '/_auth/network/routers'
     | '/_auth/network/topology'
     | '/_auth/customers/'
     | '/_auth/invoices/'
     | '/_auth/network/devices/$deviceId'
     | '/_auth/network/routers/$routerId'
+    | '/_auth/network/devices/'
+    | '/_auth/network/routers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -436,20 +436,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNetworkTopologyRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/network/routers': {
-      id: '/_auth/network/routers'
-      path: '/network/routers'
-      fullPath: '/network/routers'
-      preLoaderRoute: typeof AuthNetworkRoutersRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/devices': {
-      id: '/_auth/network/devices'
-      path: '/network/devices'
-      fullPath: '/network/devices'
-      preLoaderRoute: typeof AuthNetworkDevicesRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/invoices/$invoiceId': {
       id: '/_auth/invoices/$invoiceId'
       path: '/$invoiceId'
@@ -471,19 +457,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthCustomersRoute
     }
+    '/_auth/network/routers/': {
+      id: '/_auth/network/routers/'
+      path: '/network/routers'
+      fullPath: '/network/routers/'
+      preLoaderRoute: typeof AuthNetworkRoutersIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/network/devices/': {
+      id: '/_auth/network/devices/'
+      path: '/network/devices'
+      fullPath: '/network/devices/'
+      preLoaderRoute: typeof AuthNetworkDevicesIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/network/routers/$routerId': {
       id: '/_auth/network/routers/$routerId'
-      path: '/$routerId'
+      path: '/network/routers/$routerId'
       fullPath: '/network/routers/$routerId'
       preLoaderRoute: typeof AuthNetworkRoutersRouterIdRouteImport
-      parentRoute: typeof AuthNetworkRoutersRoute
+      parentRoute: typeof AuthRoute
     }
     '/_auth/network/devices/$deviceId': {
       id: '/_auth/network/devices/$deviceId'
-      path: '/$deviceId'
+      path: '/network/devices/$deviceId'
       fullPath: '/network/devices/$deviceId'
       preLoaderRoute: typeof AuthNetworkDevicesDeviceIdRouteImport
-      parentRoute: typeof AuthNetworkDevicesRoute
+      parentRoute: typeof AuthRoute
     }
   }
 }
@@ -518,28 +518,6 @@ const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
   AuthInvoicesRouteChildren,
 )
 
-interface AuthNetworkDevicesRouteChildren {
-  AuthNetworkDevicesDeviceIdRoute: typeof AuthNetworkDevicesDeviceIdRoute
-}
-
-const AuthNetworkDevicesRouteChildren: AuthNetworkDevicesRouteChildren = {
-  AuthNetworkDevicesDeviceIdRoute: AuthNetworkDevicesDeviceIdRoute,
-}
-
-const AuthNetworkDevicesRouteWithChildren =
-  AuthNetworkDevicesRoute._addFileChildren(AuthNetworkDevicesRouteChildren)
-
-interface AuthNetworkRoutersRouteChildren {
-  AuthNetworkRoutersRouterIdRoute: typeof AuthNetworkRoutersRouterIdRoute
-}
-
-const AuthNetworkRoutersRouteChildren: AuthNetworkRoutersRouteChildren = {
-  AuthNetworkRoutersRouterIdRoute: AuthNetworkRoutersRouterIdRoute,
-}
-
-const AuthNetworkRoutersRouteWithChildren =
-  AuthNetworkRoutersRoute._addFileChildren(AuthNetworkRoutersRouteChildren)
-
 interface AuthRouteChildren {
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
@@ -553,9 +531,11 @@ interface AuthRouteChildren {
   AuthTicketsRoute: typeof AuthTicketsRoute
   AuthWorkOrdersRoute: typeof AuthWorkOrdersRoute
   AuthIndexRoute: typeof AuthIndexRoute
-  AuthNetworkDevicesRoute: typeof AuthNetworkDevicesRouteWithChildren
-  AuthNetworkRoutersRoute: typeof AuthNetworkRoutersRouteWithChildren
   AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
+  AuthNetworkDevicesDeviceIdRoute: typeof AuthNetworkDevicesDeviceIdRoute
+  AuthNetworkRoutersRouterIdRoute: typeof AuthNetworkRoutersRouterIdRoute
+  AuthNetworkDevicesIndexRoute: typeof AuthNetworkDevicesIndexRoute
+  AuthNetworkRoutersIndexRoute: typeof AuthNetworkRoutersIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -571,9 +551,11 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthTicketsRoute: AuthTicketsRoute,
   AuthWorkOrdersRoute: AuthWorkOrdersRoute,
   AuthIndexRoute: AuthIndexRoute,
-  AuthNetworkDevicesRoute: AuthNetworkDevicesRouteWithChildren,
-  AuthNetworkRoutersRoute: AuthNetworkRoutersRouteWithChildren,
   AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
+  AuthNetworkDevicesDeviceIdRoute: AuthNetworkDevicesDeviceIdRoute,
+  AuthNetworkRoutersRouterIdRoute: AuthNetworkRoutersRouterIdRoute,
+  AuthNetworkDevicesIndexRoute: AuthNetworkDevicesIndexRoute,
+  AuthNetworkRoutersIndexRoute: AuthNetworkRoutersIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
