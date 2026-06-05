@@ -236,6 +236,9 @@ const DASHBOARD_SUMMARY = {
     { label: 'Diproses', count: 5 },
     { label: 'Selesai', count: 31 },
   ],
+  subscriberTrend: [1180, 1205, 1221, 1248, 1262, 1284],
+  isolatedTrend: [52, 48, 44, 41, 39, 37],
+  arTrend: [12_400_000, 14_100_000, 13_500_000, 16_800_000, 17_900_000, 18_900_000],
 }
 
 const REPORTS_SUMMARY = {

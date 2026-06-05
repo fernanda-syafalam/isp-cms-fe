@@ -24,6 +24,10 @@ export const DashboardSummarySchema = z.object({
   devicesTotal: z.number().int().nonnegative(),
   revenueTrend: z.array(MonthRevenueSchema),
   ticketsByStatus: z.array(StatusCountSchema),
+  // Short trend series powering KPI sparklines.
+  subscriberTrend: z.array(z.number()),
+  isolatedTrend: z.array(z.number()),
+  arTrend: z.array(z.number()),
 })
 
 const MonthMovementSchema = z.object({
