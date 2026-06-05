@@ -3,6 +3,7 @@ import { MoonIcon, SearchIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import {
   CommandDialog,
   CommandEmpty,
@@ -39,18 +40,19 @@ export function CommandMenu() {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={() => setOpen(true)}
-        className="flex h-9 items-center gap-2 rounded-md border border-border bg-muted/40 px-3 text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground"
+        className="text-muted-foreground sm:w-56 sm:justify-start sm:pr-2"
         aria-label="Buka pencarian perintah"
       >
         <SearchIcon className="size-4" />
         <span className="hidden sm:inline">Cari…</span>
-        <kbd className="ml-2 hidden rounded border border-border bg-background px-1.5 font-mono text-[10px] text-muted-foreground sm:inline">
+        <kbd className="ml-auto hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] sm:inline">
           ⌘K
         </kbd>
-      </button>
+      </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Cari menu atau jalankan aksi…" />
