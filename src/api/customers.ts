@@ -1,5 +1,6 @@
 import { api } from './client'
 import {
+  type ChangePlanInput,
   type CreateCustomerInput,
   type Customer,
   CustomerListSchema,
@@ -39,6 +40,12 @@ export async function updateCustomer(id: string, input: CreateCustomerInput): Pr
 // Soft-delete: move the subscriber to the "berhenti" (churned) lifecycle state.
 export async function stopCustomer(id: string): Promise<Customer> {
   const json = await api.post(`customers/${id}/stop`).json()
+  return CustomerSchema.parse(json)
+}
+
+// Change plan (mock prorates the difference into a new invoice + updates profile).
+export async function changeCustomerPlan(id: string, input: ChangePlanInput): Promise<Customer> {
+  const json = await api.post(`customers/${id}/change-plan`, { json: input }).json()
   return CustomerSchema.parse(json)
 }
 

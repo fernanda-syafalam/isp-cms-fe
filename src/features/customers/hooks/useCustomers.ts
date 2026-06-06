@@ -6,6 +6,7 @@ import {
   activateCustomer,
   createCustomer,
   getCustomer,
+  changeCustomerPlan,
   isolateCustomer,
   listCustomers,
   notifyWhatsapp,
@@ -15,7 +16,12 @@ import {
   updateCustomer,
 } from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
-import type { Customer, CreateCustomerInput, SetWifiInput } from '@/schemas/customer'
+import type {
+  ChangePlanInput,
+  Customer,
+  CreateCustomerInput,
+  SetWifiInput,
+} from '@/schemas/customer'
 
 export function useCustomersList(filter: CustomerFilter = {}) {
   return useQuery({
@@ -99,6 +105,20 @@ export function useUpdateCustomer(id: string) {
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" diperbarui`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useChangePlan(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ChangePlanInput) => changeCustomerPlan(id, input),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      qc.invalidateQueries({ queryKey: ['invoices'] })
+      qc.invalidateQueries({ queryKey: ['analytics'] })
+      toast.success(`Paket "${customer.fullName}" diubah ke ${customer.planName}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

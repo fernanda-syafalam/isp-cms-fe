@@ -683,6 +683,51 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(found)
   }),
+  // Change plan: switch package + prorate the difference into a pending invoice.
+  http.post('*/api/customers/:id/change-plan', async ({ params, request }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as { planId: string }
+    const newPlan = PLAN_FIXTURES.find((p) => p.id === body.planId)
+    if (!newPlan) {
+      return new HttpResponse(JSON.stringify({ message: 'Plan not found' }), {
+        status: 404,
+      })
+    }
+    const oldPlan = PLAN_FIXTURES.find((p) => p.name === found.planName)
+    found.planId = newPlan.id
+    found.planName = newPlan.name
+    if (found.connection) found.connection.profile = newPlan.name
+    // Prorate the upgrade difference over the remaining days of the month.
+    const diff = newPlan.priceMonthly - (oldPlan?.priceMonthly ?? 0)
+    if (diff > 0) {
+      const now = new Date()
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+      const remaining = daysInMonth - now.getDate() + 1
+      const prorate = Math.round((diff * remaining) / daysInMonth)
+      const due = new Date(now.getTime() + 10 * 86_400_000)
+      INVOICE_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        invoiceNo: `INV-${now.getFullYear()}-ADJ${9000 + INVOICE_FIXTURES.length}`,
+        customerId: found.id,
+        customerName: found.fullName,
+        periodStart: now.toISOString().slice(0, 10),
+        periodEnd: due.toISOString().slice(0, 10),
+        amount: prorate,
+        lateFee: 0,
+        status: 'pending',
+        dueDate: due.toISOString().slice(0, 10),
+        paidAt: null,
+      })
+      found.outstanding += prorate
+    }
+    persistDb()
+    return HttpResponse.json(found)
+  }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
       fullName: string

@@ -1,4 +1,4 @@
-import { BanIcon, MoreHorizontalIcon, PencilIcon } from 'lucide-react'
+import { ArrowLeftRightIcon, BanIcon, MoreHorizontalIcon, PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -22,10 +22,12 @@ import { useCan } from '@/features/auth'
 import type { Customer } from '@/schemas/customer'
 
 import { useStopCustomer } from '../hooks/useCustomers'
+import { ChangePlanDialog } from './ChangePlanDialog'
 import { EditCustomerDialog } from './EditCustomerDialog'
 
 export function CustomerRowActions({ customer }: { customer: Customer }) {
   const [editOpen, setEditOpen] = useState(false)
+  const [planOpen, setPlanOpen] = useState(false)
   const [stopOpen, setStopOpen] = useState(false)
   const canEdit = useCan('customers.manage')
   const canDelete = useCan('records.delete')
@@ -49,6 +51,12 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
               Edit
             </DropdownMenuItem>
           ) : null}
+          {canEdit ? (
+            <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
+              <ArrowLeftRightIcon className="size-4" />
+              Ganti paket
+            </DropdownMenuItem>
+          ) : null}
           {canStop ? (
             <DropdownMenuItem
               onSelect={() => setStopOpen(true)}
@@ -63,6 +71,9 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
 
       {canEdit ? (
         <EditCustomerDialog customer={customer} open={editOpen} onOpenChange={setEditOpen} />
+      ) : null}
+      {canEdit ? (
+        <ChangePlanDialog customer={customer} open={planOpen} onOpenChange={setPlanOpen} />
       ) : null}
 
       <AlertDialog open={stopOpen} onOpenChange={setStopOpen}>

@@ -23,7 +23,7 @@ import { useCustomerComposition } from '../hooks/useCustomerComposition'
 const KPI_KEYS = ['r1', 'r2', 'r3', 'r4', 'r5'] as const
 
 export function ReportsPage() {
-  const { data: reports, isLoading, isError } = useReportsSummary()
+  const { data: reports, isError } = useReportsSummary()
   const { data: dashboard } = useDashboardSummary()
   const { data: composition } = useCustomerComposition()
 
