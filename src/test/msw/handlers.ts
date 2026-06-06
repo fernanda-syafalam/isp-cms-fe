@@ -920,6 +920,31 @@ const CONTRACT_FIXTURES = CUSTOMER_FIXTURES.filter(
   }
 })
 
+// Sales pipeline leads across stages (mock).
+const LEAD_STAGES = ['new', 'survey', 'quote', 'won', 'lost'] as const
+const LEAD_SOURCES = ['walk_in', 'referral', 'online', 'reseller'] as const
+const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
+  const plan = PLAN_FIXTURES[i % PLAN_FIXTURES.length]
+  const stage = LEAD_STAGES[i % LEAD_STAGES.length] ?? 'new'
+  return {
+    id: oid('1ead0000', i),
+    name: `Calon ${String.fromCharCode(65 + i)}`,
+    phone: `08${String(1200000000 + i * 7).slice(0, 10)}`,
+    address: `Jl. Contoh No. ${i + 1}`,
+    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+    planName: plan?.name ?? 'Home 20',
+    stage: stage as 'new' | 'survey' | 'quote' | 'won' | 'lost',
+    estValue: plan?.priceMonthly ?? 200_000,
+    source: (LEAD_SOURCES[i % LEAD_SOURCES.length] ?? 'walk_in') as
+      | 'walk_in'
+      | 'referral'
+      | 'online'
+      | 'reseller',
+    note: null as string | null,
+    createdAt: iso(2026, 4, 1 + i),
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -966,6 +991,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   odp: ODP_FIXTURES,
   acsDevices: ACS_DEVICE_FIXTURES,
   contracts: CONTRACT_FIXTURES,
+  leads: LEAD_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1337,6 +1363,79 @@ export const handlers = [
     found.meterai = true
     found.signedAt = new Date().toISOString()
     recordAudit('contract.sign', 'Kontrak', `PKS ditandatangani ${found.customerName}`)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+
+  // CRM / sales pipeline
+  http.get('*/api/leads', () =>
+    HttpResponse.json({ items: LEAD_FIXTURES, total: LEAD_FIXTURES.length }),
+  ),
+  http.post('*/api/leads', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string
+      phone: string
+      address: string
+      areaName: string
+      planName: string
+      estValue: number
+      source: 'walk_in' | 'referral' | 'online' | 'reseller'
+      note?: string
+    }
+    const lead = {
+      id: crypto.randomUUID(),
+      name: body.name,
+      phone: body.phone,
+      address: body.address,
+      areaName: body.areaName,
+      planName: body.planName,
+      stage: 'new' as 'new' | 'survey' | 'quote' | 'won' | 'lost',
+      estValue: body.estValue,
+      source: body.source,
+      note: body.note ? body.note : null,
+      createdAt: new Date().toISOString(),
+    }
+    LEAD_FIXTURES.unshift(lead)
+    persistDb()
+    return HttpResponse.json(lead, { status: 201 })
+  }),
+  http.patch('*/api/leads/:id/stage', async ({ params, request }) => {
+    const found = LEAD_FIXTURES.find((l) => l.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as {
+      stage: 'new' | 'survey' | 'quote' | 'won' | 'lost'
+    }
+    found.stage = body.stage
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // Convert a won lead into a subscriber (status "instalasi") + mark won.
+  http.post('*/api/leads/:id/convert', ({ params }) => {
+    const found = LEAD_FIXTURES.find((l) => l.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const plan = PLAN_FIXTURES.find((p) => p.name === found.planName) ?? PLAN_FIXTURES[0]
+    CUSTOMER_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      customerNo: `CUST-${9000 + CUSTOMER_FIXTURES.length}`,
+      fullName: found.name,
+      phone: found.phone,
+      email: null,
+      address: found.address,
+      areaId: oid('dddddddd', 0),
+      areaName: found.areaName,
+      planId: plan?.id ?? oid('bbbbbbbb', 1),
+      planName: plan?.name ?? 'Home 20',
+      status: 'instalasi' as const,
+      outstanding: 0,
+      npwp: null,
+      ktp: null,
+      consentAt: null,
+      resellerName: null,
+      connection: null,
+      joinedAt: new Date().toISOString(),
+    })
+    found.stage = 'won'
+    recordAudit('lead.convert', 'Prospek', `Konversi prospek ${found.name}`)
     persistDb()
     return HttpResponse.json(found)
   }),

@@ -19,6 +19,7 @@ import {
   SmartphoneIcon,
   SplitIcon,
   StoreIcon,
+  TargetIcon,
   TicketIcon,
   UsersIcon,
   WalletIcon,
@@ -48,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operasional',
     items: [
+      { to: '/leads', label: 'Prospek', icon: TargetIcon },
       { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
       { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
       { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },

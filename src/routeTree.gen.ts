@@ -23,6 +23,7 @@ import { Route as AuthPortalRouteImport } from './routes/_auth.portal'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
 import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
 import { Route as AuthNotificationsRouteImport } from './routes/_auth.notifications'
+import { Route as AuthLeadsRouteImport } from './routes/_auth.leads'
 import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
@@ -129,6 +130,11 @@ const AuthNotificationsRoute = AuthNotificationsRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.notifications.lazy').then((d) => d.Route),
 )
+const AuthLeadsRoute = AuthLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.leads.lazy').then((d) => d.Route))
 const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/customers': typeof AuthCustomersRouteWithChildren
   '/inventory': typeof AuthInventoryRouteWithChildren
   '/invoices': typeof AuthInvoicesRouteWithChildren
+  '/leads': typeof AuthLeadsRoute
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/audit': typeof AuthAuditRoute
   '/coverage': typeof AuthCoverageRoute
+  '/leads': typeof AuthLeadsRoute
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/_auth/customers': typeof AuthCustomersRouteWithChildren
   '/_auth/inventory': typeof AuthInventoryRouteWithChildren
   '/_auth/invoices': typeof AuthInvoicesRouteWithChildren
+  '/_auth/leads': typeof AuthLeadsRoute
   '/_auth/notifications': typeof AuthNotificationsRoute
   '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/inventory'
     | '/invoices'
+    | '/leads'
     | '/notifications'
     | '/payments'
     | '/plans'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/audit'
     | '/coverage'
+    | '/leads'
     | '/notifications'
     | '/payments'
     | '/plans'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/_auth/customers'
     | '/_auth/inventory'
     | '/_auth/invoices'
+    | '/_auth/leads'
     | '/_auth/notifications'
     | '/_auth/payments'
     | '/_auth/plans'
@@ -620,6 +632,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthNotificationsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/leads': {
+      id: '/_auth/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthLeadsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/invoices': {
@@ -887,6 +906,7 @@ interface AuthRouteChildren {
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
   AuthInventoryRoute: typeof AuthInventoryRouteWithChildren
   AuthInvoicesRoute: typeof AuthInvoicesRouteWithChildren
+  AuthLeadsRoute: typeof AuthLeadsRoute
   AuthNotificationsRoute: typeof AuthNotificationsRoute
   AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
@@ -916,6 +936,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCustomersRoute: AuthCustomersRouteWithChildren,
   AuthInventoryRoute: AuthInventoryRouteWithChildren,
   AuthInvoicesRoute: AuthInvoicesRouteWithChildren,
+  AuthLeadsRoute: AuthLeadsRoute,
   AuthNotificationsRoute: AuthNotificationsRoute,
   AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
