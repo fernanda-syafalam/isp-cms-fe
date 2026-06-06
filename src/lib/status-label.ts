@@ -73,6 +73,16 @@ const STATUS_LABELS: Record<string, string> = {
   // contract status (draft already mapped above)
   sent: 'Terkirim',
   signed: 'Ditandatangani',
+  // lead pipeline stage
+  new: 'Baru',
+  survey: 'Survei',
+  quote: 'Penawaran',
+  won: 'Menang',
+  lost: 'Kalah',
+  // lead source (online already mapped under device status above)
+  walk_in: 'Datang langsung',
+  referral: 'Referral',
+  reseller: 'Reseller',
 }
 
 /** Translate an API enum value to its Indonesian display label. */
