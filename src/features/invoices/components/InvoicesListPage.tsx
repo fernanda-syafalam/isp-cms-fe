@@ -1,6 +1,12 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, ReceiptTextIcon, TriangleAlertIcon, WalletIcon } from 'lucide-react'
+import {
+  BellRingIcon,
+  DownloadIcon,
+  ReceiptTextIcon,
+  TriangleAlertIcon,
+  WalletIcon,
+} from 'lucide-react'
 import { useMemo } from 'react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
@@ -17,11 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
+import { useRemindOverdue } from '../hooks/useBilling'
 import { useInvoicesList } from '../hooks/useInvoices'
 import { BillingActions } from './BillingActions'
 
@@ -42,6 +50,7 @@ const toCsvRow = (inv: Invoice) => ({
   Jumlah: formatCurrency(invoiceTotal(inv)),
   'Jatuh tempo': formatDate(inv.dueDate),
   Status: statusLabel(inv.status),
+  Pengingat: inv.lastRemindedAt ? formatDate(inv.lastRemindedAt) : '—',
 })
 
 const routeApi = getRouteApi('/_auth/invoices/')
@@ -57,6 +66,8 @@ export function InvoicesListPage() {
   const { data, isLoading, isError } = useInvoicesList({
     status: status === 'all' ? undefined : status,
   })
+  const canRemind = useCan('billing.run')
+  const remind = useRemindOverdue()
 
   const ar = useMemo(() => {
     const items = all.data?.items ?? []
@@ -117,6 +128,19 @@ export function InvoicesListPage() {
           />
         ),
       },
+      {
+        accessorKey: 'lastRemindedAt',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Pengingat" />,
+        meta: { title: 'Pengingat' },
+        cell: ({ row }) =>
+          row.original.lastRemindedAt ? (
+            <span className="text-muted-foreground text-sm">
+              {formatDate(row.original.lastRemindedAt)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
     ],
     [],
   )
@@ -167,6 +191,24 @@ export function InvoicesListPage() {
         isError={isError}
         emptyMessage="Belum ada tagihan."
         searchPlaceholder="Cari tagihan…"
+        enableSelection={canRemind}
+        bulkActions={(selected) => {
+          const unpaid = selected.filter(
+            (inv) => inv.status === 'pending' || inv.status === 'overdue',
+          )
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={remind.isPending || unpaid.length === 0}
+              onClick={() => remind.mutate(unpaid.map((inv) => inv.id))}
+            >
+              <BellRingIcon className="size-4" />
+              Kirim pengingat ({unpaid.length})
+            </Button>
+          )
+        }}
         toolbar={
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="h-8 w-40" aria-label="Filter status">

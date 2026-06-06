@@ -16,6 +16,8 @@ export const InvoiceSchema = z.object({
   status: InvoiceStatusSchema,
   dueDate: z.iso.date(),
   paidAt: z.iso.datetime().nullable(),
+  // Last time a payment reminder (dunning) was sent for this invoice.
+  lastRemindedAt: z.iso.datetime().nullable(),
 })
 
 export const InvoiceListSchema = z.object({

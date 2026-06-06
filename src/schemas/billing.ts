@@ -12,5 +12,12 @@ export const IsolirResultSchema = z.object({
   isolated: z.number().int().nonnegative(),
 })
 
+// Result of a dunning run: how many invoices got a reminder + the channel used.
+export const RemindResultSchema = z.object({
+  reminded: z.number().int().nonnegative(),
+  channel: z.literal('whatsapp'),
+})
+
 export type BillingRunResult = z.infer<typeof BillingRunResultSchema>
 export type IsolirResult = z.infer<typeof IsolirResultSchema>
+export type RemindResult = z.infer<typeof RemindResultSchema>

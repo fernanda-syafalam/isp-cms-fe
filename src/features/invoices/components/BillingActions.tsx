@@ -1,4 +1,4 @@
-import { PlayIcon, PowerOffIcon } from 'lucide-react'
+import { BellRingIcon, PlayIcon, PowerOffIcon } from 'lucide-react'
 
 import {
   AlertDialog,
@@ -14,11 +14,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 
-import { useIsolirOverdue, useRunBilling } from '../hooks/useBilling'
+import { useIsolirOverdue, useRemindOverdue, useRunBilling } from '../hooks/useBilling'
 
 export function BillingActions() {
   const canRun = useCan('billing.run')
   const runBilling = useRunBilling()
+  const remind = useRemindOverdue()
   const isolir = useIsolirOverdue()
 
   if (!canRun) return null
@@ -43,6 +44,30 @@ export function BillingActions() {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={() => runBilling.mutate()}>Jalankan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8" disabled={remind.isPending}>
+            <BellRingIcon className="size-4" />
+            <span className="hidden sm:inline">Kirim pengingat</span>
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirim pengingat ke semua penunggak?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Mengirim pengingat pembayaran via WhatsApp ke semua pelanggan dengan tagihan jatuh
+              tempo (overdue). Gunakan ini sebelum isolir massal.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => remind.mutate(undefined)}>
+              Kirim pengingat
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
