@@ -26,14 +26,20 @@ import { useCreateSlaCredit } from '../hooks/useSlaCredits'
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  defaults?: { customerName?: string; ticketCode?: string; reason?: string }
 }
 
-export function SlaCreditFormDialog({ open, onOpenChange }: Props) {
+export function SlaCreditFormDialog({ open, onOpenChange, defaults }: Props) {
   const create = useCreateSlaCredit()
 
   const form = useForm<CreateSlaCreditInput>({
     resolver: zodResolver(CreateSlaCreditSchema),
-    defaultValues: { customerName: '', amount: 0, reason: '', ticketCode: '' },
+    defaultValues: {
+      customerName: defaults?.customerName ?? '',
+      amount: 0,
+      reason: defaults?.reason ?? '',
+      ticketCode: defaults?.ticketCode ?? '',
+    },
   })
 
   const handleSubmit = form.handleSubmit(async (values) => {

@@ -37,7 +37,8 @@ export function useConvertLead() {
     onSuccess: (lead) => {
       qc.invalidateQueries({ queryKey: ['leads'] })
       qc.invalidateQueries({ queryKey: ['customers'] })
-      toast.success(`"${lead.name}" dikonversi jadi pelanggan`)
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`"${lead.name}" dikonversi → pelanggan + WO instalasi`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

@@ -1,3 +1,4 @@
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CheckIcon, HandCoinsIcon, PlusIcon, WalletIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -22,6 +23,8 @@ import type { SlaCredit, SlaCreditStatus } from '@/schemas/slaCredit'
 import { useApplySlaCredit, useSlaCredits, useVoidSlaCredit } from '../hooks/useSlaCredits'
 import { SlaCreditFormDialog } from './SlaCreditFormDialog'
 
+const routeApi = getRouteApi('/_auth/sla-credits')
+
 const STATUS_TONE: Record<SlaCreditStatus, StatusTone> = {
   pending: 'warning',
   applied: 'success',
@@ -33,7 +36,9 @@ export function SlaCreditsPage() {
   const canManage = useCan('billing.run')
   const apply = useApplySlaCredit()
   const voidCredit = useVoidSlaCredit()
-  const [addOpen, setAddOpen] = useState(false)
+  // Deep-link prefill from a breached ticket: open the issue dialog pre-filled.
+  const { customer, ticket } = routeApi.useSearch()
+  const [addOpen, setAddOpen] = useState(Boolean(customer))
 
   const summary = useMemo(() => {
     const items = data?.items ?? []
@@ -171,7 +176,21 @@ export function SlaCreditsPage() {
         searchPlaceholder="Cari pelanggan / alasan…"
       />
 
-      {canManage ? <SlaCreditFormDialog open={addOpen} onOpenChange={setAddOpen} /> : null}
+      {canManage ? (
+        <SlaCreditFormDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          defaults={{
+            ...(customer ? { customerName: customer } : {}),
+            ...(ticket
+              ? {
+                  ticketCode: ticket,
+                  reason: `Kompensasi pelanggaran SLA tiket ${ticket}`,
+                }
+              : {}),
+          }}
+        />
+      ) : null}
     </div>
   )
 }
