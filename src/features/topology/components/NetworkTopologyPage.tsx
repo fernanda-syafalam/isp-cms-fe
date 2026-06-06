@@ -1,3 +1,4 @@
+import { getRouteApi } from '@tanstack/react-router'
 import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -23,7 +24,10 @@ import { TopologyControls } from './TopologyControls'
 import { TopologyMap } from './TopologyMap'
 import { TopologyTree } from './TopologyTree'
 
+const routeApi = getRouteApi('/_auth/network/topology')
+
 export function NetworkTopologyPage() {
+  const { focus } = routeApi.useSearch()
   const { data, isLoading, isError } = useTopology()
   const canEdit = useCan('network.manage')
   const updateNode = useUpdateNode()
@@ -34,7 +38,7 @@ export function NetworkTopologyPage() {
   const [typeFilter, setTypeFilter] = useState<'all' | NodeType>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | NodeStatus>('all')
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(focus ?? null)
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
   // Node form: { node } for edit, { latLng } for add, null when closed.
