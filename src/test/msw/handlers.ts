@@ -851,6 +851,26 @@ const MONITORING_ALERT_FIXTURES = DEVICE_FIXTURES.filter((d) => d.status !== 'on
   }),
 )
 
+// FTTH distribution points (ODP) — port capacity + optical health (mock).
+const ODP_FIXTURES = Array.from({ length: 12 }, (_, i) => {
+  const is16 = i % 3 === 0
+  const totalPorts = is16 ? 16 : 8
+  const usedPorts = Math.min(totalPorts, 2 + ((i * 5) % (totalPorts + 1)))
+  const rx = -18 - (i % 11) // -18 .. -28 dBm
+  const status = rx >= -25 ? 'healthy' : rx >= -27 ? 'warning' : 'critical'
+  const area = AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota'
+  return {
+    id: oid('0d90d900', i),
+    name: `ODP-${area.slice(0, 3).toUpperCase()}-${String(i + 1).padStart(2, '0')}`,
+    area,
+    splitter: is16 ? '1:16' : '1:8',
+    totalPorts,
+    usedPorts,
+    avgRxPowerDbm: rx,
+    status: status as 'healthy' | 'warning' | 'critical',
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -893,6 +913,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   usage: USAGE_FIXTURES,
   monitoringMetrics: MONITORING_METRIC_FIXTURES,
   monitoringAlerts: MONITORING_ALERT_FIXTURES,
+  odp: ODP_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -2435,6 +2456,11 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(ticket, { status: 201 })
   }),
+
+  // FTTH / ODP capacity
+  http.get('*/api/odp', () =>
+    HttpResponse.json({ items: ODP_FIXTURES, total: ODP_FIXTURES.length }),
+  ),
 
   // Analytics
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
