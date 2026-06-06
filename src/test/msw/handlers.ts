@@ -3030,7 +3030,45 @@ export const handlers = [
       devicesAlert: MONITORING_ALERT_FIXTURES.filter((a) => !a.acknowledged).length,
       odpFull: ODP_FIXTURES.filter((o) => o.usedPorts >= o.totalPorts).length,
     }
-    return HttpResponse.json({ ...DASHBOARD_SUMMARY, commandCenter })
+
+    // Subscriber lifecycle distribution.
+    const mixOrder: Array<[string, string]> = [
+      ['prospek', 'Prospek'],
+      ['instalasi', 'Instalasi'],
+      ['aktif', 'Aktif'],
+      ['isolir', 'Isolir'],
+      ['berhenti', 'Berhenti'],
+    ]
+    const customerMix = mixOrder.map(([status, label]) => ({
+      label,
+      count: CUSTOMER_FIXTURES.filter((c) => c.status === status).length,
+    }))
+
+    // Receivable aging from unpaid invoices, bucketed by days past due.
+    const today = Date.now()
+    const aging = { future: 0, b30: 0, b60: 0, b60plus: 0 }
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status !== 'pending' && inv.status !== 'overdue') continue
+      const total = inv.amount + inv.lateFee + inv.taxAmount
+      const days = Math.floor((today - new Date(inv.dueDate).getTime()) / 86_400_000)
+      if (days <= 0) aging.future += total
+      else if (days <= 30) aging.b30 += total
+      else if (days <= 60) aging.b60 += total
+      else aging.b60plus += total
+    }
+    const arAging = [
+      { bucket: 'Belum jatuh tempo', amount: aging.future },
+      { bucket: '1–30 hari', amount: aging.b30 },
+      { bucket: '31–60 hari', amount: aging.b60 },
+      { bucket: '> 60 hari', amount: aging.b60plus },
+    ]
+
+    return HttpResponse.json({
+      ...DASHBOARD_SUMMARY,
+      commandCenter,
+      customerMix,
+      arAging,
+    })
   }),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
 
