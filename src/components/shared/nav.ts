@@ -8,7 +8,9 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   RouterIcon,
+  ScrollTextIcon,
   ServerIcon,
+  SettingsIcon,
   ShieldCheckIcon,
   StoreIcon,
   TicketIcon,
@@ -71,7 +73,11 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Admin',
-    items: [{ to: '/staff', label: 'Staf', icon: ShieldCheckIcon }],
+    items: [
+      { to: '/staff', label: 'Staf', icon: ShieldCheckIcon },
+      { to: '/audit', label: 'Log Audit', icon: ScrollTextIcon },
+      { to: '/settings', label: 'Pengaturan', icon: SettingsIcon },
+    ],
   },
 ]
 

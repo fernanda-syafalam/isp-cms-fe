@@ -594,6 +594,98 @@ function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
   }
 }
 
+// Operator settings (single record). Company profile + billing parameters.
+const SETTINGS_FIXTURE = {
+  company: {
+    name: 'Ashnet',
+    address: 'Jl. Merdeka No. 1, Jakarta',
+    phone: '0800-1-274638',
+    email: 'billing@ashnet.id',
+  },
+  billing: {
+    lateFeeIdr: 25_000,
+    dueDays: 10,
+    isolirGraceDays: 3,
+  },
+}
+
+// Audit trail. Seeded with recent history; mutations append via recordAudit().
+const AUDIT_SEED: Array<{
+  actor: string
+  action: string
+  entity: string
+  summary: string
+}> = [
+  {
+    actor: 'Admin',
+    action: 'billing.run',
+    entity: 'Tagihan',
+    summary: 'Menjalankan billing periode 2026-05',
+  },
+  {
+    actor: 'Admin',
+    action: 'billing.isolir',
+    entity: 'Pelanggan',
+    summary: 'Isolir massal 6 penunggak',
+  },
+  {
+    actor: 'Staf',
+    action: 'invoice.pay',
+    entity: 'Tagihan',
+    summary: 'Mencatat pembayaran INV-2026-103',
+  },
+  {
+    actor: 'Staf',
+    action: 'customer.create',
+    entity: 'Pelanggan',
+    summary: 'Menambah pelanggan baru',
+  },
+  {
+    actor: 'Admin',
+    action: 'voucher.batch',
+    entity: 'Voucher',
+    summary: 'Membuat 50 voucher Hotspot 1 Hari',
+  },
+  {
+    actor: 'Staf',
+    action: 'customer.relocate',
+    entity: 'Pelanggan',
+    summary: 'Mutasi alamat ke Cimahi',
+  },
+  {
+    actor: 'Admin',
+    action: 'reseller.commission',
+    entity: 'Reseller',
+    summary: 'Mencatat komisi Loket Bandung Kota',
+  },
+  {
+    actor: 'Staf',
+    action: 'inventory.assign',
+    entity: 'Inventaris',
+    summary: 'Memasang ONU SN-500137',
+  },
+]
+const AUDIT_FIXTURES = AUDIT_SEED.map((e, i) => ({
+  id: oid('a0d17000', i),
+  at: iso(2026, 4, 28 - i),
+  actor: e.actor,
+  action: e.action,
+  entity: e.entity,
+  summary: e.summary,
+}))
+
+// Append an audit entry. Callers persist via their own persistDb().
+function recordAudit(action: string, entity: string, summary: string, actor = 'Admin') {
+  AUDIT_FIXTURES.unshift({
+    id: crypto.randomUUID(),
+    at: new Date().toISOString(),
+    actor,
+    action,
+    entity,
+    summary,
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -627,6 +719,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   vouchers: VOUCHER_FIXTURES,
   resellerLedger: RESELLER_LEDGER_FIXTURES,
   stockMovements: STOCK_MOVEMENT_FIXTURES,
+  audit: AUDIT_FIXTURES,
+  settings: [SETTINGS_FIXTURE],
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -660,12 +754,24 @@ function hydrateDb() {
   }
 }
 
+// `settings` is a single object the handlers hold by reference; replaceAll
+// (hydrate/reset) swaps the array element, so re-bind SETTINGS_FIXTURE to it.
+function syncSettingsRef() {
+  const current = COLLECTIONS.settings?.[0]
+  if (current && current !== SETTINGS_FIXTURE && typeof current === 'object') {
+    Object.assign(SETTINGS_FIXTURE, current)
+  }
+  if (COLLECTIONS.settings) COLLECTIONS.settings[0] = SETTINGS_FIXTURE
+}
+
 export function resetMockDb() {
   replaceAll(clone(SEED))
+  syncSettingsRef()
   persistDb()
 }
 
 hydrateDb()
+syncSettingsRef()
 
 // ---------------------------------------------------------------------------
 // Handlers — base path is `*/api/*` (dev worker + node tests both use /api).
@@ -812,6 +918,7 @@ export const handlers = [
       })
     }
     found.status = 'berhenti'
+    recordAudit('customer.stop', 'Pelanggan', `Memberhentikan ${found.fullName}`)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -1086,6 +1193,7 @@ export const handlers = [
         setSecretsDisabledByCustomer(customer.fullName, false)
       }
     }
+    recordAudit('invoice.pay', 'Tagihan', `Mencatat pembayaran ${found.invoiceNo}`)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -1121,6 +1229,7 @@ export const handlers = [
       })
       created++
     }
+    recordAudit('billing.run', 'Tagihan', `Billing ${period}: ${created} tagihan dibuat`)
     persistDb()
     return HttpResponse.json({ period, created })
   }),
@@ -1151,6 +1260,7 @@ export const handlers = [
         isolated++
       }
     }
+    recordAudit('billing.isolir', 'Pelanggan', `Isolir massal ${isolated} penunggak`)
     persistDb()
     return HttpResponse.json({ markedOverdue, isolated })
   }),
@@ -1583,6 +1693,7 @@ export const handlers = [
         usedBy: null,
       })
     }
+    recordAudit('voucher.batch', 'Voucher', `Membuat ${count} voucher ${body.profile}`)
     persistDb()
     return HttpResponse.json({ batchId, created: count })
   }),
@@ -1924,4 +2035,23 @@ export const handlers = [
     persistDb()
     return new HttpResponse(null, { status: 204 })
   }),
+
+  // Settings (single record)
+  http.get('*/api/settings', () => HttpResponse.json(SETTINGS_FIXTURE)),
+  http.patch('*/api/settings', async ({ request }) => {
+    const body = (await request.json()) as {
+      company?: typeof SETTINGS_FIXTURE.company
+      billing?: typeof SETTINGS_FIXTURE.billing
+    }
+    if (body.company) SETTINGS_FIXTURE.company = body.company
+    if (body.billing) SETTINGS_FIXTURE.billing = body.billing
+    recordAudit('settings.update', 'Pengaturan', 'Memperbarui pengaturan aplikasi')
+    persistDb()
+    return HttpResponse.json(SETTINGS_FIXTURE)
+  }),
+
+  // Audit log (newest first)
+  http.get('*/api/audit', () =>
+    HttpResponse.json({ items: AUDIT_FIXTURES, total: AUDIT_FIXTURES.length }),
+  ),
 ]
