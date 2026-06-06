@@ -17,9 +17,11 @@ export function useCompleteWorkOrder() {
     mutationFn: (id: string) => completeWorkOrder(id),
     onSuccess: (wo) => {
       qc.invalidateQueries({ queryKey: ['work-orders'] })
-      // An install completion activates + provisions + invoices the customer.
+      // An install completion activates + provisions + invoices the customer,
+      // and turns its topology node green (up).
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['invoices'] })
+      qc.invalidateQueries({ queryKey: ['topology'] })
       toast.success(
         wo.type === 'install'
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`

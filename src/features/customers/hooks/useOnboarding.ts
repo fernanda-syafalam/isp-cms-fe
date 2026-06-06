@@ -12,7 +12,8 @@ export function useOnboardCustomer() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['work-orders'] })
-      toast.success('Pelanggan di-onboard & instalasi dijadwalkan')
+      qc.invalidateQueries({ queryKey: ['topology'] })
+      toast.success('Pelanggan di-onboard, instalasi dijadwalkan & muncul di topologi')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
