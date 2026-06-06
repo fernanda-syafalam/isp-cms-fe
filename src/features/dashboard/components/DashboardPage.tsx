@@ -220,6 +220,33 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Komposisi pelanggan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {summary ? (
+              <CustomerMix mix={summary.customerMix} />
+            ) : (
+              <Skeleton className="h-24 w-full" />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Umur piutang (AR aging)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {summary ? (
+              <ArAging data={summary.arAging} />
+            ) : (
+              <Skeleton className="h-[220px] w-full" />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Tiket per status</CardTitle>
@@ -280,6 +307,79 @@ export function DashboardPage() {
         <UpcomingInstallsCard workOrders={upcomingInstalls} />
       </div>
     </div>
+  )
+}
+
+const MIX_COLOR: Record<string, string> = {
+  Prospek: 'bg-slate-400',
+  Instalasi: 'bg-blue-500',
+  Aktif: 'bg-green-500',
+  Isolir: 'bg-red-500',
+  Berhenti: 'bg-zinc-500',
+}
+
+function CustomerMix({ mix }: { mix: Array<{ label: string; count: number }> }) {
+  const total = mix.reduce((s, m) => s + m.count, 0) || 1
+  return (
+    <div className="space-y-3">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-muted">
+        {mix.map((m) =>
+          m.count > 0 ? (
+            <div
+              key={m.label}
+              className={MIX_COLOR[m.label] ?? 'bg-primary'}
+              style={{ width: `${(m.count / total) * 100}%` }}
+            />
+          ) : null,
+        )}
+      </div>
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
+        {mix.map((m) => (
+          <li key={m.label} className="flex items-center gap-2">
+            <span
+              className={`size-2.5 shrink-0 rounded-full ${MIX_COLOR[m.label] ?? 'bg-primary'}`}
+            />
+            <span className="text-muted-foreground">{m.label}</span>
+            <span className="ml-auto font-mono tabular-nums">{formatNumber(m.count)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ArAging({ data }: { data: Array<{ bucket: string; amount: number }> }) {
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+        <XAxis
+          dataKey="bucket"
+          interval={0}
+          tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          width={48}
+          tickFormatter={(v: number) => `${Math.round(v / 1000)}rb`}
+          tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+        />
+        <Tooltip
+          formatter={(v) => formatCurrency(Number(v))}
+          cursor={{ fill: 'var(--color-muted)' }}
+          contentStyle={{
+            background: 'var(--color-popover)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 8,
+            color: 'var(--color-popover-foreground)',
+          }}
+        />
+        <Bar dataKey="amount" name="Piutang" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 

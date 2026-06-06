@@ -37,6 +37,15 @@ export const DashboardSummarySchema = z.object({
     devicesAlert: z.number().int().nonnegative(), // alert NOC belum ditangani
     odpFull: z.number().int().nonnegative(), // ODP tanpa slot kosong
   }),
+  // Subscriber distribution by lifecycle status (operational mix).
+  customerMix: z.array(StatusCountSchema),
+  // Receivable aging buckets (finance health).
+  arAging: z.array(
+    z.object({
+      bucket: z.string(),
+      amount: z.number().int().nonnegative(),
+    }),
+  ),
 })
 
 const MonthMovementSchema = z.object({
