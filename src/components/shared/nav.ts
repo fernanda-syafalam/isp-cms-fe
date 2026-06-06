@@ -127,8 +127,18 @@ const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
     '/network/acs',
     '/network/monitoring',
   ],
-  mitra: ['/resellers', '/customers', '/leads'],
+  // A partner only manages their own storefront (its detail lists their
+  // customers + ledger); they don't get the org-wide customer/lead lists.
+  mitra: ['/resellers'],
   customer: ['/portal'],
+}
+
+// Whether a role may visit a path (admin/staff: everything). Used by the route
+// guard so deep-links/bookmarks respect the same allowlist as the sidebar.
+export function isRouteAllowed(role: Role, pathname: string): boolean {
+  const allow = ROLE_ROUTES[role]
+  if (!allow) return true
+  return allow.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
 // Where each restricted role lands instead of the ops dashboard. admin/staff

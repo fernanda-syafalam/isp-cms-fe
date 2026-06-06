@@ -9,7 +9,7 @@ import { Reveal } from '@/components/shared/reveal'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { UserMenu, useIsAuthenticated } from '@/features/auth'
+import { UserMenu, useEffectiveRole, useIsAuthenticated } from '@/features/auth'
 import { BranchScopeSwitcher } from '@/features/branches'
 
 type RouterContext = {
@@ -22,7 +22,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   const isAuthed = useIsAuthenticated()
+  const role = useEffectiveRole()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // Branch scope is an org-wide ops control — only admin/staff.
+  const canScopeBranch = role === 'admin' || role === 'staff'
 
   // Move focus to the main region on route change so screen-reader + keyboard
   // users land on the new page's content. #main-content only exists when authed,
@@ -58,7 +61,7 @@ function RootLayout() {
           <Separator orientation="vertical" className="mr-1 h-4" />
           <Breadcrumbs />
           <div className="ml-auto flex items-center gap-2">
-            <BranchScopeSwitcher />
+            {canScopeBranch ? <BranchScopeSwitcher /> : null}
             <CommandMenu />
             <ThemeToggle />
             <UserMenu />
