@@ -28,6 +28,15 @@ export const DashboardSummarySchema = z.object({
   subscriberTrend: z.array(z.number()),
   isolatedTrend: z.array(z.number()),
   arTrend: z.array(z.number()),
+  // Cross-module rollup surfaced as the dashboard "command center".
+  commandCenter: z.object({
+    pipelineValue: z.number().int().nonnegative(), // nilai prospek aktif (IDR)
+    activeLeads: z.number().int().nonnegative(),
+    churnRate: z.number().min(0).max(1),
+    slaCreditsPending: z.number().int().nonnegative(),
+    devicesAlert: z.number().int().nonnegative(), // alert NOC belum ditangani
+    odpFull: z.number().int().nonnegative(), // ODP tanpa slot kosong
+  }),
 })
 
 const MonthMovementSchema = z.object({
