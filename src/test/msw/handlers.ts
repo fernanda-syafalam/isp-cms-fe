@@ -436,6 +436,7 @@ const TOPOLOGY_FIXTURES = (() => {
     parentId: string | null
   }
   const nodes: TopoNode[] = []
+  const poles: Array<{ id: string; lat: number; lng: number }> = []
   const center = { lat: -6.5514, lng: 110.6811 } // Kota Jepara, Jawa Tengah;
   const STATUS_CYCLE: TopoNode['status'][] = ['up', 'up', 'up', 'up', 'down', 'unknown', 'up', 'up']
   let k = 0
@@ -490,21 +491,35 @@ const TOPOLOGY_FIXTURES = (() => {
           lng: pLng,
           parentId: odpId,
         })
-        for (let u = 0; u < 2; u++) {
-          const custId = `${poleId}-cust-${u + 1}`
-          nodes.push({
-            id: custId,
-            name: `Pelanggan ${String.fromCharCode(65 + (k % 26))}${k}`,
-            type: 'customer',
-            status: STATUS_CYCLE[k++ % STATUS_CYCLE.length] ?? 'up',
-            lat: pLat + (u - 0.5) * 0.003,
-            lng: pLng + (u - 0.5) * 0.004,
-            parentId: poleId,
-          })
-        }
+        poles.push({ id: poleId, lat: pLat, lng: pLng })
       }
     }
   }
+
+  // Attach REAL subscribers as customer nodes (id `${customerId}-node`) so the
+  // map mirrors the customer base and customer→topology deep-links resolve.
+  // Status follows lifecycle: aktif→up, isolir/berhenti→down, instalasi→unknown.
+  const CUST_STATUS: Record<string, TopoNode['status']> = {
+    aktif: 'up',
+    isolir: 'down',
+    berhenti: 'down',
+    instalasi: 'unknown',
+    prospek: 'unknown',
+  }
+  const subscribers = CUSTOMER_FIXTURES.filter((c) => c.status !== 'prospek')
+  subscribers.forEach((c, i) => {
+    const pole = poles[i % poles.length]
+    if (!pole) return
+    nodes.push({
+      id: `${c.id}-node`,
+      name: c.fullName,
+      type: 'customer',
+      status: CUST_STATUS[c.status] ?? 'unknown',
+      lat: pole.lat + ((i % 3) - 1) * 0.0016,
+      lng: pole.lng + ((((i / 3) | 0) % 3) - 1) * 0.0018,
+      parentId: pole.id,
+    })
+  })
   return nodes
 })()
 
@@ -1053,7 +1068,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v6'
+const DB_KEY = 'isp-cms-mock-db-v7'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
