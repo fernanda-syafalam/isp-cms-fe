@@ -1,0 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
+
+// Route stub only — component is code-split into _auth.security.lazy.tsx.
+export const Route = createFileRoute('/_auth/security')({})

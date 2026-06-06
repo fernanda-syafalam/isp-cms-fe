@@ -18,6 +18,7 @@ import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthSlaCreditsRouteImport } from './routes/_auth.sla-credits'
 import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
+import { Route as AuthSecurityRouteImport } from './routes/_auth.security'
 import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
@@ -106,6 +107,13 @@ const AuthSettingsRoute = AuthSettingsRouteImport.update({
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
   import('./routes/_auth.settings.lazy').then((d) => d.Route),
+)
+const AuthSecurityRoute = AuthSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.security.lazy').then((d) => d.Route),
 )
 const AuthSatisfactionRoute = AuthSatisfactionRouteImport.update({
   id: '/satisfaction',
@@ -331,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRouteWithChildren
   '/satisfaction': typeof AuthSatisfactionRoute
+  '/security': typeof AuthSecurityRoute
   '/settings': typeof AuthSettingsRoute
   '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
@@ -372,6 +381,7 @@ export interface FileRoutesByTo {
   '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
   '/satisfaction': typeof AuthSatisfactionRoute
+  '/security': typeof AuthSecurityRoute
   '/settings': typeof AuthSettingsRoute
   '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
@@ -419,6 +429,7 @@ export interface FileRoutesById {
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
   '/_auth/satisfaction': typeof AuthSatisfactionRoute
+  '/_auth/security': typeof AuthSecurityRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_auth/sla-credits': typeof AuthSlaCreditsRoute
   '/_auth/staff': typeof AuthStaffRoute
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/resellers'
     | '/satisfaction'
+    | '/security'
     | '/settings'
     | '/sla-credits'
     | '/staff'
@@ -509,6 +521,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/reports'
     | '/satisfaction'
+    | '/security'
     | '/settings'
     | '/sla-credits'
     | '/staff'
@@ -555,6 +568,7 @@ export interface FileRouteTypes {
     | '/_auth/reports'
     | '/_auth/resellers'
     | '/_auth/satisfaction'
+    | '/_auth/security'
     | '/_auth/settings'
     | '/_auth/sla-credits'
     | '/_auth/staff'
@@ -653,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthSettingsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/security': {
+      id: '/_auth/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AuthSecurityRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/satisfaction': {
@@ -1000,6 +1021,7 @@ interface AuthRouteChildren {
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
   AuthSatisfactionRoute: typeof AuthSatisfactionRoute
+  AuthSecurityRoute: typeof AuthSecurityRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
   AuthSlaCreditsRoute: typeof AuthSlaCreditsRoute
   AuthStaffRoute: typeof AuthStaffRoute
@@ -1034,6 +1056,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRouteWithChildren,
   AuthSatisfactionRoute: AuthSatisfactionRoute,
+  AuthSecurityRoute: AuthSecurityRoute,
   AuthSettingsRoute: AuthSettingsRoute,
   AuthSlaCreditsRoute: AuthSlaCreditsRoute,
   AuthStaffRoute: AuthStaffRoute,
