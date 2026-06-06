@@ -134,7 +134,7 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     email: i % 3 === 0 ? null : `pelanggan${i}@example.com`,
     address: `Jl. Pemuda No. ${i + 1}, Jepara`,
     areaId: oid('dddddddd', i % AREA_NAMES.length),
-    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara',
     planId: plan?.id ?? oid('bbbbbbbb', 1),
     planName: plan?.name ?? 'Home 20',
     status,
@@ -223,7 +223,7 @@ const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     status: DEVICE_STATUS[i % DEVICE_STATUS.length] ?? 'online',
     uptimeHours: 120 + i * 37,
     rxPower: type === 'onu' ? -19 - (i % 8) : null, // -19 .. -26 dBm
-    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara',
     lastSeenAt: iso(2026, 5, 5),
   }
 })
@@ -233,7 +233,7 @@ const ROUTER_MODELS = ['RB5009', 'CCR2004', 'RB4011', 'hAP ax3'] as const
 const ROUTER_VERSIONS = ['7.15.3', '7.14.2', '7.13.5', '6.49.13'] as const
 const ROUTER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
   id: oid('a7a7a7a7', i),
-  name: `MIKROTIK-${AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota'}`,
+  name: `MIKROTIK-${AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara'}`,
   address: `10.20.${i}.1`,
   apiPort: 8728,
   username: 'api',
@@ -433,7 +433,7 @@ const STOCK_MOVEMENT_FIXTURES = INVENTORY_FIXTURES.flatMap((item, i) => {
 const filterByStatus = <T extends { status: string }>(items: T[], status: string | null) =>
   status ? items.filter((item) => item.status === status) : items
 
-// Network topology: OLT → ODC → ODP → Tiang → Pelanggan, around Bandung.
+// Network topology: OLT → ODC → ODP → Tiang → Pelanggan, around Jepara.
 // Read-only mock dataset (ADR-0004); edges are derived from parentId.
 const TOPOLOGY_FIXTURES = (() => {
   type TopoNode = {
@@ -747,13 +747,13 @@ const AUDIT_SEED: Array<{
     actor: 'Staf',
     action: 'customer.relocate',
     entity: 'Pelanggan',
-    summary: 'Mutasi alamat ke Cimahi',
+    summary: 'Mutasi alamat ke Pecangaan',
   },
   {
     actor: 'Admin',
     action: 'reseller.commission',
     entity: 'Reseller',
-    summary: 'Mencatat komisi Loket Bandung Kota',
+    summary: 'Mencatat komisi Loket Andi',
   },
   {
     actor: 'Staf',
@@ -918,7 +918,7 @@ const ODP_FIXTURES = Array.from({ length: 12 }, (_, i) => {
   const usedPorts = Math.min(totalPorts, 2 + ((i * 5) % (totalPorts + 1)))
   const rx = -18 - (i % 11) // -18 .. -28 dBm
   const status = rx >= -25 ? 'healthy' : rx >= -27 ? 'warning' : 'critical'
-  const area = AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota'
+  const area = AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara'
   return {
     id: oid('0d90d900', i),
     name: `ODP-${area.slice(0, 3).toUpperCase()}-${String(i + 1).padStart(2, '0')}`,
@@ -978,7 +978,7 @@ const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
     name: `Calon ${String.fromCharCode(65 + i)}`,
     phone: `08${String(1200000000 + i * 7).slice(0, 10)}`,
     address: `Jl. Pahlawan No. ${i + 1}, Jepara`,
-    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
+    areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara',
     planName: plan?.name ?? 'Home 20',
     stage: stage as 'new' | 'survey' | 'quote' | 'won' | 'lost',
     estValue: plan?.priceMonthly ?? 200_000,
@@ -1008,10 +1008,10 @@ const SLA_CREDIT_FIXTURES = TICKET_FIXTURES.filter((t) => t.status === 'breached
 const BRANCH_FIXTURES = [
   {
     id: oid('b4a0c000', 0),
-    name: 'Cabang Bandung',
-    city: 'Bandung',
+    name: 'Kantor Pusat Jepara',
+    city: 'Jepara',
     manager: 'Andi Wijaya',
-    phone: '022-1234567',
+    phone: '0291-591234',
     status: 'active' as 'active' | 'inactive',
     isHeadOffice: true,
     customerCount: 320,
@@ -1020,10 +1020,10 @@ const BRANCH_FIXTURES = [
   },
   {
     id: oid('b4a0c000', 1),
-    name: 'Cabang Cimahi',
-    city: 'Cimahi',
+    name: 'Cabang Pecangaan',
+    city: 'Pecangaan',
     manager: 'Budi Hartono',
-    phone: '022-7654321',
+    phone: '0291-755221',
     status: 'active' as 'active' | 'inactive',
     isHeadOffice: false,
     customerCount: 145,
@@ -1032,10 +1032,10 @@ const BRANCH_FIXTURES = [
   },
   {
     id: oid('b4a0c000', 2),
-    name: 'Cabang Garut',
-    city: 'Garut',
+    name: 'Cabang Bangsri',
+    city: 'Bangsri',
     manager: 'Citra Lestari',
-    phone: '0262-998877',
+    phone: '0291-771188',
     status: 'active' as 'active' | 'inactive',
     isHeadOffice: false,
     customerCount: 88,
@@ -1078,7 +1078,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v8'
+const DB_KEY = 'isp-cms-mock-db-v9'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1717,7 +1717,7 @@ export const handlers = [
       email: body.email === '' ? null : body.email,
       address: body.address,
       areaId: oid('dddddddd', 0),
-      areaName: AREA_NAMES[0] ?? 'Bandung Kota',
+      areaName: AREA_NAMES[0] ?? 'Jepara',
       planId: plan?.id ?? oid('bbbbbbbb', 1),
       planName: plan?.name ?? 'Home 20',
       status: 'prospek' as const,
@@ -1756,7 +1756,7 @@ export const handlers = [
       email: body.email === '' ? null : body.email,
       address: body.address,
       areaId: oid('dddddddd', 0),
-      areaName: body.areaName || (AREA_NAMES[0] ?? 'Bandung Kota'),
+      areaName: body.areaName || (AREA_NAMES[0] ?? 'Jepara'),
       planId: plan?.id ?? oid('bbbbbbbb', 1),
       planName: plan?.name ?? 'Home 20',
       status: 'instalasi' as const,
