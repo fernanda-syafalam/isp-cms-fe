@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -32,6 +33,11 @@ const FormSchema = z.object({
     lateFeeIdr: z.number().int().nonnegative('Tidak boleh negatif').max(10_000_000),
     dueDays: z.number().int().positive('Minimal 1 hari').max(60),
     isolirGraceDays: z.number().int().nonnegative('Tidak boleh negatif').max(60),
+  }),
+  tax: z.object({
+    pkp: z.boolean(),
+    npwp: z.string().max(40),
+    ppnRate: z.number().nonnegative('Tidak boleh negatif').max(1),
   }),
 })
 type FormValues = z.infer<typeof FormSchema>
@@ -228,6 +234,71 @@ function SettingsForm({ initial, canManage, pending, onSave }: SettingsFormProps
                             ref={field.ref}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </section>
+
+              <Separator />
+
+              <section className="space-y-4">
+                <h3 className="font-semibold text-sm">Pajak (PPN / e-Faktur)</h3>
+                <FormField
+                  control={form.control}
+                  name="tax.pkp"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(v) => field.onChange(v === true)}
+                          disabled={!canManage}
+                          aria-label="Pengusaha Kena Pajak"
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        Penerbit adalah Pengusaha Kena Pajak (PKP) — tagihan dikenakan PPN
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="tax.npwp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NPWP penerbit</FormLabel>
+                        <FormControl>
+                          <Input disabled={!canManage} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tax.ppnRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tarif PPN efektif</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            disabled={!canManage}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormDescription>0.11 = 11% (DPP 11/12).</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -33,6 +33,7 @@ export const CustomerSchema = z.object({
   planName: z.string(),
   status: CustomerStatusSchema,
   outstanding: z.number().int().nonnegative(), // piutang (IDR)
+  npwp: z.string().nullable(), // NPWP pembeli untuk faktur pajak (PKP)
   resellerName: z.string().nullable(),
   connection: ConnectionSchema.nullable(),
   joinedAt: z.iso.datetime(),

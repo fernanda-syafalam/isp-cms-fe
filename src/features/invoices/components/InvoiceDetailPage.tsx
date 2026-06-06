@@ -15,6 +15,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
+import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 import { PaymentMethodSchema } from '@/schemas/payment'
@@ -56,7 +57,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     )
   }
 
-  const total = invoice.amount + invoice.lateFee
+  const total = invoiceTotal(invoice)
   const fields: Array<{ label: string; value: string }> = [
     { label: 'Pelanggan', value: invoice.customerName },
     {
@@ -71,6 +72,10 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     {
       label: 'Terakhir diingatkan',
       value: invoice.lastRemindedAt ? formatDateTime(invoice.lastRemindedAt) : 'Belum',
+    },
+    {
+      label: 'No. Faktur Pajak',
+      value: invoice.taxInvoiceNo ?? '—',
     },
   ]
 
@@ -107,9 +112,12 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
             ))}
           </dl>
           <div className="space-y-2 border-border border-t pt-4 text-sm">
-            <Row label="Subtotal" value={formatCurrency(invoice.amount)} />
+            <Row label="DPP (langganan)" value={formatCurrency(invoice.amount)} />
             {invoice.lateFee > 0 ? (
               <Row label="Denda keterlambatan" value={formatCurrency(invoice.lateFee)} danger />
+            ) : null}
+            {invoice.taxAmount > 0 ? (
+              <Row label="PPN" value={formatCurrency(invoice.taxAmount)} />
             ) : null}
             <div className="flex items-center justify-between pt-2">
               <span className="text-muted-foreground">Total tagihan</span>

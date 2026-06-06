@@ -125,6 +125,11 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     planName: plan?.name ?? 'Home 20',
     status,
     outstanding: status === 'isolir' ? 200_000 + (i % 3) * 150_000 : 0,
+    // Every 4th subscriber is a PKP/business account with an NPWP.
+    npwp:
+      i % 4 === 0
+        ? `0${String(10000000 + i * 7).slice(0, 8)}.${String(100 + i).slice(0, 3)}.000`
+        : null,
     resellerName: RESELLER_NAMES[i % RESELLER_NAMES.length] ?? null,
     connection,
     joinedAt: iso(2025, i % 12, 1 + (i % 27)),
@@ -132,9 +137,15 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
 })
 
 const INVOICE_STATUS = ['paid', 'paid', 'pending', 'overdue', 'paid', 'draft'] as const
+// PPN efektif 11% (mekanisme DPP 11/12). Nomor faktur pajak format 16-digit.
+const PPN_RATE = 0.11
+const ppnOf = (dpp: number) => Math.round(dpp * PPN_RATE)
+const fakturNo = (seq: number) => `010.000-26.${String(10_000_000 + seq).padStart(8, '0')}`
+
 const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
   const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
   const status = INVOICE_STATUS[i % INVOICE_STATUS.length] ?? 'pending'
+  const amount = 200_000 + (i % 4) * 150_000
   return {
     id: oid('cccccccc', i),
     invoiceNo: `INV-2026-${String(100 + i)}`,
@@ -142,8 +153,11 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
     customerName: customer?.fullName ?? 'Pelanggan A0',
     periodStart: ymd(2026, 4, 1),
     periodEnd: ymd(2026, 4, 30),
-    amount: 200_000 + (i % 4) * 150_000,
+    amount,
     lateFee: status === 'overdue' ? 25_000 : 0,
+    taxAmount: ppnOf(amount),
+    // Draft invoices have no tax invoice number yet (type stays string | null).
+    taxInvoiceNo: status === 'draft' ? null : fakturNo(i),
     status,
     dueDate: ymd(2026, 5, 10),
     paidAt: status === 'paid' ? iso(2026, 5, 3 + (i % 5)) : null,
@@ -157,7 +171,7 @@ const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid')
   id: oid('a9a9a9a9', i),
   invoiceNo: inv.invoiceNo,
   customerName: inv.customerName,
-  amount: inv.amount + inv.lateFee,
+  amount: inv.amount + inv.lateFee + inv.taxAmount,
   method: PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris',
   paidAt: inv.paidAt ?? iso(2026, 5, 5),
 }))
@@ -607,6 +621,11 @@ const SETTINGS_FIXTURE = {
     dueDays: 10,
     isolirGraceDays: 3,
   },
+  tax: {
+    pkp: true,
+    npwp: '01.234.567.8-901.000',
+    ppnRate: PPN_RATE,
+  },
 }
 
 // Audit trail. Seeded with recent history; mutations append via recordAudit().
@@ -692,8 +711,9 @@ function recordAudit(action: string, entity: string, summary: string, actor = 'A
 // ---------------------------------------------------------------------------
 // Bump the version suffix whenever a fixture's shape changes so a stale
 // localStorage snapshot from an older schema is ignored instead of failing
-// Zod validation. v2: invoices gained `lastRemindedAt` (dunning).
-const DB_KEY = 'isp-cms-mock-db-v2'
+// Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
+// gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
+const DB_KEY = 'isp-cms-mock-db-v3'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -958,6 +978,8 @@ export const handlers = [
         periodEnd: due.toISOString().slice(0, 10),
         amount: prorate,
         lateFee: 0,
+        taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(prorate) : 0,
+        taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
         status: 'pending',
         dueDate: due.toISOString().slice(0, 10),
         paidAt: null,
@@ -1037,6 +1059,7 @@ export const handlers = [
       planName: plan?.name ?? 'Home 20',
       status: 'prospek' as const,
       outstanding: 0,
+      npwp: null,
       resellerName: null,
       connection: null,
       joinedAt: new Date().toISOString(),
@@ -1071,6 +1094,7 @@ export const handlers = [
       planName: plan?.name ?? 'Home 20',
       status: 'instalasi' as const,
       outstanding: 0,
+      npwp: null,
       resellerName: null,
       connection: null,
       joinedAt: new Date().toISOString(),
@@ -1174,7 +1198,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       invoiceNo: found.invoiceNo,
       customerName: found.customerName,
-      amount: found.amount + found.lateFee,
+      amount: found.amount + found.lateFee + found.taxAmount,
       method: body.method,
       paidAt: found.paidAt,
     })
@@ -1186,7 +1210,10 @@ export const handlers = [
         (inv) =>
           inv.customerId === customer.id && (inv.status === 'pending' || inv.status === 'overdue'),
       )
-      customer.outstanding = unpaid.reduce((sum, inv) => sum + inv.amount + inv.lateFee, 0)
+      customer.outstanding = unpaid.reduce(
+        (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
+        0,
+      )
       const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
       if (customer.status === 'isolir' && !hasOverdue) {
         customer.status = 'aktif'
@@ -1213,6 +1240,7 @@ export const handlers = [
       )
       if (exists) continue
       const plan = PLAN_FIXTURES.find((p) => p.name === c.planName)
+      const dpp = plan?.priceMonthly ?? 200_000
       INVOICE_FIXTURES.unshift({
         id: crypto.randomUUID(),
         invoiceNo: `INV-${now.getFullYear()}-${9000 + INVOICE_FIXTURES.length}`,
@@ -1220,8 +1248,10 @@ export const handlers = [
         customerName: c.fullName,
         periodStart,
         periodEnd,
-        amount: plan?.priceMonthly ?? 200_000,
+        amount: dpp,
         lateFee: 0,
+        taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+        taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
         status: 'pending',
         dueDate,
         paidAt: null,
@@ -1247,7 +1277,10 @@ export const handlers = [
     const owed = new Map<string, number>()
     for (const inv of INVOICE_FIXTURES) {
       if (inv.status === 'overdue') {
-        owed.set(inv.customerId, (owed.get(inv.customerId) ?? 0) + inv.amount + inv.lateFee)
+        owed.set(
+          inv.customerId,
+          (owed.get(inv.customerId) ?? 0) + inv.amount + inv.lateFee + inv.taxAmount,
+        )
       }
     }
     let isolated = 0
@@ -1565,6 +1598,7 @@ export const handlers = [
         const plan = PLAN_FIXTURES.find((p) => p.name === customer.planName)
         const now = new Date()
         const due = new Date(now.getTime() + 10 * 86_400_000)
+        const dpp = plan?.priceMonthly ?? 200_000
         INVOICE_FIXTURES.unshift({
           id: crypto.randomUUID(),
           invoiceNo: `INV-${now.getFullYear()}-${9000 + INVOICE_FIXTURES.length}`,
@@ -1572,8 +1606,10 @@ export const handlers = [
           customerName: customer.fullName,
           periodStart: now.toISOString().slice(0, 10),
           periodEnd: due.toISOString().slice(0, 10),
-          amount: plan?.priceMonthly ?? 200_000,
+          amount: dpp,
           lateFee: 0,
+          taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+          taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
           status: 'pending',
           dueDate: due.toISOString().slice(0, 10),
           paidAt: null,
@@ -2042,9 +2078,11 @@ export const handlers = [
     const body = (await request.json()) as {
       company?: typeof SETTINGS_FIXTURE.company
       billing?: typeof SETTINGS_FIXTURE.billing
+      tax?: typeof SETTINGS_FIXTURE.tax
     }
     if (body.company) SETTINGS_FIXTURE.company = body.company
     if (body.billing) SETTINGS_FIXTURE.billing = body.billing
+    if (body.tax) SETTINGS_FIXTURE.tax = body.tax
     recordAudit('settings.update', 'Pengaturan', 'Memperbarui pengaturan aplikasi')
     persistDb()
     return HttpResponse.json(SETTINGS_FIXTURE)
