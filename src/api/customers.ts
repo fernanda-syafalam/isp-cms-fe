@@ -6,6 +6,7 @@ import {
   CustomerListSchema,
   CustomerSchema,
   type CustomerList,
+  type RelocateCustomerInput,
   type SetWifiInput,
 } from '@/schemas/customer'
 
@@ -46,6 +47,28 @@ export async function stopCustomer(id: string): Promise<Customer> {
 // Change plan (mock prorates the difference into a new invoice + updates profile).
 export async function changeCustomerPlan(id: string, input: ChangePlanInput): Promise<Customer> {
   const json = await api.post(`customers/${id}/change-plan`, { json: input }).json()
+  return CustomerSchema.parse(json)
+}
+
+// Relocation (mutasi): update the subscriber's address + service area.
+export async function relocateCustomer(
+  id: string,
+  input: RelocateCustomerInput,
+): Promise<Customer> {
+  const json = await api.post(`customers/${id}/relocate`, { json: input }).json()
+  return CustomerSchema.parse(json)
+}
+
+// Voluntary suspension at the customer's request (dormant). Distinct from the
+// non-payment isolir trigger and from churn (stop). Resume restores service
+// without clearing any outstanding balance.
+export async function suspendCustomer(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/suspend`).json()
+  return CustomerSchema.parse(json)
+}
+
+export async function resumeCustomer(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/resume`).json()
   return CustomerSchema.parse(json)
 }
 

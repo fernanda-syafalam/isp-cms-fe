@@ -11,8 +11,11 @@ import {
   listCustomers,
   notifyWhatsapp,
   rebootOnu,
+  relocateCustomer,
+  resumeCustomer,
   setOnuWifi,
   stopCustomer,
+  suspendCustomer,
   updateCustomer,
 } from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
@@ -20,6 +23,7 @@ import type {
   ChangePlanInput,
   Customer,
   CreateCustomerInput,
+  RelocateCustomerInput,
   SetWifiInput,
 } from '@/schemas/customer'
 
@@ -131,6 +135,43 @@ export function useStopCustomer() {
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" dihentikan`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useRelocateCustomer(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: RelocateCustomerInput) => relocateCustomer(id, input),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" dimutasi ke ${customer.areaName}`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Voluntary suspend (berhenti sementara) + resume, at the customer's request.
+export function useSuspendCustomer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => suspendCustomer(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" dihentikan sementara`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useResumeCustomer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => resumeCustomer(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success(`Pelanggan "${customer.fullName}" diaktifkan kembali`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

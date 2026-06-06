@@ -25,12 +25,13 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { usePlanOptions } from '@/hooks/usePlanOptions'
+import { SERVICE_AREAS } from '@/lib/areas'
 import { cn } from '@/lib/cn'
 import { OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
 
 import { useOnboardCustomer } from '../hooks/useOnboarding'
 
-const AREAS = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur']
+const AREAS = SERVICE_AREAS
 const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko']
 
 const STEPS = ['Data pelanggan', 'Paket', 'Jadwal instalasi', 'Ringkasan']

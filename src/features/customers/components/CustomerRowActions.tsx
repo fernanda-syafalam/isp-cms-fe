@@ -1,4 +1,12 @@
-import { ArrowLeftRightIcon, BanIcon, MoreHorizontalIcon, PencilIcon } from 'lucide-react'
+import {
+  ArrowLeftRightIcon,
+  BanIcon,
+  MapPinIcon,
+  MoreHorizontalIcon,
+  PauseIcon,
+  PencilIcon,
+  PlayIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -21,19 +29,26 @@ import {
 import { useCan } from '@/features/auth'
 import type { Customer } from '@/schemas/customer'
 
-import { useStopCustomer } from '../hooks/useCustomers'
+import { useResumeCustomer, useStopCustomer, useSuspendCustomer } from '../hooks/useCustomers'
 import { ChangePlanDialog } from './ChangePlanDialog'
 import { EditCustomerDialog } from './EditCustomerDialog'
+import { RelocateCustomerDialog } from './RelocateCustomerDialog'
 
 export function CustomerRowActions({ customer }: { customer: Customer }) {
   const [editOpen, setEditOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
+  const [relocateOpen, setRelocateOpen] = useState(false)
   const [stopOpen, setStopOpen] = useState(false)
   const canEdit = useCan('customers.manage')
   const canDelete = useCan('records.delete')
   const stop = useStopCustomer()
+  const suspend = useSuspendCustomer()
+  const resume = useResumeCustomer()
 
   const canStop = canDelete && customer.status !== 'berhenti'
+  const canRelocate = canEdit && customer.status !== 'berhenti'
+  const canSuspend = canEdit && customer.status === 'aktif'
+  const canResume = canEdit && customer.status === 'isolir'
   if (!canEdit && !canStop) return null
 
   return (
@@ -57,6 +72,24 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
               Ganti paket
             </DropdownMenuItem>
           ) : null}
+          {canRelocate ? (
+            <DropdownMenuItem onSelect={() => setRelocateOpen(true)}>
+              <MapPinIcon className="size-4" />
+              Mutasi alamat
+            </DropdownMenuItem>
+          ) : null}
+          {canSuspend ? (
+            <DropdownMenuItem onSelect={() => suspend.mutate(customer.id)}>
+              <PauseIcon className="size-4" />
+              Berhenti sementara
+            </DropdownMenuItem>
+          ) : null}
+          {canResume ? (
+            <DropdownMenuItem onSelect={() => resume.mutate(customer.id)}>
+              <PlayIcon className="size-4" />
+              Aktifkan kembali
+            </DropdownMenuItem>
+          ) : null}
           {canStop ? (
             <DropdownMenuItem
               onSelect={() => setStopOpen(true)}
@@ -74,6 +107,13 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
       ) : null}
       {canEdit ? (
         <ChangePlanDialog customer={customer} open={planOpen} onOpenChange={setPlanOpen} />
+      ) : null}
+      {canRelocate ? (
+        <RelocateCustomerDialog
+          customer={customer}
+          open={relocateOpen}
+          onOpenChange={setRelocateOpen}
+        />
       ) : null}
 
       <AlertDialog open={stopOpen} onOpenChange={setStopOpen}>
