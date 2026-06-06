@@ -17,6 +17,7 @@ import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
 import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthSlaCreditsRouteImport } from './routes/_auth.sla-credits'
+import { Route as AuthSetupRouteImport } from './routes/_auth.setup'
 import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
 import { Route as AuthSecurityRouteImport } from './routes/_auth.security'
 import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
@@ -101,6 +102,11 @@ const AuthSlaCreditsRoute = AuthSlaCreditsRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.sla-credits.lazy').then((d) => d.Route),
 )
+const AuthSetupRoute = AuthSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.setup.lazy').then((d) => d.Route))
 const AuthSettingsRoute = AuthSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/satisfaction': typeof AuthSatisfactionRoute
   '/security': typeof AuthSecurityRoute
   '/settings': typeof AuthSettingsRoute
+  '/setup': typeof AuthSetupRoute
   '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/satisfaction': typeof AuthSatisfactionRoute
   '/security': typeof AuthSecurityRoute
   '/settings': typeof AuthSettingsRoute
+  '/setup': typeof AuthSetupRoute
   '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
   '/vouchers': typeof AuthVouchersRoute
@@ -433,6 +441,7 @@ export interface FileRoutesById {
   '/_auth/satisfaction': typeof AuthSatisfactionRoute
   '/_auth/security': typeof AuthSecurityRoute
   '/_auth/settings': typeof AuthSettingsRoute
+  '/_auth/setup': typeof AuthSetupRoute
   '/_auth/sla-credits': typeof AuthSlaCreditsRoute
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
@@ -483,6 +492,7 @@ export interface FileRouteTypes {
     | '/satisfaction'
     | '/security'
     | '/settings'
+    | '/setup'
     | '/sla-credits'
     | '/staff'
     | '/tickets'
@@ -525,6 +535,7 @@ export interface FileRouteTypes {
     | '/satisfaction'
     | '/security'
     | '/settings'
+    | '/setup'
     | '/sla-credits'
     | '/staff'
     | '/vouchers'
@@ -572,6 +583,7 @@ export interface FileRouteTypes {
     | '/_auth/satisfaction'
     | '/_auth/security'
     | '/_auth/settings'
+    | '/_auth/setup'
     | '/_auth/sla-credits'
     | '/_auth/staff'
     | '/_auth/tickets'
@@ -662,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/sla-credits'
       fullPath: '/sla-credits'
       preLoaderRoute: typeof AuthSlaCreditsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/setup': {
+      id: '/_auth/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthSetupRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/settings': {
@@ -1025,6 +1044,7 @@ interface AuthRouteChildren {
   AuthSatisfactionRoute: typeof AuthSatisfactionRoute
   AuthSecurityRoute: typeof AuthSecurityRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
+  AuthSetupRoute: typeof AuthSetupRoute
   AuthSlaCreditsRoute: typeof AuthSlaCreditsRoute
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
@@ -1060,6 +1080,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSatisfactionRoute: AuthSatisfactionRoute,
   AuthSecurityRoute: AuthSecurityRoute,
   AuthSettingsRoute: AuthSettingsRoute,
+  AuthSetupRoute: AuthSetupRoute,
   AuthSlaCreditsRoute: AuthSlaCreditsRoute,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,

@@ -15,6 +15,7 @@ import {
   NetworkIcon,
   PackageIcon,
   ReceiptTextIcon,
+  RouteIcon,
   RouterIcon,
   ScrollTextIcon,
   ServerIcon,
@@ -51,7 +52,10 @@ export type NavGroup = {
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Ringkasan',
-    items: [{ to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true }],
+    items: [
+      { to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true },
+      { to: '/setup', label: 'Panduan Setup', icon: RouteIcon },
+    ],
   },
   {
     label: 'Operasional',
