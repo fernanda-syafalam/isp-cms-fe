@@ -144,7 +144,7 @@ export function NetworkTopologyPage() {
 
       {impactedCount > 0 ? (
         <div
-          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm"
+          className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm"
           role="alert"
         >
           <TriangleAlertIcon className="size-5 shrink-0 text-destructive" />
@@ -152,6 +152,14 @@ export function NetworkTopologyPage() {
             <span className="font-semibold">≈ {impactedCount} pelanggan</span> berpotensi terdampak
             gangguan jaringan saat ini.
           </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto h-7"
+            onClick={() => setStatusFilter(statusFilter === 'down' ? 'all' : 'down')}
+          >
+            {statusFilter === 'down' ? 'Tampilkan semua' : 'Fokus node down'}
+          </Button>
         </div>
       ) : null}
 
