@@ -2949,7 +2949,25 @@ export const handlers = [
   }),
 
   // Analytics
-  http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
+  http.get('*/api/analytics/dashboard', () => {
+    // Cross-module rollup computed at request time (fixtures defined below the
+    // static summary), so the dashboard "command center" stays in one query.
+    const activeLeads = LEAD_FIXTURES.filter((l) => ['new', 'survey', 'quote'].includes(l.stage))
+    const atRisk = CUSTOMER_FIXTURES.filter(
+      (c) => c.status === 'isolir' || c.outstanding > 0,
+    ).length
+    const commandCenter = {
+      pipelineValue: activeLeads.reduce((s, l) => s + l.estValue, 0),
+      activeLeads: activeLeads.length,
+      churnRate: CUSTOMER_FIXTURES.length
+        ? Math.round((atRisk / CUSTOMER_FIXTURES.length) * 1000) / 1000
+        : 0,
+      slaCreditsPending: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'pending').length,
+      devicesAlert: MONITORING_ALERT_FIXTURES.filter((a) => !a.acknowledged).length,
+      odpFull: ODP_FIXTURES.filter((o) => o.usedPorts >= o.totalPorts).length,
+    }
+    return HttpResponse.json({ ...DASHBOARD_SUMMARY, commandCenter })
+  }),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
 
   // Accounting: cash-basis GL journal for a period (derived from settled
