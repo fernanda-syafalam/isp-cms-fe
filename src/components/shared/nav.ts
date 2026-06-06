@@ -32,6 +32,8 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import type { Role } from '@/lib/permissions'
+
 export type NavItem = {
   to: string
   label: string
@@ -108,3 +110,35 @@ export const NAV_GROUPS: NavGroup[] = [
 ]
 
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
+
+// Roles with a restricted workspace see only these routes; admin/staff (omitted)
+// see the full navigation.
+const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
+  teknisi: [
+    '/',
+    '/work-orders',
+    '/tickets',
+    '/customers',
+    '/network/topology',
+    '/network/devices',
+    '/network/acs',
+    '/network/monitoring',
+  ],
+  mitra: ['/', '/customers', '/leads', '/resellers'],
+  customer: ['/portal'],
+}
+
+// Navigation groups visible to a role (empty groups dropped).
+export function navGroupsForRole(role: Role): NavGroup[] {
+  const allow = ROLE_ROUTES[role]
+  if (!allow) return NAV_GROUPS
+  return NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => allow.includes(item.to)),
+  })).filter((group) => group.items.length > 0)
+}
+
+// Flat nav items visible to a role (for the ⌘K command menu).
+export function navItemsForRole(role: Role): NavItem[] {
+  return navGroupsForRole(role).flatMap((g) => g.items)
+}

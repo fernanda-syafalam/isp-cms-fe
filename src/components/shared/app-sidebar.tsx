@@ -14,7 +14,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { type NavGroup, NAV_GROUPS } from './nav'
+import { useEffectiveRole } from '@/features/auth'
+import { type NavGroup, navGroupsForRole } from './nav'
 
 function isActive(pathname: string, to: string, exact?: boolean) {
   if (to === '/') return pathname === '/'
@@ -26,6 +27,8 @@ const ALWAYS_OPEN = new Set(['Ringkasan', 'Operasional'])
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const role = useEffectiveRole()
+  const groups = navGroupsForRole(role)
 
   return (
     <Sidebar collapsible="icon">
@@ -48,7 +51,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <NavGroupSection key={group.label} group={group} pathname={pathname} />
         ))}
       </SidebarContent>

@@ -14,13 +14,15 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command'
-import { NAV_GROUPS } from './nav'
+import { useEffectiveRole } from '@/features/auth'
+import { navGroupsForRole } from './nav'
 
 // Global ⌘K palette: fuzzy nav + theme actions. Mounted once in the shell.
 export function CommandMenu() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const { setTheme } = useTheme()
+  const groups = navGroupsForRole(useEffectiveRole())
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -58,7 +60,7 @@ export function CommandMenu() {
         <CommandInput placeholder="Cari menu atau jalankan aksi…" />
         <CommandList>
           <CommandEmpty>Tidak ada hasil.</CommandEmpty>
-          {NAV_GROUPS.map((group) => (
+          {groups.map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
               {group.items.map((item) => {
                 const Icon = item.icon
