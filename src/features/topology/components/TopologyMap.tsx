@@ -99,7 +99,7 @@ export function TopologyMap({
 }: Props) {
   const tile = TILES[base]
   const center: [number, number] =
-    nodes.length > 0 && nodes[0] ? [nodes[0].lat, nodes[0].lng] : [-6.914744, 107.60981]
+    nodes.length > 0 && nodes[0] ? [nodes[0].lat, nodes[0].lng] : [-6.5514, 110.6811]
 
   return (
     <MapContainer center={center} zoom={13} className="h-full w-full" scrollWheelZoom>

@@ -19,7 +19,7 @@ export function PrintableContract({ contract, customerAddress }: Props) {
       </header>
 
       <p className="mt-6 text-sm leading-relaxed">
-        Perjanjian ini dibuat antara <span className="font-semibold">Ashnet</span> (selanjutnya
+        Perjanjian ini dibuat antara <span className="font-semibold">Jepara Net</span> (selanjutnya
         disebut "Penyedia Layanan") dan pelanggan berikut (selanjutnya disebut "Pelanggan"):
       </p>
 
@@ -58,7 +58,7 @@ export function PrintableContract({ contract, customerAddress }: Props) {
       <section className="mt-10 flex items-start justify-between gap-8">
         <div className="text-center text-sm">
           <p>Penyedia Layanan</p>
-          <div className="mt-16 border-neutral-400 border-t pt-1">Ashnet</div>
+          <div className="mt-16 border-neutral-400 border-t pt-1">Jepara Net</div>
         </div>
         <div className="text-center text-sm">
           {/* e-Meterai placeholder */}
