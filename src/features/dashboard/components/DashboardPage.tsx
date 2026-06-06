@@ -35,6 +35,8 @@ import { statusLabel } from '@/lib/status-label'
 import type { Payment } from '@/schemas/payment'
 import type { WorkOrder } from '@/schemas/workorder'
 
+import { ROLE_HOME } from '@/components/shared/nav'
+
 import { useRecentPayments, useUpcomingInstalls } from '../hooks/useDashboardLists'
 import { AttentionPanel, type AttentionAlert } from './AttentionPanel'
 
@@ -47,8 +49,9 @@ export function DashboardPage() {
   const { data: recentPayments } = useRecentPayments()
   const { data: upcomingInstalls } = useUpcomingInstalls()
 
-  // A customer's home is their self-service portal, not the ops dashboard.
-  if (role === 'customer') return <Navigate to="/portal" replace />
+  // Restricted roles land on their own home, not the ops dashboard.
+  const home = ROLE_HOME[role]
+  if (home) return <Navigate to={home} replace />
 
   const alerts: AttentionAlert[] = summary
     ? [
