@@ -216,11 +216,15 @@ const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
 
 const ROUTER_STATUS = ['online', 'online', 'offline'] as const
 const ROUTER_MODELS = ['RB5009', 'CCR2004', 'RB4011', 'hAP ax3'] as const
+const ROUTER_VERSIONS = ['7.15.3', '7.14.2', '7.13.5', '6.49.13'] as const
 const ROUTER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
   id: oid('a7a7a7a7', i),
   name: `MIKROTIK-${AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota'}`,
   address: `10.20.${i}.1`,
+  apiPort: 8728,
+  username: 'api',
   model: ROUTER_MODELS[i % ROUTER_MODELS.length] ?? 'RB5009',
+  version: ROUTER_VERSIONS[i % ROUTER_VERSIONS.length] ?? '7.15.3',
   status: ROUTER_STATUS[i % ROUTER_STATUS.length] ?? 'online',
   secretCount: 80 + i * 35,
   lastSyncAt: iso(2026, 5, 5),
@@ -1031,7 +1035,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v4'
+const DB_KEY = 'isp-cms-mock-db-v5'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -2233,6 +2237,54 @@ export const handlers = [
       total: ROUTER_FIXTURES.length,
     }),
   ),
+  // Probe a RouterOS device (API) → identity / board-name / version. Fails
+  // auth when the password is empty (to exercise the error path).
+  http.post('*/api/routers/test-connection', async ({ request }) => {
+    const body = (await request.json()) as { host: string; password: string }
+    if (!body.password) {
+      return HttpResponse.json({
+        ok: false,
+        identity: null,
+        model: null,
+        version: null,
+        message: 'Autentikasi gagal — periksa username / password.',
+      })
+    }
+    const idx = [...body.host].reduce((a, c) => a + c.charCodeAt(0), 0) % ROUTER_MODELS.length
+    return HttpResponse.json({
+      ok: true,
+      identity: `MikroTik-${body.host}`,
+      model: ROUTER_MODELS[idx] ?? 'RB5009',
+      version: ROUTER_VERSIONS[idx % ROUTER_VERSIONS.length] ?? '7.15.3',
+      message: null,
+    })
+  }),
+  // Connect (save) a new router after a successful probe.
+  http.post('*/api/routers', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string
+      host: string
+      apiPort: number
+      username: string
+    }
+    const idx = [...body.host].reduce((a, c) => a + c.charCodeAt(0), 0) % ROUTER_MODELS.length
+    const router = {
+      id: crypto.randomUUID(),
+      name: body.name,
+      address: body.host,
+      apiPort: body.apiPort,
+      username: body.username,
+      model: ROUTER_MODELS[idx] ?? 'RB5009',
+      version: ROUTER_VERSIONS[idx % ROUTER_VERSIONS.length] ?? '7.15.3',
+      status: 'online' as const,
+      secretCount: 0,
+      lastSyncAt: new Date().toISOString(),
+    }
+    ROUTER_FIXTURES.unshift(router)
+    recordAudit('router.connect', 'Router', `Router terhubung ${body.name}`)
+    persistDb()
+    return HttpResponse.json(router, { status: 201 })
+  }),
   http.get('*/api/routers/:id', ({ params }) => {
     const found = ROUTER_FIXTURES.find((r) => r.id === params.id)
     return found

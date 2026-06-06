@@ -119,7 +119,10 @@ function RouterActions({ routerId }: { routerId: string }) {
 function OverviewCard({ router }: { router: Router }) {
   const fields: Array<{ label: string; value: string; copy?: boolean }> = [
     { label: 'Model', value: router.model },
+    { label: 'RouterOS', value: router.version },
     { label: 'IP manajemen', value: router.address, copy: true },
+    { label: 'Port API', value: `${router.apiPort}` },
+    { label: 'User API', value: router.username },
     { label: 'Secret aktif', value: formatNumber(router.secretCount) },
     { label: 'Sinkron terakhir', value: formatDateTime(router.lastSyncAt) },
   ]

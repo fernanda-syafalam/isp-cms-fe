@@ -1,19 +1,21 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { DownloadIcon, PlusIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Router, RouterStatus } from '@/schemas/router'
 
 import { useRoutersList } from '../hooks/useRouters'
+import { ConnectRouterDialog } from './ConnectRouterDialog'
 
 const STATUS_TONE: Record<RouterStatus, StatusTone> = {
   online: 'success',
@@ -31,6 +33,8 @@ const toCsvRow = (r: Router) => ({
 
 export function RoutersListPage() {
   const { data, isLoading, isError } = useRoutersList()
+  const canManage = useCan('network.manage')
+  const [connectOpen, setConnectOpen] = useState(false)
 
   const columns = useMemo<ColumnDef<Router>[]>(
     () => [
@@ -98,18 +102,28 @@ export function RoutersListPage() {
         emptyMessage="Belum ada router."
         searchPlaceholder="Cari router…"
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!data?.items.length}
-            onClick={() => downloadCsv('router', (data?.items ?? []).map(toCsvRow))}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
+          <>
+            {canManage ? (
+              <Button size="sm" className="h-8" onClick={() => setConnectOpen(true)}>
+                <PlusIcon className="size-4" />
+                Hubungkan router
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!data?.items.length}
+              onClick={() => downloadCsv('router', (data?.items ?? []).map(toCsvRow))}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </>
         }
       />
+
+      {canManage ? <ConnectRouterDialog open={connectOpen} onOpenChange={setConnectOpen} /> : null}
     </div>
   )
 }
