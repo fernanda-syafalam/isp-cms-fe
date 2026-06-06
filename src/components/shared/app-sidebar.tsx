@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Building2Icon } from 'lucide-react'
+import { Building2Icon, ChevronRightIcon } from 'lucide-react'
+import { Collapsible } from 'radix-ui'
 
 import {
   Sidebar,
@@ -13,12 +14,15 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { NAV_GROUPS } from './nav'
+import { type NavGroup, NAV_GROUPS } from './nav'
 
 function isActive(pathname: string, to: string, exact?: boolean) {
   if (to === '/') return pathname === '/'
   return exact ? pathname === to : pathname.startsWith(to)
 }
+
+// Groups that stay open by default; others collapse to tidy the long nav.
+const ALWAYS_OPEN = new Set(['Ringkasan', 'Operasional'])
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
@@ -45,34 +49,55 @@ export function AppSidebar() {
 
       <SidebarContent>
         {NAV_GROUPS.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive(pathname, item.to, item.exact)}
-                        tooltip={item.label}
-                      >
-                        <Link to={item.to}>
-                          <Icon />
-                          <span>{item.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <NavGroupSection key={group.label} group={group} pathname={pathname} />
         ))}
       </SidebarContent>
 
       <SidebarRail />
     </Sidebar>
+  )
+}
+
+function NavGroupSection({ group, pathname }: { group: NavGroup; pathname: string }) {
+  const hasActive = group.items.some((it) => isActive(pathname, it.to, it.exact))
+  const defaultOpen = hasActive || ALWAYS_OPEN.has(group.label)
+
+  return (
+    <Collapsible.Root defaultOpen={defaultOpen} className="group/collapsible">
+      <SidebarGroup>
+        <SidebarGroupLabel
+          asChild
+          className="cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <Collapsible.Trigger>
+            {group.label}
+            <ChevronRightIcon className="ml-auto size-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+          </Collapsible.Trigger>
+        </SidebarGroupLabel>
+        <Collapsible.Content>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {group.items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(pathname, item.to, item.exact)}
+                      tooltip={item.label}
+                    >
+                      <Link to={item.to}>
+                        <Icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </Collapsible.Content>
+      </SidebarGroup>
+    </Collapsible.Root>
   )
 }
