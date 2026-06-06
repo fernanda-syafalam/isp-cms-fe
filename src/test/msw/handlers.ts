@@ -2883,6 +2883,73 @@ export const handlers = [
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
 
+  // Accounting: cash-basis GL journal for a period (derived from settled
+  // invoices). Dr Kas, Cr Revenue + Denda + PPN Keluaran.
+  http.get('*/api/accounting/journal', ({ request }) => {
+    const period = new URL(request.url).searchParams.get('period') ?? ''
+    const lines: Array<{
+      id: string
+      date: string
+      accountCode: string
+      accountName: string
+      description: string
+      debit: number
+      credit: number
+    }> = []
+    let debit = 0
+    let credit = 0
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status !== 'paid' || !inv.paidAt || !inv.paidAt.startsWith(period)) {
+        continue
+      }
+      const date = inv.paidAt
+      const total = inv.amount + inv.lateFee + inv.taxAmount
+      lines.push({
+        id: `${inv.id}-dr`,
+        date,
+        accountCode: '1110',
+        accountName: 'Kas & Bank',
+        description: `Pelunasan ${inv.invoiceNo} - ${inv.customerName}`,
+        debit: total,
+        credit: 0,
+      })
+      lines.push({
+        id: `${inv.id}-rev`,
+        date,
+        accountCode: '4100',
+        accountName: 'Pendapatan Jasa Internet',
+        description: `Pendapatan ${inv.invoiceNo}`,
+        debit: 0,
+        credit: inv.amount,
+      })
+      if (inv.lateFee > 0) {
+        lines.push({
+          id: `${inv.id}-fee`,
+          date,
+          accountCode: '4200',
+          accountName: 'Pendapatan Denda',
+          description: `Denda ${inv.invoiceNo}`,
+          debit: 0,
+          credit: inv.lateFee,
+        })
+      }
+      if (inv.taxAmount > 0) {
+        lines.push({
+          id: `${inv.id}-tax`,
+          date,
+          accountCode: '2130',
+          accountName: 'PPN Keluaran',
+          description: `PPN ${inv.invoiceNo}`,
+          debit: 0,
+          credit: inv.taxAmount,
+        })
+      }
+      debit += total
+      credit += total
+    }
+    return HttpResponse.json({ period, lines, totals: { debit, credit } })
+  }),
+
   // Customer experience: CSAT (post-ticket), NPS, churn risk (all derived).
   http.get('*/api/satisfaction', () => {
     const resolved = TICKET_FIXTURES.filter((t) => t.status === 'resolved')
