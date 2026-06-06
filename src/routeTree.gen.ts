@@ -19,6 +19,7 @@ import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
+import { Route as AuthPortalRouteImport } from './routes/_auth.portal'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
 import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
 import { Route as AuthNotificationsRouteImport } from './routes/_auth.notifications'
@@ -94,6 +95,11 @@ const AuthReportsRoute = AuthReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() => import('./routes/_auth.reports.lazy').then((d) => d.Route))
+const AuthPortalRoute = AuthPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthPlansRoute = AuthPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
+  '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRouteWithChildren
   '/settings': typeof AuthSettingsRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
+  '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
   '/settings': typeof AuthSettingsRoute
   '/staff': typeof AuthStaffRoute
@@ -304,6 +312,7 @@ export interface FileRoutesById {
   '/_auth/notifications': typeof AuthNotificationsRoute
   '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
+  '/_auth/portal': typeof AuthPortalRoute
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
   '/_auth/settings': typeof AuthSettingsRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/payments'
     | '/plans'
+    | '/portal'
     | '/reports'
     | '/resellers'
     | '/settings'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/payments'
     | '/plans'
+    | '/portal'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/_auth/notifications'
     | '/_auth/payments'
     | '/_auth/plans'
+    | '/_auth/portal'
     | '/_auth/reports'
     | '/_auth/resellers'
     | '/_auth/settings'
@@ -512,6 +524,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AuthReportsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/portal': {
+      id: '/_auth/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof AuthPortalRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/plans': {
@@ -775,6 +794,7 @@ interface AuthRouteChildren {
   AuthNotificationsRoute: typeof AuthNotificationsRoute
   AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
+  AuthPortalRoute: typeof AuthPortalRoute
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
   AuthSettingsRoute: typeof AuthSettingsRoute
@@ -799,6 +819,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthNotificationsRoute: AuthNotificationsRoute,
   AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
+  AuthPortalRoute: AuthPortalRoute,
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRouteWithChildren,
   AuthSettingsRoute: AuthSettingsRoute,
