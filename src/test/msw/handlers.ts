@@ -997,6 +997,32 @@ const BRANCH_FIXTURES = [
   },
 ]
 
+// Account security: current user's active sessions + 2FA flag (mock).
+const SECURITY_SESSION_FIXTURES = [
+  {
+    id: oid('5e555510', 0),
+    device: 'Chrome · macOS',
+    ip: '103.12.34.56',
+    lastActiveAt: iso(2026, 5, 6),
+    current: true,
+  },
+  {
+    id: oid('5e555510', 1),
+    device: 'Safari · iOS',
+    ip: '103.12.34.57',
+    lastActiveAt: iso(2026, 5, 5),
+    current: false,
+  },
+  {
+    id: oid('5e555510', 2),
+    device: 'Edge · Windows',
+    ip: '180.250.1.2',
+    lastActiveAt: iso(2026, 5, 4),
+    current: false,
+  },
+]
+const SECURITY_STATE = { twoFactorEnabled: false }
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -1046,6 +1072,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   leads: LEAD_FIXTURES,
   slaCredits: SLA_CREDIT_FIXTURES,
   branches: BRANCH_FIXTURES,
+  securitySessions: SECURITY_SESSION_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1568,6 +1595,48 @@ export const handlers = [
     recordAudit('branch.create', 'Cabang', `Cabang baru ${body.name}`)
     persistDb()
     return HttpResponse.json(branch, { status: 201 })
+  }),
+
+  // Account security: 2FA + active sessions
+  http.get('*/api/security', () =>
+    HttpResponse.json({
+      twoFactorEnabled: SECURITY_STATE.twoFactorEnabled,
+      sessions: SECURITY_SESSION_FIXTURES,
+    }),
+  ),
+  http.post('*/api/security/2fa/enable', () => {
+    SECURITY_STATE.twoFactorEnabled = true
+    recordAudit('security.2fa_enable', 'Keamanan', '2FA diaktifkan')
+    persistDb()
+    return HttpResponse.json({
+      twoFactorEnabled: true,
+      sessions: SECURITY_SESSION_FIXTURES,
+    })
+  }),
+  http.post('*/api/security/2fa/disable', () => {
+    SECURITY_STATE.twoFactorEnabled = false
+    recordAudit('security.2fa_disable', 'Keamanan', '2FA dinonaktifkan')
+    persistDb()
+    return HttpResponse.json({
+      twoFactorEnabled: false,
+      sessions: SECURITY_SESSION_FIXTURES,
+    })
+  }),
+  http.post('*/api/security/sessions/:id/revoke', ({ params }) => {
+    const idx = SECURITY_SESSION_FIXTURES.findIndex((s) => s.id === params.id && !s.current)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    SECURITY_SESSION_FIXTURES.splice(idx, 1)
+    recordAudit('security.session_revoke', 'Keamanan', 'Sesi diakhiri')
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('*/api/security/sessions/revoke-others', () => {
+    const kept = SECURITY_SESSION_FIXTURES.filter((s) => s.current)
+    SECURITY_SESSION_FIXTURES.length = 0
+    SECURITY_SESSION_FIXTURES.push(...kept)
+    recordAudit('security.session_revoke_all', 'Keamanan', 'Sesi lain diakhiri')
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
   }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
