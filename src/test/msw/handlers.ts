@@ -797,6 +797,26 @@ function renderTemplate(body: string): string {
     .replaceAll('{jatuh_tempo}', '10 Mei 2026')
 }
 
+// Per-subscriber data usage for the period (mock; real backend reads RADIUS
+// accounting). Quota derives from plan speed; FUP triggers over quota.
+const USAGE_FIXTURES = CUSTOMER_FIXTURES.filter(
+  (c) => c.status === 'aktif' || c.status === 'isolir',
+).map((c, i) => {
+  const plan = PLAN_FIXTURES.find((p) => p.name === c.planName)
+  const speed = plan?.speedMbps ?? 20
+  const quotaGb = speed >= 100 ? 0 : speed >= 50 ? 1000 : 500
+  const usedGb = quotaGb === 0 ? 300 + i * 40 : Math.round(quotaGb * (0.4 + (i % 7) * 0.12))
+  return {
+    customerId: c.id,
+    customerName: c.fullName,
+    planName: c.planName,
+    quotaGb,
+    usedGb,
+    fupThrottled: quotaGb > 0 && usedGb >= quotaGb,
+    trend: Array.from({ length: 7 }, (_, d) => 5 + ((i + d) % 9) * 3),
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -836,6 +856,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   settings: [SETTINGS_FIXTURE],
   notificationTemplates: NOTIFICATION_TEMPLATE_FIXTURES,
   notificationLog: NOTIFICATION_LOG_FIXTURES,
+  usage: USAGE_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -2326,6 +2347,14 @@ export const handlers = [
     HttpResponse.json({
       items: COVERAGE_FIXTURES,
       total: COVERAGE_FIXTURES.length,
+    }),
+  ),
+
+  // Usage / quota / FUP
+  http.get('*/api/usage', () =>
+    HttpResponse.json({
+      items: USAGE_FIXTURES,
+      total: USAGE_FIXTURES.length,
     }),
   ),
 
