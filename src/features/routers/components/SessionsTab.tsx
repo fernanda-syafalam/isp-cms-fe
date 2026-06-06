@@ -15,15 +15,24 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
-import type { PppSession } from '@/schemas/mikrotik'
+import type { PppSecret, PppSession } from '@/schemas/mikrotik'
 
-import { useDisconnectSession, useSessions } from '../hooks/useMikrotik'
+import { useDisconnectSession, useSecrets, useSessions } from '../hooks/useMikrotik'
 
 export function SessionsTab({ routerId }: { routerId: string }) {
   const canManage = useCan('network.manage')
   const { data, isLoading, isError } = useSessions(routerId)
+  const { data: secretsData } = useSecrets(routerId)
   const disconnect = useDisconnectSession(routerId)
   const [confirm, setConfirm] = useState<PppSession | null>(null)
+
+  // "Who is this online username?" — join sessions to their secret for the
+  // human customer name + bandwidth profile.
+  const secretByUsername = useMemo(() => {
+    const m = new Map<string, PppSecret>()
+    for (const s of secretsData?.items ?? []) m.set(s.username, s)
+    return m
+  }, [secretsData])
 
   const columns = useMemo<ColumnDef<PppSession>[]>(
     () => [
@@ -32,6 +41,24 @@ export function SessionsTab({ routerId }: { routerId: string }) {
         header: 'Username',
         meta: { title: 'Username' },
         cell: ({ row }) => <span className="font-mono text-sm">{row.original.username}</span>,
+      },
+      {
+        id: 'customer',
+        header: 'Pelanggan',
+        meta: { title: 'Pelanggan' },
+        cell: ({ row }) =>
+          secretByUsername.get(row.original.username)?.customerName ?? (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        id: 'profile',
+        header: 'Profil',
+        meta: { title: 'Profil' },
+        cell: ({ row }) =>
+          secretByUsername.get(row.original.username)?.profileName ?? (
+            <span className="text-muted-foreground">—</span>
+          ),
       },
       {
         accessorKey: 'address',
@@ -64,7 +91,7 @@ export function SessionsTab({ routerId }: { routerId: string }) {
           ) : null,
       },
     ],
-    [canManage],
+    [canManage, secretByUsername],
   )
 
   return (
