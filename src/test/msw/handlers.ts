@@ -817,6 +817,40 @@ const USAGE_FIXTURES = CUSTOMER_FIXTURES.filter(
   }
 })
 
+// NOC telemetry derived from device fixtures (mock; real backend polls SNMP).
+const MONITORING_METRIC_FIXTURES = DEVICE_FIXTURES.map((d, i) => {
+  const status = d.status === 'offline' ? 'down' : d.status === 'degraded' ? 'degraded' : 'up'
+  return {
+    deviceId: d.id,
+    name: d.name,
+    type: d.type,
+    areaName: d.areaName,
+    status: status as 'up' | 'degraded' | 'down',
+    uptimePct:
+      status === 'down'
+        ? 0
+        : status === 'degraded'
+          ? 97.5
+          : Math.round((99.9 - (i % 5) * 0.1) * 10) / 10,
+    latencyMs: status === 'down' ? 0 : 5 + (i % 6) * 4 + (status === 'degraded' ? 60 : 0),
+    utilizationPct: 30 + (i % 7) * 9,
+  }
+})
+// Active alerts from any device not fully up.
+const MONITORING_ALERT_FIXTURES = DEVICE_FIXTURES.filter((d) => d.status !== 'online').map(
+  (d, i) => ({
+    id: oid('a1e47000', i),
+    deviceName: d.name,
+    severity: (d.status === 'offline' ? 'critical' : 'warning') as 'critical' | 'warning',
+    message:
+      d.status === 'offline'
+        ? `${d.name} tidak merespons (down)`
+        : `${d.name} mengalami degradasi / latensi tinggi`,
+    at: iso(2026, 4, 25 - i),
+    acknowledged: false,
+  }),
+)
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -857,6 +891,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   notificationTemplates: NOTIFICATION_TEMPLATE_FIXTURES,
   notificationLog: NOTIFICATION_LOG_FIXTURES,
   usage: USAGE_FIXTURES,
+  monitoringMetrics: MONITORING_METRIC_FIXTURES,
+  monitoringAlerts: MONITORING_ALERT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -2357,6 +2393,48 @@ export const handlers = [
       total: USAGE_FIXTURES.length,
     }),
   ),
+
+  // NOC monitoring
+  http.get('*/api/monitoring/metrics', () =>
+    HttpResponse.json({
+      items: MONITORING_METRIC_FIXTURES,
+      total: MONITORING_METRIC_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/monitoring/alerts', () => {
+    const items = [...MONITORING_ALERT_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/monitoring/alerts/:id/acknowledge', ({ params }) => {
+    const found = MONITORING_ALERT_FIXTURES.find((a) => a.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.acknowledged = true
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // Auto-ticket: escalate an alert into a repair work item + acknowledge it.
+  http.post('*/api/monitoring/alerts/:id/ticket', ({ params }) => {
+    const found = MONITORING_ALERT_FIXTURES.find((a) => a.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    const now = Date.now()
+    const slaHours = SLA_HOURS.high ?? 8
+    const ticket = {
+      id: crypto.randomUUID(),
+      code: `TKT-${9000 + TICKET_FIXTURES.length}`,
+      subject: `[NOC] ${found.message}`,
+      customerName: found.deviceName,
+      priority: 'high' as const,
+      status: 'open' as const,
+      assignee: null,
+      slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
+      createdAt: new Date(now).toISOString(),
+    }
+    TICKET_FIXTURES.unshift(ticket)
+    found.acknowledged = true
+    recordAudit('monitoring.ticket', 'Tiket', `Auto-tiket dari alert ${found.deviceName}`)
+    persistDb()
+    return HttpResponse.json(ticket, { status: 201 })
+  }),
 
   // Analytics
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
