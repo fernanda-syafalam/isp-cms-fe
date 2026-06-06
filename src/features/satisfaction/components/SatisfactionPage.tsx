@@ -91,7 +91,11 @@ export function SatisfactionPage() {
                   <div className="min-w-0">
                     <p className="text-sm">
                       <span className="font-medium">{f.customerName}</span>{' '}
-                      <span className="text-amber-500" aria-label={`Rating ${f.rating} dari 5`}>
+                      <span
+                        className="text-amber-500"
+                        role="img"
+                        aria-label={`Rating ${f.rating} dari 5`}
+                      >
                         {stars(f.rating)}
                       </span>
                     </p>
