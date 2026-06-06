@@ -16,6 +16,7 @@ import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
 import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
 import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
+import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
@@ -24,6 +25,7 @@ import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
+import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
 import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
 import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
@@ -76,6 +78,11 @@ const AuthStaffRoute = AuthStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() => import('./routes/_auth.staff.lazy').then((d) => d.Route))
+const AuthSettingsRoute = AuthSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthResellersRoute = AuthResellersRouteImport.update({
   id: '/resellers',
   path: '/resellers',
@@ -114,6 +121,11 @@ const AuthCustomersRoute = AuthCustomersRouteImport.update({
 const AuthCoverageRoute = AuthCoverageRouteImport.update({
   id: '/coverage',
   path: '/coverage',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAuditRoute = AuthAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
@@ -210,6 +222,7 @@ const AuthInvoicesPrintInvoiceIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
+  '/audit': typeof AuthAuditRoute
   '/coverage': typeof AuthCoverageRoute
   '/customers': typeof AuthCustomersRouteWithChildren
   '/inventory': typeof AuthInventoryRouteWithChildren
@@ -218,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRouteWithChildren
+  '/settings': typeof AuthSettingsRoute
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
   '/vouchers': typeof AuthVouchersRoute
@@ -242,10 +256,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/audit': typeof AuthAuditRoute
   '/coverage': typeof AuthCoverageRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
+  '/settings': typeof AuthSettingsRoute
   '/staff': typeof AuthStaffRoute
   '/vouchers': typeof AuthVouchersRoute
   '/work-orders': typeof AuthWorkOrdersRoute
@@ -272,6 +288,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
+  '/_auth/audit': typeof AuthAuditRoute
   '/_auth/coverage': typeof AuthCoverageRoute
   '/_auth/customers': typeof AuthCustomersRouteWithChildren
   '/_auth/inventory': typeof AuthInventoryRouteWithChildren
@@ -280,6 +297,7 @@ export interface FileRoutesById {
   '/_auth/plans': typeof AuthPlansRoute
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
+  '/_auth/settings': typeof AuthSettingsRoute
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
   '/_auth/vouchers': typeof AuthVouchersRoute
@@ -308,6 +326,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/audit'
     | '/coverage'
     | '/customers'
     | '/inventory'
@@ -316,6 +335,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/reports'
     | '/resellers'
+    | '/settings'
     | '/staff'
     | '/tickets'
     | '/vouchers'
@@ -340,10 +360,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/audit'
     | '/coverage'
     | '/payments'
     | '/plans'
     | '/reports'
+    | '/settings'
     | '/staff'
     | '/vouchers'
     | '/work-orders'
@@ -369,6 +391,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_auth'
     | '/login'
+    | '/_auth/audit'
     | '/_auth/coverage'
     | '/_auth/customers'
     | '/_auth/inventory'
@@ -377,6 +400,7 @@ export interface FileRouteTypes {
     | '/_auth/plans'
     | '/_auth/reports'
     | '/_auth/resellers'
+    | '/_auth/settings'
     | '/_auth/staff'
     | '/_auth/tickets'
     | '/_auth/vouchers'
@@ -457,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthStaffRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/resellers': {
       id: '/_auth/resellers'
       path: '/resellers'
@@ -511,6 +542,13 @@ declare module '@tanstack/react-router' {
       path: '/coverage'
       fullPath: '/coverage'
       preLoaderRoute: typeof AuthCoverageRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/audit': {
+      id: '/_auth/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthAuditRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/tickets/': {
@@ -710,6 +748,7 @@ const AuthTicketsRouteWithChildren = AuthTicketsRoute._addFileChildren(
 )
 
 interface AuthRouteChildren {
+  AuthAuditRoute: typeof AuthAuditRoute
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
   AuthInventoryRoute: typeof AuthInventoryRouteWithChildren
@@ -718,6 +757,7 @@ interface AuthRouteChildren {
   AuthPlansRoute: typeof AuthPlansRoute
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
+  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
   AuthVouchersRoute: typeof AuthVouchersRoute
@@ -731,6 +771,7 @@ interface AuthRouteChildren {
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthAuditRoute: AuthAuditRoute,
   AuthCoverageRoute: AuthCoverageRoute,
   AuthCustomersRoute: AuthCustomersRouteWithChildren,
   AuthInventoryRoute: AuthInventoryRouteWithChildren,
@@ -739,6 +780,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthPlansRoute: AuthPlansRoute,
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRouteWithChildren,
+  AuthSettingsRoute: AuthSettingsRoute,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,
   AuthVouchersRoute: AuthVouchersRoute,

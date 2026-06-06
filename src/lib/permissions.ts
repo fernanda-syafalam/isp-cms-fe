@@ -13,6 +13,7 @@ export type Permission =
   | 'staff.manage'
   | 'resellers.manage'
   | 'vouchers.manage'
+  | 'settings.manage'
   | 'records.delete'
   | 'data.reset'
 
@@ -25,6 +26,7 @@ const ALL_PERMISSIONS: Permission[] = [
   'staff.manage',
   'resellers.manage',
   'vouchers.manage',
+  'settings.manage',
   'records.delete',
   'data.reset',
 ]
