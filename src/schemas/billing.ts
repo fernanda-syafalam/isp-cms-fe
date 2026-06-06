@@ -18,6 +18,25 @@ export const RemindResultSchema = z.object({
   channel: z.literal('whatsapp'),
 })
 
+// What the automated billing cycle would do next (preview, no mutation).
+export const SchedulerPreviewSchema = z.object({
+  toBill: z.number().int().nonnegative(), // invoices to create this period
+  toRemindUpcoming: z.number().int().nonnegative(), // due within reminder window
+  toRemindOverdue: z.number().int().nonnegative(), // already/▶ overdue
+  toIsolir: z.number().int().nonnegative(), // customers past the grace period
+})
+
+// Result after running the full automated cycle in one pass.
+export const SchedulerRunResultSchema = z.object({
+  period: z.string(),
+  created: z.number().int().nonnegative(),
+  remindedUpcoming: z.number().int().nonnegative(),
+  remindedOverdue: z.number().int().nonnegative(),
+  isolated: z.number().int().nonnegative(),
+})
+
 export type BillingRunResult = z.infer<typeof BillingRunResultSchema>
 export type IsolirResult = z.infer<typeof IsolirResultSchema>
 export type RemindResult = z.infer<typeof RemindResultSchema>
+export type SchedulerPreview = z.infer<typeof SchedulerPreviewSchema>
+export type SchedulerRunResult = z.infer<typeof SchedulerRunResultSchema>

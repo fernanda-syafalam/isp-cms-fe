@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 
 import { useIsolirOverdue, useRemindOverdue, useRunBilling } from '../hooks/useBilling'
+import { SchedulerDialog } from './SchedulerDialog'
 
 export function BillingActions() {
   const canRun = useCan('billing.run')
@@ -26,6 +27,7 @@ export function BillingActions() {
 
   return (
     <>
+      <SchedulerDialog />
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="outline" size="sm" className="h-8" disabled={runBilling.isPending}>
