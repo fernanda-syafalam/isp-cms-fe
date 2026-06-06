@@ -1,3 +1,4 @@
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { RotateCwIcon, UploadCloudIcon, WifiIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -15,7 +16,10 @@ import { useAcsDevices, useBulkAcs } from '../hooks/useAcs'
 import { BulkFirmwareDialog } from './BulkFirmwareDialog'
 import { BulkWifiDialog } from './BulkWifiDialog'
 
+const routeApi = getRouteApi('/_auth/network/acs')
+
 export function AcsPage() {
+  const { q } = routeApi.useSearch()
   const { data, isLoading, isError } = useAcsDevices()
   const canManage = useCan('network.manage')
   const bulk = useBulkAcs()
@@ -88,6 +92,7 @@ export function AcsPage() {
         isError={isError}
         emptyMessage="Belum ada perangkat CPE."
         searchPlaceholder="Cari serial / pelanggan…"
+        initialSearch={q}
         enableSelection={canManage}
         bulkActions={(selected) => {
           const ids = selected.map((d) => d.id)

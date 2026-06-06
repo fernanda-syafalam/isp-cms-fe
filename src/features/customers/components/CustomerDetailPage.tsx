@@ -303,7 +303,21 @@ function ConnectionCard({
             <Field label="PPPoE" value={connection.pppoeUsername} mono />
             <Field label="Profil" value={connection.profile} />
             <Field label="IP" value={connection.ipAddress} mono />
-            <Field label="ONU Serial" value={connection.onuSerial ?? '—'} mono />
+            <div>
+              <dt className="text-muted-foreground text-xs">ONU Serial</dt>
+              <dd className="mt-1 flex items-center gap-2 text-sm">
+                <span className="font-mono">{connection.onuSerial ?? '—'}</span>
+                {connection.onuSerial ? (
+                  <Link
+                    to="/network/acs"
+                    search={{ q: connection.onuSerial }}
+                    className="text-primary text-xs hover:underline"
+                  >
+                    Kelola ONU
+                  </Link>
+                ) : null}
+              </dd>
+            </div>
             <Field label="OLT" value={connection.olt ?? '—'} />
             <Field label="PON Port" value={connection.ponPort ?? '—'} mono />
             <div>

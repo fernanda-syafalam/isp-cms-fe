@@ -50,6 +50,8 @@ type DataTableProps<T> = {
   emptyMessage?: string
   errorMessage?: string
   searchPlaceholder?: string
+  /** Seeds the search box (e.g. from a `?q=` deep-link). */
+  initialSearch?: string | undefined
   /** Extra filter controls rendered in the left of the toolbar. */
   toolbar?: ReactNode
   /** Right-aligned actions (e.g. "+ Baru", Export). */
@@ -69,6 +71,7 @@ export function DataTable<T>({
   emptyMessage = 'Tidak ada data.',
   errorMessage = 'Gagal memuat data. Coba muat ulang halaman.',
   searchPlaceholder,
+  initialSearch,
   toolbar,
   actions,
   enableSelection = false,
@@ -77,7 +80,7 @@ export function DataTable<T>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
-  const [globalFilter, setGlobalFilter] = useState('')
+  const [globalFilter, setGlobalFilter] = useState(initialSearch ?? '')
 
   const selectColumn: ColumnDef<T> = {
     id: SELECT_COLUMN_ID,
