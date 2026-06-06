@@ -65,6 +65,11 @@ const STATUS_LABELS: Record<string, string> = {
   unused: 'Belum dipakai',
   used: 'Terpakai',
   expired: 'Kedaluwarsa',
+  // reseller ledger entry type
+  topup: 'Top-up',
+  commission: 'Komisi',
+  deduction: 'Potongan',
+  withdrawal: 'Penarikan',
 }
 
 /** Translate an API enum value to its Indonesian display label. */

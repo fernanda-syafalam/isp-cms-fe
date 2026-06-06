@@ -289,6 +289,41 @@ const RESELLER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
   status: RESELLER_STATUS[i % RESELLER_STATUS.length] ?? 'active',
 }))
 
+// Deposit/commission ledger per reseller. Built cumulatively so balanceAfter is
+// always consistent; each reseller's balance is then synced to its final entry.
+const RESELLER_LEDGER_SEED: Array<{
+  type: string
+  amount: number
+  note: string
+}> = [
+  { type: 'topup', amount: 1_000_000, note: 'Setoran awal deposit' },
+  { type: 'commission', amount: 175_000, note: 'Komisi bulan lalu' },
+  { type: 'deduction', amount: -200_000, note: 'Aktivasi pelanggan baru' },
+  { type: 'commission', amount: 120_000, note: 'Komisi berjalan' },
+]
+const RESELLER_LEDGER_FIXTURES = RESELLER_FIXTURES.flatMap((r, ri) => {
+  let bal = 0
+  return RESELLER_LEDGER_SEED.map((e, j) => {
+    const amount = e.amount + (e.amount > 0 ? ri * 10_000 : -ri * 5_000)
+    bal += amount
+    return {
+      id: `${r.id}-led-${j}`,
+      resellerId: r.id,
+      type: e.type,
+      amount,
+      note: e.note,
+      balanceAfter: bal,
+      at: iso(2026, 2 + Math.floor(j / 2), 5 + j * 6),
+    }
+  })
+})
+// Sync each reseller's stored balance to its ledger's final balanceAfter.
+for (const r of RESELLER_FIXTURES) {
+  const entries = RESELLER_LEDGER_FIXTURES.filter((e) => e.resellerId === r.id)
+  const last = entries.at(-1)
+  if (last) r.balance = last.balanceAfter
+}
+
 const INVENTORY_KIND = ['onu', 'router', 'mikrotik'] as const
 const INVENTORY_STATUS = ['warehouse', 'installed', 'installed', 'broken'] as const
 const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
@@ -557,6 +592,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   mikrotikQueues: MIKROTIK_QUEUE_FIXTURES,
   ticketEvents: TICKET_EVENT_FIXTURES,
   vouchers: VOUCHER_FIXTURES,
+  resellerLedger: RESELLER_LEDGER_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1365,6 +1401,54 @@ export const handlers = [
       total: RESELLER_FIXTURES.length,
     }),
   ),
+  http.get('*/api/resellers/:id', ({ params }) => {
+    const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
+    return found
+      ? HttpResponse.json(found)
+      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+          status: 404,
+        })
+  }),
+  // Deposit/commission ledger for a reseller (newest first).
+  http.get('*/api/resellers/:id/ledger', ({ params }) => {
+    const items = RESELLER_LEDGER_FIXTURES.filter((e) => e.resellerId === params.id).sort((a, b) =>
+      a.at < b.at ? 1 : -1,
+    )
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  // Append a ledger entry. topup/commission add to the balance; deduction/
+  // withdrawal subtract. Rejects a move that would take the balance negative.
+  http.post('*/api/resellers/:id/ledger', async ({ params, request }) => {
+    const reseller = RESELLER_FIXTURES.find((r) => r.id === params.id)
+    if (!reseller) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      type: 'topup' | 'commission' | 'deduction' | 'withdrawal'
+      amount: number
+      note?: string
+    }
+    const credit = body.type === 'topup' || body.type === 'commission'
+    const signed = credit ? Math.abs(body.amount) : -Math.abs(body.amount)
+    const nextBalance = reseller.balance + signed
+    if (nextBalance < 0) {
+      return new HttpResponse(JSON.stringify({ message: 'Saldo tidak mencukupi' }), { status: 422 })
+    }
+    reseller.balance = nextBalance
+    RESELLER_LEDGER_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      resellerId: reseller.id,
+      type: body.type,
+      amount: signed,
+      note: body.note ?? '',
+      balanceAfter: nextBalance,
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return HttpResponse.json(reseller)
+  }),
   http.patch('*/api/resellers/:id', async ({ params, request }) => {
     const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
     if (!found) {

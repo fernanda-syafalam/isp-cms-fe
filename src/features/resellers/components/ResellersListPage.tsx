@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -38,7 +39,15 @@ export function ResellersListPage() {
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Reseller" />,
         meta: { title: 'Reseller' },
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/resellers/$resellerId"
+            params={{ resellerId: row.original.id }}
+            className="font-medium hover:underline"
+          >
+            {row.original.name}
+          </Link>
+        ),
       },
       { accessorKey: 'area', header: 'Area', meta: { title: 'Area' } },
       {
