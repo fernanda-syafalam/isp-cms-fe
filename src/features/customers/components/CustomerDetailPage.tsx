@@ -25,6 +25,7 @@ import { useCustomerTickets } from '../hooks/useCustomerTickets'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { OnuActions } from './OnuActions'
+import { PrivacyTab } from './PrivacyTab'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   prospek: 'neutral',
@@ -105,6 +106,7 @@ export function CustomerDetailPage({ customerId }: Props) {
           <TabsTrigger value="koneksi">Koneksi</TabsTrigger>
           <TabsTrigger value="tagihan">Tagihan</TabsTrigger>
           <TabsTrigger value="tiket">Tiket</TabsTrigger>
+          <TabsTrigger value="privasi">Privasi</TabsTrigger>
         </TabsList>
         <TabsContent value="ringkasan">
           <div className="grid gap-4 md:grid-cols-2">
@@ -120,6 +122,9 @@ export function CustomerDetailPage({ customerId }: Props) {
         </TabsContent>
         <TabsContent value="tiket">
           <TicketsCard tickets={tickets} />
+        </TabsContent>
+        <TabsContent value="privasi">
+          <PrivacyTab customer={customer} invoices={invoices} tickets={tickets} />
         </TabsContent>
       </Tabs>
     </div>

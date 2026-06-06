@@ -11,12 +11,15 @@ import {
   listCustomers,
   notifyWhatsapp,
   rebootOnu,
+  recordConsent,
   relocateCustomer,
+  requestDataDeletion,
   resumeCustomer,
   setOnuWifi,
   stopCustomer,
   suspendCustomer,
   updateCustomer,
+  updateKyc,
 } from '@/api/customers'
 import { getErrorMessage } from '@/lib/errors'
 import type {
@@ -25,6 +28,7 @@ import type {
   CreateCustomerInput,
   RelocateCustomerInput,
   SetWifiInput,
+  UpdateKycInput,
 } from '@/schemas/customer'
 
 export function useCustomersList(filter: CustomerFilter = {}) {
@@ -136,6 +140,39 @@ export function useStopCustomer() {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" dihentikan`)
     },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// UU PDP: consent, KYC capture, and data-subject erasure request.
+export function useRecordConsent(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => recordConsent(id),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success('Persetujuan pemrosesan data dicatat')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useUpdateKyc(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateKycInput) => updateKyc(id, input),
+    onSuccess: (customer) => {
+      syncCustomerCaches(qc, customer)
+      toast.success('Data KYC diperbarui')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useRequestDataDeletion(id: string) {
+  return useMutation({
+    mutationFn: () => requestDataDeletion(id),
+    onSuccess: () => toast.success('Permintaan hapus data dicatat'),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }

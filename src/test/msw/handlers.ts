@@ -130,6 +130,9 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
       i % 4 === 0
         ? `0${String(10000000 + i * 7).slice(0, 8)}.${String(100 + i).slice(0, 3)}.000`
         : null,
+    ktp: i % 3 === 0 ? `327${String(1000000000000 + i * 7)}`.slice(0, 16) : null,
+    // Most active/isolir subscribers already consented at onboarding.
+    consentAt: provisioned ? iso(2025, i % 12, 1 + (i % 27)) : null,
     resellerName: RESELLER_NAMES[i % RESELLER_NAMES.length] ?? null,
     connection,
     joinedAt: iso(2025, i % 12, 1 + (i % 27)),
@@ -906,7 +909,7 @@ const ACS_DEVICE_FIXTURES = CUSTOMER_FIXTURES.filter((c) => c.connection?.type =
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v3'
+const DB_KEY = 'isp-cms-mock-db-v4'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1239,6 +1242,41 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(found)
   }),
+  // UU PDP: record consent to data processing.
+  http.post('*/api/customers/:id/consent', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.consentAt = new Date().toISOString()
+    recordAudit('customer.consent', 'Pelanggan', `Persetujuan PDP ${found.fullName}`)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // KYC capture (NIK/KTP, NPWP).
+  http.patch('*/api/customers/:id/kyc', async ({ params, request }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as { ktp: string; npwp?: string }
+    found.ktp = body.ktp
+    if (body.npwp !== undefined) found.npwp = body.npwp === '' ? null : body.npwp
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // Data-subject erasure request (logged; historical billing retained).
+  http.post('*/api/customers/:id/data-deletion', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    recordAudit('customer.data_deletion', 'Pelanggan', `Permintaan hapus data ${found.fullName}`)
+    persistDb()
+    return new HttpResponse(null, { status: 202 })
+  }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
       fullName: string
@@ -1262,6 +1300,8 @@ export const handlers = [
       status: 'prospek' as const,
       outstanding: 0,
       npwp: null,
+      ktp: null,
+      consentAt: null,
       resellerName: null,
       connection: null,
       joinedAt: new Date().toISOString(),
@@ -1297,6 +1337,8 @@ export const handlers = [
       status: 'instalasi' as const,
       outstanding: 0,
       npwp: null,
+      ktp: null,
+      consentAt: null,
       resellerName: null,
       connection: null,
       joinedAt: new Date().toISOString(),
