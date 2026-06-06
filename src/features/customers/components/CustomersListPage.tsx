@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useCan } from '@/features/auth'
+import { areaInScope, useBranchScope } from '@/features/branches'
 import { downloadCsv } from '@/lib/csv'
 import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -58,9 +59,16 @@ export function CustomersListPage() {
   const canManage = useCan('customers.manage')
   const canNetwork = useCan('network.manage')
   const bulkStatus = useBulkCustomerStatus()
+  const scope = useBranchScope((s) => s.scope)
   const { data, isLoading, isError } = useCustomersList({
     status: status === 'all' ? undefined : status,
   })
+
+  // Narrow to the active branch's service areas (null scope = all).
+  const items = useMemo(
+    () => (data?.items ?? []).filter((c) => areaInScope(c.areaName, scope)),
+    [data, scope],
+  )
 
   const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
@@ -120,10 +128,17 @@ export function CustomersListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Pelanggan" description="Pelanggan dan paket aktif mereka." />
+      <PageHeader
+        title="Pelanggan"
+        description={
+          scope
+            ? `Pelanggan & paket aktif — cabang ${scope.name}.`
+            : 'Pelanggan dan paket aktif mereka.'
+        }
+      />
       <DataTable
         columns={columns}
-        data={data?.items}
+        data={items}
         isLoading={isLoading}
         isError={isError}
         emptyMessage="Belum ada pelanggan."
@@ -149,8 +164,8 @@ export function CustomersListPage() {
               variant="outline"
               size="sm"
               className="h-8"
-              disabled={!data?.items.length}
-              onClick={() => downloadCsv('pelanggan', (data?.items ?? []).map(toCsvRow))}
+              disabled={!items.length}
+              onClick={() => downloadCsv('pelanggan', items.map(toCsvRow))}
             >
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Export</span>
