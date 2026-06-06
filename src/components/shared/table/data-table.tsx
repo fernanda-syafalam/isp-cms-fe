@@ -147,9 +147,11 @@ export function DataTable<T>({
       </div>
 
       {enableSelection && bulkActions && selectedRows.length > 0 ? (
-        <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-2">
           <span className="text-sm">{selectedRows.length} dipilih</span>
-          <div className="ml-auto flex items-center gap-2">{bulkActions(selectedRows)}</div>
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            {bulkActions(selectedRows)}
+          </div>
         </div>
       ) : null}
 
