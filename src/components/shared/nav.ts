@@ -119,7 +119,6 @@ export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
   teknisi: [
-    '/',
     '/work-orders',
     '/tickets',
     '/customers',
@@ -128,8 +127,16 @@ const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
     '/network/acs',
     '/network/monitoring',
   ],
-  mitra: ['/', '/customers', '/leads', '/resellers'],
+  mitra: ['/resellers', '/customers', '/leads'],
   customer: ['/portal'],
+}
+
+// Where each restricted role lands instead of the ops dashboard. admin/staff
+// (omitted) stay on the dashboard at "/".
+export const ROLE_HOME: Partial<Record<Role, string>> = {
+  teknisi: '/work-orders',
+  mitra: '/resellers',
+  customer: '/portal',
 }
 
 // Navigation groups visible to a role (empty groups dropped).
