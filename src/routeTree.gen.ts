@@ -16,6 +16,7 @@ import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
 import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
 import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
+import { Route as AuthSlaCreditsRouteImport } from './routes/_auth.sla-credits'
 import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
 import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
@@ -90,6 +91,13 @@ const AuthStaffRoute = AuthStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() => import('./routes/_auth.staff.lazy').then((d) => d.Route))
+const AuthSlaCreditsRoute = AuthSlaCreditsRouteImport.update({
+  id: '/sla-credits',
+  path: '/sla-credits',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.sla-credits.lazy').then((d) => d.Route),
+)
 const AuthSettingsRoute = AuthSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -306,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/resellers': typeof AuthResellersRouteWithChildren
   '/satisfaction': typeof AuthSatisfactionRoute
   '/settings': typeof AuthSettingsRoute
+  '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
   '/vouchers': typeof AuthVouchersRoute
@@ -344,6 +353,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthReportsRoute
   '/satisfaction': typeof AuthSatisfactionRoute
   '/settings': typeof AuthSettingsRoute
+  '/sla-credits': typeof AuthSlaCreditsRoute
   '/staff': typeof AuthStaffRoute
   '/vouchers': typeof AuthVouchersRoute
   '/work-orders': typeof AuthWorkOrdersRoute
@@ -388,6 +398,7 @@ export interface FileRoutesById {
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
   '/_auth/satisfaction': typeof AuthSatisfactionRoute
   '/_auth/settings': typeof AuthSettingsRoute
+  '/_auth/sla-credits': typeof AuthSlaCreditsRoute
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
   '/_auth/vouchers': typeof AuthVouchersRoute
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/resellers'
     | '/satisfaction'
     | '/settings'
+    | '/sla-credits'
     | '/staff'
     | '/tickets'
     | '/vouchers'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/satisfaction'
     | '/settings'
+    | '/sla-credits'
     | '/staff'
     | '/vouchers'
     | '/work-orders'
@@ -515,6 +528,7 @@ export interface FileRouteTypes {
     | '/_auth/resellers'
     | '/_auth/satisfaction'
     | '/_auth/settings'
+    | '/_auth/sla-credits'
     | '/_auth/staff'
     | '/_auth/tickets'
     | '/_auth/vouchers'
@@ -597,6 +611,13 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof AuthStaffRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sla-credits': {
+      id: '/_auth/sla-credits'
+      path: '/sla-credits'
+      fullPath: '/sla-credits'
+      preLoaderRoute: typeof AuthSlaCreditsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/settings': {
@@ -936,6 +957,7 @@ interface AuthRouteChildren {
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
   AuthSatisfactionRoute: typeof AuthSatisfactionRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
+  AuthSlaCreditsRoute: typeof AuthSlaCreditsRoute
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
   AuthVouchersRoute: typeof AuthVouchersRoute
@@ -967,6 +989,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthResellersRoute: AuthResellersRouteWithChildren,
   AuthSatisfactionRoute: AuthSatisfactionRoute,
   AuthSettingsRoute: AuthSettingsRoute,
+  AuthSlaCreditsRoute: AuthSlaCreditsRoute,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,
   AuthVouchersRoute: AuthVouchersRoute,
