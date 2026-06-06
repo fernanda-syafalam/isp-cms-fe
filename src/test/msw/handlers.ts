@@ -957,6 +957,46 @@ const SLA_CREDIT_FIXTURES = TICKET_FIXTURES.filter((t) => t.status === 'breached
   appliedAt: (i === 0 ? iso(2026, 4, 20) : null) as string | null,
 }))
 
+// Branches / cabang (POPs) with per-branch rollups (mock).
+const BRANCH_FIXTURES = [
+  {
+    id: oid('b4a0c000', 0),
+    name: 'Cabang Bandung',
+    city: 'Bandung',
+    manager: 'Andi Wijaya',
+    phone: '022-1234567',
+    status: 'active' as 'active' | 'inactive',
+    isHeadOffice: true,
+    customerCount: 320,
+    mrr: 96_000_000,
+    deviceCount: 18,
+  },
+  {
+    id: oid('b4a0c000', 1),
+    name: 'Cabang Cimahi',
+    city: 'Cimahi',
+    manager: 'Budi Hartono',
+    phone: '022-7654321',
+    status: 'active' as 'active' | 'inactive',
+    isHeadOffice: false,
+    customerCount: 145,
+    mrr: 41_000_000,
+    deviceCount: 9,
+  },
+  {
+    id: oid('b4a0c000', 2),
+    name: 'Cabang Garut',
+    city: 'Garut',
+    manager: 'Citra Lestari',
+    phone: '0262-998877',
+    status: 'active' as 'active' | 'inactive',
+    isHeadOffice: false,
+    customerCount: 88,
+    mrr: 23_500_000,
+    deviceCount: 6,
+  },
+]
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -1005,6 +1045,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   contracts: CONTRACT_FIXTURES,
   leads: LEAD_FIXTURES,
   slaCredits: SLA_CREDIT_FIXTURES,
+  branches: BRANCH_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1495,6 +1536,38 @@ export const handlers = [
     found.status = 'void'
     persistDb()
     return HttpResponse.json(found)
+  }),
+
+  // Branches / cabang
+  http.get('*/api/branches', () =>
+    HttpResponse.json({
+      items: BRANCH_FIXTURES,
+      total: BRANCH_FIXTURES.length,
+    }),
+  ),
+  http.post('*/api/branches', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string
+      city: string
+      manager: string
+      phone: string
+    }
+    const branch = {
+      id: crypto.randomUUID(),
+      name: body.name,
+      city: body.city,
+      manager: body.manager,
+      phone: body.phone,
+      status: 'active' as 'active' | 'inactive',
+      isHeadOffice: false,
+      customerCount: 0,
+      mrr: 0,
+      deviceCount: 0,
+    }
+    BRANCH_FIXTURES.push(branch)
+    recordAudit('branch.create', 'Cabang', `Cabang baru ${body.name}`)
+    persistDb()
+    return HttpResponse.json(branch, { status: 201 })
   }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {

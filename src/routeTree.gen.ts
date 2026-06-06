@@ -30,6 +30,7 @@ import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
+import { Route as AuthBranchesRouteImport } from './routes/_auth.branches'
 import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
 import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
 import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
@@ -173,6 +174,13 @@ const AuthCoverageRoute = AuthCoverageRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.coverage.lazy').then((d) => d.Route),
 )
+const AuthBranchesRoute = AuthBranchesRouteImport.update({
+  id: '/branches',
+  path: '/branches',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.branches.lazy').then((d) => d.Route),
+)
 const AuthAuditRoute = AuthAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -301,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
   '/audit': typeof AuthAuditRoute
+  '/branches': typeof AuthBranchesRoute
   '/coverage': typeof AuthCoverageRoute
   '/customers': typeof AuthCustomersRouteWithChildren
   '/inventory': typeof AuthInventoryRouteWithChildren
@@ -344,6 +353,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/audit': typeof AuthAuditRoute
+  '/branches': typeof AuthBranchesRoute
   '/coverage': typeof AuthCoverageRoute
   '/leads': typeof AuthLeadsRoute
   '/notifications': typeof AuthNotificationsRoute
@@ -385,6 +395,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
   '/_auth/audit': typeof AuthAuditRoute
+  '/_auth/branches': typeof AuthBranchesRoute
   '/_auth/coverage': typeof AuthCoverageRoute
   '/_auth/customers': typeof AuthCustomersRouteWithChildren
   '/_auth/inventory': typeof AuthInventoryRouteWithChildren
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/audit'
+    | '/branches'
     | '/coverage'
     | '/customers'
     | '/inventory'
@@ -475,6 +487,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/audit'
+    | '/branches'
     | '/coverage'
     | '/leads'
     | '/notifications'
@@ -515,6 +528,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/login'
     | '/_auth/audit'
+    | '/_auth/branches'
     | '/_auth/coverage'
     | '/_auth/customers'
     | '/_auth/inventory'
@@ -709,6 +723,13 @@ declare module '@tanstack/react-router' {
       path: '/coverage'
       fullPath: '/coverage'
       preLoaderRoute: typeof AuthCoverageRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/branches': {
+      id: '/_auth/branches'
+      path: '/branches'
+      fullPath: '/branches'
+      preLoaderRoute: typeof AuthBranchesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/audit': {
@@ -944,6 +965,7 @@ const AuthTicketsRouteWithChildren = AuthTicketsRoute._addFileChildren(
 
 interface AuthRouteChildren {
   AuthAuditRoute: typeof AuthAuditRoute
+  AuthBranchesRoute: typeof AuthBranchesRoute
   AuthCoverageRoute: typeof AuthCoverageRoute
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
   AuthInventoryRoute: typeof AuthInventoryRouteWithChildren
@@ -976,6 +998,7 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAuditRoute: AuthAuditRoute,
+  AuthBranchesRoute: AuthBranchesRoute,
   AuthCoverageRoute: AuthCoverageRoute,
   AuthCustomersRoute: AuthCustomersRouteWithChildren,
   AuthInventoryRoute: AuthInventoryRouteWithChildren,
