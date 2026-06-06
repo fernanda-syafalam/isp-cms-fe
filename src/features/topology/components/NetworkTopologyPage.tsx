@@ -1,4 +1,4 @@
-import { ListTreeIcon, MapIcon } from 'lucide-react'
+import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -10,7 +10,13 @@ import { cn } from '@/lib/cn'
 import type { NetworkNode, NodeStatus, NodeType } from '@/schemas/topology'
 
 import { useDeleteNode, useTopology, useUpdateNode } from '../hooks/useTopology'
-import { buildForest, downstreamIds, indexById, uplinkPath } from '../lib/graph'
+import {
+  buildForest,
+  downstreamIds,
+  impactedCustomerIds,
+  indexById,
+  uplinkPath,
+} from '../lib/graph'
 import { NodeDetailPanel } from './NodeDetailPanel'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyControls } from './TopologyControls'
@@ -56,6 +62,7 @@ export function NetworkTopologyPage() {
   )
   const visibleById = useMemo(() => indexById(visible), [visible])
   const forest = useMemo(() => buildForest(visible), [visible])
+  const impactedCount = useMemo(() => impactedCustomerIds(all).size, [all])
 
   const highlightIds = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -133,6 +140,19 @@ export function NetworkTopologyPage() {
         <p className="text-destructive" role="alert">
           Gagal memuat topologi.
         </p>
+      ) : null}
+
+      {impactedCount > 0 ? (
+        <div
+          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm"
+          role="alert"
+        >
+          <TriangleAlertIcon className="size-5 shrink-0 text-destructive" />
+          <span className="text-destructive">
+            <span className="font-semibold">≈ {impactedCount} pelanggan</span> berpotensi terdampak
+            gangguan jaringan saat ini.
+          </span>
+        </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
