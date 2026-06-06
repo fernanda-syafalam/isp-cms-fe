@@ -22,6 +22,8 @@ export function useCompleteWorkOrder() {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['invoices'] })
       qc.invalidateQueries({ queryKey: ['topology'] })
+      // An install consumes an ONU from the warehouse.
+      qc.invalidateQueries({ queryKey: ['inventory'] })
       toast.success(
         wo.type === 'install'
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`

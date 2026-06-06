@@ -2568,12 +2568,31 @@ export const handlers = [
         const seq = CUSTOMER_FIXTURES.indexOf(customer)
         customer.status = 'aktif'
         setTopoCustomerStatus(customer.fullName, 'up')
+        // Consume an ONU from the warehouse: assign it to the customer + log
+        // the stock movement, so inventory reflects the install. Falls back to
+        // a synthetic serial if no ONU is in stock.
+        const onu = INVENTORY_FIXTURES.find((it) => it.kind === 'onu' && it.status === 'warehouse')
+        let onuSerial = `ZTEG${String(20000000 + seq)}`
+        if (onu) {
+          onu.status = 'installed'
+          onu.assignedTo = customer.fullName
+          onuSerial = onu.serial
+          STOCK_MOVEMENT_FIXTURES.unshift({
+            id: crypto.randomUUID(),
+            itemId: onu.id,
+            serial: onu.serial,
+            kind: onu.kind,
+            type: 'assign',
+            note: customer.fullName,
+            at: new Date().toISOString(),
+          })
+        }
         customer.connection = {
           type: 'gpon',
           pppoeUsername: customer.customerNo.toLowerCase().replace('-', ''),
           profile: customer.planName,
           ipAddress: `100.64.${100 + (seq % 150)}.2`,
-          onuSerial: `ZTEG${String(20000000 + seq)}`,
+          onuSerial,
           olt: 'OLT-1',
           ponPort: `0/${seq % 8}/${seq % 16}`,
           rxPower: -20 - (seq % 6),
