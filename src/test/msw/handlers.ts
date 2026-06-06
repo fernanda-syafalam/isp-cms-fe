@@ -176,6 +176,24 @@ const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid')
   paidAt: inv.paidAt ?? iso(2026, 5, 5),
 }))
 
+// Online payment-gateway charges (QRIS/VA/e-wallet). Created at checkout, marked
+// paid by a simulated webhook. Starts empty; loose-typed so the array can grow.
+type PaymentIntentRecord = {
+  id: string
+  invoiceId: string
+  invoiceNo: string
+  customerName: string
+  amount: number
+  channel: string
+  status: 'pending' | 'paid' | 'expired'
+  vaNumber: string | null
+  qrPayload: string | null
+  createdAt: string
+  expiresAt: string
+  paidAt: string | null
+}
+const PAYMENT_INTENT_FIXTURES: PaymentIntentRecord[] = []
+
 const DEVICE_TYPES = ['olt', 'onu', 'mikrotik'] as const
 const DEVICE_STATUS = ['online', 'online', 'degraded', 'online', 'offline'] as const
 const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
@@ -739,6 +757,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   vouchers: VOUCHER_FIXTURES,
   resellerLedger: RESELLER_LEDGER_FIXTURES,
   stockMovements: STOCK_MOVEMENT_FIXTURES,
+  paymentIntents: PAYMENT_INTENT_FIXTURES,
   audit: AUDIT_FIXTURES,
   settings: [SETTINGS_FIXTURE],
 }
@@ -1325,6 +1344,88 @@ export const handlers = [
       total: PAYMENT_FIXTURES.length,
     }),
   ),
+  // Payment gateway: create a charge (QRIS/VA/e-wallet) for an invoice.
+  http.post('*/api/payments/intent', async ({ request }) => {
+    const body = (await request.json()) as {
+      invoiceId: string
+      channel: string
+    }
+    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === body.invoiceId)
+    if (!invoice) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const isVa = body.channel.startsWith('va_')
+    const rand = crypto.randomUUID().replace(/\D/g, '').padEnd(12, '0')
+    const now = new Date()
+    const intent = {
+      id: crypto.randomUUID(),
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      customerName: invoice.customerName,
+      amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
+      channel: body.channel,
+      status: 'pending' as const,
+      vaNumber: isVa ? `88${rand.slice(0, 14)}` : null,
+      qrPayload: isVa ? null : `00020101021226${rand.slice(0, 10)}5204481253033605802ID`,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + 86_400_000).toISOString(),
+      paidAt: null,
+    }
+    PAYMENT_INTENT_FIXTURES.unshift(intent)
+    persistDb()
+    return HttpResponse.json(intent, { status: 201 })
+  }),
+  // Simulated settlement webhook: mark the intent + invoice paid, reconcile AR,
+  // reactivate an isolir customer if nothing overdue remains.
+  http.post('*/api/payments/intent/:id/confirm', ({ params }) => {
+    const intent = PAYMENT_INTENT_FIXTURES.find((p) => p.id === params.id)
+    if (!intent) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (intent.status === 'paid') return HttpResponse.json(intent)
+    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === intent.invoiceId)
+    const nowIso = new Date().toISOString()
+    intent.status = 'paid'
+    intent.paidAt = nowIso
+    if (invoice) {
+      invoice.status = 'paid'
+      invoice.paidAt = nowIso
+      const method =
+        intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
+      PAYMENT_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        invoiceNo: invoice.invoiceNo,
+        customerName: invoice.customerName,
+        amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
+        method,
+        paidAt: nowIso,
+      })
+      const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
+      if (customer) {
+        const unpaid = INVOICE_FIXTURES.filter(
+          (inv) =>
+            inv.customerId === customer.id &&
+            (inv.status === 'pending' || inv.status === 'overdue'),
+        )
+        customer.outstanding = unpaid.reduce(
+          (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
+          0,
+        )
+        const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
+        if (customer.status === 'isolir' && !hasOverdue) {
+          customer.status = 'aktif'
+          setSecretsDisabledByCustomer(customer.fullName, false)
+        }
+      }
+      recordAudit('payment.gateway', 'Tagihan', `Pembayaran ${intent.channel} ${invoice.invoiceNo}`)
+    }
+    persistDb()
+    return HttpResponse.json(intent)
+  }),
 
   // Devices
   http.get('*/api/devices', () =>

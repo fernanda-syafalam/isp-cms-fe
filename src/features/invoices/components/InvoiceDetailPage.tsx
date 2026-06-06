@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, BellRingIcon, PrinterIcon, WalletIcon } from 'lucide-react'
+import { ArrowLeftIcon, BellRingIcon, CreditCardIcon, PrinterIcon, WalletIcon } from 'lucide-react'
+import { useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -22,6 +23,7 @@ import { PaymentMethodSchema } from '@/schemas/payment'
 
 import { useRemindOverdue } from '../hooks/useBilling'
 import { useInvoice, usePayInvoice } from '../hooks/useInvoices'
+import { CheckoutDialog } from './CheckoutDialog'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
   paid: 'success',
@@ -94,6 +96,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
               </Link>
             </Button>
             {invoice.status !== 'paid' ? <RemindButton invoice={invoice} /> : null}
+            {invoice.status !== 'paid' ? <OnlinePayButton invoice={invoice} /> : null}
             {invoice.status !== 'paid' ? <PayMenu invoice={invoice} /> : null}
           </div>
         }
@@ -160,14 +163,27 @@ function RemindButton({ invoice }: { invoice: Invoice }) {
   )
 }
 
+function OnlinePayButton({ invoice }: { invoice: Invoice }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button size="sm" onClick={() => setOpen(true)}>
+        <CreditCardIcon className="size-4" />
+        Bayar online
+      </Button>
+      <CheckoutDialog invoice={invoice} open={open} onOpenChange={setOpen} />
+    </>
+  )
+}
+
 function PayMenu({ invoice }: { invoice: Invoice }) {
   const pay = usePayInvoice(invoice.id)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" disabled={pay.isPending}>
+        <Button variant="outline" size="sm" disabled={pay.isPending}>
           <WalletIcon className="size-4" />
-          Catat pembayaran
+          Catat manual
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
