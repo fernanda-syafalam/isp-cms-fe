@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+import { ROLE_LABEL, ROLES, isRole } from '@/lib/permissions'
+
 import { useCurrentUser, useLogout } from '../hooks/useAuth'
 import { useCan, useEffectiveRole } from '../hooks/useRole'
 import { useRoleStore } from '../store/roleStore'
@@ -62,11 +64,14 @@ export function UserMenu() {
         <DropdownMenuRadioGroup
           value={effectiveRole}
           onValueChange={(value) => {
-            if (value === 'admin' || value === 'staff') setOverride(value)
+            if (isRole(value)) setOverride(value)
           }}
         >
-          <DropdownMenuRadioItem value="admin">Admin</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="staff">Staf</DropdownMenuRadioItem>
+          {ROLES.map((role) => (
+            <DropdownMenuRadioItem key={role} value={role}>
+              {ROLE_LABEL[role]}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         {canReset ? (
