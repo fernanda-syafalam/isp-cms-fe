@@ -14,11 +14,11 @@ type Issuer = {
 
 // Fallback issuer profile. InvoicePrintPage passes the live Settings profile.
 const DEFAULT_ISSUER: Issuer = {
-  name: 'Ashnet',
+  name: 'Jepara Net',
   tagline: 'Layanan Internet',
-  address: 'Jl. Merdeka No. 1, Jakarta',
-  phone: '0800-1-274638',
-  email: 'billing@ashnet.id',
+  address: 'Jl. Pemuda No. 12, Jepara, Jawa Tengah',
+  phone: '0291-591234',
+  email: 'billing@jeparanet.id',
 }
 
 type Props = {

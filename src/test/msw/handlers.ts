@@ -71,7 +71,17 @@ const PLAN_FIXTURES = [
   },
 ]
 
-const AREA_NAMES: string[] = ['Bandung Kota', 'Cimahi', 'Sumedang', 'Garut', 'Cianjur']
+// Service areas = kecamatan around Jepara, Jawa Tengah (demo locale).
+const AREA_NAMES: string[] = [
+  'Jepara',
+  'Tahunan',
+  'Pecangaan',
+  'Kalinyamatan',
+  'Mlonggo',
+  'Bangsri',
+  'Mayong',
+  'Batealit',
+]
 const CUSTOMER_STATUS = [
   'aktif',
   'aktif',
@@ -118,7 +128,7 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     fullName: `Pelanggan ${String.fromCharCode(65 + (i % 26))}${i}`,
     phone: `0812${String(10000000 + i)}`,
     email: i % 3 === 0 ? null : `pelanggan${i}@example.com`,
-    address: `Jl. Merdeka No. ${i + 1}`,
+    address: `Jl. Pemuda No. ${i + 1}, Jepara`,
     areaId: oid('dddddddd', i % AREA_NAMES.length),
     areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
     planId: plan?.id ?? oid('bbbbbbbb', 1),
@@ -426,7 +436,7 @@ const TOPOLOGY_FIXTURES = (() => {
     parentId: string | null
   }
   const nodes: TopoNode[] = []
-  const center = { lat: -6.9039, lng: 107.6186 }
+  const center = { lat: -6.5514, lng: 110.6811 } // Kota Jepara, Jawa Tengah;
   const STATUS_CYCLE: TopoNode['status'][] = ['up', 'up', 'up', 'up', 'down', 'unknown', 'up', 'up']
   let k = 0
   for (let o = 0; o < 2; o++) {
@@ -646,10 +656,10 @@ function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
 // Operator settings (single record). Company profile + billing parameters.
 const SETTINGS_FIXTURE = {
   company: {
-    name: 'Ashnet',
-    address: 'Jl. Merdeka No. 1, Jakarta',
-    phone: '0800-1-274638',
-    email: 'billing@ashnet.id',
+    name: 'Jepara Net',
+    address: 'Jl. Pemuda No. 12, Jepara, Jawa Tengah',
+    phone: '0291-591234',
+    email: 'billing@jeparanet.id',
   },
   billing: {
     lateFeeIdr: 25_000,
@@ -934,7 +944,7 @@ const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
     id: oid('1ead0000', i),
     name: `Calon ${String.fromCharCode(65 + i)}`,
     phone: `08${String(1200000000 + i * 7).slice(0, 10)}`,
-    address: `Jl. Contoh No. ${i + 1}`,
+    address: `Jl. Pahlawan No. ${i + 1}, Jepara`,
     areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
     planName: plan?.name ?? 'Home 20',
     stage: stage as 'new' | 'survey' | 'quote' | 'won' | 'lost',
@@ -1035,7 +1045,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v5'
+const DB_KEY = 'isp-cms-mock-db-v6'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
