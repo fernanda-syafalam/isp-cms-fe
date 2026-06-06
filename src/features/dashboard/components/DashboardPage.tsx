@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import { Link } from '@tanstack/react-router'
+import { Link, Navigate } from '@tanstack/react-router'
 import type { ComponentType } from 'react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
@@ -23,7 +23,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useDashboardSummary } from '@/hooks/useAnalytics'
-import { useCurrentUser } from '@/features/auth'
+import { useCurrentUser, useEffectiveRole } from '@/features/auth'
 import {
   formatCurrency,
   formatDate,
@@ -41,10 +41,14 @@ import { AttentionPanel, type AttentionAlert } from './AttentionPanel'
 const KPI_SKELETON_KEYS = ['k1', 'k2', 'k3', 'k4'] as const
 
 export function DashboardPage() {
+  const role = useEffectiveRole()
   const { data: user } = useCurrentUser()
   const { data: summary, isLoading, isError } = useDashboardSummary()
   const { data: recentPayments } = useRecentPayments()
   const { data: upcomingInstalls } = useUpcomingInstalls()
+
+  // A customer's home is their self-service portal, not the ops dashboard.
+  if (role === 'customer') return <Navigate to="/portal" replace />
 
   const alerts: AttentionAlert[] = summary
     ? [
