@@ -1,4 +1,4 @@
-import { PencilIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { PencilIcon, Trash2Icon, TriangleAlertIcon, XIcon } from 'lucide-react'
 
 import {
   AlertDialog,
@@ -38,6 +38,8 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
   const path = uplinkPath(node, byId)
   const downstream = downstreamIds(node.id, nodes)
   const customerCount = nodes.filter((n) => n.type === 'customer' && downstream.has(n.id)).length
+  // Blast radius when this node is down: downstream customers + itself if it is one.
+  const impacted = customerCount + (node.type === 'customer' ? 1 : 0)
 
   return (
     <Card>
@@ -60,6 +62,16 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {node.status === 'down' ? (
+          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+            <TriangleAlertIcon className="size-4 shrink-0 text-destructive" />
+            <span className="text-destructive text-xs">
+              {impacted > 0
+                ? `≈ ${impacted} pelanggan berpotensi terdampak`
+                : 'Node ini sedang down'}
+            </span>
+          </div>
+        ) : null}
         <div>
           <p className="mb-1 text-muted-foreground text-xs">Jalur uplink</p>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">

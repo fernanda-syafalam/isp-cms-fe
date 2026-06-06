@@ -104,3 +104,18 @@ export function downstreamIds(rootId: string, nodes: NetworkNode[]): Set<string>
   }
   return result
 }
+
+// Customers cut off by an outage (blast radius): any customer that is itself
+// down, or whose uplink passes through a down node (downstream of it).
+export function impactedCustomerIds(nodes: NetworkNode[]): Set<string> {
+  const byId = indexById(nodes)
+  const ids = new Set<string>()
+  for (const d of nodes) {
+    if (d.status !== 'down') continue
+    if (d.type === 'customer') ids.add(d.id)
+    for (const id of downstreamIds(d.id, nodes)) {
+      if (byId.get(id)?.type === 'customer') ids.add(id)
+    }
+  }
+  return ids
+}
