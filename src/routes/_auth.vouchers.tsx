@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { VouchersListPage } from '@/features/vouchers'
 import { statusSearch } from '@/lib/search'
 
+// Route stub (keeps validateSearch) — component is code-split into the lazy file.
 export const Route = createFileRoute('/_auth/vouchers')({
-  component: VouchersListPage,
   validateSearch: statusSearch,
 })

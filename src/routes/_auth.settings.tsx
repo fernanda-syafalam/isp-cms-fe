@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { SettingsPage } from '@/features/settings'
-
-export const Route = createFileRoute('/_auth/settings')({
-  component: SettingsPage,
-})
+// Route stub only — component is code-split into _auth.settings.lazy.tsx.
+export const Route = createFileRoute('/_auth/settings')({})

@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { NotificationsPage } from '@/features/notifications'
-
-export const Route = createFileRoute('/_auth/notifications')({
-  component: NotificationsPage,
-})
+// Route stub only — component is code-split into _auth.notifications.lazy.tsx.
+export const Route = createFileRoute('/_auth/notifications')({})

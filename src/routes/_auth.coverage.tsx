@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { CoverageListPage } from '@/features/coverage'
-
-export const Route = createFileRoute('/_auth/coverage')({
-  component: CoverageListPage,
-})
+// Route stub only — component is code-split into _auth.coverage.lazy.tsx.
+export const Route = createFileRoute('/_auth/coverage')({})
