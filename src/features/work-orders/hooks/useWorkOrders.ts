@@ -24,6 +24,8 @@ export function useCompleteWorkOrder() {
       qc.invalidateQueries({ queryKey: ['topology'] })
       // An install consumes an ONU from the warehouse.
       qc.invalidateQueries({ queryKey: ['inventory'] })
+      // …and provisions a PPPoE secret on a router.
+      qc.invalidateQueries({ queryKey: ['routers'] })
       toast.success(
         wo.type === 'install'
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`

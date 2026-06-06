@@ -2597,15 +2597,35 @@ export const handlers = [
             at: new Date().toISOString(),
           })
         }
+        const pppoeUsername = customer.customerNo.toLowerCase().replace('-', '')
         customer.connection = {
           type: 'gpon',
-          pppoeUsername: customer.customerNo.toLowerCase().replace('-', ''),
+          pppoeUsername,
           profile: customer.planName,
           ipAddress: `100.64.${100 + (seq % 150)}.2`,
           onuSerial,
           olt: 'OLT-1',
           ponPort: `0/${seq % 8}/${seq % 16}`,
           rxPower: -20 - (seq % 6),
+        }
+        // Provision a PPPoE secret on a Mikrotik so the new subscriber shows up
+        // on the router (Secrets tab) — closes the connect-router → customer loop.
+        const router = ROUTER_FIXTURES[0]
+        if (router) {
+          const profile = MIKROTIK_PROFILE_FIXTURES.find(
+            (p) => p.routerId === router.id && p.name === customer.planName,
+          )
+          MIKROTIK_SECRET_FIXTURES.unshift({
+            id: crypto.randomUUID(),
+            routerId: router.id,
+            username: pppoeUsername,
+            profileId: profile?.id ?? `${router.id}-prof-home20`,
+            profileName: profile?.name ?? customer.planName,
+            customerName: customer.fullName,
+            disabled: false,
+            comment: `Auto-provision saat instalasi (${wo.code})`,
+          })
+          router.secretCount += 1
         }
         const plan = PLAN_FIXTURES.find((p) => p.name === customer.planName)
         const now = new Date()
