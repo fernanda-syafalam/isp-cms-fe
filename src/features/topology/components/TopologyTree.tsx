@@ -2,7 +2,7 @@ import { ChevronRightIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { cn } from '@/lib/cn'
-import type { NetworkNode, NodeStatus } from '@/schemas/topology'
+import type { NodeStatus } from '@/schemas/topology'
 
 import { STATUS_LABEL, TYPE_LABEL, type TreeNode } from '../lib/graph'
 
