@@ -286,7 +286,9 @@ const AuthCustomersOnboardingRoute = AuthCustomersOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthCustomersRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.customers.onboarding.lazy').then((d) => d.Route),
+)
 const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   id: '/$customerId',
   path: '/$customerId',
