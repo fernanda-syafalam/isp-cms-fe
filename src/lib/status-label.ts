@@ -61,6 +61,10 @@ const STATUS_LABELS: Record<string, string> = {
   warehouse: 'Gudang',
   installed: 'Terpasang',
   broken: 'Rusak',
+  // voucher status
+  unused: 'Belum dipakai',
+  used: 'Terpakai',
+  expired: 'Kedaluwarsa',
 }
 
 /** Translate an API enum value to its Indonesian display label. */

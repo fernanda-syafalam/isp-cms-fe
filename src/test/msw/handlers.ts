@@ -462,6 +462,62 @@ const TICKET_EVENT_FIXTURES: TicketEvent[] = TICKET_FIXTURES.map((t) => ({
   at: t.createdAt,
 }))
 
+// Prepaid voucher batches (hotspot/PPPoE). Codes are deterministic in the seed.
+// Typed wide (not literal) so the batch handler can unshift new vouchers.
+const VOUCHER_BATCHES: Array<{
+  batchId: string
+  profile: string
+  priceIdr: number
+  durationDays: number
+}> = [
+  {
+    batchId: 'BATCH-2026-01',
+    profile: 'Hotspot 1 Hari',
+    priceIdr: 5_000,
+    durationDays: 1,
+  },
+  {
+    batchId: 'BATCH-2026-02',
+    profile: 'Hotspot 7 Hari',
+    priceIdr: 25_000,
+    durationDays: 7,
+  },
+  {
+    batchId: 'BATCH-2026-03',
+    profile: 'PPPoE 10Mbps 30 Hari',
+    priceIdr: 150_000,
+    durationDays: 30,
+  },
+] as const
+const VOUCHER_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const voucherCode = (n: number) => {
+  let s = ''
+  let x = n * 2_654_435_761 + 7
+  for (let i = 0; i < 8; i++) {
+    s += VOUCHER_CHARS.charAt(x % VOUCHER_CHARS.length)
+    x = Math.floor(x / VOUCHER_CHARS.length) + (i + 1) * 131
+  }
+  return `ASH-${s.slice(0, 4)}-${s.slice(4)}`
+}
+const VOUCHER_FIXTURES = VOUCHER_BATCHES.flatMap((batch, bi) =>
+  Array.from({ length: 8 }, (_, j) => {
+    const i = bi * 8 + j
+    const status = i % 3 === 0 ? 'used' : i % 7 === 0 ? 'expired' : 'unused'
+    return {
+      id: oid('e0e0e0e0', i),
+      code: voucherCode(i),
+      batchId: batch.batchId,
+      profile: batch.profile,
+      priceIdr: batch.priceIdr,
+      durationDays: batch.durationDays,
+      status,
+      createdAt: iso(2026, 4, 1 + bi),
+      usedAt: status === 'used' ? iso(2026, 4, 5 + (j % 10)) : null,
+      usedBy: status === 'used' ? `Hotspot user ${i}` : null,
+    }
+  }),
+)
+
 // Isolir integration: disable/enable a customer's PPPoE secrets by name.
 function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
   if (!name) return
@@ -500,6 +556,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   mikrotikSessions: MIKROTIK_SESSION_FIXTURES,
   mikrotikQueues: MIKROTIK_QUEUE_FIXTURES,
   ticketEvents: TICKET_EVENT_FIXTURES,
+  vouchers: VOUCHER_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1325,6 +1382,56 @@ export const handlers = [
     if (body.area !== undefined) found.area = body.area
     if (body.commissionPct !== undefined) found.commissionPct = body.commissionPct
     if (body.status !== undefined) found.status = body.status
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+
+  // Vouchers (prepaid hotspot/PPPoE)
+  http.get('*/api/vouchers', ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status')
+    const items = filterByStatus(VOUCHER_FIXTURES, status)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  // Generate a batch of identical unused vouchers.
+  http.post('*/api/vouchers/batch', async ({ request }) => {
+    const body = (await request.json()) as {
+      count: number
+      profile: string
+      priceIdr: number
+      durationDays: number
+    }
+    const count = Math.max(1, Math.min(500, Math.floor(body.count)))
+    const batchId = `BATCH-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
+    const createdAt = new Date().toISOString()
+    for (let i = 0; i < count; i++) {
+      const raw = crypto.randomUUID().replace(/-/g, '').toUpperCase()
+      VOUCHER_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        code: `ASH-${raw.slice(0, 4)}-${raw.slice(4, 8)}`,
+        batchId,
+        profile: body.profile,
+        priceIdr: body.priceIdr,
+        durationDays: body.durationDays,
+        status: 'unused',
+        createdAt,
+        usedAt: null,
+        usedBy: null,
+      })
+    }
+    persistDb()
+    return HttpResponse.json({ batchId, created: count })
+  }),
+  // Mark a voucher redeemed.
+  http.post('*/api/vouchers/:id/redeem', ({ params }) => {
+    const found = VOUCHER_FIXTURES.find((v) => v.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'used'
+    found.usedAt = new Date().toISOString()
+    found.usedBy = found.usedBy ?? 'Admin (manual)'
     persistDb()
     return HttpResponse.json(found)
   }),

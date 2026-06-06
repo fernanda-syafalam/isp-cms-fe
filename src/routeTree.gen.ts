@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth.index'
 import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
+import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
 import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
@@ -54,6 +55,11 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
 const AuthWorkOrdersRoute = AuthWorkOrdersRouteImport.update({
   id: '/work-orders',
   path: '/work-orders',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthVouchersRoute = AuthVouchersRouteImport.update({
+  id: '/vouchers',
+  path: '/vouchers',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthTicketsRoute = AuthTicketsRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/resellers': typeof AuthResellersRoute
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
+  '/vouchers': typeof AuthVouchersRoute
   '/work-orders': typeof AuthWorkOrdersRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRoute
   '/staff': typeof AuthStaffRoute
+  '/vouchers': typeof AuthVouchersRoute
   '/work-orders': typeof AuthWorkOrdersRoute
   '/': typeof AuthIndexRoute
   '/customers/$customerId': typeof AuthCustomersCustomerIdRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/_auth/resellers': typeof AuthResellersRoute
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
+  '/_auth/vouchers': typeof AuthVouchersRoute
   '/_auth/work-orders': typeof AuthWorkOrdersRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/customers/$customerId': typeof AuthCustomersCustomerIdRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/resellers'
     | '/staff'
     | '/tickets'
+    | '/vouchers'
     | '/work-orders'
     | '/customers/$customerId'
     | '/customers/onboarding'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/resellers'
     | '/staff'
+    | '/vouchers'
     | '/work-orders'
     | '/'
     | '/customers/$customerId'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/_auth/resellers'
     | '/_auth/staff'
     | '/_auth/tickets'
+    | '/_auth/vouchers'
     | '/_auth/work-orders'
     | '/_auth/'
     | '/_auth/customers/$customerId'
@@ -378,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/work-orders'
       fullPath: '/work-orders'
       preLoaderRoute: typeof AuthWorkOrdersRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/vouchers': {
+      id: '/_auth/vouchers'
+      path: '/vouchers'
+      fullPath: '/vouchers'
+      preLoaderRoute: typeof AuthVouchersRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/tickets': {
@@ -601,6 +620,7 @@ interface AuthRouteChildren {
   AuthResellersRoute: typeof AuthResellersRoute
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
+  AuthVouchersRoute: typeof AuthVouchersRoute
   AuthWorkOrdersRoute: typeof AuthWorkOrdersRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
@@ -621,6 +641,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthResellersRoute: AuthResellersRoute,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,
+  AuthVouchersRoute: AuthVouchersRoute,
   AuthWorkOrdersRoute: AuthWorkOrdersRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
