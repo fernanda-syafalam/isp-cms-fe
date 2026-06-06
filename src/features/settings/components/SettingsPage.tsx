@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
@@ -16,7 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 
@@ -99,14 +98,20 @@ function SettingsForm({ initial, canManage, pending, onSave }: SettingsFormProps
   })
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader title="Pengaturan" description="Profil perusahaan dan parameter penagihan." />
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        title="Pengaturan"
+        description="Profil perusahaan, parameter penagihan, dan pajak."
+      />
       <Form {...form}>
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
           <Card>
-            <CardContent className="space-y-6 pt-6">
-              <section className="space-y-4">
-                <h3 className="font-semibold text-sm">Profil perusahaan</h3>
+            <CardHeader>
+              <CardTitle className="text-base">Profil perusahaan</CardTitle>
+              <CardDescription>Tampil di faktur, kwitansi, dan kontrak.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="company.name"
@@ -162,12 +167,19 @@ function SettingsForm({ initial, canManage, pending, onSave }: SettingsFormProps
                     )}
                   />
                 </div>
-              </section>
+              </div>
+            </CardContent>
+          </Card>
 
-              <Separator />
-
-              <section className="space-y-4">
-                <h3 className="font-semibold text-sm">Penagihan</h3>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Penagihan</CardTitle>
+              <CardDescription>
+                Mengatur siklus tagihan, denda, dan ambang isolir otomatis.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
                     control={form.control}
@@ -239,12 +251,19 @@ function SettingsForm({ initial, canManage, pending, onSave }: SettingsFormProps
                     )}
                   />
                 </div>
-              </section>
+              </div>
+            </CardContent>
+          </Card>
 
-              <Separator />
-
-              <section className="space-y-4">
-                <h3 className="font-semibold text-sm">Pajak (PPN / e-Faktur)</h3>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pajak (PPN / e-Faktur)</CardTitle>
+              <CardDescription>
+                Status PKP & tarif PPN efektif yang dipakai saat menghitung tagihan.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="tax.pkp"
@@ -304,16 +323,22 @@ function SettingsForm({ initial, canManage, pending, onSave }: SettingsFormProps
                     )}
                   />
                 </div>
-              </section>
+              </div>
             </CardContent>
-            {canManage ? (
-              <CardFooter className="justify-end border-t pt-4">
-                <Button type="submit" disabled={pending || !form.formState.isDirty}>
-                  {pending ? 'Menyimpan…' : 'Simpan perubahan'}
-                </Button>
-              </CardFooter>
-            ) : null}
           </Card>
+
+          {canManage ? (
+            <div className="sticky bottom-0 flex items-center justify-end gap-3 border-border border-t bg-background/80 py-3 backdrop-blur">
+              {form.formState.isDirty ? (
+                <span className="mr-auto text-muted-foreground text-sm">
+                  Ada perubahan yang belum disimpan.
+                </span>
+              ) : null}
+              <Button type="submit" disabled={pending || !form.formState.isDirty}>
+                {pending ? 'Menyimpan…' : 'Simpan perubahan'}
+              </Button>
+            </div>
+          ) : null}
         </form>
       </Form>
     </div>
