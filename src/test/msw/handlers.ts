@@ -338,6 +338,39 @@ const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
   }
 })
 
+// Stock movement trail seeded from the current item states: every item has an
+// "in" (warehouse) entry; installed items add an "assign", broken add a "broken".
+const STOCK_MOVEMENT_FIXTURES = INVENTORY_FIXTURES.flatMap((item, i) => {
+  const moves: Array<{
+    type: 'in' | 'assign' | 'return' | 'broken'
+    note: string
+    at: string
+  }> = [{ type: 'in', note: 'Stok masuk awal', at: iso(2026, 2, 1 + (i % 20)) }]
+  if (item.status === 'installed') {
+    moves.push({
+      type: 'assign',
+      note: item.assignedTo ?? 'Pelanggan',
+      at: iso(2026, 3, 2 + (i % 20)),
+    })
+  }
+  if (item.status === 'broken') {
+    moves.push({
+      type: 'broken',
+      note: 'Rusak saat pengecekan',
+      at: iso(2026, 3, 3 + (i % 20)),
+    })
+  }
+  return moves.map((m, j) => ({
+    id: `${item.id}-mv-${j}`,
+    itemId: item.id,
+    serial: item.serial,
+    kind: item.kind,
+    type: m.type,
+    note: m.note,
+    at: m.at,
+  }))
+})
+
 const filterByStatus = <T extends { status: string }>(items: T[], status: string | null) =>
   status ? items.filter((item) => item.status === status) : items
 
@@ -593,6 +626,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   ticketEvents: TICKET_EVENT_FIXTURES,
   vouchers: VOUCHER_FIXTURES,
   resellerLedger: RESELLER_LEDGER_FIXTURES,
+  stockMovements: STOCK_MOVEMENT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1572,6 +1606,74 @@ export const handlers = [
     const status = new URL(request.url).searchParams.get('status')
     const items = filterByStatus(INVENTORY_FIXTURES, status)
     return HttpResponse.json({ items, total: items.length })
+  }),
+  // Full stock movement history (newest first).
+  http.get('*/api/inventory/movements', () => {
+    const items = [...STOCK_MOVEMENT_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  // Stock-in: register a new device into the warehouse + log an "in" movement.
+  http.post('*/api/inventory', async ({ request }) => {
+    const body = (await request.json()) as {
+      kind: 'onu' | 'router' | 'mikrotik'
+      serial: string
+    }
+    const item = {
+      id: crypto.randomUUID(),
+      kind: body.kind,
+      serial: body.serial,
+      status: 'warehouse' as const,
+      assignedTo: null,
+    }
+    INVENTORY_FIXTURES.unshift(item)
+    STOCK_MOVEMENT_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      itemId: item.id,
+      serial: item.serial,
+      kind: item.kind,
+      type: 'in',
+      note: 'Stok masuk',
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return HttpResponse.json(item, { status: 201 })
+  }),
+  // Move an item: assign (→ installed), return (→ warehouse), or mark broken.
+  http.post('*/api/inventory/:id/move', async ({ params, request }) => {
+    const found = INVENTORY_FIXTURES.find((it) => it.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      type: 'assign' | 'return' | 'broken'
+      note?: string
+    }
+    let note = body.note ?? ''
+    if (body.type === 'assign') {
+      found.status = 'installed'
+      found.assignedTo = body.note ?? found.assignedTo ?? 'Pelanggan'
+      note = found.assignedTo ?? ''
+    } else if (body.type === 'return') {
+      found.status = 'warehouse'
+      found.assignedTo = null
+      note = body.note || 'Dikembalikan ke gudang'
+    } else {
+      found.status = 'broken'
+      note = body.note || 'Rusak'
+    }
+    STOCK_MOVEMENT_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      itemId: found.id,
+      serial: found.serial,
+      kind: found.kind,
+      type: body.type,
+      note,
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return HttpResponse.json(found)
   }),
   http.patch('*/api/inventory/:id', async ({ params, request }) => {
     const found = INVENTORY_FIXTURES.find((it) => it.id === params.id)

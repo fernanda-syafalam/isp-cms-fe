@@ -5,15 +5,60 @@ import {
   type InventoryFilter,
   deleteInventory,
   listInventory,
+  listStockMovements,
+  moveInventory,
+  stockInInventory,
   updateInventory,
 } from '@/api/inventory'
 import { getErrorMessage } from '@/lib/errors'
-import type { UpdateInventoryInput } from '@/schemas/inventory'
+import type {
+  MoveInventoryInput,
+  StockInInput,
+  StockMovementType,
+  UpdateInventoryInput,
+} from '@/schemas/inventory'
 
 export function useInventoryList(filter: InventoryFilter = {}) {
   return useQuery({
     queryKey: ['inventory', 'list', filter] as const,
     queryFn: () => listInventory(filter),
+  })
+}
+
+export function useStockMovements() {
+  return useQuery({
+    queryKey: ['inventory', 'movements'] as const,
+    queryFn: listStockMovements,
+  })
+}
+
+export function useStockIn() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: StockInInput) => stockInInventory(input),
+    onSuccess: (item) => {
+      qc.invalidateQueries({ queryKey: ['inventory'] })
+      toast.success(`Stok masuk: ${item.kind.toUpperCase()} ${item.serial}`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+const MOVE_TOAST: Record<Exclude<StockMovementType, 'in'>, string> = {
+  assign: 'dipasang',
+  return: 'dikembalikan ke gudang',
+  broken: 'ditandai rusak',
+}
+
+export function useMoveInventory(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: MoveInventoryInput) => moveInventory(id, input),
+    onSuccess: (item, vars) => {
+      qc.invalidateQueries({ queryKey: ['inventory'] })
+      toast.success(`Item "${item.serial}" ${MOVE_TOAST[vars.type]}`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
 
