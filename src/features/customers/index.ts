@@ -4,6 +4,7 @@ export { OnboardingWizard } from './components/OnboardingWizard'
 export {
   useActivateCustomer,
   useBulkCustomerStatus,
+  useChangePlan,
   useCustomer,
   useCustomersList,
   useCreateCustomer,

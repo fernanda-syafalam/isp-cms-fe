@@ -57,6 +57,10 @@ export const CreateCustomerSchema = z.object({
   planId: z.string().min(1, 'Paket wajib dipilih'),
 })
 
+export const ChangePlanSchema = z.object({
+  planId: z.string().min(1, 'Paket wajib dipilih'),
+})
+
 export type CustomerStatus = z.infer<typeof CustomerStatusSchema>
 export type ConnectionType = z.infer<typeof ConnectionTypeSchema>
 export type Connection = z.infer<typeof ConnectionSchema>
@@ -64,3 +68,4 @@ export type Customer = z.infer<typeof CustomerSchema>
 export type CustomerList = z.infer<typeof CustomerListSchema>
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>
 export type SetWifiInput = z.infer<typeof SetWifiSchema>
+export type ChangePlanInput = z.infer<typeof ChangePlanSchema>
