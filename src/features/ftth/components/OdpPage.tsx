@@ -155,9 +155,7 @@ export function OdpPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading || !data ? (
-          <>
-            <KpiSkeleton />
-          </>
+          <KpiSkeleton />
         ) : (
           <>
             <KpiCard label="Total ODP" value={summary.total} icon={NetworkIcon} />

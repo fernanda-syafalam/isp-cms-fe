@@ -111,7 +111,7 @@ export function TopologyMap({
         if (!node.parentId) return null
         const parent = byId.get(node.parentId)
         if (!parent) return null
-        const active = activeIds !== null && activeIds.has(node.id) && activeIds.has(parent.id)
+        const active = activeIds ? activeIds.has(node.id) && activeIds.has(parent.id) : false
         const dim = activeIds !== null && !active
         return (
           <Polyline
