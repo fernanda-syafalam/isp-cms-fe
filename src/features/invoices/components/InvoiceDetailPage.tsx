@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, BellRingIcon, WalletIcon } from 'lucide-react'
+import { ArrowLeftIcon, BellRingIcon, PrinterIcon, WalletIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -82,6 +82,12 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/invoices/print/$invoiceId" params={{ invoiceId: invoice.id }}>
+                <PrinterIcon className="size-4" />
+                {invoice.status === 'paid' ? 'Kwitansi' : 'Cetak / PDF'}
+              </Link>
+            </Button>
             {invoice.status !== 'paid' ? <RemindButton invoice={invoice} /> : null}
             {invoice.status !== 'paid' ? <PayMenu invoice={invoice} /> : null}
           </div>
