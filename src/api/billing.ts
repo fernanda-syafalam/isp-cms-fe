@@ -6,6 +6,10 @@ import {
   IsolirResultSchema,
   type RemindResult,
   RemindResultSchema,
+  type SchedulerPreview,
+  SchedulerPreviewSchema,
+  type SchedulerRunResult,
+  SchedulerRunResultSchema,
 } from '@/schemas/billing'
 
 // Generate invoices for the current period for all active subscribers (mock).
@@ -25,4 +29,16 @@ export async function isolirOverdue(): Promise<IsolirResult> {
 export async function remindOverdue(invoiceIds?: string[]): Promise<RemindResult> {
   const json = await api.post('billing/remind', { json: { invoiceIds } }).json()
   return RemindResultSchema.parse(json)
+}
+
+// What the automated billing cycle would do next (no mutation).
+export async function getSchedulerPreview(): Promise<SchedulerPreview> {
+  const json = await api.get('billing/scheduler/preview').json()
+  return SchedulerPreviewSchema.parse(json)
+}
+
+// Run the full automated cycle once: bill → mark overdue → remind → isolir.
+export async function runScheduler(): Promise<SchedulerRunResult> {
+  const json = await api.post('billing/scheduler/run').json()
+  return SchedulerRunResultSchema.parse(json)
 }

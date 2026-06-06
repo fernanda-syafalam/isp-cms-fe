@@ -1336,6 +1336,154 @@ export const handlers = [
     persistDb()
     return HttpResponse.json({ reminded, channel: 'whatsapp' })
   }),
+  // Automated cycle — preview the next run without mutating anything.
+  http.get('*/api/billing/scheduler/preview', () => {
+    const now = new Date()
+    const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const periodStart = `${period}-01`
+    const today = now.toISOString().slice(0, 10)
+    const soon = new Date(now.getTime() + 3 * 86_400_000).toISOString().slice(0, 10)
+    const graceCut = new Date(now.getTime() - SETTINGS_FIXTURE.billing.isolirGraceDays * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+
+    let toBill = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      if (c.status !== 'aktif') continue
+      const exists = INVOICE_FIXTURES.some(
+        (inv) => inv.customerId === c.id && inv.periodStart === periodStart,
+      )
+      if (!exists) toBill++
+    }
+    let toRemindUpcoming = 0
+    let toRemindOverdue = 0
+    const pastGrace = new Set<string>()
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'overdue') {
+        toRemindOverdue++
+        if (inv.dueDate < graceCut) pastGrace.add(inv.customerId)
+      } else if (inv.status === 'pending') {
+        if (inv.dueDate < today) {
+          toRemindOverdue++
+          if (inv.dueDate < graceCut) pastGrace.add(inv.customerId)
+        } else if (inv.dueDate <= soon) {
+          toRemindUpcoming++
+        }
+      }
+    }
+    let toIsolir = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      if (c.status === 'aktif' && pastGrace.has(c.id)) toIsolir++
+    }
+    return HttpResponse.json({
+      toBill,
+      toRemindUpcoming,
+      toRemindOverdue,
+      toIsolir,
+    })
+  }),
+  // Automated cycle — bill → mark overdue → remind → isolir, in one pass.
+  http.post('*/api/billing/scheduler/run', () => {
+    const now = new Date()
+    const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const periodStart = `${period}-01`
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+    const dueDate = new Date(now.getTime() + SETTINGS_FIXTURE.billing.dueDays * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    const today = now.toISOString().slice(0, 10)
+    const soon = new Date(now.getTime() + 3 * 86_400_000).toISOString().slice(0, 10)
+    const graceCut = new Date(now.getTime() - SETTINGS_FIXTURE.billing.isolirGraceDays * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    const nowIso = now.toISOString()
+
+    // 1. Create current-period invoices for active subscribers not yet billed.
+    let created = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      if (c.status !== 'aktif') continue
+      const exists = INVOICE_FIXTURES.some(
+        (inv) => inv.customerId === c.id && inv.periodStart === periodStart,
+      )
+      if (exists) continue
+      const plan = PLAN_FIXTURES.find((p) => p.name === c.planName)
+      const dpp = plan?.priceMonthly ?? 200_000
+      INVOICE_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        invoiceNo: `INV-${now.getFullYear()}-${9000 + INVOICE_FIXTURES.length}`,
+        customerId: c.id,
+        customerName: c.fullName,
+        periodStart,
+        periodEnd,
+        amount: dpp,
+        lateFee: 0,
+        taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+        taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
+        status: 'pending',
+        dueDate,
+        paidAt: null,
+        lastRemindedAt: null,
+      })
+      created++
+    }
+
+    // 2. Flag past-due pending invoices as overdue (+denda).
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'pending' && inv.dueDate < today) {
+        inv.status = 'overdue'
+        if (inv.lateFee === 0) inv.lateFee = SETTINGS_FIXTURE.billing.lateFeeIdr
+      }
+    }
+
+    // 3. Dunning: remind upcoming (≤3d) and overdue invoices.
+    let remindedUpcoming = 0
+    let remindedOverdue = 0
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'overdue') {
+        inv.lastRemindedAt = nowIso
+        remindedOverdue++
+      } else if (inv.status === 'pending' && inv.dueDate <= soon) {
+        inv.lastRemindedAt = nowIso
+        remindedUpcoming++
+      }
+    }
+
+    // 4. Auto-isolir: customers with an overdue invoice past the grace period.
+    const owed = new Map<string, number>()
+    const pastGrace = new Set<string>()
+    for (const inv of INVOICE_FIXTURES) {
+      if (inv.status === 'overdue') {
+        owed.set(
+          inv.customerId,
+          (owed.get(inv.customerId) ?? 0) + inv.amount + inv.lateFee + inv.taxAmount,
+        )
+        if (inv.dueDate < graceCut) pastGrace.add(inv.customerId)
+      }
+    }
+    let isolated = 0
+    for (const c of CUSTOMER_FIXTURES) {
+      if (c.status === 'aktif' && pastGrace.has(c.id)) {
+        c.status = 'isolir'
+        c.outstanding = owed.get(c.id) ?? c.outstanding
+        setSecretsDisabledByCustomer(c.fullName, true)
+        isolated++
+      }
+    }
+
+    recordAudit(
+      'billing.scheduler',
+      'Tagihan',
+      `Siklus ${period}: ${created} tagihan, ${remindedUpcoming + remindedOverdue} pengingat, ${isolated} isolir`,
+    )
+    persistDb()
+    return HttpResponse.json({
+      period,
+      created,
+      remindedUpcoming,
+      remindedOverdue,
+      isolated,
+    })
+  }),
 
   // Payments
   http.get('*/api/payments', () =>

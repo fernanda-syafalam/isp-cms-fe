@@ -1,7 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { isolirOverdue, remindOverdue, runBilling } from '@/api/billing'
+import {
+  getSchedulerPreview,
+  isolirOverdue,
+  remindOverdue,
+  runBilling,
+  runScheduler,
+} from '@/api/billing'
 import { getErrorMessage } from '@/lib/errors'
 
 function useInvalidateBilling() {
@@ -40,6 +46,34 @@ export function useIsolirOverdue() {
         res.isolated > 0
           ? `${res.isolated} pelanggan diisolir (${res.markedOverdue} tagihan jatuh tempo)`
           : 'Tidak ada penunggak untuk diisolir',
+      )
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Automation: preview what the next cycle would do (open it on a dialog).
+export function useSchedulerPreview(enabled = true) {
+  return useQuery({
+    queryKey: ['billing', 'scheduler', 'preview'] as const,
+    queryFn: getSchedulerPreview,
+    enabled,
+    staleTime: 0,
+  })
+}
+
+// Run the full automated cycle: bill → mark overdue → remind → isolir.
+export function useRunScheduler() {
+  const invalidate = useInvalidateBilling()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: runScheduler,
+    onSuccess: (res) => {
+      invalidate()
+      qc.invalidateQueries({ queryKey: ['billing', 'scheduler'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
+      toast.success(
+        `Siklus ${res.period}: ${res.created} tagihan, ${res.remindedUpcoming + res.remindedOverdue} pengingat, ${res.isolated} isolir`,
       )
     },
     onError: (err) => toast.error(getErrorMessage(err)),
