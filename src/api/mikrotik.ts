@@ -1,8 +1,13 @@
 import { api } from './client'
 import { type Router, RouterSchema } from '@/schemas/router'
 import {
+  type CreateIpPoolInput,
   type CreateProfileInput,
   type CreateSecretInput,
+  type IpPool,
+  IpPoolListSchema,
+  type IpPoolList,
+  IpPoolSchema,
   type PppProfile,
   PppProfileListSchema,
   PppProfileSchema,
@@ -127,4 +132,19 @@ export async function updateQueue(
 
 export async function deleteQueue(routerId: string, id: string): Promise<void> {
   await api.delete(`routers/${routerId}/queues/${id}`)
+}
+
+// IP pools — address ranges PPPoE clients are provisioned from.
+export async function listPools(routerId: string): Promise<IpPoolList> {
+  const json = await api.get(`routers/${routerId}/pools`).json()
+  return IpPoolListSchema.parse(json)
+}
+
+export async function createPool(routerId: string, input: CreateIpPoolInput): Promise<IpPool> {
+  const json = await api.post(`routers/${routerId}/pools`, { json: input }).json()
+  return IpPoolSchema.parse(json)
+}
+
+export async function deletePool(routerId: string, id: string): Promise<void> {
+  await api.delete(`routers/${routerId}/pools/${id}`)
 }

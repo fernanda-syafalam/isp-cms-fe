@@ -100,6 +100,26 @@ export const UpdateQueueSchema = z.object({
   maxLimit: z.string().min(1).max(40).optional(),
 })
 
+// IP pool — the address range PPPoE clients are assigned from (provisioning).
+export const IpPoolSchema = z.object({
+  id: z.string(),
+  routerId: z.string(),
+  name: z.string().min(1),
+  ranges: z.string(), // e.g. "10.10.0.2-10.10.0.254"
+  totalAddresses: z.number().int().nonnegative(),
+  usedAddresses: z.number().int().nonnegative(),
+})
+
+export const IpPoolListSchema = z.object({
+  items: z.array(IpPoolSchema),
+  total: z.number().int().nonnegative(),
+})
+
+export const CreateIpPoolSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(60),
+  ranges: z.string().min(1, 'Rentang IP wajib diisi').max(120),
+})
+
 export type PppProfile = z.infer<typeof PppProfileSchema>
 export type PppSecret = z.infer<typeof PppSecretSchema>
 export type PppSession = z.infer<typeof PppSessionSchema>
@@ -114,3 +134,6 @@ export type CreateProfileInput = z.infer<typeof CreateProfileSchema>
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>
 export type CreateSecretInput = z.infer<typeof CreateSecretSchema>
 export type UpdateSecretInput = z.infer<typeof UpdateSecretSchema>
+export type IpPool = z.infer<typeof IpPoolSchema>
+export type IpPoolList = z.infer<typeof IpPoolListSchema>
+export type CreateIpPoolInput = z.infer<typeof CreateIpPoolSchema>

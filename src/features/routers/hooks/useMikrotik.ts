@@ -2,14 +2,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  createPool,
   createProfile,
   createQueue,
   createSecret,
+  deletePool,
   deleteProfile,
   deleteQueue,
   deleteSecret,
   disconnectSession,
   getRouter,
+  listPools,
   listProfiles,
   listQueues,
   listSecrets,
@@ -23,6 +26,7 @@ import {
 } from '@/api/mikrotik'
 import { getErrorMessage } from '@/lib/errors'
 import type {
+  CreateIpPoolInput,
   CreateProfileInput,
   CreateQueueInput,
   CreateSecretInput,
@@ -199,6 +203,37 @@ export function useDeleteQueue(routerId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] })
       toast.success('Queue dihapus')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function usePools(routerId: string) {
+  return useQuery({
+    queryKey: ['routers', routerId, 'pools'] as const,
+    queryFn: () => listPools(routerId),
+  })
+}
+
+export function useCreatePool(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateIpPoolInput) => createPool(routerId, input),
+    onSuccess: (p) => {
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'pools'] })
+      toast.success(`IP pool "${p.name}" dibuat`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useDeletePool(routerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deletePool(routerId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'pools'] })
+      toast.success('IP pool dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

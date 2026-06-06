@@ -12,6 +12,7 @@ import { formatDateTime, formatNumber } from '@/lib/format'
 import type { Router } from '@/schemas/router'
 
 import { useRebootRouter, useRouter, useSyncRouter, useTestRouter } from '../hooks/useMikrotik'
+import { PoolsTab } from './PoolsTab'
 import { ProfilesTab } from './ProfilesTab'
 import { QueuesTab } from './QueuesTab'
 import { SecretsTab } from './SecretsTab'
@@ -62,6 +63,7 @@ export function RouterDetailPage({ routerId }: { routerId: string }) {
           <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
           <TabsTrigger value="secrets">PPPoE Secret</TabsTrigger>
           <TabsTrigger value="profiles">Profil</TabsTrigger>
+          <TabsTrigger value="pools">IP Pool</TabsTrigger>
           <TabsTrigger value="sessions">Sesi Aktif</TabsTrigger>
           <TabsTrigger value="queues">Queue</TabsTrigger>
         </TabsList>
@@ -73,6 +75,9 @@ export function RouterDetailPage({ routerId }: { routerId: string }) {
         </TabsContent>
         <TabsContent value="profiles">
           <ProfilesTab routerId={routerId} />
+        </TabsContent>
+        <TabsContent value="pools">
+          <PoolsTab routerId={routerId} />
         </TabsContent>
         <TabsContent value="sessions">
           <SessionsTab routerId={routerId} />
