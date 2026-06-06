@@ -1,2 +1,4 @@
 export { BranchesPage } from './components/BranchesPage'
+export { BranchScopeSwitcher } from './components/BranchScopeSwitcher'
 export { useBranches, useCreateBranch } from './hooks/useBranches'
+export { type BranchScope, useBranchScope } from './store/branchScope'

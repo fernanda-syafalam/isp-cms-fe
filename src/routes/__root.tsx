@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { UserMenu, useIsAuthenticated } from '@/features/auth'
+import { BranchScopeSwitcher } from '@/features/branches'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -57,6 +58,7 @@ function RootLayout() {
           <Separator orientation="vertical" className="mr-1 h-4" />
           <Breadcrumbs />
           <div className="ml-auto flex items-center gap-2">
+            <BranchScopeSwitcher />
             <CommandMenu />
             <ThemeToggle />
             <UserMenu />
