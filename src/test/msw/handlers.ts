@@ -1515,6 +1515,18 @@ export const handlers = [
       connection: null,
       joinedAt: new Date().toISOString(),
     })
+    // Converting a won lead kicks off onboarding: schedule an install WO
+    // (mirrors POST /onboarding) so the field flow isn't orphaned.
+    WORKORDER_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
+      type: 'install' as const,
+      customerName: found.name,
+      technician: null,
+      scheduledAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      status: 'scheduled' as const,
+      createdAt: new Date().toISOString(),
+    })
     found.stage = 'won'
     recordAudit('lead.convert', 'Prospek', `Konversi prospek ${found.name}`)
     persistDb()

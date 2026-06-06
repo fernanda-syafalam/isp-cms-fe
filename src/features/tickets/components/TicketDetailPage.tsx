@@ -1,7 +1,8 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeftIcon,
   CheckCircle2Icon,
+  HandCoinsIcon,
   MessageSquareIcon,
   PlayIcon,
   PlusIcon,
@@ -40,6 +41,8 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
   const { data: ticket, isLoading, isError } = useTicket(ticketId)
   const { data: events } = useTicketEvents(ticketId)
   const canManage = useCan('tickets.manage')
+  const canBill = useCan('billing.run')
+  const navigate = useNavigate()
   const update = useUpdateTicket(ticketId)
   const addComment = useAddComment(ticketId)
   const createWo = useCreateWorkOrderFromTicket(ticketId)
@@ -116,6 +119,24 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
                   Buat Work Order
                 </Button>
               </>
+            ) : null}
+            {canBill ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  navigate({
+                    to: '/sla-credits',
+                    search: {
+                      customer: ticket.customerName,
+                      ticket: ticket.code,
+                    },
+                  })
+                }
+              >
+                <HandCoinsIcon className="size-4" />
+                Kredit SLA
+              </Button>
             ) : null}
           </div>
         }
