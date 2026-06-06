@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, MessageCircleIcon, PlugZapIcon, PowerOffIcon } from 'lucide-react'
 
+import { CopyButton } from '@/components/shared/copy-button'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -212,12 +213,12 @@ function WhatsappButton({ customerId }: { customerId: string }) {
 }
 
 function ProfileCard({ customer }: { customer: Customer }) {
-  const fields: Array<{ label: string; value: string }> = [
-    { label: 'Telepon', value: customer.phone },
-    { label: 'Email', value: customer.email ?? '—' },
+  const fields: Array<{ label: string; value: string; copy?: boolean }> = [
+    { label: 'Telepon', value: customer.phone, copy: true },
+    { label: 'Email', value: customer.email ?? '—', copy: true },
     { label: 'Alamat', value: customer.address },
     { label: 'Area', value: customer.areaName },
-    { label: 'NPWP', value: customer.npwp ?? '—' },
+    { label: 'NPWP', value: customer.npwp ?? '—', copy: true },
     { label: 'Reseller', value: customer.resellerName ?? '—' },
     { label: 'Bergabung', value: formatDate(customer.joinedAt) },
   ]
@@ -229,9 +230,14 @@ function ProfileCard({ customer }: { customer: Customer }) {
       <CardContent>
         <dl className="space-y-3">
           {fields.map((f) => (
-            <div key={f.label} className="flex justify-between gap-4">
+            <div key={f.label} className="flex items-center justify-between gap-4">
               <dt className="text-muted-foreground text-xs">{f.label}</dt>
-              <dd className="text-right text-sm">{f.value}</dd>
+              <dd className="flex items-center gap-1 text-right text-sm">
+                {f.value}
+                {f.copy && f.value !== '—' ? (
+                  <CopyButton value={f.value} label={`${f.label} disalin`} />
+                ) : null}
+              </dd>
             </div>
           ))}
         </dl>

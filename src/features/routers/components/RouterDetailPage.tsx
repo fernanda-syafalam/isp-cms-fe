@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, PlugZapIcon, RefreshCwIcon, RotateCwIcon } from 'lucide-react'
 
+import { CopyButton } from '@/components/shared/copy-button'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -116,9 +117,9 @@ function RouterActions({ routerId }: { routerId: string }) {
 }
 
 function OverviewCard({ router }: { router: Router }) {
-  const fields: Array<{ label: string; value: string }> = [
+  const fields: Array<{ label: string; value: string; copy?: boolean }> = [
     { label: 'Model', value: router.model },
-    { label: 'IP manajemen', value: router.address },
+    { label: 'IP manajemen', value: router.address, copy: true },
     { label: 'Secret aktif', value: formatNumber(router.secretCount) },
     { label: 'Sinkron terakhir', value: formatDateTime(router.lastSyncAt) },
   ]
@@ -132,7 +133,10 @@ function OverviewCard({ router }: { router: Router }) {
           {fields.map((f) => (
             <div key={f.label} className="flex justify-between gap-4 border-border border-b pb-2">
               <dt className="text-muted-foreground text-xs">{f.label}</dt>
-              <dd className="text-right text-sm">{f.value}</dd>
+              <dd className="flex items-center gap-1 text-right text-sm">
+                {f.value}
+                {f.copy ? <CopyButton value={f.value} label={`${f.label} disalin`} /> : null}
+              </dd>
             </div>
           ))}
         </dl>

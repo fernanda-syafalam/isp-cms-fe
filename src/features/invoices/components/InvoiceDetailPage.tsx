@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, BellRingIcon, CreditCardIcon, PrinterIcon, WalletIcon } from 'lucide-react'
 import { useState } from 'react'
 
+import { CopyButton } from '@/components/shared/copy-button'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -60,7 +61,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
   }
 
   const total = invoiceTotal(invoice)
-  const fields: Array<{ label: string; value: string }> = [
+  const fields: Array<{ label: string; value: string; copy?: boolean }> = [
     { label: 'Pelanggan', value: invoice.customerName },
     {
       label: 'Periode',
@@ -78,6 +79,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     {
       label: 'No. Faktur Pajak',
       value: invoice.taxInvoiceNo ?? '—',
+      copy: true,
     },
   ]
 
@@ -88,6 +90,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
         title={invoice.invoiceNo}
         actions={
           <div className="flex items-center gap-2">
+            <CopyButton value={invoice.invoiceNo} label="No. tagihan disalin" />
             <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
             <Button asChild variant="outline" size="sm">
               <Link to="/invoices/print/$invoiceId" params={{ invoiceId: invoice.id }}>
@@ -110,7 +113,12 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
             {fields.map((f) => (
               <div key={f.label}>
                 <dt className="text-muted-foreground text-xs">{f.label}</dt>
-                <dd className="mt-0.5 text-sm">{f.value}</dd>
+                <dd className="mt-0.5 flex items-center gap-1 text-sm">
+                  {f.value}
+                  {f.copy && f.value !== '—' ? (
+                    <CopyButton value={f.value} label={`${f.label} disalin`} />
+                  ) : null}
+                </dd>
               </div>
             ))}
           </dl>
