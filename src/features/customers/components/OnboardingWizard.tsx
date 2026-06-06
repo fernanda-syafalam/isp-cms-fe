@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowLeftIcon, CheckIcon } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { type FieldPath, useForm } from 'react-hook-form'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -30,6 +30,14 @@ import { cn } from '@/lib/cn'
 import { OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
 
 import { useOnboardCustomer } from '../hooks/useOnboarding'
+
+// Code-split the Leaflet map picker so it (and Leaflet) stays out of the main
+// bundle — loaded only when the onboarding wizard renders.
+const LocationPicker = lazy(() =>
+  import('@/components/shared/location-picker').then((m) => ({
+    default: m.LocationPicker,
+  })),
+)
 
 const AREAS = SERVICE_AREAS
 const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko']
@@ -82,6 +90,8 @@ export function OnboardingWizard() {
 
   const values = form.getValues()
   const planLabel = planOptions?.find((p) => p.value === values.planId)?.label ?? '—'
+  const latValue = form.watch('lat')
+  const lngValue = form.watch('lng')
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -134,7 +144,7 @@ export function OnboardingWizard() {
                     form={form}
                     name="address"
                     label="Alamat"
-                    placeholder="Jl. Merdeka No. 1"
+                    placeholder="Jl. Pemuda No. 12, Jepara"
                   />
                   <SelectField
                     form={form}
@@ -143,6 +153,26 @@ export function OnboardingWizard() {
                     placeholder="Pilih area"
                     options={AREAS.map((a) => ({ value: a, label: a }))}
                   />
+                  <FormItem>
+                    <FormLabel>Titik lokasi instalasi</FormLabel>
+                    <Suspense fallback={<div className="h-56 animate-pulse rounded-lg bg-muted" />}>
+                      <LocationPicker
+                        value={
+                          latValue != null && lngValue != null
+                            ? { lat: latValue, lng: lngValue }
+                            : null
+                        }
+                        onChange={(lat, lng) => {
+                          form.setValue('lat', lat)
+                          form.setValue('lng', lng)
+                        }}
+                      />
+                    </Suspense>
+                    <p className="text-muted-foreground text-xs">
+                      Tandai titik di peta (seperti memilih lokasi di Shopee) — akan muncul di
+                      topologi.
+                    </p>
+                  </FormItem>
                 </>
               ) : null}
 
