@@ -13,6 +13,10 @@ export const OnboardingSchema = z.object({
   technician: z.string().min(1, 'Teknisi wajib dipilih'),
   scheduledAt: z.string().min(1, 'Jadwal instalasi wajib diisi'),
   note: z.string().max(300).optional(),
+  // Install coordinates picked on the map (Shopee-style); drives the new
+  // customer's node on the topology map.
+  lat: z.number().optional(),
+  lng: z.number().optional(),
 })
 
 export type OnboardingInput = z.infer<typeof OnboardingSchema>

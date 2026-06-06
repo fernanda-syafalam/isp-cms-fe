@@ -60,6 +60,8 @@ export function useCreateCustomer() {
 function syncCustomerCaches(qc: ReturnType<typeof useQueryClient>, customer: Customer) {
   qc.setQueryData(['customers', 'detail', customer.id], customer)
   qc.invalidateQueries({ queryKey: ['customers', 'list'] })
+  // Lifecycle changes (aktif/isolir/berhenti) flip the customer's topology node.
+  qc.invalidateQueries({ queryKey: ['topology'] })
 }
 
 export function useIsolateCustomer() {
@@ -98,6 +100,7 @@ export function useBulkCustomerStatus() {
     onSuccess: ({ count, action }) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['analytics'] })
+      qc.invalidateQueries({ queryKey: ['topology'] })
       toast.success(
         action === 'isolate' ? `${count} pelanggan diisolir` : `${count} pelanggan diaktifkan`,
       )

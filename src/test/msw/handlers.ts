@@ -653,6 +653,14 @@ function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
   }
 }
 
+// Reflect a subscriber's lifecycle on its topology node (created at onboarding),
+// so the network map mirrors aktif/isolir/berhenti in real time.
+function setTopoCustomerStatus(name: string, status: 'up' | 'down' | 'unknown') {
+  for (const n of TOPOLOGY_FIXTURES) {
+    if (n.type === 'customer' && n.name === name) n.status = status
+  }
+}
+
 // Operator settings (single record). Company profile + billing parameters.
 const SETTINGS_FIXTURE = {
   company: {
@@ -1284,6 +1292,7 @@ export const handlers = [
       })
     }
     found.status = 'berhenti'
+    setTopoCustomerStatus(found.fullName, 'down')
     recordAudit('customer.stop', 'Pelanggan', `Memberhentikan ${found.fullName}`)
     persistDb()
     return HttpResponse.json(found)
@@ -1365,6 +1374,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    setTopoCustomerStatus(found.fullName, 'down')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
     return HttpResponse.json(found)
@@ -1379,6 +1389,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
+    setTopoCustomerStatus(found.fullName, 'up')
     setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
     return HttpResponse.json(found)
@@ -1708,6 +1719,8 @@ export const handlers = [
       planId: string
       technician: string
       scheduledAt: string
+      lat?: number
+      lng?: number
     }
     const plan = PLAN_FIXTURES.find((p) => p.id === body.planId) ?? PLAN_FIXTURES[0]
     const customer = {
@@ -1741,6 +1754,21 @@ export const handlers = [
       status: 'scheduled' as const,
       createdAt: new Date().toISOString(),
     })
+    // Drop the new subscriber onto the topology map under the nearest ODP, at
+    // the picked coordinates (falls back near that ODP). Status starts
+    // "unknown" until the install WO is completed → "up".
+    const odp = TOPOLOGY_FIXTURES.find((n) => n.type === 'odp')
+    const lat = body.lat ?? (odp ? odp.lat + (Math.random() - 0.5) * 0.004 : -6.5514)
+    const lng = body.lng ?? (odp ? odp.lng + (Math.random() - 0.5) * 0.004 : 110.6811)
+    TOPOLOGY_FIXTURES.push({
+      id: `${customer.id}-node`,
+      name: customer.fullName,
+      type: 'customer' as const,
+      status: 'unknown' as const,
+      lat,
+      lng,
+      parentId: odp ? odp.id : null,
+    })
     persistDb()
     return HttpResponse.json(customer, { status: 201 })
   }),
@@ -1753,6 +1781,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    setTopoCustomerStatus(found.fullName, 'down')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
     return HttpResponse.json(found)
@@ -1765,6 +1794,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
+    setTopoCustomerStatus(found.fullName, 'up')
     found.outstanding = 0
     setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
@@ -1848,6 +1878,7 @@ export const handlers = [
       const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
       if (customer.status === 'isolir' && !hasOverdue) {
         customer.status = 'aktif'
+        setTopoCustomerStatus(customer.fullName, 'up')
         setSecretsDisabledByCustomer(customer.fullName, false)
       }
     }
@@ -2178,6 +2209,7 @@ export const handlers = [
         const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
         if (customer.status === 'isolir' && !hasOverdue) {
           customer.status = 'aktif'
+          setTopoCustomerStatus(customer.fullName, 'up')
           setSecretsDisabledByCustomer(customer.fullName, false)
         }
       }
@@ -2520,6 +2552,7 @@ export const handlers = [
       if (customer) {
         const seq = CUSTOMER_FIXTURES.indexOf(customer)
         customer.status = 'aktif'
+        setTopoCustomerStatus(customer.fullName, 'up')
         customer.connection = {
           type: 'gpon',
           pppoeUsername: customer.customerNo.toLowerCase().replace('-', ''),

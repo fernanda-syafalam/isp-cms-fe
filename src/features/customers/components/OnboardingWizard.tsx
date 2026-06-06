@@ -275,7 +275,7 @@ function SelectField({
       render={({ field }) => (
         <FormItem>
           <FormLabel>{label}</FormLabel>
-          <Select value={field.value ?? ''} onValueChange={field.onChange}>
+          <Select value={String(field.value ?? '')} onValueChange={field.onChange}>
             <FormControl>
               <SelectTrigger className="w-full" aria-label={label}>
                 <SelectValue placeholder={placeholder} />
