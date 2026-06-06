@@ -1,5 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, MessageCircleIcon, PlugZapIcon, PowerOffIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  MapPinIcon,
+  MessageCircleIcon,
+  PlugZapIcon,
+  PowerOffIcon,
+} from 'lucide-react'
 
 import { CopyButton } from '@/components/shared/copy-button'
 import { PageHeader } from '@/components/shared/page-header'
@@ -93,6 +99,12 @@ export function CustomerDetailPage({ customerId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <Link to="/network/topology" search={{ focus: `${customer.id}-node` }}>
+                <MapPinIcon className="size-4" />
+                <span className="hidden sm:inline">Lihat di peta</span>
+              </Link>
+            </Button>
             <WhatsappButton customerId={customer.id} />
             <CustomerActions customer={customer} />
             <CustomerRowActions customer={customer} />
