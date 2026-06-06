@@ -881,6 +881,23 @@ const ODP_FIXTURES = Array.from({ length: 12 }, (_, i) => {
   }
 })
 
+// TR-069 / GenieACS managed CPE, derived from GPON subscribers (mock).
+const ACS_MODELS = ['ZTE F660', 'Huawei HG8245', 'Fiberhome AN5506'] as const
+// Not `as const`: firmware is mutated by the bulk firmware task, keep it wide.
+const ACS_FIRMWARES: string[] = ['v2.3.0', 'v2.4.1', 'v2.4.1']
+const ACS_DEVICE_FIXTURES = CUSTOMER_FIXTURES.filter((c) => c.connection?.type === 'gpon').map(
+  (c, i) => ({
+    id: c.id,
+    serial: c.connection?.onuSerial ?? `ZTEG${10_000_000 + i}`,
+    customerName: c.fullName,
+    model: ACS_MODELS[i % ACS_MODELS.length] ?? 'ZTE F660',
+    firmware: ACS_FIRMWARES[i % ACS_FIRMWARES.length] ?? 'v2.4.1',
+    rxPowerDbm: c.connection?.rxPower ?? null,
+    status: (c.status === 'aktif' ? 'online' : 'offline') as 'online' | 'offline',
+    lastInform: iso(2026, 5, 5),
+  }),
+)
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -925,6 +942,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   monitoringMetrics: MONITORING_METRIC_FIXTURES,
   monitoringAlerts: MONITORING_ALERT_FIXTURES,
   odp: ODP_FIXTURES,
+  acsDevices: ACS_DEVICE_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -2498,6 +2516,34 @@ export const handlers = [
   http.get('*/api/odp', () =>
     HttpResponse.json({ items: ODP_FIXTURES, total: ODP_FIXTURES.length }),
   ),
+
+  // TR-069 / GenieACS
+  http.get('*/api/acs/devices', () =>
+    HttpResponse.json({
+      items: ACS_DEVICE_FIXTURES,
+      total: ACS_DEVICE_FIXTURES.length,
+    }),
+  ),
+  // Bulk task: firmware upgrades flip the firmware version; reboot/wifi just ack.
+  http.post('*/api/acs/bulk', async ({ request }) => {
+    const body = (await request.json()) as {
+      action: 'reboot' | 'firmware' | 'wifi'
+      deviceIds: string[]
+      firmwareVersion?: string
+    }
+    const ids = new Set(body.deviceIds)
+    let affected = 0
+    for (const d of ACS_DEVICE_FIXTURES) {
+      if (!ids.has(d.id)) continue
+      if (body.action === 'firmware' && body.firmwareVersion) {
+        d.firmware = body.firmwareVersion
+      }
+      affected++
+    }
+    recordAudit(`acs.${body.action}`, 'ONU', `Bulk ${body.action} ke ${affected} CPE`)
+    persistDb()
+    return HttpResponse.json({ affected })
+  }),
 
   // Analytics
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),

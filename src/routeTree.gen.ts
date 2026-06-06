@@ -39,6 +39,7 @@ import { Route as AuthNetworkUsageRouteImport } from './routes/_auth.network.usa
 import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
 import { Route as AuthNetworkMonitoringRouteImport } from './routes/_auth.network.monitoring'
 import { Route as AuthNetworkFtthRouteImport } from './routes/_auth.network.ftth'
+import { Route as AuthNetworkAcsRouteImport } from './routes/_auth.network.acs'
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
 import { Route as AuthInventoryMovementsRouteImport } from './routes/_auth.inventory.movements'
 import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
@@ -218,6 +219,13 @@ const AuthNetworkFtthRoute = AuthNetworkFtthRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.network.ftth.lazy').then((d) => d.Route),
 )
+const AuthNetworkAcsRoute = AuthNetworkAcsRouteImport.update({
+  id: '/network/acs',
+  path: '/network/acs',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.acs.lazy').then((d) => d.Route),
+)
 const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
   id: '/$invoiceId',
   path: '/$invoiceId',
@@ -290,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/inventory/movements': typeof AuthInventoryMovementsRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/network/acs': typeof AuthNetworkAcsRoute
   '/network/ftth': typeof AuthNetworkFtthRoute
   '/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
@@ -325,6 +334,7 @@ export interface FileRoutesByTo {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/inventory/movements': typeof AuthInventoryMovementsRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/network/acs': typeof AuthNetworkAcsRoute
   '/network/ftth': typeof AuthNetworkFtthRoute
   '/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
@@ -367,6 +377,7 @@ export interface FileRoutesById {
   '/_auth/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/_auth/inventory/movements': typeof AuthInventoryMovementsRoute
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
+  '/_auth/network/acs': typeof AuthNetworkAcsRoute
   '/_auth/network/ftth': typeof AuthNetworkFtthRoute
   '/_auth/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/customers/onboarding'
     | '/inventory/movements'
     | '/invoices/$invoiceId'
+    | '/network/acs'
     | '/network/ftth'
     | '/network/monitoring'
     | '/network/topology'
@@ -444,6 +456,7 @@ export interface FileRouteTypes {
     | '/customers/onboarding'
     | '/inventory/movements'
     | '/invoices/$invoiceId'
+    | '/network/acs'
     | '/network/ftth'
     | '/network/monitoring'
     | '/network/topology'
@@ -485,6 +498,7 @@ export interface FileRouteTypes {
     | '/_auth/customers/onboarding'
     | '/_auth/inventory/movements'
     | '/_auth/invoices/$invoiceId'
+    | '/_auth/network/acs'
     | '/_auth/network/ftth'
     | '/_auth/network/monitoring'
     | '/_auth/network/topology'
@@ -720,6 +734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNetworkFtthRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/network/acs': {
+      id: '/_auth/network/acs'
+      path: '/network/acs'
+      fullPath: '/network/acs'
+      preLoaderRoute: typeof AuthNetworkAcsRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/invoices/$invoiceId': {
       id: '/_auth/invoices/$invoiceId'
       path: '/$invoiceId'
@@ -878,6 +899,7 @@ interface AuthRouteChildren {
   AuthVouchersRoute: typeof AuthVouchersRoute
   AuthWorkOrdersRoute: typeof AuthWorkOrdersRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthNetworkAcsRoute: typeof AuthNetworkAcsRoute
   AuthNetworkFtthRoute: typeof AuthNetworkFtthRoute
   AuthNetworkMonitoringRoute: typeof AuthNetworkMonitoringRoute
   AuthNetworkTopologyRoute: typeof AuthNetworkTopologyRoute
@@ -906,6 +928,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthVouchersRoute: AuthVouchersRoute,
   AuthWorkOrdersRoute: AuthWorkOrdersRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthNetworkAcsRoute: AuthNetworkAcsRoute,
   AuthNetworkFtthRoute: AuthNetworkFtthRoute,
   AuthNetworkMonitoringRoute: AuthNetworkMonitoringRoute,
   AuthNetworkTopologyRoute: AuthNetworkTopologyRoute,
