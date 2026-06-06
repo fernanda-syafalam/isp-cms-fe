@@ -1,5 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { BanIcon, MoreHorizontalIcon, PencilIcon, PlayIcon, Trash2Icon } from 'lucide-react'
+import {
+  BanIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  PlayIcon,
+  Trash2Icon,
+  UnplugIcon,
+} from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -24,17 +31,34 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
-import type { PppSecret } from '@/schemas/mikrotik'
+import type { PppSecret, PppSession } from '@/schemas/mikrotik'
 
-import { useDeleteSecret, useProfiles, useSecrets, useUpdateSecret } from '../hooks/useMikrotik'
+import {
+  useDeleteSecret,
+  useDisconnectSession,
+  useProfiles,
+  useSecrets,
+  useSessions,
+  useUpdateSecret,
+} from '../hooks/useMikrotik'
 import { SecretFormDialog } from './SecretFormDialog'
 
 export function SecretsTab({ routerId }: { routerId: string }) {
   const canManage = useCan('network.manage')
   const { data, isLoading, isError } = useSecrets(routerId)
   const { data: profilesData } = useProfiles(routerId)
+  const { data: sessionsData } = useSessions(routerId)
   const update = useUpdateSecret(routerId)
   const remove = useDeleteSecret(routerId)
+  const disconnect = useDisconnectSession(routerId)
+
+  // Correlate secrets with who is actually online now (Winbox "active") so
+  // operators see connection state + IP/uptime and can force a reconnect.
+  const sessionByUsername = useMemo(() => {
+    const m = new Map<string, PppSession>()
+    for (const s of sessionsData?.items ?? []) m.set(s.username, s)
+    return m
+  }, [sessionsData])
 
   const [addOpen, setAddOpen] = useState(false)
   const [editSecret, setEditSecret] = useState<PppSecret | null>(null)
@@ -73,6 +97,23 @@ export function SecretsTab({ routerId }: { routerId: string }) {
           ),
       },
       {
+        id: 'connection',
+        header: 'Koneksi',
+        meta: { title: 'Koneksi' },
+        cell: ({ row }) => {
+          const sess = sessionByUsername.get(row.original.username)
+          if (!sess) return <StatusBadge tone="neutral" label="Offline" />
+          return (
+            <div className="flex flex-col gap-0.5">
+              <StatusBadge tone="success" label="Online" />
+              <span className="font-mono text-muted-foreground text-xs">
+                {sess.address} · {sess.uptime}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
         id: 'actions',
         meta: { align: 'right' },
         enableHiding: false,
@@ -102,6 +143,17 @@ export function SecretsTab({ routerId }: { routerId: string }) {
                   {s.disabled ? <PlayIcon className="size-4" /> : <BanIcon className="size-4" />}
                   {s.disabled ? 'Aktifkan' : 'Nonaktifkan'}
                 </DropdownMenuItem>
+                {sessionByUsername.has(s.username) ? (
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      const sess = sessionByUsername.get(s.username)
+                      if (sess) disconnect.mutate(sess.id)
+                    }}
+                  >
+                    <UnplugIcon className="size-4" />
+                    Putus sesi
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => setConfirmDelete(s)}
@@ -116,7 +168,7 @@ export function SecretsTab({ routerId }: { routerId: string }) {
         },
       },
     ],
-    [canManage, update],
+    [canManage, update, sessionByUsername, disconnect],
   )
 
   return (
