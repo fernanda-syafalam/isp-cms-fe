@@ -17,6 +17,8 @@ function useInvalidateBilling() {
     qc.invalidateQueries({ queryKey: ['customers'] })
     qc.invalidateQueries({ queryKey: ['payments'] })
     qc.invalidateQueries({ queryKey: ['analytics'] })
+    // Mass isolir flips topology nodes to "down" — refresh the map too.
+    qc.invalidateQueries({ queryKey: ['topology'] })
   }
 }
 
