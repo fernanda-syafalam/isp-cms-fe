@@ -11,10 +11,13 @@ export {
   useIsolateCustomer,
   useNotifyWhatsapp,
   useRebootOnu,
+  useRecordConsent,
   useRelocateCustomer,
+  useRequestDataDeletion,
   useResumeCustomer,
   useSetOnuWifi,
   useStopCustomer,
   useSuspendCustomer,
   useUpdateCustomer,
+  useUpdateKyc,
 } from './hooks/useCustomers'

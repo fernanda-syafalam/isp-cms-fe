@@ -34,6 +34,9 @@ export const CustomerSchema = z.object({
   status: CustomerStatusSchema,
   outstanding: z.number().int().nonnegative(), // piutang (IDR)
   npwp: z.string().nullable(), // NPWP pembeli untuk faktur pajak (PKP)
+  ktp: z.string().nullable(), // NIK/KTP untuk KYC (UU PDP)
+  // When the subscriber consented to data processing (UU PDP). Null = belum.
+  consentAt: z.iso.datetime().nullable(),
   resellerName: z.string().nullable(),
   connection: ConnectionSchema.nullable(),
   joinedAt: z.iso.datetime(),
@@ -68,6 +71,12 @@ export const RelocateCustomerSchema = z.object({
   areaName: z.string().min(1, 'Area wajib dipilih'),
 })
 
+// KYC update (UU PDP): capture the subscriber's NIK/KTP + NPWP.
+export const UpdateKycSchema = z.object({
+  ktp: z.string().min(1, 'NIK/KTP wajib diisi').max(32),
+  npwp: z.string().max(40).optional(),
+})
+
 export type CustomerStatus = z.infer<typeof CustomerStatusSchema>
 export type ConnectionType = z.infer<typeof ConnectionTypeSchema>
 export type Connection = z.infer<typeof ConnectionSchema>
@@ -77,3 +86,4 @@ export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>
 export type SetWifiInput = z.infer<typeof SetWifiSchema>
 export type ChangePlanInput = z.infer<typeof ChangePlanSchema>
 export type RelocateCustomerInput = z.infer<typeof RelocateCustomerSchema>
+export type UpdateKycInput = z.infer<typeof UpdateKycSchema>

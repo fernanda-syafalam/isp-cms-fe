@@ -8,6 +8,7 @@ import {
   type CustomerList,
   type RelocateCustomerInput,
   type SetWifiInput,
+  type UpdateKycInput,
 } from '@/schemas/customer'
 
 export type CustomerFilter = {
@@ -57,6 +58,23 @@ export async function relocateCustomer(
 ): Promise<Customer> {
   const json = await api.post(`customers/${id}/relocate`, { json: input }).json()
   return CustomerSchema.parse(json)
+}
+
+// UU PDP: record the subscriber's consent to data processing.
+export async function recordConsent(id: string): Promise<Customer> {
+  const json = await api.post(`customers/${id}/consent`).json()
+  return CustomerSchema.parse(json)
+}
+
+// KYC capture (NIK/KTP, NPWP).
+export async function updateKyc(id: string, input: UpdateKycInput): Promise<Customer> {
+  const json = await api.patch(`customers/${id}/kyc`, { json: input }).json()
+  return CustomerSchema.parse(json)
+}
+
+// Data-subject erasure request (UU PDP); a real backend queues anonymization.
+export async function requestDataDeletion(id: string): Promise<void> {
+  await api.post(`customers/${id}/data-deletion`)
 }
 
 // Voluntary suspension at the customer's request (dormant). Distinct from the
