@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw'
 
 import { SLA_HOURS } from '@/lib/sla'
-import type { PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
+import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { TicketEvent } from '@/schemas/ticket'
 
 // ---------------------------------------------------------------------------
@@ -552,6 +552,16 @@ const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =
   })),
 )
 
+// IP pools per router — address ranges for PPPoE allocation (provisioning).
+const MIKROTIK_POOL_FIXTURES: IpPool[] = ROUTER_FIXTURES.map((r, ri) => ({
+  id: `${r.id}-pool-1`,
+  routerId: r.id,
+  name: `pool-pppoe-${ri + 1}`,
+  ranges: `100.64.${ri}.2-100.64.${ri}.254`,
+  totalAddresses: 253,
+  usedAddresses: 40 + ri * 25,
+}))
+
 // Ticket timeline: one "created" event seeded per ticket.
 const TICKET_EVENT_FIXTURES: TicketEvent[] = TICKET_FIXTURES.map((t) => ({
   id: `${t.id}-ev-created`,
@@ -901,6 +911,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   mikrotikSecrets: MIKROTIK_SECRET_FIXTURES,
   mikrotikSessions: MIKROTIK_SESSION_FIXTURES,
   mikrotikQueues: MIKROTIK_QUEUE_FIXTURES,
+  mikrotikPools: MIKROTIK_POOL_FIXTURES,
   ticketEvents: TICKET_EVENT_FIXTURES,
   vouchers: VOUCHER_FIXTURES,
   resellerLedger: RESELLER_LEDGER_FIXTURES,
@@ -1964,6 +1975,32 @@ export const handlers = [
     const idx = MIKROTIK_QUEUE_FIXTURES.findIndex((q) => q.id === params.qid)
     if (idx === -1) return new HttpResponse(null, { status: 404 })
     MIKROTIK_QUEUE_FIXTURES.splice(idx, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  // IP pools (provisioning)
+  http.get('*/api/routers/:id/pools', ({ params }) => {
+    const items = MIKROTIK_POOL_FIXTURES.filter((p) => p.routerId === params.id)
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/routers/:id/pools', async ({ params, request }) => {
+    const body = (await request.json()) as { name: string; ranges: string }
+    const pool = {
+      id: crypto.randomUUID(),
+      routerId: String(params.id),
+      name: body.name,
+      ranges: body.ranges,
+      totalAddresses: 253,
+      usedAddresses: 0,
+    }
+    MIKROTIK_POOL_FIXTURES.push(pool)
+    persistDb()
+    return HttpResponse.json(pool, { status: 201 })
+  }),
+  http.delete('*/api/routers/:id/pools/:pid', ({ params }) => {
+    const idx = MIKROTIK_POOL_FIXTURES.findIndex((p) => p.id === params.pid)
+    if (idx === -1) return new HttpResponse(null, { status: 404 })
+    MIKROTIK_POOL_FIXTURES.splice(idx, 1)
     persistDb()
     return new HttpResponse(null, { status: 204 })
   }),
