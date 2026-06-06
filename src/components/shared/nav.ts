@@ -1,6 +1,7 @@
 import {
   ActivityIcon,
   BarChart3Icon,
+  BookTextIcon,
   BoxesIcon,
   Building2Icon,
   CpuIcon,
@@ -89,6 +90,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/reports', label: 'Laporan', icon: BarChart3Icon },
       { to: '/satisfaction', label: 'Kepuasan & Churn', icon: SmilePlusIcon },
+      { to: '/accounting', label: 'Akuntansi (GL)', icon: BookTextIcon },
     ],
   },
   {

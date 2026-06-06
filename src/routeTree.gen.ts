@@ -32,6 +32,7 @@ import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
 import { Route as AuthBranchesRouteImport } from './routes/_auth.branches'
 import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
+import { Route as AuthAccountingRouteImport } from './routes/_auth.accounting'
 import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
 import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
@@ -186,6 +187,13 @@ const AuthAuditRoute = AuthAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() => import('./routes/_auth.audit.lazy').then((d) => d.Route))
+const AuthAccountingRoute = AuthAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.accounting.lazy').then((d) => d.Route),
+)
 const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -308,6 +316,7 @@ const AuthInvoicesPrintInvoiceIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/login': typeof LoginRoute
+  '/accounting': typeof AuthAccountingRoute
   '/audit': typeof AuthAuditRoute
   '/branches': typeof AuthBranchesRoute
   '/coverage': typeof AuthCoverageRoute
@@ -352,6 +361,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/accounting': typeof AuthAccountingRoute
   '/audit': typeof AuthAuditRoute
   '/branches': typeof AuthBranchesRoute
   '/coverage': typeof AuthCoverageRoute
@@ -394,6 +404,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
   '/login': typeof LoginRoute
+  '/_auth/accounting': typeof AuthAccountingRoute
   '/_auth/audit': typeof AuthAuditRoute
   '/_auth/branches': typeof AuthBranchesRoute
   '/_auth/coverage': typeof AuthCoverageRoute
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/accounting'
     | '/audit'
     | '/branches'
     | '/coverage'
@@ -486,6 +498,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/accounting'
     | '/audit'
     | '/branches'
     | '/coverage'
@@ -527,6 +540,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_auth'
     | '/login'
+    | '/_auth/accounting'
     | '/_auth/audit'
     | '/_auth/branches'
     | '/_auth/coverage'
@@ -737,6 +751,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/audit'
       preLoaderRoute: typeof AuthAuditRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/accounting': {
+      id: '/_auth/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AuthAccountingRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/tickets/': {
@@ -964,6 +985,7 @@ const AuthTicketsRouteWithChildren = AuthTicketsRoute._addFileChildren(
 )
 
 interface AuthRouteChildren {
+  AuthAccountingRoute: typeof AuthAccountingRoute
   AuthAuditRoute: typeof AuthAuditRoute
   AuthBranchesRoute: typeof AuthBranchesRoute
   AuthCoverageRoute: typeof AuthCoverageRoute
@@ -997,6 +1019,7 @@ interface AuthRouteChildren {
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthAccountingRoute: AuthAccountingRoute,
   AuthAuditRoute: AuthAuditRoute,
   AuthBranchesRoute: AuthBranchesRoute,
   AuthCoverageRoute: AuthCoverageRoute,
