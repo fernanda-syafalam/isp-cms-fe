@@ -21,6 +21,7 @@ import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
 import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
+import { Route as AuthNotificationsRouteImport } from './routes/_auth.notifications'
 import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
 import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
@@ -101,6 +102,11 @@ const AuthPlansRoute = AuthPlansRouteImport.update({
 const AuthPaymentsRoute = AuthPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthNotificationsRoute = AuthNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/customers': typeof AuthCustomersRouteWithChildren
   '/inventory': typeof AuthInventoryRouteWithChildren
   '/invoices': typeof AuthInvoicesRouteWithChildren
+  '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/audit': typeof AuthAuditRoute
   '/coverage': typeof AuthCoverageRoute
+  '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/_auth/customers': typeof AuthCustomersRouteWithChildren
   '/_auth/inventory': typeof AuthInventoryRouteWithChildren
   '/_auth/invoices': typeof AuthInvoicesRouteWithChildren
+  '/_auth/notifications': typeof AuthNotificationsRoute
   '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
   '/_auth/reports': typeof AuthReportsRoute
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/inventory'
     | '/invoices'
+    | '/notifications'
     | '/payments'
     | '/plans'
     | '/reports'
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/audit'
     | '/coverage'
+    | '/notifications'
     | '/payments'
     | '/plans'
     | '/reports'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/_auth/customers'
     | '/_auth/inventory'
     | '/_auth/invoices'
+    | '/_auth/notifications'
     | '/_auth/payments'
     | '/_auth/plans'
     | '/_auth/reports'
@@ -514,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/payments'
       preLoaderRoute: typeof AuthPaymentsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/notifications': {
+      id: '/_auth/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthNotificationsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/invoices': {
@@ -753,6 +772,7 @@ interface AuthRouteChildren {
   AuthCustomersRoute: typeof AuthCustomersRouteWithChildren
   AuthInventoryRoute: typeof AuthInventoryRouteWithChildren
   AuthInvoicesRoute: typeof AuthInvoicesRouteWithChildren
+  AuthNotificationsRoute: typeof AuthNotificationsRoute
   AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
   AuthReportsRoute: typeof AuthReportsRoute
@@ -776,6 +796,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthCustomersRoute: AuthCustomersRouteWithChildren,
   AuthInventoryRoute: AuthInventoryRouteWithChildren,
   AuthInvoicesRoute: AuthInvoicesRouteWithChildren,
+  AuthNotificationsRoute: AuthNotificationsRoute,
   AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
   AuthReportsRoute: AuthReportsRoute,

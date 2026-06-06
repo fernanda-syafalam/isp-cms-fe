@@ -723,6 +723,80 @@ function recordAudit(action: string, entity: string, summary: string, actor = 'A
   })
 }
 
+// WhatsApp notification templates (per lifecycle event) + a send log.
+const NOTIFICATION_TEMPLATE_SEED: Array<{
+  event: string
+  name: string
+  body: string
+  enabled: boolean
+}> = [
+  {
+    event: 'invoice_created',
+    name: 'Tagihan terbit',
+    body: 'Halo {nama}, tagihan {no_tagihan} sebesar {jumlah} telah terbit, jatuh tempo {jatuh_tempo}.',
+    enabled: true,
+  },
+  {
+    event: 'due_soon',
+    name: 'Pengingat H-3',
+    body: 'Halo {nama}, tagihan {no_tagihan} ({jumlah}) jatuh tempo {jatuh_tempo}. Mohon segera dibayar ya.',
+    enabled: true,
+  },
+  {
+    event: 'overdue',
+    name: 'Terlambat',
+    body: 'Halo {nama}, tagihan {no_tagihan} ({jumlah}) sudah lewat jatuh tempo. Segera bayar untuk menghindari isolir.',
+    enabled: true,
+  },
+  {
+    event: 'isolir',
+    name: 'Isolir',
+    body: 'Halo {nama}, layanan Anda diisolir karena tagihan {no_tagihan} belum dibayar. Bayar untuk reaktivasi otomatis.',
+    enabled: true,
+  },
+  {
+    event: 'paid',
+    name: 'Lunas',
+    body: 'Terima kasih {nama}, pembayaran tagihan {no_tagihan} sebesar {jumlah} telah kami terima.',
+    enabled: true,
+  },
+  {
+    event: 'ticket_update',
+    name: 'Update tiket',
+    body: 'Halo {nama}, ada pembaruan pada laporan gangguan Anda. Tim kami sedang menindaklanjuti.',
+    enabled: false,
+  },
+]
+const NOTIFICATION_TEMPLATE_FIXTURES = NOTIFICATION_TEMPLATE_SEED.map((t, i) => ({
+  id: oid('aff1aff1', i),
+  event: t.event,
+  name: t.name,
+  channel: 'whatsapp' as const,
+  body: t.body,
+  enabled: t.enabled,
+}))
+const NOTIFICATION_LOG_FIXTURES = Array.from({ length: 6 }, (_, i) => {
+  const tpl = NOTIFICATION_TEMPLATE_SEED[i % NOTIFICATION_TEMPLATE_SEED.length]
+  return {
+    id: oid('a106a106', i),
+    to: `0812${String(10_000_000 + i)}`,
+    templateName: tpl?.name ?? 'Tagihan terbit',
+    channel: 'whatsapp' as const,
+    status: (i % 5 === 0 ? 'failed' : 'sent') as 'sent' | 'failed',
+    body: 'Halo Pelanggan, tagihan INV-2026-100 sebesar Rp250.000 telah terbit.',
+    at: iso(2026, 4, 20 - i),
+  }
+})
+
+// Render a template body with sample values (mock; real send hits the gateway).
+function renderTemplate(body: string): string {
+  return body
+    .replaceAll('{nama}', 'Budi Santoso')
+    .replaceAll('{no_tagihan}', 'INV-2026-100')
+    .replaceAll('{jumlah}', 'Rp250.000')
+    .replaceAll('{jatuh_tempo}', '10 Mei 2026')
+}
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -760,6 +834,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   paymentIntents: PAYMENT_INTENT_FIXTURES,
   audit: AUDIT_FIXTURES,
   settings: [SETTINGS_FIXTURE],
+  notificationTemplates: NOTIFICATION_TEMPLATE_FIXTURES,
+  notificationLog: NOTIFICATION_LOG_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -2341,4 +2417,53 @@ export const handlers = [
   http.get('*/api/audit', () =>
     HttpResponse.json({ items: AUDIT_FIXTURES, total: AUDIT_FIXTURES.length }),
   ),
+
+  // WhatsApp notifications
+  http.get('*/api/notifications/templates', () =>
+    HttpResponse.json({
+      items: NOTIFICATION_TEMPLATE_FIXTURES,
+      total: NOTIFICATION_TEMPLATE_FIXTURES.length,
+    }),
+  ),
+  http.patch('*/api/notifications/templates/:id', async ({ params, request }) => {
+    const found = NOTIFICATION_TEMPLATE_FIXTURES.find((t) => t.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      body?: string
+      enabled?: boolean
+    }
+    if (body.body !== undefined) found.body = body.body
+    if (body.enabled !== undefined) found.enabled = body.enabled
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.get('*/api/notifications/log', () => {
+    const items = [...NOTIFICATION_LOG_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  // Send a (test) message rendered from a template; appends to the log.
+  http.post('*/api/notifications/send', async ({ request }) => {
+    const body = (await request.json()) as { event: string; to: string }
+    const tpl = NOTIFICATION_TEMPLATE_FIXTURES.find((t) => t.event === body.event)
+    if (!tpl) {
+      return new HttpResponse(JSON.stringify({ message: 'Template not found' }), {
+        status: 404,
+      })
+    }
+    NOTIFICATION_LOG_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      to: body.to,
+      templateName: tpl.name,
+      channel: 'whatsapp',
+      status: 'sent',
+      body: renderTemplate(tpl.body),
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return new HttpResponse(null, { status: 201 })
+  }),
 ]

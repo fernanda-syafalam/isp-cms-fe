@@ -4,6 +4,7 @@ import {
   LayoutDashboardIcon,
   LifeBuoyIcon,
   MapPinIcon,
+  MessageCircleIcon,
   NetworkIcon,
   PackageIcon,
   ReceiptTextIcon,
@@ -75,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Admin',
     items: [
       { to: '/staff', label: 'Staf', icon: ShieldCheckIcon },
+      { to: '/notifications', label: 'Notifikasi WA', icon: MessageCircleIcon },
       { to: '/audit', label: 'Log Audit', icon: ScrollTextIcon },
       { to: '/settings', label: 'Pengaturan', icon: SettingsIcon },
     ],
