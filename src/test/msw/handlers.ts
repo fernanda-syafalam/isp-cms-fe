@@ -2466,4 +2466,41 @@ export const handlers = [
     persistDb()
     return new HttpResponse(null, { status: 201 })
   }),
+
+  // Customer self-service portal — "me" resolves to a representative subscriber
+  // (a real backend resolves it from the customer's auth token).
+  http.get('*/api/portal/me', () => {
+    const me = CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
+    if (!me) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const invoices = INVOICE_FIXTURES.filter((inv) => inv.customerId === me.id)
+    const payments = PAYMENT_FIXTURES.filter((p) => p.customerName === me.fullName)
+    const tickets = TICKET_FIXTURES.filter((t) => t.customerName === me.fullName)
+    return HttpResponse.json({ customer: me, invoices, payments, tickets })
+  }),
+  // Customer reports a problem → opens a support ticket on their account.
+  http.post('*/api/portal/tickets', async ({ request }) => {
+    const me = CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
+    if (!me) return new HttpResponse(null, { status: 404 })
+    const body = (await request.json()) as { subject: string }
+    const now = Date.now()
+    const slaHours = SLA_HOURS.medium ?? 24
+    const ticket = {
+      id: crypto.randomUUID(),
+      code: `TKT-${9000 + TICKET_FIXTURES.length}`,
+      subject: body.subject,
+      customerName: me.fullName,
+      priority: 'medium' as const,
+      status: 'open' as const,
+      assignee: null,
+      slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
+      createdAt: new Date(now).toISOString(),
+    }
+    TICKET_FIXTURES.unshift(ticket)
+    persistDb()
+    return HttpResponse.json(ticket, { status: 201 })
+  }),
 ]

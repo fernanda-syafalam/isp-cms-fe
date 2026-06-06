@@ -13,6 +13,7 @@ import {
   ServerIcon,
   SettingsIcon,
   ShieldCheckIcon,
+  SmartphoneIcon,
   StoreIcon,
   TicketIcon,
   UsersIcon,
@@ -50,6 +51,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/vouchers', label: 'Voucher', icon: TicketIcon },
       { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
       { to: '/resellers', label: 'Reseller', icon: StoreIcon },
+      { to: '/portal', label: 'Portal Pelanggan', icon: SmartphoneIcon },
     ],
   },
   {
