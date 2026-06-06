@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import { listCustomers } from '@/api/customers'
 import {
   addLedgerEntry,
   getReseller,
@@ -15,6 +16,15 @@ export function useResellersList() {
   return useQuery({
     queryKey: ['resellers', 'list'] as const,
     queryFn: listResellers,
+  })
+}
+
+// Customers registered by a reseller — joins the customer base by resellerName.
+export function useResellerCustomers(resellerName: string) {
+  return useQuery({
+    queryKey: ['customers', 'list', { reseller: resellerName }] as const,
+    queryFn: () => listCustomers({}),
+    select: (data) => data.items.filter((c) => c.resellerName === resellerName),
   })
 }
 

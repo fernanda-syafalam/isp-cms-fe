@@ -16,14 +16,24 @@ import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { formatCurrency, formatDateTime, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
+import type { Customer, CustomerStatus } from '@/schemas/customer'
 import type { LedgerEntry, LedgerEntryType } from '@/schemas/reseller'
 
-import { useReseller, useResellerLedger } from '../hooks/useResellers'
+import { useReseller, useResellerCustomers, useResellerLedger } from '../hooks/useResellers'
 import { LedgerEntryDialog } from './LedgerEntryDialog'
+
+const CUSTOMER_TONE: Record<CustomerStatus, StatusTone> = {
+  prospek: 'neutral',
+  instalasi: 'info',
+  aktif: 'success',
+  isolir: 'danger',
+  berhenti: 'neutral',
+}
 
 // Representative ARPU used to estimate a reseller's monthly commission from
 // their customer count and commission rate (mock — real systems sum invoices).
@@ -185,6 +195,8 @@ export function ResellerDetailPage({ resellerId }: Props) {
         />
       </div>
 
+      <ResellerCustomersCard resellerName={reseller.name} />
+
       <DataTable
         columns={columns}
         data={ledger.data?.items}
@@ -204,6 +216,47 @@ export function ResellerDetailPage({ resellerId }: Props) {
         />
       ) : null}
     </div>
+  )
+}
+
+function ResellerCustomersCard({ resellerName }: { resellerName: string }) {
+  const { data: customers, isLoading } = useResellerCustomers(resellerName)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          Pelanggan reseller
+          {customers ? ` (${formatNumber(customers.length)})` : ''}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : !customers || customers.length === 0 ? (
+          <p className="py-6 text-center text-muted-foreground text-sm">
+            Belum ada pelanggan dari reseller ini.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {customers.map((c: Customer) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
+                <Link
+                  to="/customers/$customerId"
+                  params={{ customerId: c.id }}
+                  className="min-w-0 hover:underline"
+                >
+                  <span className="block truncate font-medium text-sm">{c.fullName}</span>
+                  <span className="font-mono text-muted-foreground text-xs">
+                    {c.customerNo} · {c.areaName}
+                  </span>
+                </Link>
+                <StatusBadge tone={CUSTOMER_TONE[c.status]} label={statusLabel(c.status)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
