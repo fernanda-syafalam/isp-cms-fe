@@ -1,5 +1,6 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { DownloadIcon, HistoryIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -14,12 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { statusLabel } from '@/lib/status-label'
 import type { InventoryItem, InventoryStatus } from '@/schemas/inventory'
 
 import { useInventoryList } from '../hooks/useInventory'
 import { InventoryRowActions } from './InventoryRowActions'
+import { StockInDialog } from './StockInDialog'
 
 const STATUS_TONE: Record<InventoryStatus, StatusTone> = {
   warehouse: 'info',
@@ -38,6 +41,7 @@ const toCsvRow = (i: InventoryItem) => ({
 
 export function InventoryListPage() {
   const [status, setStatus] = useState('all')
+  const canManage = useCan('network.manage')
   const { data, isLoading, isError } = useInventoryList({
     status: status === 'all' ? undefined : status,
   })
@@ -108,16 +112,25 @@ export function InventoryListPage() {
           </Select>
         }
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!data?.items.length}
-            onClick={() => downloadCsv('inventaris', (data?.items ?? []).map(toCsvRow))}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
+          <>
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <Link to="/inventory/movements">
+                <HistoryIcon className="size-4" />
+                <span className="hidden sm:inline">Riwayat stok</span>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!data?.items.length}
+              onClick={() => downloadCsv('inventaris', (data?.items ?? []).map(toCsvRow))}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            {canManage ? <StockInDialog /> : null}
+          </>
         }
       />
     </div>
