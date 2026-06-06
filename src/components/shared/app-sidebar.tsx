@@ -1,7 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Building2Icon, ChevronRightIcon } from 'lucide-react'
-import { Collapsible } from 'radix-ui'
 
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Sidebar,
   SidebarContent,
@@ -63,18 +63,18 @@ function NavGroupSection({ group, pathname }: { group: NavGroup; pathname: strin
   const defaultOpen = hasActive || ALWAYS_OPEN.has(group.label)
 
   return (
-    <Collapsible.Root defaultOpen={defaultOpen} className="group/collapsible">
+    <Collapsible defaultOpen={defaultOpen} className="group/collapsible">
       <SidebarGroup>
         <SidebarGroupLabel
           asChild
           className="cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
-          <Collapsible.Trigger>
+          <CollapsibleTrigger>
             {group.label}
             <ChevronRightIcon className="ml-auto size-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-          </Collapsible.Trigger>
+          </CollapsibleTrigger>
         </SidebarGroupLabel>
-        <Collapsible.Content>
+        <CollapsibleContent>
           <SidebarGroupContent>
             <SidebarMenu>
               {group.items.map((item) => {
@@ -96,8 +96,8 @@ function NavGroupSection({ group, pathname }: { group: NavGroup; pathname: strin
               })}
             </SidebarMenu>
           </SidebarGroupContent>
-        </Collapsible.Content>
+        </CollapsibleContent>
       </SidebarGroup>
-    </Collapsible.Root>
+    </Collapsible>
   )
 }
