@@ -92,6 +92,10 @@ const CUSTOMER_STATUS = [
   'aktif',
   'berhenti',
 ] as const
+// Reseller storefronts. RESELLER_NAMES (with nulls) is sprinkled onto customers
+// as `resellerName`; RESELLER_CO_NAMES seeds the matching reseller records so
+// the reseller → customers join resolves.
+const RESELLER_CO_NAMES = ['Loket Andi', 'Agen Budi', 'Loket Citra'] as const
 const RESELLER_NAMES = ['Loket Andi', null, 'Agen Budi', null, 'Loket Citra'] as const
 
 type ConnectionFixture = {
@@ -325,18 +329,24 @@ const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
 })
 
 const RESELLER_STATUS = ['active', 'active', 'inactive'] as const
-const RESELLER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
-  id: oid('a3a3a3a3', i),
-  name:
-    i % 2 === 0
+const RESELLER_FIXTURES = Array.from({ length: 6 }, (_, i) => {
+  // First entries take the names customers actually reference, so the reseller
+  // → customers join resolves; the rest are synthetic storefronts per area.
+  const name: string =
+    RESELLER_CO_NAMES[i] ??
+    (i % 2 === 0
       ? `Loket ${AREA_NAMES[i % AREA_NAMES.length]}`
-      : `Agen ${AREA_NAMES[i % AREA_NAMES.length]}`,
-  area: AREA_NAMES[i % AREA_NAMES.length] ?? 'Bandung Kota',
-  balance: 500_000 + i * 250_000,
-  commissionPct: 0.05 + (i % 3) * 0.02,
-  customerCount: 12 + i * 7,
-  status: RESELLER_STATUS[i % RESELLER_STATUS.length] ?? 'active',
-}))
+      : `Agen ${AREA_NAMES[i % AREA_NAMES.length]}`)
+  return {
+    id: oid('a3a3a3a3', i),
+    name,
+    area: AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara',
+    balance: 500_000 + i * 250_000,
+    commissionPct: 0.05 + (i % 3) * 0.02,
+    customerCount: CUSTOMER_FIXTURES.filter((c) => c.resellerName === name).length,
+    status: RESELLER_STATUS[i % RESELLER_STATUS.length] ?? 'active',
+  }
+})
 
 // Deposit/commission ledger per reseller. Built cumulatively so balanceAfter is
 // always consistent; each reseller's balance is then synced to its final entry.
@@ -1068,7 +1078,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v7'
+const DB_KEY = 'isp-cms-mock-db-v8'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
