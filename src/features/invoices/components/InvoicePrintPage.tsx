@@ -3,6 +3,7 @@ import { ArrowLeftIcon, PrinterIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSettings } from '@/features/settings'
 
 import { useInvoice } from '../hooks/useInvoices'
 import { PrintableInvoice } from './PrintableInvoice'
@@ -15,6 +16,18 @@ type Props = {
 // shell on screen; @media print (globals.css) then prints only #print-document.
 export function InvoicePrintPage({ invoiceId }: Props) {
   const { data: invoice, isLoading, isError } = useInvoice(invoiceId)
+  const { data: settings } = useSettings()
+
+  const issuer = settings
+    ? {
+        name: settings.company.name,
+        address: settings.company.address,
+        phone: settings.company.phone,
+        email: settings.company.email,
+        // Only attach NPWP when PKP (omit the key entirely otherwise).
+        ...(settings.tax.pkp ? { npwp: settings.tax.npwp } : {}),
+      }
+    : undefined
 
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-neutral-100 print:static print:overflow-visible print:bg-white">
@@ -44,7 +57,7 @@ export function InvoicePrintPage({ invoiceId }: Props) {
           </p>
         ) : (
           <div id="print-document">
-            <PrintableInvoice invoice={invoice} />
+            <PrintableInvoice invoice={invoice} issuer={issuer} />
           </div>
         )}
       </div>

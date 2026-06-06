@@ -11,8 +11,11 @@ export const InvoiceSchema = z.object({
   customerName: z.string(),
   periodStart: z.iso.date(),
   periodEnd: z.iso.date(),
-  amount: z.number().int().nonnegative(),
+  amount: z.number().int().nonnegative(), // DPP / harga langganan
   lateFee: z.number().int().nonnegative(), // denda keterlambatan
+  taxAmount: z.number().int().nonnegative(), // PPN (efektif 11% via DPP 11/12)
+  // Nomor faktur pajak (e-Faktur/Coretax) — null untuk non-PKP.
+  taxInvoiceNo: z.string().nullable(),
   status: InvoiceStatusSchema,
   dueDate: z.iso.date(),
   paidAt: z.iso.datetime().nullable(),

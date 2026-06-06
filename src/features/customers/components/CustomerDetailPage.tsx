@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDate } from '@/lib/format'
+import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Connection, Customer, CustomerStatus } from '@/schemas/customer'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
@@ -206,6 +207,7 @@ function ProfileCard({ customer }: { customer: Customer }) {
     { label: 'Email', value: customer.email ?? '—' },
     { label: 'Alamat', value: customer.address },
     { label: 'Area', value: customer.areaName },
+    { label: 'NPWP', value: customer.npwp ?? '—' },
     { label: 'Reseller', value: customer.resellerName ?? '—' },
     { label: 'Bergabung', value: formatDate(customer.joinedAt) },
   ]
@@ -335,7 +337,7 @@ function InvoicesCard({ invoices }: { invoices: Invoice[] | undefined }) {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-sm tabular-nums">
-                    {formatCurrency(inv.amount)}
+                    {formatCurrency(invoiceTotal(inv))}
                   </span>
                   <StatusBadge tone={INVOICE_TONE[inv.status]} label={statusLabel(inv.status)} />
                 </div>

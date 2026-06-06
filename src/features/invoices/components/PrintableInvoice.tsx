@@ -1,49 +1,57 @@
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
+import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice } from '@/schemas/invoice'
 
-// Static issuer profile. A future Settings page (B10) can make this editable.
-const COMPANY = {
+type Issuer = {
+  name: string
+  tagline?: string
+  address: string
+  phone: string
+  email: string
+  npwp?: string
+}
+
+// Fallback issuer profile. InvoicePrintPage passes the live Settings profile.
+const DEFAULT_ISSUER: Issuer = {
   name: 'Ashnet',
   tagline: 'Layanan Internet',
   address: 'Jl. Merdeka No. 1, Jakarta',
   phone: '0800-1-274638',
   email: 'billing@ashnet.id',
-} as const
+}
 
 type Props = {
   invoice: Invoice
+  issuer?: Issuer | undefined
+  buyerNpwp?: string | null
 }
 
 // A print-ready invoice (FAKTUR) or, when paid, a receipt (KWITANSI).
 // Colors are explicit black-on-white because this is a paper document, not an
 // app surface — theme/dark-mode tokens do not apply to print output.
-export function PrintableInvoice({ invoice }: Props) {
+export function PrintableInvoice({ invoice, issuer = DEFAULT_ISSUER, buyerNpwp }: Props) {
   const isPaid = invoice.status === 'paid'
-  const total = invoice.amount + invoice.lateFee
+  const total = invoiceTotal(invoice)
   const docTitle = isPaid ? 'KWITANSI' : 'FAKTUR'
-
-  const lineItems: Array<{ label: string; amount: number }> = [
-    {
-      label: `Langganan internet — periode ${formatDate(invoice.periodStart)} s/d ${formatDate(invoice.periodEnd)}`,
-      amount: invoice.amount,
-    },
-  ]
-  if (invoice.lateFee > 0) {
-    lineItems.push({ label: 'Denda keterlambatan', amount: invoice.lateFee })
-  }
 
   return (
     <article className="mx-auto max-w-[800px] bg-white px-10 py-12 text-neutral-900">
       {/* Header */}
       <header className="flex items-start justify-between border-neutral-300 border-b pb-6">
         <div>
-          <p className="font-bold text-2xl tracking-tight text-blue-700">{COMPANY.name}</p>
-          <p className="text-neutral-600 text-sm">{COMPANY.tagline}</p>
+          <p className="font-bold text-2xl tracking-tight text-blue-700">{issuer.name}</p>
+          {issuer.tagline ? <p className="text-neutral-600 text-sm">{issuer.tagline}</p> : null}
           <p className="mt-2 text-neutral-500 text-xs leading-relaxed">
-            {COMPANY.address}
+            {issuer.address}
             <br />
-            {COMPANY.phone} · {COMPANY.email}
+            {issuer.phone} · {issuer.email}
+            {issuer.npwp ? (
+              <>
+                <br />
+                NPWP: {issuer.npwp}
+              </>
+            ) : null}
           </p>
         </div>
         <div className="text-right">
@@ -52,6 +60,11 @@ export function PrintableInvoice({ invoice }: Props) {
           </p>
           <p className="mt-1 font-mono font-semibold text-lg">{invoice.invoiceNo}</p>
           <p className="mt-1 text-neutral-600 text-sm">Status: {statusLabel(invoice.status)}</p>
+          {invoice.taxInvoiceNo ? (
+            <p className="mt-1 text-neutral-500 text-xs">
+              Faktur Pajak: <span className="font-mono">{invoice.taxInvoiceNo}</span>
+            </p>
+          ) : null}
         </div>
       </header>
 
@@ -60,6 +73,7 @@ export function PrintableInvoice({ invoice }: Props) {
         <div>
           <p className="text-neutral-500 text-xs uppercase tracking-wide">Ditagihkan kepada</p>
           <p className="mt-1 font-medium text-base">{invoice.customerName}</p>
+          {buyerNpwp ? <p className="text-neutral-500 text-xs">NPWP: {buyerNpwp}</p> : null}
         </div>
         <dl className="space-y-1 text-right text-sm">
           <div className="flex justify-between gap-8">
@@ -81,7 +95,7 @@ export function PrintableInvoice({ invoice }: Props) {
         </dl>
       </section>
 
-      {/* Line items */}
+      {/* Line item + tax breakdown */}
       <table className="mt-8 w-full border-collapse text-sm">
         <thead>
           <tr className="border-neutral-300 border-y text-left">
@@ -90,19 +104,42 @@ export function PrintableInvoice({ invoice }: Props) {
           </tr>
         </thead>
         <tbody>
-          {lineItems.map((item) => (
-            <tr key={item.label} className="border-neutral-200 border-b">
-              <td className="py-3 pr-4">{item.label}</td>
+          <tr className="border-neutral-200 border-b">
+            <td className="py-3 pr-4">
+              Langganan internet — periode {formatDate(invoice.periodStart)} s/d{' '}
+              {formatDate(invoice.periodEnd)}
+            </td>
+            <td className="py-3 text-right font-mono tabular-nums">
+              {formatCurrency(invoice.amount)}
+            </td>
+          </tr>
+          {invoice.lateFee > 0 ? (
+            <tr className="border-neutral-200 border-b">
+              <td className="py-3 pr-4">Denda keterlambatan</td>
               <td className="py-3 text-right font-mono tabular-nums">
-                {formatCurrency(item.amount)}
+                {formatCurrency(invoice.lateFee)}
               </td>
             </tr>
-          ))}
+          ) : null}
         </tbody>
         <tfoot>
           <tr>
-            <td className="py-4 text-right font-semibold">Total</td>
-            <td className="py-4 text-right font-mono font-bold text-lg tabular-nums">
+            <td className="py-1 text-right text-neutral-500">DPP</td>
+            <td className="py-1 text-right font-mono tabular-nums">
+              {formatCurrency(invoice.amount + invoice.lateFee)}
+            </td>
+          </tr>
+          {invoice.taxAmount > 0 ? (
+            <tr>
+              <td className="py-1 text-right text-neutral-500">PPN</td>
+              <td className="py-1 text-right font-mono tabular-nums">
+                {formatCurrency(invoice.taxAmount)}
+              </td>
+            </tr>
+          ) : null}
+          <tr>
+            <td className="py-3 text-right font-semibold">Total</td>
+            <td className="py-3 text-right font-mono font-bold text-lg tabular-nums">
               {formatCurrency(total)}
             </td>
           </tr>
@@ -122,7 +159,7 @@ export function PrintableInvoice({ invoice }: Props) {
 
       {/* Footer */}
       <footer className="mt-12 border-neutral-300 border-t pt-4 text-center text-neutral-500 text-xs">
-        Terima kasih atas kepercayaan Anda menggunakan layanan {COMPANY.name}.
+        Terima kasih atas kepercayaan Anda menggunakan layanan {issuer.name}.
         <br />
         Dokumen ini sah dan diproses secara elektronik tanpa tanda tangan.
       </footer>

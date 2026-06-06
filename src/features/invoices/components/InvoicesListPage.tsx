@@ -26,6 +26,7 @@ import {
 import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
+import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
@@ -42,11 +43,11 @@ const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
 
 const STATUS_OPTIONS = ['all', 'paid', 'pending', 'overdue', 'draft'] as const
 
-const invoiceTotal = (inv: Invoice) => inv.amount + inv.lateFee
-
 const toCsvRow = (inv: Invoice) => ({
   'No. Tagihan': inv.invoiceNo,
   Pelanggan: inv.customerName,
+  DPP: formatCurrency(inv.amount),
+  PPN: formatCurrency(inv.taxAmount),
   Jumlah: formatCurrency(invoiceTotal(inv)),
   'Jatuh tempo': formatDate(inv.dueDate),
   Status: statusLabel(inv.status),
