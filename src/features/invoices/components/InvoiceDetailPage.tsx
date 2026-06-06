@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, WalletIcon } from 'lucide-react'
+import { ArrowLeftIcon, BellRingIcon, WalletIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -13,11 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useCan } from '@/features/auth'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 import { PaymentMethodSchema } from '@/schemas/payment'
 
+import { useRemindOverdue } from '../hooks/useBilling'
 import { useInvoice, usePayInvoice } from '../hooks/useInvoices'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
@@ -66,6 +68,10 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
       label: 'Dibayar pada',
       value: invoice.paidAt ? formatDateTime(invoice.paidAt) : '—',
     },
+    {
+      label: 'Terakhir diingatkan',
+      value: invoice.lastRemindedAt ? formatDateTime(invoice.lastRemindedAt) : 'Belum',
+    },
   ]
 
   return (
@@ -76,6 +82,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+            {invoice.status !== 'paid' ? <RemindButton invoice={invoice} /> : null}
             {invoice.status !== 'paid' ? <PayMenu invoice={invoice} /> : null}
           </div>
         }
@@ -119,6 +126,23 @@ function Row({ label, value, danger = false }: { label: string; value: string; d
         {value}
       </span>
     </div>
+  )
+}
+
+function RemindButton({ invoice }: { invoice: Invoice }) {
+  const canRemind = useCan('billing.run')
+  const remind = useRemindOverdue()
+  if (!canRemind) return null
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={remind.isPending}
+      onClick={() => remind.mutate([invoice.id])}
+    >
+      <BellRingIcon className="size-4" />
+      Kirim pengingat
+    </Button>
   )
 }
 

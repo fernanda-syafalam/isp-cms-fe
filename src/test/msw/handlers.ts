@@ -147,6 +147,8 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
     status,
     dueDate: ymd(2026, 5, 10),
     paidAt: status === 'paid' ? iso(2026, 5, 3 + (i % 5)) : null,
+    // Overdue invoices already had a first reminder; others none yet.
+    lastRemindedAt: status === 'overdue' ? iso(2026, 5, 12) : null,
   }
 })
 
@@ -472,7 +474,10 @@ function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
 // ---------------------------------------------------------------------------
-const DB_KEY = 'isp-cms-mock-db-v1'
+// Bump the version suffix whenever a fixture's shape changes so a stale
+// localStorage snapshot from an older schema is ignored instead of failing
+// Zod validation. v2: invoices gained `lastRemindedAt` (dunning).
+const DB_KEY = 'isp-cms-mock-db-v2'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -722,6 +727,7 @@ export const handlers = [
         status: 'pending',
         dueDate: due.toISOString().slice(0, 10),
         paidAt: null,
+        lastRemindedAt: null,
       })
       found.outstanding += prorate
     }
@@ -937,6 +943,7 @@ export const handlers = [
         status: 'pending',
         dueDate,
         paidAt: null,
+        lastRemindedAt: null,
       })
       created++
     }
@@ -972,6 +979,26 @@ export const handlers = [
     }
     persistDb()
     return HttpResponse.json({ markedOverdue, isolated })
+  }),
+  // Dunning: stamp a reminder on unpaid invoices. With invoiceIds, only those
+  // (unpaid) get reminded; without it, every overdue invoice is reminded.
+  http.post('*/api/billing/remind', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      invoiceIds?: string[]
+    }
+    const ids = body.invoiceIds
+    const now = new Date().toISOString()
+    let reminded = 0
+    for (const inv of INVOICE_FIXTURES) {
+      const isUnpaid = inv.status === 'pending' || inv.status === 'overdue'
+      if (!isUnpaid) continue
+      const targeted = ids ? ids.includes(inv.id) : inv.status === 'overdue'
+      if (!targeted) continue
+      inv.lastRemindedAt = now
+      reminded++
+    }
+    persistDb()
+    return HttpResponse.json({ reminded, channel: 'whatsapp' })
   }),
 
   // Payments
@@ -1266,6 +1293,7 @@ export const handlers = [
           status: 'pending',
           dueDate: due.toISOString().slice(0, 10),
           paidAt: null,
+          lastRemindedAt: null,
         })
       }
     }

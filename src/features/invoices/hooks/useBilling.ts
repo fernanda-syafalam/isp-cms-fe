@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { isolirOverdue, runBilling } from '@/api/billing'
+import { isolirOverdue, remindOverdue, runBilling } from '@/api/billing'
 import { getErrorMessage } from '@/lib/errors'
 
 function useInvalidateBilling() {
@@ -40,6 +40,24 @@ export function useIsolirOverdue() {
         res.isolated > 0
           ? `${res.isolated} pelanggan diisolir (${res.markedOverdue} tagihan jatuh tempo)`
           : 'Tidak ada penunggak untuk diisolir',
+      )
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Dunning: send payment reminders. Pass invoiceIds for a selection, or omit to
+// remind every overdue invoice (all penunggak).
+export function useRemindOverdue() {
+  const invalidate = useInvalidateBilling()
+  return useMutation({
+    mutationFn: (invoiceIds?: string[]) => remindOverdue(invoiceIds),
+    onSuccess: (res) => {
+      invalidate()
+      toast.success(
+        res.reminded > 0
+          ? `${res.reminded} pengingat terkirim via WhatsApp`
+          : 'Tidak ada tagihan untuk diingatkan',
       )
     },
     onError: (err) => toast.error(getErrorMessage(err)),
