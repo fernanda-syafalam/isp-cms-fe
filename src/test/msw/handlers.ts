@@ -2753,6 +2753,55 @@ export const handlers = [
   http.get('*/api/analytics/dashboard', () => HttpResponse.json(DASHBOARD_SUMMARY)),
   http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
 
+  // Customer experience: CSAT (post-ticket), NPS, churn risk (all derived).
+  http.get('*/api/satisfaction', () => {
+    const resolved = TICKET_FIXTURES.filter((t) => t.status === 'resolved')
+    const ratings = resolved.map((_, i) => 3 + (i % 3)) // 3..5
+    const csatAvg = ratings.length
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : 0
+
+    const scores = CUSTOMER_FIXTURES.map((_, i) => (i * 7) % 11) // 0..10
+    const promoters = scores.filter((s) => s >= 9).length
+    const passives = scores.filter((s) => s >= 7 && s <= 8).length
+    const detractors = scores.filter((s) => s <= 6).length
+    const total = scores.length
+    const npsScore = total ? Math.round((promoters / total) * 100 - (detractors / total) * 100) : 0
+
+    const atRisk = CUSTOMER_FIXTURES.filter((c) => c.status === 'isolir' || c.outstanding > 0)
+      .slice(0, 6)
+      .map((c) => ({
+        customerName: c.fullName,
+        reason: c.status === 'isolir' ? 'Terisolir' : 'Tunggakan tagihan',
+        riskPct: c.status === 'isolir' ? 80 : 55,
+      }))
+    const churnRate = CUSTOMER_FIXTURES.length
+      ? Math.round((atRisk.length / CUSTOMER_FIXTURES.length) * 1000) / 10
+      : 0
+
+    const COMMENTS = [
+      'Pemasangan cepat dan rapi',
+      'Sinyal stabil, puas',
+      'Sempat gangguan tapi cepat ditangani',
+      'Pelayanan ramah',
+      'Kurang puas saat isolir',
+    ]
+    const recentFeedback = resolved.slice(0, 6).map((t, i) => ({
+      id: `${t.id}-fb`,
+      customerName: t.customerName,
+      rating: 3 + (i % 3),
+      comment: COMMENTS[i % COMMENTS.length] ?? 'Terima kasih',
+      at: t.createdAt,
+    }))
+
+    return HttpResponse.json({
+      csat: { avg: csatAvg, count: ratings.length },
+      nps: { score: npsScore, promoters, passives, detractors, total },
+      churn: { rate: churnRate, atRisk },
+      recentFeedback,
+    })
+  }),
+
   // Network topology
   http.get('*/api/topology', () =>
     HttpResponse.json({

@@ -17,6 +17,7 @@ import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
 import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
 import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
 import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
+import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
 import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
 import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
 import { Route as AuthPortalRouteImport } from './routes/_auth.portal'
@@ -95,6 +96,13 @@ const AuthSettingsRoute = AuthSettingsRouteImport.update({
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
   import('./routes/_auth.settings.lazy').then((d) => d.Route),
+)
+const AuthSatisfactionRoute = AuthSatisfactionRouteImport.update({
+  id: '/satisfaction',
+  path: '/satisfaction',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.satisfaction.lazy').then((d) => d.Route),
 )
 const AuthResellersRoute = AuthResellersRouteImport.update({
   id: '/resellers',
@@ -296,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRouteWithChildren
+  '/satisfaction': typeof AuthSatisfactionRoute
   '/settings': typeof AuthSettingsRoute
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
@@ -333,6 +342,7 @@ export interface FileRoutesByTo {
   '/plans': typeof AuthPlansRoute
   '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
+  '/satisfaction': typeof AuthSatisfactionRoute
   '/settings': typeof AuthSettingsRoute
   '/staff': typeof AuthStaffRoute
   '/vouchers': typeof AuthVouchersRoute
@@ -376,6 +386,7 @@ export interface FileRoutesById {
   '/_auth/portal': typeof AuthPortalRoute
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
+  '/_auth/satisfaction': typeof AuthSatisfactionRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/reports'
     | '/resellers'
+    | '/satisfaction'
     | '/settings'
     | '/staff'
     | '/tickets'
@@ -458,6 +470,7 @@ export interface FileRouteTypes {
     | '/plans'
     | '/portal'
     | '/reports'
+    | '/satisfaction'
     | '/settings'
     | '/staff'
     | '/vouchers'
@@ -500,6 +513,7 @@ export interface FileRouteTypes {
     | '/_auth/portal'
     | '/_auth/reports'
     | '/_auth/resellers'
+    | '/_auth/satisfaction'
     | '/_auth/settings'
     | '/_auth/staff'
     | '/_auth/tickets'
@@ -590,6 +604,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthSettingsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/satisfaction': {
+      id: '/_auth/satisfaction'
+      path: '/satisfaction'
+      fullPath: '/satisfaction'
+      preLoaderRoute: typeof AuthSatisfactionRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/resellers': {
@@ -913,6 +934,7 @@ interface AuthRouteChildren {
   AuthPortalRoute: typeof AuthPortalRoute
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
+  AuthSatisfactionRoute: typeof AuthSatisfactionRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
@@ -943,6 +965,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthPortalRoute: AuthPortalRoute,
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRouteWithChildren,
+  AuthSatisfactionRoute: AuthSatisfactionRoute,
   AuthSettingsRoute: AuthSettingsRoute,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,

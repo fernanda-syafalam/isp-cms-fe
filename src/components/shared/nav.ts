@@ -16,6 +16,7 @@ import {
   ServerIcon,
   SettingsIcon,
   ShieldCheckIcon,
+  SmilePlusIcon,
   SmartphoneIcon,
   SplitIcon,
   StoreIcon,
@@ -82,7 +83,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Analitik',
-    items: [{ to: '/reports', label: 'Laporan', icon: BarChart3Icon }],
+    items: [
+      { to: '/reports', label: 'Laporan', icon: BarChart3Icon },
+      { to: '/satisfaction', label: 'Kepuasan & Churn', icon: SmilePlusIcon },
+    ],
   },
   {
     label: 'Admin',
