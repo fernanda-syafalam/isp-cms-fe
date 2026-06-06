@@ -12,6 +12,7 @@ export type Permission =
   | 'plans.manage'
   | 'staff.manage'
   | 'resellers.manage'
+  | 'vouchers.manage'
   | 'records.delete'
   | 'data.reset'
 
@@ -23,13 +24,14 @@ const ALL_PERMISSIONS: Permission[] = [
   'plans.manage',
   'staff.manage',
   'resellers.manage',
+  'vouchers.manage',
   'records.delete',
   'data.reset',
 ]
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   admin: ALL_PERMISSIONS,
-  staff: ['customers.manage', 'tickets.manage', 'billing.run', 'network.manage'],
+  staff: ['customers.manage', 'tickets.manage', 'billing.run', 'network.manage', 'vouchers.manage'],
   customer: [],
 }
 

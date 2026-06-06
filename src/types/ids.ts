@@ -12,6 +12,7 @@ export const ticketId = z.uuid().brand<'TicketId'>()
 export const workOrderId = z.uuid().brand<'WorkOrderId'>()
 export const resellerId = z.uuid().brand<'ResellerId'>()
 export const inventoryId = z.uuid().brand<'InventoryId'>()
+export const voucherId = z.uuid().brand<'VoucherId'>()
 export const areaId = z.uuid().brand<'AreaId'>()
 
 export type UserId = z.infer<typeof userId>
@@ -25,4 +26,5 @@ export type TicketId = z.infer<typeof ticketId>
 export type WorkOrderId = z.infer<typeof workOrderId>
 export type ResellerId = z.infer<typeof resellerId>
 export type InventoryId = z.infer<typeof inventoryId>
+export type VoucherId = z.infer<typeof voucherId>
 export type AreaId = z.infer<typeof areaId>
