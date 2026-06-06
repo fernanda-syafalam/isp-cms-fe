@@ -1,17 +1,21 @@
+import { ListTreeIcon, MapIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
+import { cn } from '@/lib/cn'
 import type { NetworkNode, NodeStatus, NodeType } from '@/schemas/topology'
 
 import { useDeleteNode, useTopology, useUpdateNode } from '../hooks/useTopology'
-import { downstreamIds, indexById, uplinkPath } from '../lib/graph'
+import { buildForest, downstreamIds, indexById, uplinkPath } from '../lib/graph'
 import { NodeDetailPanel } from './NodeDetailPanel'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyControls } from './TopologyControls'
 import { TopologyMap } from './TopologyMap'
+import { TopologyTree } from './TopologyTree'
 
 export function NetworkTopologyPage() {
   const { data, isLoading, isError } = useTopology()
@@ -19,6 +23,7 @@ export function NetworkTopologyPage() {
   const updateNode = useUpdateNode()
   const deleteNode = useDeleteNode()
 
+  const [view, setView] = useState<'map' | 'list'>('map')
   const [base, setBase] = useState<'map' | 'satellite'>('satellite')
   const [typeFilter, setTypeFilter] = useState<'all' | NodeType>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | NodeStatus>('all')
@@ -50,6 +55,7 @@ export function NetworkTopologyPage() {
     [all, typeFilter, statusFilter],
   )
   const visibleById = useMemo(() => indexById(visible), [visible])
+  const forest = useMemo(() => buildForest(visible), [visible])
 
   const highlightIds = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -78,6 +84,28 @@ export function NetworkTopologyPage() {
       <PageHeader
         title="Topologi Jaringan"
         description="Peta infrastruktur OLT → ODC → ODP → Tiang → Pelanggan. Klik node untuk menelusuri jalur uplink."
+        actions={
+          <div className="inline-flex rounded-md border border-border p-0.5">
+            <Button
+              variant={view === 'map' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7"
+              onClick={() => setView('map')}
+            >
+              <MapIcon className="size-4" />
+              Peta
+            </Button>
+            <Button
+              variant={view === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7"
+              onClick={() => setView('list')}
+            >
+              <ListTreeIcon className="size-4" />
+              Daftar
+            </Button>
+          </div>
+        }
       />
 
       <TopologyControls
@@ -108,10 +136,15 @@ export function NetworkTopologyPage() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="h-[70vh] overflow-hidden rounded-lg border bg-card">
+        <div
+          className={cn(
+            'h-[70vh] rounded-lg border bg-card',
+            view === 'map' ? 'overflow-hidden' : 'overflow-y-auto',
+          )}
+        >
           {isLoading || !data ? (
             <Skeleton className="h-full w-full" />
-          ) : (
+          ) : view === 'map' ? (
             <TopologyMap
               nodes={visible}
               byId={visibleById}
@@ -127,6 +160,13 @@ export function NetworkTopologyPage() {
                 setForm({ latLng: { lat, lng } })
                 setAddMode(false)
               }}
+            />
+          ) : (
+            <TopologyTree
+              forest={forest}
+              selectedId={selectedId}
+              highlightIds={highlightIds}
+              onSelect={setSelectedId}
             />
           )}
         </div>

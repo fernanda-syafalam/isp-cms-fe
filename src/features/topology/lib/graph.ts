@@ -34,6 +34,37 @@ export function indexById(nodes: NetworkNode[]): Map<string, NetworkNode> {
   return new Map(nodes.map((n) => [n.id, n]))
 }
 
+// Tree node for the accessible list/hierarchy view (alternative to the map —
+// network graphs are poor for a11y, so we expose the same data as a tree).
+export type TreeNode = { node: NetworkNode; children: TreeNode[] }
+
+const TYPE_ORDER: NodeType[] = ['olt', 'odc', 'odp', 'pole', 'customer']
+
+// Build the OLT→…→customer forest from parentId links. Roots = nodes with no
+// parent present in the given set. Children sorted by type then name.
+export function buildForest(nodes: NetworkNode[]): TreeNode[] {
+  const byId = indexById(nodes)
+  const childrenOf = new Map<string, NetworkNode[]>()
+  const roots: NetworkNode[] = []
+  for (const n of nodes) {
+    const parent = n.parentId ? byId.get(n.parentId) : undefined
+    if (parent) {
+      const list = childrenOf.get(parent.id) ?? []
+      list.push(n)
+      childrenOf.set(parent.id, list)
+    } else {
+      roots.push(n)
+    }
+  }
+  const sortNodes = (a: NetworkNode, b: NetworkNode) =>
+    TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.name.localeCompare(b.name)
+  const build = (n: NetworkNode): TreeNode => ({
+    node: n,
+    children: (childrenOf.get(n.id) ?? []).sort(sortNodes).map(build),
+  })
+  return roots.sort(sortNodes).map(build)
+}
+
 // Uplink path from a node up to the OLT root (inclusive), nearest first.
 export function uplinkPath(start: NetworkNode, byId: Map<string, NetworkNode>): NetworkNode[] {
   const path: NetworkNode[] = [start]
