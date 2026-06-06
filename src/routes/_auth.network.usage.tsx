@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { UsagePage } from '@/features/usage'
-
-export const Route = createFileRoute('/_auth/network/usage')({
-  component: UsagePage,
-})
+// Route stub only — component is code-split into _auth.network.usage.lazy.tsx.
+export const Route = createFileRoute('/_auth/network/usage')({})

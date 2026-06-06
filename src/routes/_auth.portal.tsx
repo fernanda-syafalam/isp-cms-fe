@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { CustomerPortalPage } from '@/features/portal'
-
-export const Route = createFileRoute('/_auth/portal')({
-  component: CustomerPortalPage,
-})
+// Route stub only — component is code-split into _auth.portal.lazy.tsx.
+export const Route = createFileRoute('/_auth/portal')({})
