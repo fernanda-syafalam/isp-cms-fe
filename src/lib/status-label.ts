@@ -70,6 +70,9 @@ const STATUS_LABELS: Record<string, string> = {
   commission: 'Komisi',
   deduction: 'Potongan',
   withdrawal: 'Penarikan',
+  // contract status (draft already mapped above)
+  sent: 'Terkirim',
+  signed: 'Ditandatangani',
 }
 
 /** Translate an API enum value to its Indonesian display label. */

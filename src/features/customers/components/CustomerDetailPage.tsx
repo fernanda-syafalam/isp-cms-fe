@@ -24,6 +24,7 @@ import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
+import { ContractTab } from '@/features/contracts'
 import { OnuActions } from './OnuActions'
 import { PrivacyTab } from './PrivacyTab'
 
@@ -106,6 +107,7 @@ export function CustomerDetailPage({ customerId }: Props) {
           <TabsTrigger value="koneksi">Koneksi</TabsTrigger>
           <TabsTrigger value="tagihan">Tagihan</TabsTrigger>
           <TabsTrigger value="tiket">Tiket</TabsTrigger>
+          <TabsTrigger value="kontrak">Kontrak</TabsTrigger>
           <TabsTrigger value="privasi">Privasi</TabsTrigger>
         </TabsList>
         <TabsContent value="ringkasan">
@@ -122,6 +124,9 @@ export function CustomerDetailPage({ customerId }: Props) {
         </TabsContent>
         <TabsContent value="tiket">
           <TicketsCard tickets={tickets} />
+        </TabsContent>
+        <TabsContent value="kontrak">
+          <ContractTab customer={customer} />
         </TabsContent>
         <TabsContent value="privasi">
           <PrivacyTab customer={customer} invoices={invoices} tickets={tickets} />

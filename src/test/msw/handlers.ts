@@ -901,6 +901,25 @@ const ACS_DEVICE_FIXTURES = CUSTOMER_FIXTURES.filter((c) => c.connection?.type =
   }),
 )
 
+// Subscription agreements (PKS). Seeded for half of the provisioned subscribers
+// at varying lifecycle stages (signed / sent / draft).
+const CONTRACT_FIXTURES = CUSTOMER_FIXTURES.filter(
+  (c, i) => i % 2 === 0 && (c.status === 'aktif' || c.status === 'isolir'),
+).map((c, i) => {
+  const status = (['signed', 'sent', 'draft'] as const)[i % 3] ?? 'draft'
+  return {
+    id: `${c.id}-pks`,
+    number: `PKS-2026-${String(1 + i).padStart(4, '0')}`,
+    customerId: c.id,
+    customerName: c.fullName,
+    planName: c.planName,
+    status: status as 'draft' | 'sent' | 'signed',
+    meterai: status === 'signed',
+    createdAt: iso(2025, i % 12, 1 + (i % 27)),
+    signedAt: status === 'signed' ? iso(2025, i % 12, 5 + (i % 20)) : null,
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -946,6 +965,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   monitoringAlerts: MONITORING_ALERT_FIXTURES,
   odp: ODP_FIXTURES,
   acsDevices: ACS_DEVICE_FIXTURES,
+  contracts: CONTRACT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1276,6 +1296,49 @@ export const handlers = [
     recordAudit('customer.data_deletion', 'Pelanggan', `Permintaan hapus data ${found.fullName}`)
     persistDb()
     return new HttpResponse(null, { status: 202 })
+  }),
+  // Subscription contract (PKS): draft → sent → signed (+ e-Meterai).
+  http.get('*/api/customers/:id/contract', ({ params }) => {
+    const contract = CONTRACT_FIXTURES.find((k) => k.customerId === params.id) ?? null
+    return HttpResponse.json({ contract })
+  }),
+  http.post('*/api/customers/:id/contract', ({ params }) => {
+    const existing = CONTRACT_FIXTURES.find((k) => k.customerId === params.id)
+    if (existing) return HttpResponse.json(existing, { status: 200 })
+    const customer = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!customer) return new HttpResponse(null, { status: 404 })
+    const contract = {
+      id: crypto.randomUUID(),
+      number: `PKS-2026-${String(1000 + CONTRACT_FIXTURES.length).slice(0, 4)}`,
+      customerId: customer.id,
+      customerName: customer.fullName,
+      planName: customer.planName,
+      status: 'draft' as 'draft' | 'sent' | 'signed',
+      meterai: false,
+      createdAt: new Date().toISOString(),
+      signedAt: null as string | null,
+    }
+    CONTRACT_FIXTURES.push(contract)
+    recordAudit('contract.create', 'Kontrak', `PKS dibuat ${customer.fullName}`)
+    persistDb()
+    return HttpResponse.json(contract, { status: 201 })
+  }),
+  http.post('*/api/customers/:id/contract/send', ({ params }) => {
+    const found = CONTRACT_FIXTURES.find((k) => k.customerId === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.status = 'sent'
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.post('*/api/customers/:id/contract/sign', ({ params }) => {
+    const found = CONTRACT_FIXTURES.find((k) => k.customerId === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.status = 'signed'
+    found.meterai = true
+    found.signedAt = new Date().toISOString()
+    recordAudit('contract.sign', 'Kontrak', `PKS ditandatangani ${found.customerName}`)
+    persistDb()
+    return HttpResponse.json(found)
   }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
