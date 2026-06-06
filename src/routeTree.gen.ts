@@ -35,6 +35,7 @@ import { Route as AuthNetworkRoutersIndexRouteImport } from './routes/_auth.netw
 import { Route as AuthNetworkDevicesIndexRouteImport } from './routes/_auth.network.devices.index'
 import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
 import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
+import { Route as AuthInvoicesPrintInvoiceIdRouteImport } from './routes/_auth.invoices.print.$invoiceId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -169,6 +170,12 @@ const AuthNetworkDevicesDeviceIdRoute =
     path: '/network/devices/$deviceId',
     getParentRoute: () => AuthRoute,
   } as any)
+const AuthInvoicesPrintInvoiceIdRoute =
+  AuthInvoicesPrintInvoiceIdRouteImport.update({
+    id: '/print/$invoiceId',
+    path: '/print/$invoiceId',
+    getParentRoute: () => AuthInvoicesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
   '/tickets/': typeof AuthTicketsIndexRoute
+  '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices/': typeof AuthNetworkDevicesIndexRoute
@@ -216,6 +224,7 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
   '/tickets': typeof AuthTicketsIndexRoute
+  '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices': typeof AuthNetworkDevicesIndexRoute
@@ -245,6 +254,7 @@ export interface FileRoutesById {
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
   '/_auth/tickets/': typeof AuthTicketsIndexRoute
+  '/_auth/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
   '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/_auth/network/devices/': typeof AuthNetworkDevicesIndexRoute
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/invoices/'
     | '/tickets/'
+    | '/invoices/print/$invoiceId'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
     | '/network/devices/'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/invoices'
     | '/tickets'
+    | '/invoices/print/$invoiceId'
     | '/network/devices/$deviceId'
     | '/network/routers/$routerId'
     | '/network/devices'
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
     | '/_auth/customers/'
     | '/_auth/invoices/'
     | '/_auth/tickets/'
+    | '/_auth/invoices/print/$invoiceId'
     | '/_auth/network/devices/$deviceId'
     | '/_auth/network/routers/$routerId'
     | '/_auth/network/devices/'
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNetworkDevicesDeviceIdRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/invoices/print/$invoiceId': {
+      id: '/_auth/invoices/print/$invoiceId'
+      path: '/print/$invoiceId'
+      fullPath: '/invoices/print/$invoiceId'
+      preLoaderRoute: typeof AuthInvoicesPrintInvoiceIdRouteImport
+      parentRoute: typeof AuthInvoicesRoute
+    }
   }
 }
 
@@ -543,11 +563,13 @@ const AuthCustomersRouteWithChildren = AuthCustomersRoute._addFileChildren(
 interface AuthInvoicesRouteChildren {
   AuthInvoicesInvoiceIdRoute: typeof AuthInvoicesInvoiceIdRoute
   AuthInvoicesIndexRoute: typeof AuthInvoicesIndexRoute
+  AuthInvoicesPrintInvoiceIdRoute: typeof AuthInvoicesPrintInvoiceIdRoute
 }
 
 const AuthInvoicesRouteChildren: AuthInvoicesRouteChildren = {
   AuthInvoicesInvoiceIdRoute: AuthInvoicesInvoiceIdRoute,
   AuthInvoicesIndexRoute: AuthInvoicesIndexRoute,
+  AuthInvoicesPrintInvoiceIdRoute: AuthInvoicesPrintInvoiceIdRoute,
 }
 
 const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
