@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, Navigate } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -8,6 +8,8 @@ import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useEffectiveRole } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -31,6 +33,7 @@ const toCsvRow = (r: Reseller) => ({
 })
 
 export function ResellersListPage() {
+  const role = useEffectiveRole()
   const { data, isLoading, isError } = useResellersList()
 
   const columns = useMemo<ColumnDef<Reseller>[]>(
@@ -96,6 +99,16 @@ export function ResellersListPage() {
     ],
     [],
   )
+
+  // A partner (mitra) only sees their own storefront, not the org-wide table.
+  // Demo identity = the first reseller record.
+  if (role === 'mitra') {
+    const mine = data?.items[0]
+    if (mine) {
+      return <Navigate to="/resellers/$resellerId" params={{ resellerId: mine.id }} replace />
+    }
+    return <Skeleton className="h-64 w-full" />
+  }
 
   return (
     <div className="space-y-6">
