@@ -12,7 +12,13 @@ import { useCan } from '@/features/auth'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import type { Router } from '@/schemas/router'
 
-import { useRebootRouter, useRouter, useSyncRouter, useTestRouter } from '../hooks/useMikrotik'
+import {
+  useRebootRouter,
+  useRouter,
+  useSessions,
+  useSyncRouter,
+  useTestRouter,
+} from '../hooks/useMikrotik'
 import { PoolsTab } from './PoolsTab'
 import { ProfilesTab } from './ProfilesTab'
 import { QueuesTab } from './QueuesTab'
@@ -117,6 +123,9 @@ function RouterActions({ routerId }: { routerId: string }) {
 }
 
 function OverviewCard({ router }: { router: Router }) {
+  // Live health: how many PPPoE accounts are actually online right now.
+  const { data: sessions } = useSessions(router.id)
+  const online = sessions?.items.length ?? 0
   const fields: Array<{ label: string; value: string; copy?: boolean }> = [
     { label: 'Model', value: router.model },
     { label: 'RouterOS', value: router.version },
@@ -124,6 +133,10 @@ function OverviewCard({ router }: { router: Router }) {
     { label: 'Port API', value: `${router.apiPort}` },
     { label: 'User API', value: router.username },
     { label: 'Secret aktif', value: formatNumber(router.secretCount) },
+    {
+      label: 'Online sekarang',
+      value: `${formatNumber(online)} / ${formatNumber(router.secretCount)}`,
+    },
     { label: 'Sinkron terakhir', value: formatDateTime(router.lastSyncAt) },
   ]
   return (
