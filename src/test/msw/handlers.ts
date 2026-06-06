@@ -945,6 +945,18 @@ const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
   }
 })
 
+// SLA compensation credits, seeded from breached tickets (mock).
+const SLA_CREDIT_FIXTURES = TICKET_FIXTURES.filter((t) => t.status === 'breached').map((t, i) => ({
+  id: oid('51ac0000', i),
+  customerName: t.customerName,
+  amount: 25_000 + i * 15_000,
+  reason: `Kompensasi pelanggaran SLA tiket ${t.code}`,
+  ticketCode: t.code as string | null,
+  status: (i === 0 ? 'applied' : 'pending') as 'pending' | 'applied' | 'void',
+  createdAt: t.createdAt,
+  appliedAt: (i === 0 ? iso(2026, 4, 20) : null) as string | null,
+}))
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -992,6 +1004,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   acsDevices: ACS_DEVICE_FIXTURES,
   contracts: CONTRACT_FIXTURES,
   leads: LEAD_FIXTURES,
+  slaCredits: SLA_CREDIT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -1436,6 +1449,50 @@ export const handlers = [
     })
     found.stage = 'won'
     recordAudit('lead.convert', 'Prospek', `Konversi prospek ${found.name}`)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+
+  // SLA compensation credits
+  http.get('*/api/sla-credits', () => {
+    const items = [...SLA_CREDIT_FIXTURES].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/sla-credits', async ({ request }) => {
+    const body = (await request.json()) as {
+      customerName: string
+      amount: number
+      reason: string
+      ticketCode?: string
+    }
+    const credit = {
+      id: crypto.randomUUID(),
+      customerName: body.customerName,
+      amount: body.amount,
+      reason: body.reason,
+      ticketCode: body.ticketCode ? body.ticketCode : null,
+      status: 'pending' as 'pending' | 'applied' | 'void',
+      createdAt: new Date().toISOString(),
+      appliedAt: null as string | null,
+    }
+    SLA_CREDIT_FIXTURES.unshift(credit)
+    recordAudit('sla_credit.create', 'Kredit SLA', `Kredit SLA ${body.customerName}`)
+    persistDb()
+    return HttpResponse.json(credit, { status: 201 })
+  }),
+  http.post('*/api/sla-credits/:id/apply', ({ params }) => {
+    const found = SLA_CREDIT_FIXTURES.find((c) => c.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.status = 'applied'
+    found.appliedAt = new Date().toISOString()
+    recordAudit('sla_credit.apply', 'Kredit SLA', `Kredit diterapkan ${found.customerName}`)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  http.post('*/api/sla-credits/:id/void', ({ params }) => {
+    const found = SLA_CREDIT_FIXTURES.find((c) => c.id === params.id)
+    if (!found) return new HttpResponse(null, { status: 404 })
+    found.status = 'void'
     persistDb()
     return HttpResponse.json(found)
   }),

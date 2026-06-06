@@ -83,6 +83,9 @@ const STATUS_LABELS: Record<string, string> = {
   walk_in: 'Datang langsung',
   referral: 'Referral',
   reseller: 'Reseller',
+  // sla credit status (pending already mapped under invoice above)
+  applied: 'Diterapkan',
+  void: 'Dibatalkan',
 }
 
 /** Translate an API enum value to its Indonesian display label. */
