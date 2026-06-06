@@ -827,6 +827,53 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(found)
   }),
+  // Relocation (mutasi): move the subscriber to a new address + service area.
+  http.post('*/api/customers/:id/relocate', async ({ params, request }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as {
+      address: string
+      areaName: string
+    }
+    found.address = body.address
+    found.areaName = body.areaName
+    const idx = AREA_NAMES.indexOf(body.areaName)
+    if (idx >= 0) found.areaId = oid('dddddddd', idx)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // Voluntary suspend (berhenti sementara) — reuses the suspended (isolir) state
+  // but is triggered by the customer, not by non-payment.
+  http.post('*/api/customers/:id/suspend', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'isolir'
+    setSecretsDisabledByCustomer(found.fullName, true)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
+  // Resume from a voluntary suspension. Unlike /activate it does NOT clear the
+  // outstanding balance — the customer still owes whatever they owed.
+  http.post('*/api/customers/:id/resume', ({ params }) => {
+    const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    found.status = 'aktif'
+    setSecretsDisabledByCustomer(found.fullName, false)
+    persistDb()
+    return HttpResponse.json(found)
+  }),
   http.post('*/api/customers', async ({ request }) => {
     const body = (await request.json()) as {
       fullName: string
