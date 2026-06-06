@@ -25,9 +25,11 @@ import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
 import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
 import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
 import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
+import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
 import { Route as AuthTicketsTicketIdRouteImport } from './routes/_auth.tickets.$ticketId'
+import { Route as AuthResellersResellerIdRouteImport } from './routes/_auth.resellers.$resellerId'
 import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
 import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
 import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
@@ -117,6 +119,11 @@ const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthTicketsRoute,
 } as any)
+const AuthResellersIndexRoute = AuthResellersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthResellersRoute,
+} as any)
 const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -131,6 +138,11 @@ const AuthTicketsTicketIdRoute = AuthTicketsTicketIdRouteImport.update({
   id: '/$ticketId',
   path: '/$ticketId',
   getParentRoute: () => AuthTicketsRoute,
+} as any)
+const AuthResellersResellerIdRoute = AuthResellersResellerIdRouteImport.update({
+  id: '/$resellerId',
+  path: '/$resellerId',
+  getParentRoute: () => AuthResellersRoute,
 } as any)
 const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
   id: '/network/topology',
@@ -193,7 +205,7 @@ export interface FileRoutesByFullPath {
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
-  '/resellers': typeof AuthResellersRoute
+  '/resellers': typeof AuthResellersRouteWithChildren
   '/staff': typeof AuthStaffRoute
   '/tickets': typeof AuthTicketsRouteWithChildren
   '/vouchers': typeof AuthVouchersRoute
@@ -202,9 +214,11 @@ export interface FileRoutesByFullPath {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
+  '/resellers/$resellerId': typeof AuthResellersResellerIdRoute
   '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
+  '/resellers/': typeof AuthResellersIndexRoute
   '/tickets/': typeof AuthTicketsIndexRoute
   '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -219,7 +233,6 @@ export interface FileRoutesByTo {
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
   '/reports': typeof AuthReportsRoute
-  '/resellers': typeof AuthResellersRoute
   '/staff': typeof AuthStaffRoute
   '/vouchers': typeof AuthVouchersRoute
   '/work-orders': typeof AuthWorkOrdersRoute
@@ -228,9 +241,11 @@ export interface FileRoutesByTo {
   '/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
+  '/resellers/$resellerId': typeof AuthResellersResellerIdRoute
   '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
+  '/resellers': typeof AuthResellersIndexRoute
   '/tickets': typeof AuthTicketsIndexRoute
   '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -249,7 +264,7 @@ export interface FileRoutesById {
   '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
   '/_auth/reports': typeof AuthReportsRoute
-  '/_auth/resellers': typeof AuthResellersRoute
+  '/_auth/resellers': typeof AuthResellersRouteWithChildren
   '/_auth/staff': typeof AuthStaffRoute
   '/_auth/tickets': typeof AuthTicketsRouteWithChildren
   '/_auth/vouchers': typeof AuthVouchersRoute
@@ -259,9 +274,11 @@ export interface FileRoutesById {
   '/_auth/customers/onboarding': typeof AuthCustomersOnboardingRoute
   '/_auth/invoices/$invoiceId': typeof AuthInvoicesInvoiceIdRoute
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
+  '/_auth/resellers/$resellerId': typeof AuthResellersResellerIdRoute
   '/_auth/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
+  '/_auth/resellers/': typeof AuthResellersIndexRoute
   '/_auth/tickets/': typeof AuthTicketsIndexRoute
   '/_auth/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
   '/_auth/network/devices/$deviceId': typeof AuthNetworkDevicesDeviceIdRoute
@@ -290,9 +307,11 @@ export interface FileRouteTypes {
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
     | '/network/topology'
+    | '/resellers/$resellerId'
     | '/tickets/$ticketId'
     | '/customers/'
     | '/invoices/'
+    | '/resellers/'
     | '/tickets/'
     | '/invoices/print/$invoiceId'
     | '/network/devices/$deviceId'
@@ -307,7 +326,6 @@ export interface FileRouteTypes {
     | '/payments'
     | '/plans'
     | '/reports'
-    | '/resellers'
     | '/staff'
     | '/vouchers'
     | '/work-orders'
@@ -316,9 +334,11 @@ export interface FileRouteTypes {
     | '/customers/onboarding'
     | '/invoices/$invoiceId'
     | '/network/topology'
+    | '/resellers/$resellerId'
     | '/tickets/$ticketId'
     | '/customers'
     | '/invoices'
+    | '/resellers'
     | '/tickets'
     | '/invoices/print/$invoiceId'
     | '/network/devices/$deviceId'
@@ -346,9 +366,11 @@ export interface FileRouteTypes {
     | '/_auth/customers/onboarding'
     | '/_auth/invoices/$invoiceId'
     | '/_auth/network/topology'
+    | '/_auth/resellers/$resellerId'
     | '/_auth/tickets/$ticketId'
     | '/_auth/customers/'
     | '/_auth/invoices/'
+    | '/_auth/resellers/'
     | '/_auth/tickets/'
     | '/_auth/invoices/print/$invoiceId'
     | '/_auth/network/devices/$deviceId'
@@ -476,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthTicketsIndexRouteImport
       parentRoute: typeof AuthTicketsRoute
     }
+    '/_auth/resellers/': {
+      id: '/_auth/resellers/'
+      path: '/'
+      fullPath: '/resellers/'
+      preLoaderRoute: typeof AuthResellersIndexRouteImport
+      parentRoute: typeof AuthResellersRoute
+    }
     '/_auth/invoices/': {
       id: '/_auth/invoices/'
       path: '/'
@@ -496,6 +525,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tickets/$ticketId'
       preLoaderRoute: typeof AuthTicketsTicketIdRouteImport
       parentRoute: typeof AuthTicketsRoute
+    }
+    '/_auth/resellers/$resellerId': {
+      id: '/_auth/resellers/$resellerId'
+      path: '/$resellerId'
+      fullPath: '/resellers/$resellerId'
+      preLoaderRoute: typeof AuthResellersResellerIdRouteImport
+      parentRoute: typeof AuthResellersRoute
     }
     '/_auth/network/topology': {
       id: '/_auth/network/topology'
@@ -595,6 +631,20 @@ const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
   AuthInvoicesRouteChildren,
 )
 
+interface AuthResellersRouteChildren {
+  AuthResellersResellerIdRoute: typeof AuthResellersResellerIdRoute
+  AuthResellersIndexRoute: typeof AuthResellersIndexRoute
+}
+
+const AuthResellersRouteChildren: AuthResellersRouteChildren = {
+  AuthResellersResellerIdRoute: AuthResellersResellerIdRoute,
+  AuthResellersIndexRoute: AuthResellersIndexRoute,
+}
+
+const AuthResellersRouteWithChildren = AuthResellersRoute._addFileChildren(
+  AuthResellersRouteChildren,
+)
+
 interface AuthTicketsRouteChildren {
   AuthTicketsTicketIdRoute: typeof AuthTicketsTicketIdRoute
   AuthTicketsIndexRoute: typeof AuthTicketsIndexRoute
@@ -617,7 +667,7 @@ interface AuthRouteChildren {
   AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
   AuthReportsRoute: typeof AuthReportsRoute
-  AuthResellersRoute: typeof AuthResellersRoute
+  AuthResellersRoute: typeof AuthResellersRouteWithChildren
   AuthStaffRoute: typeof AuthStaffRoute
   AuthTicketsRoute: typeof AuthTicketsRouteWithChildren
   AuthVouchersRoute: typeof AuthVouchersRoute
@@ -638,7 +688,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
   AuthReportsRoute: AuthReportsRoute,
-  AuthResellersRoute: AuthResellersRoute,
+  AuthResellersRoute: AuthResellersRouteWithChildren,
   AuthStaffRoute: AuthStaffRoute,
   AuthTicketsRoute: AuthTicketsRouteWithChildren,
   AuthVouchersRoute: AuthVouchersRoute,

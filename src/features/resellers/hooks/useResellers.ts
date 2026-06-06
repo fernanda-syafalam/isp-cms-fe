@@ -1,14 +1,55 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { listResellers, updateReseller } from '@/api/resellers'
+import {
+  addLedgerEntry,
+  getReseller,
+  listResellerLedger,
+  listResellers,
+  updateReseller,
+} from '@/api/resellers'
 import { getErrorMessage } from '@/lib/errors'
-import type { UpdateResellerInput } from '@/schemas/reseller'
+import type { AddLedgerEntryInput, UpdateResellerInput } from '@/schemas/reseller'
 
 export function useResellersList() {
   return useQuery({
     queryKey: ['resellers', 'list'] as const,
     queryFn: listResellers,
+  })
+}
+
+export function useReseller(id: string) {
+  return useQuery({
+    queryKey: ['resellers', 'detail', id] as const,
+    queryFn: () => getReseller(id),
+  })
+}
+
+export function useResellerLedger(id: string) {
+  return useQuery({
+    queryKey: ['resellers', 'detail', id, 'ledger'] as const,
+    queryFn: () => listResellerLedger(id),
+  })
+}
+
+const LEDGER_TYPE_TOAST: Record<AddLedgerEntryInput['type'], string> = {
+  topup: 'Top-up deposit dicatat',
+  commission: 'Komisi dicatat',
+  deduction: 'Potongan dicatat',
+  withdrawal: 'Penarikan dicatat',
+}
+
+export function useAddLedgerEntry(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AddLedgerEntryInput) => addLedgerEntry(id, input),
+    onSuccess: (reseller, vars) => {
+      qc.setQueryData(['resellers', 'detail', id], reseller)
+      qc.invalidateQueries({ queryKey: ['resellers', 'detail', id, 'ledger'] })
+      qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+      toast.success(LEDGER_TYPE_TOAST[vars.type])
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
 
