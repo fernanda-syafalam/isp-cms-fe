@@ -38,9 +38,9 @@ export function SetupGuidePage() {
   const items = customers?.items ?? []
   const installing = items.filter((c) => c.status === 'instalasi').length
   const active = items.filter((c) => c.status === 'aktif').length
-  const scheduledInstalls = (workOrders?.items ?? []).filter(
-    (w) => w.type === 'install' && w.status === 'scheduled',
-  ).length
+  const installWos = (workOrders?.items ?? []).filter((w) => w.type === 'install')
+  const scheduledInstalls = installWos.filter((w) => w.status === 'scheduled').length
+  const completedInstalls = installWos.filter((w) => w.status === 'done').length
 
   const steps: Step[] = [
     {
@@ -73,8 +73,8 @@ export function SetupGuidePage() {
       title: '4. Selesaikan instalasi (Work Order)',
       description:
         'Teknisi menyelesaikan WO: pelanggan aktif, ONU dari gudang dipasang, secret PPPoE dibuat.',
-      status: `${formatNumber(scheduledInstalls)} WO instalasi terjadwal`,
-      done: active > 0,
+      status: `${formatNumber(completedInstalls)} selesai · ${formatNumber(scheduledInstalls)} terjadwal`,
+      done: completedInstalls > 0,
       cta: { to: '/work-orders', label: 'Buka work order' },
     },
     {
