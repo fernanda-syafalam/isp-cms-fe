@@ -1,4 +1,4 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -71,6 +71,18 @@ export function WorkOrdersListPage() {
         accessorKey: 'customerName',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
+        cell: ({ row }) =>
+          row.original.customerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: row.original.customerId }}
+              className="font-medium hover:underline"
+            >
+              {row.original.customerName}
+            </Link>
+          ) : (
+            row.original.customerName
+          ),
       },
       {
         accessorKey: 'technician',

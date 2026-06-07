@@ -323,6 +323,7 @@ const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     id: oid('a5a5a5a5', i),
     code: `WO-${String(3001 + i)}`,
     type: WORKORDER_TYPE[i % WORKORDER_TYPE.length] ?? 'install',
+    customerId: (customer?.id ?? null) as string | null,
     customerName: customer?.fullName ?? 'Pelanggan A0',
     technician: TECHNICIANS[i % TECHNICIANS.length] ?? null,
     scheduledAt: iso(2026, 5, 6 + (i % 5)),
@@ -1155,7 +1156,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v15'
+const DB_KEY = 'isp-cms-mock-db-v16'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1653,6 +1654,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
       type: 'install' as const,
+      customerId: null, // lead becomes a subscriber only at onboarding
       customerName: found.name,
       technician: null,
       scheduledAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
@@ -1862,6 +1864,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
       type: 'install' as const,
+      customerId: customer.id,
       customerName: customer.fullName,
       technician: body.technician,
       scheduledAt: new Date(body.scheduledAt).toISOString(),
@@ -3103,6 +3106,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
       type: 'repair' as const,
+      customerId: CUSTOMER_FIXTURES.find((c) => c.fullName === ticket.customerName)?.id ?? null,
       customerName: ticket.customerName,
       technician: null,
       scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
