@@ -101,6 +101,15 @@ export function InvoicesListPage() {
         accessorKey: 'customerName',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
+        cell: ({ row }) => (
+          <Link
+            to="/customers/$customerId"
+            params={{ customerId: row.original.customerId }}
+            className="font-medium hover:underline"
+          >
+            {row.original.customerName}
+          </Link>
+        ),
       },
       {
         accessorKey: 'amount',
