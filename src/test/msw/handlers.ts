@@ -186,6 +186,7 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
 const PAYMENT_METHODS = ['qris', 'va', 'ewallet', 'transfer', 'cash'] as const
 const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid').map((inv, i) => ({
   id: oid('a9a9a9a9', i),
+  invoiceId: inv.id,
   invoiceNo: inv.invoiceNo,
   customerName: inv.customerName,
   amount: inv.amount + inv.lateFee + inv.taxAmount,
@@ -1078,7 +1079,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v9'
+const DB_KEY = 'isp-cms-mock-db-v10'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1882,6 +1883,7 @@ export const handlers = [
     found.paidAt = new Date().toISOString()
     PAYMENT_FIXTURES.unshift({
       id: crypto.randomUUID(),
+      invoiceId: found.id,
       invoiceNo: found.invoiceNo,
       customerName: found.customerName,
       amount: found.amount + found.lateFee + found.taxAmount,
@@ -2214,6 +2216,7 @@ export const handlers = [
         intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
       PAYMENT_FIXTURES.unshift({
         id: crypto.randomUUID(),
+        invoiceId: invoice.id,
         invoiceNo: invoice.invoiceNo,
         customerName: invoice.customerName,
         amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
