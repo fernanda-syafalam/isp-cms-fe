@@ -90,7 +90,7 @@ export function AcsPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada perangkat CPE."
+        emptyMessage={q ? `Tidak ada ONU cocok dengan "${q}".` : 'Belum ada perangkat CPE.'}
         searchPlaceholder="Cari serial / pelanggan…"
         initialSearch={q}
         enableSelection={canManage}

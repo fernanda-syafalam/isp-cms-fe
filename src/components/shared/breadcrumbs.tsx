@@ -8,12 +8,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { NAV_ITEMS } from './nav'
+import { useEffectiveRole } from '@/features/auth'
+import { ROLE_HOME, NAV_ITEMS } from './nav'
 
 // Route-aware breadcrumb rendered with shadcn primitives. Matches the deepest
 // nav item that prefixes the path; a remaining segment shows as "Detail".
 export function Breadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const home = ROLE_HOME[useEffectiveRole()] ?? '/'
 
   const match = NAV_ITEMS.filter((i) => i.to !== '/' && pathname.startsWith(i.to)).sort(
     (a, b) => b.to.length - a.to.length,
@@ -26,7 +28,7 @@ export function Breadcrumbs() {
       <BreadcrumbList>
         <BreadcrumbItem className="hidden sm:block">
           <BreadcrumbLink asChild>
-            <Link to="/">ISP CMS</Link>
+            <Link to={home}>ISP CMS</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {section ? (
