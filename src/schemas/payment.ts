@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { invoiceId, paymentId } from '@/types/ids'
+import { customerId, invoiceId, paymentId } from '@/types/ids'
 
 export const PaymentMethodSchema = z.enum(['qris', 'va', 'ewallet', 'transfer', 'cash'])
 
@@ -8,6 +8,7 @@ export const PaymentSchema = z.object({
   id: paymentId,
   invoiceId: invoiceId,
   invoiceNo: z.string(),
+  customerId: customerId,
   customerName: z.string(),
   amount: z.number().int().nonnegative(),
   method: PaymentMethodSchema,
