@@ -30,6 +30,48 @@ export const STATUS_COLOR: Record<NodeStatus, string> = {
   unknown: '#d97706',
 }
 
+// Fiber core color code (TIA-598-C) — each core/strand in a cable has a distinct
+// color; one core feeds one customer. Beyond 12, the sequence repeats (striped).
+// Ref: TIA-598-C / FOA. Names in Indonesian for the UI.
+export const FIBER_CORES = [
+  { name: 'Biru', hex: '#2563eb' },
+  { name: 'Oranye', hex: '#ea580c' },
+  { name: 'Hijau', hex: '#16a34a' },
+  { name: 'Coklat', hex: '#92400e' },
+  { name: 'Abu-abu', hex: '#6b7280' },
+  { name: 'Putih', hex: '#d1d5db' },
+  { name: 'Merah', hex: '#dc2626' },
+  { name: 'Hitam', hex: '#111827' },
+  { name: 'Kuning', hex: '#eab308' },
+  { name: 'Ungu', hex: '#7c3aed' },
+  { name: 'Merah Muda', hex: '#ec4899' },
+  { name: 'Aqua', hex: '#06b6d4' },
+] as const
+
+// Map a 1-based core number to its TIA-598 color (cycles every 12).
+export function fiberCore(coreNo: number): { name: string; hex: string } {
+  return FIBER_CORES[(coreNo - 1) % 12] ?? FIBER_CORES[0]
+}
+
+// A loose-tube cable groups fibers into buffer tubes of 12. A global fiber
+// number resolves to its tube (color) + position within that tube (color) — the
+// standard "tube + core" identity used to trace a strand. (TIA-598-C.)
+export function fiberId(globalNo: number): {
+  tubeNo: number
+  tube: { name: string; hex: string }
+  coreNo: number
+  core: { name: string; hex: string }
+} {
+  const tubeNo = Math.ceil(globalNo / 12)
+  const inTube = ((globalNo - 1) % 12) + 1
+  return {
+    tubeNo,
+    tube: fiberCore(tubeNo),
+    coreNo: inTube,
+    core: fiberCore(inTube),
+  }
+}
+
 export function indexById(nodes: NetworkNode[]): Map<string, NetworkNode> {
   return new Map(nodes.map((n) => [n.id, n]))
 }

@@ -457,6 +457,7 @@ const TOPOLOGY_FIXTURES = (() => {
       uptimePct?: number
       customerId?: string
       planName?: string
+      coreNo?: number
     }
   }
   const nodes: TopoNode[] = []
@@ -552,9 +553,17 @@ const TOPOLOGY_FIXTURES = (() => {
     prospek: 'unknown',
   }
   const subscribers = CUSTOMER_FIXTURES.filter((c) => c.status !== 'prospek')
+  // A loose-tube cable: each pole's feeder is a distinct buffer tube; customers
+  // on it are sequential cores within that tube. coreNo is the GLOBAL fiber
+  // number (tube*12 + core), so fiberId() resolves tube color + core color.
+  const corePerPole = new Map<string, number>()
   subscribers.forEach((c, i) => {
-    const pole = poles[i % poles.length]
+    const poleIndex = i % poles.length
+    const pole = poles[poleIndex]
     if (!pole) return
+    const coreInTube = (corePerPole.get(pole.id) ?? 0) + 1
+    corePerPole.set(pole.id, coreInTube)
+    const coreNo = poleIndex * 12 + coreInTube // global fiber number
     nodes.push({
       id: `${c.id}-node`,
       name: c.fullName,
@@ -566,6 +575,7 @@ const TOPOLOGY_FIXTURES = (() => {
       meta: {
         customerId: c.id,
         planName: c.planName,
+        coreNo,
         ...(c.connection?.rxPower != null ? { rxPowerDbm: c.connection.rxPower } : {}),
       },
     })
@@ -1145,7 +1155,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v14'
+const DB_KEY = 'isp-cms-mock-db-v15'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.

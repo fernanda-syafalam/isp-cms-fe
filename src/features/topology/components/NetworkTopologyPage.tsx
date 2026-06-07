@@ -227,7 +227,13 @@ export function NetworkTopologyPage() {
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-6 shrink-0 rounded-full bg-green-600/60" />
                     <span className="h-1 w-6 shrink-0 rounded-full bg-red-600" />
-                    Warna kabel = status node tujuan (mis. drop pelanggan memerah saat down).
+                    Kabel feeder (OLT→ODP) = warna status node.
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-3 shrink-0 rounded-full bg-blue-600" />
+                    <span className="h-1 w-3 shrink-0 rounded-full bg-orange-500" />
+                    <span className="h-1 w-3 shrink-0 rounded-full bg-green-600" />
+                    Drop pelanggan = warna core fiber (TIA-598); merah bila down.
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="size-3 shrink-0 rounded-full bg-muted-foreground/30 ring-2 ring-amber-500" />

@@ -14,7 +14,7 @@ import {
 
 import type { NetworkNode } from '@/schemas/topology'
 
-import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL, TYPE_RADIUS } from '../lib/graph'
+import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL, TYPE_RADIUS, fiberCore } from '../lib/graph'
 
 const ACCENT = '#2563eb'
 
@@ -37,8 +37,19 @@ function tooltipMeta(node: NetworkNode): string | null {
   if (m.portsTotal) parts.push(`Port ${m.portsUsed ?? 0}/${m.portsTotal}`)
   if (typeof m.rxPowerDbm === 'number') parts.push(`${m.rxPowerDbm} dBm`)
   if (typeof m.uptimePct === 'number') parts.push(`${m.uptimePct}%`)
+  if (m.coreNo) parts.push(`Core ${fiberCore(m.coreNo).name}`)
   if (m.planName) parts.push(m.planName)
   return parts.length > 0 ? parts.join(' · ') : null
+}
+
+// Edge color: a customer's drop cable carries its fiber-core color (TIA-598) so
+// you can see which core feeds whom; a down customer still overrides to red.
+// Upstream segments stay status-colored (Dude-style).
+function edgeColor(node: NetworkNode): string {
+  if (node.type === 'customer' && node.meta?.coreNo && node.status !== 'down') {
+    return fiberCore(node.meta.coreNo).hex
+  }
+  return STATUS_COLOR[node.status]
 }
 
 // Capacity ring around a node when its ports are filling up (≥70% amber,
@@ -152,11 +163,19 @@ export function TopologyMap({
               [parent.lat, parent.lng],
             ]}
             pathOptions={{
-              // The Dude-style: the segment feeding a node takes that node's
-              // health — a customer's drop cable turns red when they're down.
-              color: active ? ACCENT : STATUS_COLOR[node.status],
+              // Customer drops show their fiber-core color; upstream segments
+              // show node health; a down drop overrides to red (see edgeColor).
+              color: active ? ACCENT : edgeColor(node),
               weight: active ? 3 : node.status === 'down' ? 2.5 : 1.6,
-              opacity: dim ? 0.12 : active ? 0.9 : node.status === 'up' ? 0.45 : 0.85,
+              opacity: dim
+                ? 0.12
+                : active
+                  ? 0.9
+                  : node.type === 'customer'
+                    ? 0.8
+                    : node.status === 'up'
+                      ? 0.45
+                      : 0.85,
             }}
           />
         )
