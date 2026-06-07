@@ -1,4 +1,4 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CheckIcon, HandCoinsIcon, PlusIcon, WalletIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -56,7 +56,18 @@ export function SlaCreditsPage() {
         accessorKey: 'customerName',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
         meta: { title: 'Pelanggan' },
-        cell: ({ row }) => <span className="font-medium">{row.original.customerName}</span>,
+        cell: ({ row }) =>
+          row.original.customerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: row.original.customerId }}
+              className="font-medium hover:underline"
+            >
+              {row.original.customerName}
+            </Link>
+          ) : (
+            <span className="font-medium">{row.original.customerName}</span>
+          ),
       },
       {
         accessorKey: 'amount',
@@ -77,7 +88,15 @@ export function SlaCreditsPage() {
         header: 'Tiket',
         meta: { title: 'Tiket' },
         cell: ({ row }) =>
-          row.original.ticketCode ? (
+          row.original.ticketCode && row.original.ticketId ? (
+            <Link
+              to="/tickets/$ticketId"
+              params={{ ticketId: row.original.ticketId }}
+              className="font-mono text-xs hover:underline"
+            >
+              {row.original.ticketCode}
+            </Link>
+          ) : row.original.ticketCode ? (
             <span className="font-mono text-xs">{row.original.ticketCode}</span>
           ) : (
             <span className="text-muted-foreground">—</span>

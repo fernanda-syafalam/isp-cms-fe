@@ -6,9 +6,11 @@ export const SlaCreditStatusSchema = z.enum(['pending', 'applied', 'void'])
 
 export const SlaCreditSchema = z.object({
   id: z.string(),
+  customerId: z.string().nullable(),
   customerName: z.string(),
   amount: z.number().int().nonnegative(), // IDR
   reason: z.string(),
+  ticketId: z.string().nullable(),
   ticketCode: z.string().nullable(),
   status: SlaCreditStatusSchema,
   createdAt: z.iso.datetime(),
