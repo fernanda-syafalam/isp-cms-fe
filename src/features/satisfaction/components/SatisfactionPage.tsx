@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { GaugeIcon, HeartPulseIcon, SmilePlusIcon } from 'lucide-react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
@@ -90,7 +91,7 @@ export function SatisfactionPage() {
                 <li key={f.id} className="flex items-start justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <p className="text-sm">
-                      <span className="font-medium">{f.customerName}</span>{' '}
+                      <CustomerName id={f.customerId} name={f.customerName} />{' '}
                       <span
                         className="text-amber-500"
                         role="img"
@@ -164,7 +165,9 @@ function AtRiskList({ atRisk }: { atRisk: Satisfaction['churn']['atRisk'] }) {
             {atRisk.map((c) => (
               <li key={c.customerName} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-sm">{c.customerName}</p>
+                  <p className="truncate font-medium text-sm">
+                    <CustomerName id={c.customerId} name={c.customerName} />
+                  </p>
                   <p className="text-muted-foreground text-xs">{c.reason}</p>
                 </div>
                 <StatusBadge
@@ -177,5 +180,19 @@ function AtRiskList({ atRisk }: { atRisk: Satisfaction['churn']['atRisk'] }) {
         )}
       </CardContent>
     </Card>
+  )
+}
+
+// Customer name as a link to its detail when the id is known, else plain text.
+function CustomerName({ id, name }: { id?: string | undefined; name: string }) {
+  if (!id) return <span className="font-medium">{name}</span>
+  return (
+    <Link
+      to="/customers/$customerId"
+      params={{ customerId: id }}
+      className="font-medium hover:underline"
+    >
+      {name}
+    </Link>
   )
 }
