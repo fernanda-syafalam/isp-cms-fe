@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { PlugIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -46,10 +47,21 @@ export function SessionsTab({ routerId }: { routerId: string }) {
         id: 'customer',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
-        cell: ({ row }) =>
-          secretByUsername.get(row.original.username)?.customerName ?? (
-            <span className="text-muted-foreground">—</span>
-          ),
+        cell: ({ row }) => {
+          const secret = secretByUsername.get(row.original.username)
+          if (!secret?.customerName) return <span className="text-muted-foreground">—</span>
+          return secret.customerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: secret.customerId }}
+              className="font-medium hover:underline"
+            >
+              {secret.customerName}
+            </Link>
+          ) : (
+            secret.customerName
+          )
+        },
       },
       {
         id: 'profile',
