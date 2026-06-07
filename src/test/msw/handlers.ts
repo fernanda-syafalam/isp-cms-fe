@@ -1239,9 +1239,14 @@ export const handlers = [
   }),
 
   // Plans
-  http.get('*/api/plans', () =>
-    HttpResponse.json({ items: PLAN_FIXTURES, total: PLAN_FIXTURES.length }),
-  ),
+  http.get('*/api/plans', () => {
+    // Attach a live subscriber count per plan from the customer base.
+    const items = PLAN_FIXTURES.map((p) => ({
+      ...p,
+      subscriberCount: CUSTOMER_FIXTURES.filter((c) => c.planName === p.name).length,
+    }))
+    return HttpResponse.json({ items, total: items.length })
+  }),
   http.post('*/api/plans', async ({ request }) => {
     const body = (await request.json()) as {
       name: string

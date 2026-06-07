@@ -10,6 +10,8 @@ export const PlanSchema = z.object({
   speedMbps: z.number().int().positive(),
   priceMonthly: z.number().int().nonnegative(),
   status: PlanStatusSchema,
+  // Live subscriber count on this plan (computed server-side at list time).
+  subscriberCount: z.number().int().nonnegative().optional(),
 })
 
 export const PlanListSchema = z.object({
