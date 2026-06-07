@@ -125,6 +125,7 @@ export function DashboardPage() {
               hintTone={summary.newThisMonth >= 0 ? 'positive' : 'negative'}
               icon={UsersIcon}
               series={summary.subscriberTrend}
+              to="/customers"
             />
             <KpiCard
               label="Terisolir"
@@ -151,6 +152,8 @@ export function DashboardPage() {
               hintTone="negative"
               icon={TriangleAlertIcon}
               series={summary.arTrend}
+              to="/invoices"
+              search={{ status: 'overdue' }}
             />
           </>
         ) : null}
