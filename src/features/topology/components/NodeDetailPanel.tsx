@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -147,6 +148,19 @@ function rxTone(dbm: number): StatusTone {
   return 'danger'
 }
 
+// Deterministic 12-point series seeded by node id, so the "last 12 readings"
+// sparkline is stable across renders (mock; a real backend would poll).
+function metricSeries(seed: string, base: number, amp: number): number[] {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
+  const out: number[] = []
+  for (let i = 0; i < 12; i++) {
+    h = (h * 1103515245 + 12345) >>> 0
+    out.push(Math.round((base + ((h % 1000) / 1000 - 0.5) * amp) * 10) / 10)
+  }
+  return out
+}
+
 // Per-type technical detail + a customer-node link to its subscriber record.
 function NodeMetaDetails({
   node,
@@ -158,6 +172,19 @@ function NodeMetaDetails({
   const m = node.meta
   const portPct =
     m?.portsTotal && m.portsTotal > 0 ? Math.round(((m.portsUsed ?? 0) / m.portsTotal) * 100) : null
+  // A "last 12 readings" sparkline: utilization for infra, RX power for CPE.
+  const spark =
+    portPct !== null
+      ? {
+          label: 'Utilisasi port (12 jam)',
+          data: metricSeries(node.id, portPct, 18),
+        }
+      : typeof m?.rxPowerDbm === 'number'
+        ? {
+            label: 'Redaman RX (12 jam)',
+            data: metricSeries(node.id, m.rxPowerDbm, 2),
+          }
+        : null
 
   return (
     <div className="space-y-3 border-border border-t pt-3">
@@ -232,6 +259,13 @@ function NodeMetaDetails({
               style={{ width: `${Math.max(2, portPct)}%` }}
             />
           </div>
+        </div>
+      ) : null}
+
+      {spark ? (
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs">{spark.label}</p>
+          <Sparkline data={spark.data} className="text-primary/70" />
         </div>
       ) : null}
 
