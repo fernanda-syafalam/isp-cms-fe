@@ -226,6 +226,8 @@ const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     rxPower: type === 'onu' ? -19 - (i % 8) : null, // -19 .. -26 dBm
     areaName: AREA_NAMES[i % AREA_NAMES.length] ?? 'Jepara',
     lastSeenAt: iso(2026, 5, 5),
+    // OLT devices map to a real topology OLT node so "Lihat di topologi" works.
+    topologyNodeId: type === 'olt' ? `olt-${(Math.floor(i / 3) % 2) + 1}` : null,
   }
 })
 
@@ -1143,7 +1145,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v13'
+const DB_KEY = 'isp-cms-mock-db-v14'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
