@@ -9,6 +9,7 @@ import {
 
 import { CopyButton } from '@/components/shared/copy-button'
 import { PageHeader } from '@/components/shared/page-header'
+import { useCan } from '@/features/auth'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -188,9 +189,14 @@ function TicketsCard({ tickets }: { tickets: Ticket[] | undefined }) {
 }
 
 function CustomerActions({ customer }: { customer: Customer }) {
+  const canNetwork = useCan('network.manage')
   const isolate = useIsolateCustomer()
   const activate = useActivateCustomer()
   const busy = isolate.isPending || activate.isPending
+
+  // Isolir/aktivasi is a network enforcement action — gated like the bulk
+  // action on the list (network.manage).
+  if (!canNetwork) return null
 
   if (customer.status === 'aktif') {
     return (
