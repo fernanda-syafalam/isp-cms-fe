@@ -15,7 +15,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useEffectiveRole } from '@/features/auth'
-import { type NavGroup, navGroupsForRole } from './nav'
+import { ROLE_HOME, type NavGroup, navGroupsForRole } from './nav'
 
 function isActive(pathname: string, to: string, exact?: boolean) {
   if (to === '/') return pathname === '/'
@@ -29,6 +29,7 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const role = useEffectiveRole()
   const groups = navGroupsForRole(role)
+  const home = ROLE_HOME[role] ?? '/'
 
   return (
     <Sidebar collapsible="icon">
@@ -36,7 +37,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg" className="gap-2">
-              <Link to="/">
+              <Link to={home}>
                 <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Building2Icon className="size-4" />
                 </span>
