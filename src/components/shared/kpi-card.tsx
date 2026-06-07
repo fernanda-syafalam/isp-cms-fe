@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -21,6 +22,9 @@ type Props = {
   icon: ComponentType<{ className?: string }>
   /** Optional trend series — renders a sparkline tinted by the accent. */
   series?: number[]
+  /** When set, the whole card becomes a link (drill-down to a filtered list). */
+  to?: string
+  search?: Record<string, string>
 }
 
 const hintToneClass: Record<HintTone, string> = {
@@ -48,6 +52,8 @@ export function KpiCard({
   accent = 'primary',
   icon: Icon,
   series,
+  to,
+  search,
 }: Props) {
   const numeric = typeof value === 'number'
   const animated = useCountUp(numeric ? value : 0)
@@ -60,8 +66,13 @@ export function KpiCard({
   const TrendIcon =
     hintTone === 'positive' ? TrendingUpIcon : hintTone === 'negative' ? TrendingDownIcon : null
 
-  return (
-    <Card className="relative overflow-hidden transition-colors hover:border-foreground/15">
+  const card = (
+    <Card
+      className={cn(
+        'relative overflow-hidden transition-colors hover:border-foreground/15',
+        to ? 'hover:border-primary/40' : '',
+      )}
+    >
       <CardContent className="space-y-3 pt-6">
         <div className="flex items-start justify-between gap-3">
           <p className="font-medium text-muted-foreground text-sm">{label}</p>
@@ -89,4 +100,13 @@ export function KpiCard({
       </CardContent>
     </Card>
   )
+
+  if (to) {
+    return (
+      <Link to={to} search={search ?? {}} className="block">
+        {card}
+      </Link>
+    )
+  }
+  return card
 }
