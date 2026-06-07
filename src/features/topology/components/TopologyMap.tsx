@@ -41,15 +41,34 @@ function tooltipMeta(node: NetworkNode): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-function nodeIcon(node: NetworkNode, ring: boolean, dim: boolean): L.DivIcon {
+// Capacity ring around a node when its ports are filling up (≥70% amber,
+// ≥90% red) — surfaces near-full ODP/ODC/OLT at a glance on the map.
+function capacityColor(node: NetworkNode): string | null {
+  const m = node.meta
+  if (!m?.portsTotal) return null
+  const pct = ((m.portsUsed ?? 0) / m.portsTotal) * 100
+  if (pct >= 90) return '#dc2626'
+  if (pct >= 70) return '#d97706'
+  return null
+}
+
+function nodeIcon(
+  node: NetworkNode,
+  ring: boolean,
+  dim: boolean,
+  capacity: string | null,
+): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
   const border = ring ? `3px solid ${ACCENT}` : '2px solid #ffffff'
+  const shadow = capacity
+    ? `0 0 2px rgba(0,0,0,.5), 0 0 0 3px ${capacity}`
+    : '0 0 2px rgba(0,0,0,.5)'
   return L.divIcon({
     className: 'topology-marker',
     iconSize: [size, size],
     iconAnchor: [r, r],
-    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:0 0 2px rgba(0,0,0,.5)"></span>`,
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>`,
   })
 }
 
@@ -150,7 +169,7 @@ export function TopologyMap({
           <Marker
             key={node.id}
             position={[node.lat, node.lng]}
-            icon={nodeIcon(node, ring, dim)}
+            icon={nodeIcon(node, ring, dim, capacityColor(node))}
             draggable={editMode}
             eventHandlers={{
               click: () => onSelect(node.id),
