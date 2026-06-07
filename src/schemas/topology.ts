@@ -18,6 +18,7 @@ export const NodeMetaSchema = z.object({
   uptimePct: z.number().optional(),
   customerId: z.string().optional(), // link a customer node to its record
   planName: z.string().optional(),
+  coreNo: z.number().int().positive().optional(), // fiber core feeding a customer (TIA-598)
 })
 
 export const NetworkNodeSchema = z.object({

@@ -22,6 +22,7 @@ import {
   STATUS_LABEL,
   TYPE_LABEL,
   downstreamIds,
+  fiberId,
   formatLength,
   segmentMeters,
   uplinkPath,
@@ -233,6 +234,30 @@ function NodeMetaDetails({
           <>
             <dt className="text-muted-foreground">Paket</dt>
             <dd className="text-right font-medium">{m.planName}</dd>
+          </>
+        ) : null}
+        {m?.coreNo ? (
+          <>
+            <dt className="text-muted-foreground">Tube</dt>
+            <dd className="flex items-center justify-end gap-1.5 text-right">
+              <span
+                className="size-3 shrink-0 rounded-full border border-border"
+                style={{ background: fiberId(m.coreNo).tube.hex }}
+              />
+              <span>
+                #{fiberId(m.coreNo).tubeNo} {fiberId(m.coreNo).tube.name}
+              </span>
+            </dd>
+            <dt className="text-muted-foreground">Core (inti)</dt>
+            <dd className="flex items-center justify-end gap-1.5 text-right">
+              <span
+                className="size-3 shrink-0 rounded-full border border-border"
+                style={{ background: fiberId(m.coreNo).core.hex }}
+              />
+              <span>
+                #{fiberId(m.coreNo).coreNo} {fiberId(m.coreNo).core.name}
+              </span>
+            </dd>
           </>
         ) : null}
         {typeof cableMeters === 'number' ? (
