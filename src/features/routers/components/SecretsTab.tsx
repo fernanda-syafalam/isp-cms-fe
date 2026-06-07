@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   BanIcon,
@@ -83,7 +84,18 @@ export function SecretsTab({ routerId }: { routerId: string }) {
         accessorKey: 'customerName',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
-        cell: ({ row }) => row.original.customerName ?? '—',
+        cell: ({ row }) =>
+          row.original.customerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: row.original.customerId }}
+              className="font-medium hover:underline"
+            >
+              {row.original.customerName}
+            </Link>
+          ) : (
+            (row.original.customerName ?? '—')
+          ),
       },
       {
         accessorKey: 'disabled',
