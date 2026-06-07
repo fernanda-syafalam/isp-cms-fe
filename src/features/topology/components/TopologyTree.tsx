@@ -2,9 +2,21 @@ import { ChevronRightIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { cn } from '@/lib/cn'
-import type { NodeStatus } from '@/schemas/topology'
+import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
 import { STATUS_LABEL, TYPE_LABEL, type TreeNode } from '../lib/graph'
+
+// Compact per-row technical summary (ports / uptime / RX / plan).
+function metaSummary(n: NetworkNode): string | null {
+  const m = n.meta
+  if (!m) return null
+  const parts: string[] = []
+  if (m.portsTotal) parts.push(`${m.portsUsed ?? 0}/${m.portsTotal} port`)
+  if (typeof m.uptimePct === 'number') parts.push(`${m.uptimePct}%`)
+  if (typeof m.rxPowerDbm === 'number') parts.push(`${m.rxPowerDbm} dBm`)
+  if (m.planName) parts.push(m.planName)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
 
 type Props = {
   forest: TreeNode[]
@@ -82,6 +94,7 @@ function TreeRow({
   const isOpen = expanded.has(n.id)
   const isSelected = selectedId === n.id
   const isHit = highlightIds.has(n.id)
+  const summary = metaSummary(n)
 
   return (
     <li>
@@ -118,6 +131,11 @@ function TreeRow({
             {TYPE_LABEL[n.type]}
           </span>
           <span className="truncate">{n.name}</span>
+          {summary ? (
+            <span className="hidden shrink-0 text-muted-foreground text-xs md:inline">
+              {summary}
+            </span>
+          ) : null}
           {hasChildren ? (
             <span className="ml-auto shrink-0 text-muted-foreground text-xs">
               {children.length}
