@@ -3,6 +3,7 @@ import {
   ArrowLeftIcon,
   MapPinIcon,
   MessageCircleIcon,
+  NavigationIcon,
   PlugZapIcon,
   PowerOffIcon,
 } from 'lucide-react'
@@ -108,6 +109,18 @@ export function CustomerDetailPage({ customerId }: Props) {
                 </Link>
               </Button>
             ) : null}
+            <Button asChild variant="outline" size="sm" className="h-8">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  `${customer.address}, ${customer.areaName}, Jepara, Jawa Tengah`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <NavigationIcon className="size-4" />
+                <span className="hidden sm:inline">Navigasi</span>
+              </a>
+            </Button>
             <WhatsappButton customerId={customer.id} />
             <CustomerActions customer={customer} />
             <CustomerRowActions customer={customer} />
