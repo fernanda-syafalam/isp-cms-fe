@@ -618,6 +618,7 @@ const MIKROTIK_SECRET_FIXTURES: PppSecret[] = ROUTER_FIXTURES.flatMap((r, ri) =>
       username: `cust${1001 + ri * 4 + i}`,
       profileId: `${r.id}-prof-${preset?.suffix ?? 'home20'}`,
       profileName: preset?.name ?? 'Home 20',
+      customerId: customer?.id ?? null,
       customerName: customer?.fullName ?? null,
       disabled: i === 3,
       comment: null,
@@ -1159,7 +1160,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v19'
+const DB_KEY = 'isp-cms-mock-db-v20'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -2545,6 +2546,9 @@ export const handlers = [
       username: body.username,
       profileId: body.profileId,
       profileName: profile?.name ?? '—',
+      customerId: body.customerName
+        ? (CUSTOMER_FIXTURES.find((c) => c.fullName === body.customerName)?.id ?? null)
+        : null,
       customerName: body.customerName ?? null,
       disabled: false,
       comment: body.comment ?? null,
@@ -2739,6 +2743,7 @@ export const handlers = [
             username: pppoeUsername,
             profileId: profile?.id ?? `${router.id}-prof-home20`,
             profileName: profile?.name ?? customer.planName,
+            customerId: customer.id,
             customerName: customer.fullName,
             disabled: false,
             comment: `Auto-provision saat instalasi (${wo.code})`,

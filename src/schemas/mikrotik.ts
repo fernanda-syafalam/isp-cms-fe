@@ -17,6 +17,7 @@ export const PppSecretSchema = z.object({
   username: z.string().min(1),
   profileId: z.string(),
   profileName: z.string(),
+  customerId: z.string().nullable(), // resolves to the subscriber, if any
   customerName: z.string().nullable(),
   disabled: z.boolean(),
   comment: z.string().nullable(),
