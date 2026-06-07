@@ -400,6 +400,7 @@ const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
     serial: `SN-${String(500000 + i * 137)}`,
     status,
     assignedTo: status === 'installed' ? (customer?.fullName ?? 'Pelanggan A0') : null,
+    assignedCustomerId: (status === 'installed' ? (customer?.id ?? null) : null) as string | null,
   }
 })
 
@@ -1158,7 +1159,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v18'
+const DB_KEY = 'isp-cms-mock-db-v19'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -2702,6 +2703,7 @@ export const handlers = [
         if (onu) {
           onu.status = 'installed'
           onu.assignedTo = customer.fullName
+          onu.assignedCustomerId = customer.id
           onuSerial = onu.serial
           STOCK_MOVEMENT_FIXTURES.unshift({
             id: crypto.randomUUID(),
@@ -2919,6 +2921,7 @@ export const handlers = [
       serial: body.serial,
       status: 'warehouse' as const,
       assignedTo: null,
+      assignedCustomerId: null,
     }
     INVENTORY_FIXTURES.unshift(item)
     STOCK_MOVEMENT_FIXTURES.unshift({
@@ -2949,10 +2952,13 @@ export const handlers = [
     if (body.type === 'assign') {
       found.status = 'installed'
       found.assignedTo = body.note ?? found.assignedTo ?? 'Pelanggan'
+      found.assignedCustomerId =
+        CUSTOMER_FIXTURES.find((c) => c.fullName === found.assignedTo)?.id ?? null
       note = found.assignedTo ?? ''
     } else if (body.type === 'return') {
       found.status = 'warehouse'
       found.assignedTo = null
+      found.assignedCustomerId = null
       note = body.note || 'Dikembalikan ke gudang'
     } else {
       found.status = 'broken'
@@ -2986,7 +2992,12 @@ export const handlers = [
     if (body.kind !== undefined) found.kind = body.kind
     if (body.serial !== undefined) found.serial = body.serial
     if (body.status !== undefined) found.status = body.status
-    if (body.assignedTo !== undefined) found.assignedTo = body.assignedTo
+    if (body.assignedTo !== undefined) {
+      found.assignedTo = body.assignedTo
+      found.assignedCustomerId = body.assignedTo
+        ? (CUSTOMER_FIXTURES.find((c) => c.fullName === body.assignedTo)?.id ?? null)
+        : null
+    }
     persistDb()
     return HttpResponse.json(found)
   }),

@@ -64,7 +64,18 @@ export function InventoryListPage() {
         accessorKey: 'assignedTo',
         header: 'Terpasang di',
         meta: { title: 'Terpasang di' },
-        cell: ({ row }) => row.original.assignedTo ?? '—',
+        cell: ({ row }) =>
+          row.original.assignedCustomerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: row.original.assignedCustomerId }}
+              className="font-medium hover:underline"
+            >
+              {row.original.assignedTo}
+            </Link>
+          ) : (
+            (row.original.assignedTo ?? '—')
+          ),
       },
       {
         accessorKey: 'status',
