@@ -34,6 +34,25 @@ export function indexById(nodes: NetworkNode[]): Map<string, NetworkNode> {
   return new Map(nodes.map((n) => [n.id, n]))
 }
 
+// Haversine distance (m) between two coordinates — the physical cable length of
+// the segment between a node and its uplink.
+export function segmentMeters(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number {
+  const R = 6_371_000
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180
+  const la1 = (a.lat * Math.PI) / 180
+  const la2 = (b.lat * Math.PI) / 180
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)))
+}
+
+export function formatLength(meters: number): string {
+  return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`
+}
+
 // Tree node for the accessible list/hierarchy view (alternative to the map —
 // network graphs are poor for a11y, so we expose the same data as a tree).
 export type TreeNode = { node: NetworkNode; children: TreeNode[] }

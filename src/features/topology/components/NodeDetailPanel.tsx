@@ -17,7 +17,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
-import { STATUS_LABEL, TYPE_LABEL, downstreamIds, uplinkPath } from '../lib/graph'
+import {
+  STATUS_LABEL,
+  TYPE_LABEL,
+  downstreamIds,
+  formatLength,
+  segmentMeters,
+  uplinkPath,
+} from '../lib/graph'
 
 const STATUS_TONE: Record<NodeStatus, StatusTone> = {
   up: 'success',
@@ -37,6 +44,8 @@ type Props = {
 
 export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, onDelete }: Props) {
   const path = uplinkPath(node, byId)
+  const parent = node.parentId ? byId.get(node.parentId) : undefined
+  const cableMeters = parent ? segmentMeters(node, parent) : undefined
   const downstream = downstreamIds(node.id, nodes)
   const customerCount = nodes.filter((n) => n.type === 'customer' && downstream.has(n.id)).length
   // Blast radius when this node is down: downstream customers + itself if it is one.
@@ -73,7 +82,7 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
             </span>
           </div>
         ) : null}
-        <NodeMetaDetails node={node} />
+        <NodeMetaDetails node={node} cableMeters={cableMeters} />
         <div>
           <p className="mb-1 text-muted-foreground text-xs">Jalur uplink</p>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">
@@ -139,7 +148,13 @@ function rxTone(dbm: number): StatusTone {
 }
 
 // Per-type technical detail + a customer-node link to its subscriber record.
-function NodeMetaDetails({ node }: { node: NetworkNode }) {
+function NodeMetaDetails({
+  node,
+  cableMeters,
+}: {
+  node: NetworkNode
+  cableMeters?: number | undefined
+}) {
   const m = node.meta
   const portPct =
     m?.portsTotal && m.portsTotal > 0 ? Math.round(((m.portsUsed ?? 0) / m.portsTotal) * 100) : null
@@ -191,6 +206,12 @@ function NodeMetaDetails({ node }: { node: NetworkNode }) {
           <>
             <dt className="text-muted-foreground">Paket</dt>
             <dd className="text-right font-medium">{m.planName}</dd>
+          </>
+        ) : null}
+        {typeof cableMeters === 'number' ? (
+          <>
+            <dt className="text-muted-foreground">Panjang kabel</dt>
+            <dd className="text-right font-mono tabular-nums">{formatLength(cableMeters)}</dd>
           </>
         ) : null}
         <dt className="text-muted-foreground">Koordinat</dt>
