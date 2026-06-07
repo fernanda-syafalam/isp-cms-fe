@@ -216,12 +216,26 @@ export function NetworkTopologyPage() {
           ) : (
             <Card>
               <CardContent className="pt-6 text-muted-foreground text-sm">
-                <p className="font-medium text-foreground">Cara baca peta</p>
-                <ul className="mt-2 space-y-1.5">
-                  <li>Warna titik = status (hijau Up, merah Down, amber Unknown).</li>
+                <p className="font-medium text-foreground">Legenda peta</p>
+                <ul className="mt-2 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="size-2.5 shrink-0 rounded-full bg-green-600" />
+                    <span className="size-2.5 shrink-0 rotate-45 rounded-[2px] bg-red-600" />
+                    <span className="size-2.5 shrink-0 rounded-full border-2 border-amber-600" />
+                    Status node: Up / Down / Unknown
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-6 shrink-0 rounded-full bg-green-600/60" />
+                    <span className="h-1 w-6 shrink-0 rounded-full bg-red-600" />
+                    Warna kabel = status node tujuan (mis. drop pelanggan memerah saat down).
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="size-3 shrink-0 rounded-full bg-muted-foreground/30 ring-2 ring-amber-500" />
+                    <span className="size-3 shrink-0 rounded-full bg-muted-foreground/30 ring-2 ring-red-600" />
+                    Cincin = kapasitas port (≥70% amber, ≥90% merah).
+                  </li>
                   <li>Ukuran titik = tipe (OLT terbesar → Pelanggan terkecil).</li>
-                  <li>Garis = koneksi ke induk (uplink).</li>
-                  <li>Klik titik untuk menyorot jalur uplink + hitung pelanggan downstream.</li>
+                  <li>Klik titik: sorot jalur uplink, detail teknis, & blast-radius.</li>
                 </ul>
               </CardContent>
             </Card>
