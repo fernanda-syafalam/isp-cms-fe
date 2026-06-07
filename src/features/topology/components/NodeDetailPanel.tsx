@@ -264,6 +264,32 @@ function NodeMetaDetails({
             </dd>
           </>
         ) : null}
+        {node.type === 'odp' && m?.portsTotal ? (
+          <>
+            <dt className="text-muted-foreground">Port tersisa</dt>
+            <dd className="text-right font-mono tabular-nums">
+              {m.portsTotal - (m.portsUsed ?? 0)}
+            </dd>
+            <dt className="text-muted-foreground">Core berikutnya</dt>
+            <dd className="flex items-center justify-end gap-1.5 text-right">
+              {(m.portsUsed ?? 0) < m.portsTotal ? (
+                <>
+                  <span
+                    className="size-3 shrink-0 rounded-full border border-border"
+                    style={{
+                      background: fiberId((m.portsUsed ?? 0) + 1).core.hex,
+                    }}
+                  />
+                  <span>
+                    #{(m.portsUsed ?? 0) + 1} {fiberId((m.portsUsed ?? 0) + 1).core.name}
+                  </span>
+                </>
+              ) : (
+                <span className="text-destructive">Penuh</span>
+              )}
+            </dd>
+          </>
+        ) : null}
         {typeof m?.rxPowerDbm === 'number' ? (
           <>
             <dt className="text-muted-foreground">Redaman (RX)</dt>
