@@ -29,6 +29,18 @@ const TILES = {
   },
 }
 
+// One-line technical summary shown under the node name on hover.
+function tooltipMeta(node: NetworkNode): string | null {
+  const m = node.meta
+  if (!m) return null
+  const parts: string[] = []
+  if (m.portsTotal) parts.push(`Port ${m.portsUsed ?? 0}/${m.portsTotal}`)
+  if (typeof m.rxPowerDbm === 'number') parts.push(`${m.rxPowerDbm} dBm`)
+  if (typeof m.uptimePct === 'number') parts.push(`${m.uptimePct}%`)
+  if (m.planName) parts.push(m.planName)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
 function nodeIcon(node: NetworkNode, ring: boolean, dim: boolean): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
@@ -150,6 +162,12 @@ export function TopologyMap({
               <span className="font-medium">{node.name}</span>
               {' · '}
               {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
+              {tooltipMeta(node) ? (
+                <>
+                  <br />
+                  <span className="text-[11px] opacity-80">{tooltipMeta(node)}</span>
+                </>
+              ) : null}
             </Tooltip>
           </Marker>
         )
