@@ -61,6 +61,7 @@ export function ReportsPage() {
               hintTone="positive"
               icon={UsersIcon}
               series={dashboard.subscriberTrend}
+              to="/customers"
             />
             <KpiCard
               label="Piutang (AR)"
@@ -70,6 +71,8 @@ export function ReportsPage() {
               hintTone="negative"
               icon={WalletIcon}
               series={dashboard.arTrend}
+              to="/invoices"
+              search={{ status: 'overdue' }}
             />
             <KpiCard
               label="ARPU"
