@@ -1,4 +1,5 @@
-import { PencilIcon, Trash2Icon, TriangleAlertIcon, XIcon } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ExternalLinkIcon, PencilIcon, Trash2Icon, TriangleAlertIcon, XIcon } from 'lucide-react'
 
 import {
   AlertDialog,
@@ -72,6 +73,7 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
             </span>
           </div>
         ) : null}
+        <NodeMetaDetails node={node} />
         <div>
           <p className="mb-1 text-muted-foreground text-xs">Jalur uplink</p>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">
@@ -126,5 +128,100 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
         ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+// Optical RX power health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
+function rxTone(dbm: number): StatusTone {
+  if (dbm >= -25) return 'success'
+  if (dbm >= -27) return 'warning'
+  return 'danger'
+}
+
+// Per-type technical detail + a customer-node link to its subscriber record.
+function NodeMetaDetails({ node }: { node: NetworkNode }) {
+  const m = node.meta
+  const portPct =
+    m?.portsTotal && m.portsTotal > 0 ? Math.round(((m.portsUsed ?? 0) / m.portsTotal) * 100) : null
+
+  return (
+    <div className="space-y-3 border-border border-t pt-3">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        {m?.model ? (
+          <>
+            <dt className="text-muted-foreground">Model</dt>
+            <dd className="text-right font-medium">{m.model}</dd>
+          </>
+        ) : null}
+        {m?.ipAddress ? (
+          <>
+            <dt className="text-muted-foreground">IP</dt>
+            <dd className="text-right font-mono">{m.ipAddress}</dd>
+          </>
+        ) : null}
+        {m?.splitter ? (
+          <>
+            <dt className="text-muted-foreground">Splitter</dt>
+            <dd className="text-right font-mono">{m.splitter}</dd>
+          </>
+        ) : null}
+        {m?.portsTotal ? (
+          <>
+            <dt className="text-muted-foreground">Port</dt>
+            <dd className="text-right font-mono tabular-nums">
+              {m.portsUsed ?? 0}/{m.portsTotal}
+            </dd>
+          </>
+        ) : null}
+        {typeof m?.rxPowerDbm === 'number' ? (
+          <>
+            <dt className="text-muted-foreground">Redaman (RX)</dt>
+            <dd className="text-right">
+              <StatusBadge tone={rxTone(m.rxPowerDbm)} label={`${m.rxPowerDbm} dBm`} dot={false} />
+            </dd>
+          </>
+        ) : null}
+        {typeof m?.uptimePct === 'number' ? (
+          <>
+            <dt className="text-muted-foreground">Uptime</dt>
+            <dd className="text-right font-mono tabular-nums">{m.uptimePct}%</dd>
+          </>
+        ) : null}
+        {m?.planName ? (
+          <>
+            <dt className="text-muted-foreground">Paket</dt>
+            <dd className="text-right font-medium">{m.planName}</dd>
+          </>
+        ) : null}
+        <dt className="text-muted-foreground">Koordinat</dt>
+        <dd className="text-right font-mono tabular-nums">
+          {node.lat.toFixed(4)}, {node.lng.toFixed(4)}
+        </dd>
+      </dl>
+
+      {portPct !== null ? (
+        <div className="space-y-1">
+          <div className="flex justify-between text-muted-foreground text-xs">
+            <span>Utilisasi port</span>
+            <span>{portPct}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full ${portPct >= 90 ? 'bg-red-500' : portPct >= 70 ? 'bg-amber-500' : 'bg-primary'}`}
+              style={{ width: `${Math.max(2, portPct)}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {m?.customerId ? (
+        <Button asChild variant="outline" size="sm" className="h-8 w-full">
+          <Link to="/customers/$customerId" params={{ customerId: m.customerId }}>
+            <ExternalLinkIcon className="size-4" />
+            Buka detail pelanggan
+          </Link>
+        </Button>
+      ) : null}
+    </div>
   )
 }

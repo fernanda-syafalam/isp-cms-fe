@@ -7,6 +7,19 @@ import { z } from 'zod'
 export const NodeTypeSchema = z.enum(['olt', 'odc', 'odp', 'pole', 'customer'])
 export const NodeStatusSchema = z.enum(['up', 'down', 'unknown'])
 
+// Type-specific technical metadata (all optional; populated per node type).
+export const NodeMetaSchema = z.object({
+  ipAddress: z.string().optional(), // OLT/ODC management IP
+  model: z.string().optional(), // hardware model (OLT)
+  splitter: z.string().optional(), // splitter ratio (ODC/ODP), e.g. "1:8"
+  portsUsed: z.number().int().nonnegative().optional(),
+  portsTotal: z.number().int().positive().optional(),
+  rxPowerDbm: z.number().optional(), // optical RX power (ODP/customer)
+  uptimePct: z.number().optional(),
+  customerId: z.string().optional(), // link a customer node to its record
+  planName: z.string().optional(),
+})
+
 export const NetworkNodeSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -15,6 +28,7 @@ export const NetworkNodeSchema = z.object({
   lat: z.number(),
   lng: z.number(),
   parentId: z.string().nullable(), // uplink node id; null at the OLT root
+  meta: NodeMetaSchema.optional(),
 })
 
 export const TopologySchema = z.object({
@@ -42,6 +56,7 @@ export const UpdateNodeSchema = z.object({
 
 export type NodeType = z.infer<typeof NodeTypeSchema>
 export type NodeStatus = z.infer<typeof NodeStatusSchema>
+export type NodeMeta = z.infer<typeof NodeMetaSchema>
 export type NetworkNode = z.infer<typeof NetworkNodeSchema>
 export type Topology = z.infer<typeof TopologySchema>
 export type CreateNodeInput = z.infer<typeof CreateNodeSchema>

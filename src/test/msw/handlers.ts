@@ -445,6 +445,17 @@ const TOPOLOGY_FIXTURES = (() => {
     lat: number
     lng: number
     parentId: string | null
+    meta?: {
+      ipAddress?: string
+      model?: string
+      splitter?: string
+      portsUsed?: number
+      portsTotal?: number
+      rxPowerDbm?: number
+      uptimePct?: number
+      customerId?: string
+      planName?: string
+    }
   }
   const nodes: TopoNode[] = []
   const poles: Array<{ id: string; lat: number; lng: number }> = []
@@ -463,6 +474,13 @@ const TOPOLOGY_FIXTURES = (() => {
       lat: oLat,
       lng: oLng,
       parentId: null,
+      meta: {
+        model: 'ZTE C320',
+        ipAddress: `10.20.${o + 1}.1`,
+        portsUsed: 6 + o * 2,
+        portsTotal: 16,
+        uptimePct: 99.95,
+      },
     })
     for (let c = 0; c < 2; c++) {
       const odcId = `${oltId}-odc-${c + 1}`
@@ -476,6 +494,13 @@ const TOPOLOGY_FIXTURES = (() => {
         lat: cLat,
         lng: cLng,
         parentId: oltId,
+        meta: {
+          ipAddress: `10.20.${o + 1}.${10 + c}`,
+          splitter: '1:4',
+          portsUsed: 2 + c,
+          portsTotal: 4,
+          uptimePct: 99.9,
+        },
       })
       for (let d = 0; d < 2; d++) {
         const odpId = `${odcId}-odp-${d + 1}`
@@ -489,6 +514,13 @@ const TOPOLOGY_FIXTURES = (() => {
           lat: dLat,
           lng: dLng,
           parentId: odcId,
+          meta: {
+            splitter: '1:8',
+            portsUsed: 4 + ((o + c + d) % 4),
+            portsTotal: 8,
+            rxPowerDbm: -20 - ((o + c + d) % 6),
+            uptimePct: 99.8,
+          },
         })
         const poleId = `${odpId}-pole`
         const pLat = dLat + 0.0025
@@ -529,6 +561,11 @@ const TOPOLOGY_FIXTURES = (() => {
       lat: pole.lat + ((i % 3) - 1) * 0.0016,
       lng: pole.lng + ((((i / 3) | 0) % 3) - 1) * 0.0018,
       parentId: pole.id,
+      meta: {
+        customerId: c.id,
+        planName: c.planName,
+        ...(c.connection?.rxPower != null ? { rxPowerDbm: c.connection.rxPower } : {}),
+      },
     })
   })
   return nodes
@@ -1106,7 +1143,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v12'
+const DB_KEY = 'isp-cms-mock-db-v13'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
