@@ -91,6 +91,18 @@ export function TicketsListPage() {
         accessorKey: 'customerName',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
+        cell: ({ row }) =>
+          row.original.customerId ? (
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: row.original.customerId }}
+              className="font-medium hover:underline"
+            >
+              {row.original.customerName}
+            </Link>
+          ) : (
+            row.original.customerName
+          ),
       },
       {
         accessorKey: 'priority',

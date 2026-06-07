@@ -255,6 +255,7 @@ const TICKET_FIXTURES = Array.from({ length: 8 }, (_, i) => {
     id: oid('ffffffff', i),
     code: `TKT-${String(2001 + i)}`,
     subject: i % 2 === 0 ? 'Internet mati total' : 'Koneksi lambat saat malam',
+    customerId: (customer?.id ?? null) as string | null,
     customerName: customer?.fullName ?? 'Customer A0',
     priority: TICKET_PRIORITY[i % TICKET_PRIORITY.length] ?? 'medium',
     status: TICKET_STATUS[i % TICKET_STATUS.length] ?? 'open',
@@ -1156,7 +1157,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v16'
+const DB_KEY = 'isp-cms-mock-db-v17'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -3016,6 +3017,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `TKT-${9000 + TICKET_FIXTURES.length}`,
       subject: body.subject,
+      customerId: CUSTOMER_FIXTURES.find((c) => c.fullName === body.customerName)?.id ?? null,
       customerName: body.customerName,
       priority: body.priority,
       status: 'open' as const,
@@ -3185,6 +3187,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `TKT-${9000 + TICKET_FIXTURES.length}`,
       subject: `[NOC] ${found.message}`,
+      customerId: null, // device alert, not a subscriber
       customerName: found.deviceName,
       priority: 'high' as const,
       status: 'open' as const,
@@ -3569,6 +3572,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `TKT-${9000 + TICKET_FIXTURES.length}`,
       subject: body.subject,
+      customerId: me.id,
       customerName: me.fullName,
       priority: 'medium' as const,
       status: 'open' as const,
