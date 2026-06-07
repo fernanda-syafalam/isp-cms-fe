@@ -923,6 +923,7 @@ const MONITORING_METRIC_FIXTURES = DEVICE_FIXTURES.map((d, i) => {
 const MONITORING_ALERT_FIXTURES = DEVICE_FIXTURES.filter((d) => d.status !== 'online').map(
   (d, i) => ({
     id: oid('a1e47000', i),
+    deviceId: d.id,
     deviceName: d.name,
     severity: (d.status === 'offline' ? 'critical' : 'warning') as 'critical' | 'warning',
     message:
@@ -1101,7 +1102,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v10'
+const DB_KEY = 'isp-cms-mock-db-v11'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.

@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActivitySquareIcon, BellIcon, ServerIcon, TicketPlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -58,7 +59,15 @@ export function MonitoringPage() {
         accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
         meta: { title: 'Perangkat' },
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/network/devices/$deviceId"
+            params={{ deviceId: row.original.deviceId }}
+            className="font-medium hover:underline"
+          >
+            {row.original.name}
+          </Link>
+        ),
       },
       {
         accessorKey: 'type',
@@ -185,7 +194,14 @@ function AlertsList({ alerts, canManage }: { alerts: Alert[] | undefined; canMan
             <div className="min-w-0">
               <p className="truncate text-sm">{a.message}</p>
               <p className="text-muted-foreground text-xs">
-                {a.deviceName} · {formatDateTime(a.at)}
+                <Link
+                  to="/network/devices/$deviceId"
+                  params={{ deviceId: a.deviceId }}
+                  className="hover:underline"
+                >
+                  {a.deviceName}
+                </Link>{' '}
+                · {formatDateTime(a.at)}
               </p>
             </div>
           </div>

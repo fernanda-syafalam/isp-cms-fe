@@ -23,6 +23,7 @@ export const AlertSeveritySchema = z.enum(['warning', 'critical'])
 
 export const AlertSchema = z.object({
   id: z.string(),
+  deviceId: z.string(),
   deviceName: z.string(),
   severity: AlertSeveritySchema,
   message: z.string(),
