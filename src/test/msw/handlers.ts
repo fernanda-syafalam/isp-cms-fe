@@ -1019,9 +1019,13 @@ const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
 // SLA compensation credits, seeded from breached tickets (mock).
 const SLA_CREDIT_FIXTURES = TICKET_FIXTURES.filter((t) => t.status === 'breached').map((t, i) => ({
   id: oid('51ac0000', i),
+  customerId: (CUSTOMER_FIXTURES.find((c) => c.fullName === t.customerName)?.id ?? null) as
+    | string
+    | null,
   customerName: t.customerName,
   amount: 25_000 + i * 15_000,
   reason: `Kompensasi pelanggaran SLA tiket ${t.code}`,
+  ticketId: t.id as string | null,
   ticketCode: t.code as string | null,
   status: (i === 0 ? 'applied' : 'pending') as 'pending' | 'applied' | 'void',
   createdAt: t.createdAt,
@@ -1102,7 +1106,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v11'
+const DB_KEY = 'isp-cms-mock-db-v12'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1624,11 +1628,18 @@ export const handlers = [
       reason: string
       ticketCode?: string
     }
+    const ticket = body.ticketCode
+      ? TICKET_FIXTURES.find((t) => t.code === body.ticketCode)
+      : undefined
     const credit = {
       id: crypto.randomUUID(),
+      customerId: (CUSTOMER_FIXTURES.find((c) => c.fullName === body.customerName)?.id ?? null) as
+        | string
+        | null,
       customerName: body.customerName,
       amount: body.amount,
       reason: body.reason,
+      ticketId: (ticket?.id ?? null) as string | null,
       ticketCode: body.ticketCode ? body.ticketCode : null,
       status: 'pending' as 'pending' | 'applied' | 'void',
       createdAt: new Date().toISOString(),
