@@ -62,6 +62,16 @@ export function PlansListPage() {
         ),
       },
       {
+        accessorKey: 'subscriberCount',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
+        meta: { title: 'Pelanggan', align: 'right' },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">
+            {formatNumber(row.original.subscriberCount ?? 0)}
+          </span>
+        ),
+      },
+      {
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         meta: { title: 'Status' },
