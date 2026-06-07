@@ -266,7 +266,7 @@ const COVERAGE_FIXTURES = AREA_NAMES.map((name, i) => ({
   id: oid('dddddddd', i),
   name: i % 2 === 0 ? `POP ${name}` : `Area ${name}`,
   type: i % 2 === 0 ? 'pop' : 'area',
-  region: 'Jawa Barat',
+  region: 'Jawa Tengah',
   capacity: 500 + i * 100,
   activeConnections: 320 + i * 60,
   status: COVERAGE_STATUS[i % COVERAGE_STATUS.length] ?? 'operational',

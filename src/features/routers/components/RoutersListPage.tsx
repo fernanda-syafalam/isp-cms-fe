@@ -117,7 +117,7 @@ export function RoutersListPage() {
               onClick={() => downloadCsv('router', (data?.items ?? []).map(toCsvRow))}
             >
               <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Ekspor</span>
             </Button>
           </>
         }

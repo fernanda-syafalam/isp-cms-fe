@@ -234,7 +234,7 @@ export function InvoicesListPage() {
               onClick={() => downloadCsv('tagihan', (data?.items ?? []).map(toCsvRow))}
             >
               <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Ekspor</span>
             </Button>
             <BillingActions />
           </>

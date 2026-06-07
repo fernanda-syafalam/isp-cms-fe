@@ -168,7 +168,7 @@ export function CustomersListPage() {
               onClick={() => downloadCsv('pelanggan', items.map(toCsvRow))}
             >
               <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Ekspor</span>
             </Button>
             {canManage ? (
               <Button asChild variant="outline" size="sm" className="h-8">

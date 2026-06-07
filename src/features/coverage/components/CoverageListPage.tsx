@@ -109,7 +109,7 @@ export function CoverageListPage() {
             }
           >
             <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">Ekspor</span>
           </Button>
         }
       />

@@ -73,7 +73,11 @@ export function CreateTicketDialog() {
                 <FormItem>
                   <FormLabel>Subjek</FormLabel>
                   <FormControl>
-                    <Input placeholder="No internet since morning" autoComplete="off" {...field} />
+                    <Input
+                      placeholder="mis. Internet mati sejak pagi"
+                      autoComplete="off"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

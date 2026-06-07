@@ -102,7 +102,7 @@ export function PlansListPage() {
               onClick={() => downloadCsv('paket', (data?.items ?? []).map(toCsvRow))}
             >
               <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Ekspor</span>
             </Button>
             {canManage ? <CreatePlanDialog /> : null}
           </>
