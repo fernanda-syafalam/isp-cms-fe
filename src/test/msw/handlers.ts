@@ -188,6 +188,7 @@ const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid')
   id: oid('a9a9a9a9', i),
   invoiceId: inv.id,
   invoiceNo: inv.invoiceNo,
+  customerId: inv.customerId,
   customerName: inv.customerName,
   amount: inv.amount + inv.lateFee + inv.taxAmount,
   method: PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris',
@@ -1157,7 +1158,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v17'
+const DB_KEY = 'isp-cms-mock-db-v18'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1986,6 +1987,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       invoiceId: found.id,
       invoiceNo: found.invoiceNo,
+      customerId: found.customerId,
       customerName: found.customerName,
       amount: found.amount + found.lateFee + found.taxAmount,
       method: body.method,
@@ -2322,6 +2324,7 @@ export const handlers = [
         id: crypto.randomUUID(),
         invoiceId: invoice.id,
         invoiceNo: invoice.invoiceNo,
+        customerId: invoice.customerId,
         customerName: invoice.customerName,
         amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
         method,

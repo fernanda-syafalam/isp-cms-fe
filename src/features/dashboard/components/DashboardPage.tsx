@@ -435,7 +435,13 @@ function RecentPaymentsCard({ payments }: { payments: Payment[] | undefined }) {
             {payments.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-sm">{p.customerName}</p>
+                  <Link
+                    to="/customers/$customerId"
+                    params={{ customerId: p.customerId }}
+                    className="block truncate font-medium text-sm hover:underline"
+                  >
+                    {p.customerName}
+                  </Link>
                   <p className="font-mono text-muted-foreground text-xs">
                     {p.invoiceNo} · {statusLabel(p.method)}
                   </p>
