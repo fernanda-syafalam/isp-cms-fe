@@ -32,6 +32,8 @@ const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
 
 const STATUS_OPTIONS = ['all', 'scheduled', 'in_progress', 'done', 'cancelled'] as const
 
+const TYPE_OPTIONS = ['all', 'install', 'repair', 'dismantle'] as const
+
 const toCsvRow = (w: WorkOrder) => ({
   Kode: w.code,
   Jenis: statusLabel(w.type),
@@ -44,14 +46,32 @@ const toCsvRow = (w: WorkOrder) => ({
 const routeApi = getRouteApi('/_auth/work-orders')
 
 export function WorkOrdersListPage() {
-  const { status: statusParam } = routeApi.useSearch()
+  const { status: statusParam, type: typeParam } = routeApi.useSearch()
   const status = statusParam ?? 'all'
+  const type = typeParam ?? 'all'
   const navigate = routeApi.useNavigate()
+  // Build a search object with only the keys that are set (omit when "all") so
+  // it satisfies validateSearch under exactOptionalPropertyTypes.
+  const buildSearch = (s?: string, t?: string) => ({
+    ...(s ? { status: s } : {}),
+    ...(t ? { type: t } : {}),
+  })
   const setStatus = (value: string) =>
-    navigate({ search: value === 'all' ? {} : { status: value } })
+    navigate({
+      search: buildSearch(value === 'all' ? undefined : value, typeParam),
+    })
+  const setType = (value: string) =>
+    navigate({
+      search: buildSearch(statusParam, value === 'all' ? undefined : value),
+    })
   const { data, isLoading, isError } = useWorkOrdersList({
     status: status === 'all' ? undefined : status,
   })
+  // Type filter is applied client-side (the list handler filters by status).
+  const items = useMemo(() => {
+    const list = data?.items ?? []
+    return type === 'all' ? list : list.filter((w) => w.type === type)
+  }, [data, type])
 
   const columns = useMemo<ColumnDef<WorkOrder>[]>(
     () => [
@@ -125,32 +145,46 @@ export function WorkOrdersListPage() {
       />
       <DataTable
         columns={columns}
-        data={data?.items}
+        data={items}
         isLoading={isLoading}
         isError={isError}
         emptyMessage="Belum ada work order."
         searchPlaceholder="Cari work order…"
         toolbar={
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'Semua status' : statusLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s === 'all' ? 'Semua status' : statusLabel(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="h-8 w-40" aria-label="Filter jenis">
+                <SelectValue placeholder="Jenis" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t === 'all' ? 'Semua jenis' : statusLabel(t)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
         actions={
           <Button
             variant="outline"
             size="sm"
             className="h-8"
-            disabled={!data?.items.length}
-            onClick={() => downloadCsv('work-order', (data?.items ?? []).map(toCsvRow))}
+            disabled={!items.length}
+            onClick={() => downloadCsv('work-order', items.map(toCsvRow))}
           >
             <DownloadIcon className="size-4" />
             <span className="hidden sm:inline">Ekspor</span>
