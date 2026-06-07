@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ArrowLeftIcon, RotateCwIcon } from 'lucide-react'
+import { ArrowLeftIcon, NetworkIcon, RotateCwIcon } from 'lucide-react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -62,6 +62,14 @@ export function DeviceDetailPage({ deviceId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[device.status]} label={statusLabel(device.status)} />
+            {device.topologyNodeId ? (
+              <Button asChild variant="outline" size="sm" className="h-8">
+                <Link to="/network/topology" search={{ focus: device.topologyNodeId }}>
+                  <NetworkIcon className="size-4" />
+                  <span className="hidden sm:inline">Lihat di topologi</span>
+                </Link>
+              </Button>
+            ) : null}
             <RebootButton deviceId={device.id} />
           </div>
         }

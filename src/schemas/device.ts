@@ -15,6 +15,7 @@ export const DeviceSchema = z.object({
   rxPower: z.number().nullable(), // optical RX power in dBm (ONU only)
   areaName: z.string(),
   lastSeenAt: z.iso.datetime(),
+  topologyNodeId: z.string().nullable(), // matching topology node (OLT), if any
 })
 
 export const DeviceListSchema = z.object({
