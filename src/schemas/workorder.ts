@@ -9,6 +9,7 @@ export const WorkOrderSchema = z.object({
   id: workOrderId,
   code: z.string(),
   type: WorkOrderTypeSchema,
+  customerId: z.string().nullable(), // resolves to the subscriber record, if any
   customerName: z.string(),
   technician: z.string().nullable(),
   scheduledAt: z.iso.datetime(),
