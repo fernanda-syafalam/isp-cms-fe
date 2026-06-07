@@ -1,5 +1,12 @@
 import { Link } from '@tanstack/react-router'
-import { ExternalLinkIcon, PencilIcon, Trash2Icon, TriangleAlertIcon, XIcon } from 'lucide-react'
+import {
+  ExternalLinkIcon,
+  NavigationIcon,
+  PencilIcon,
+  Trash2Icon,
+  TriangleAlertIcon,
+  XIcon,
+} from 'lucide-react'
 
 import {
   AlertDialog,
@@ -90,6 +97,16 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
         ) : null}
         <NodeMetaDetails node={node} cableMeters={cableMeters} />
         {budget ? <PowerBudget budget={budget} /> : null}
+        <Button asChild variant="outline" size="sm" className="h-8 w-full">
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${node.lat},${node.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <NavigationIcon className="size-4" />
+            Navigasi ke lokasi
+          </a>
+        </Button>
         <div>
           <p className="mb-1 text-muted-foreground text-xs">Jalur uplink</p>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">
