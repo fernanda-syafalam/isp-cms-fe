@@ -3304,6 +3304,7 @@ export const handlers = [
     const atRisk = CUSTOMER_FIXTURES.filter((c) => c.status === 'isolir' || c.outstanding > 0)
       .slice(0, 6)
       .map((c) => ({
+        customerId: c.id,
         customerName: c.fullName,
         reason: c.status === 'isolir' ? 'Terisolir' : 'Tunggakan tagihan',
         riskPct: c.status === 'isolir' ? 80 : 55,
@@ -3321,6 +3322,7 @@ export const handlers = [
     ]
     const recentFeedback = resolved.slice(0, 6).map((t, i) => ({
       id: `${t.id}-fb`,
+      customerId: CUSTOMER_FIXTURES.find((c) => c.fullName === t.customerName)?.id,
       customerName: t.customerName,
       rating: 3 + (i % 3),
       comment: COMMENTS[i % COMMENTS.length] ?? 'Terima kasih',

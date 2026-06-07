@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 // Customer-experience metrics: CSAT (post-ticket), NPS, churn risk (mock).
 export const AtRiskCustomerSchema = z.object({
+  customerId: z.string().optional(),
   customerName: z.string(),
   reason: z.string(),
   riskPct: z.number().int().min(0).max(100),
@@ -9,6 +10,7 @@ export const AtRiskCustomerSchema = z.object({
 
 export const FeedbackSchema = z.object({
   id: z.string(),
+  customerId: z.string().optional(),
   customerName: z.string(),
   rating: z.number().int().min(1).max(5),
   comment: z.string(),
