@@ -2571,10 +2571,16 @@ export const handlers = [
         status: 404,
       })
     }
+    // Idempotent: a WO already done doesn't re-provision (no duplicate ONU /
+    // secret / invoice on a double-click or repeat call).
+    if (wo.status === 'done') {
+      return HttpResponse.json(wo)
+    }
     wo.status = 'done'
     if (wo.type === 'install') {
       const customer = CUSTOMER_FIXTURES.find((c) => c.fullName === wo.customerName)
-      if (customer) {
+      // Only provision a customer that isn't active yet.
+      if (customer && customer.status !== 'aktif') {
         const seq = CUSTOMER_FIXTURES.indexOf(customer)
         customer.status = 'aktif'
         setTopoCustomerStatus(customer.fullName, 'up')
