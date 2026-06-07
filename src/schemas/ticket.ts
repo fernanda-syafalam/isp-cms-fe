@@ -9,6 +9,7 @@ export const TicketSchema = z.object({
   id: ticketId,
   code: z.string(),
   subject: z.string().min(1),
+  customerId: z.string().nullable(), // resolves to the subscriber, if any
   customerName: z.string(),
   priority: TicketPrioritySchema,
   status: TicketStatusSchema,

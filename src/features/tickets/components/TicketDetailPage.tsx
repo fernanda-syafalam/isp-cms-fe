@@ -8,7 +8,7 @@ import {
   PlusIcon,
   UserIcon,
 } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -181,7 +181,22 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
           </CardHeader>
           <CardContent>
             <dl className="space-y-3 text-sm">
-              <Row label="Pelanggan" value={ticket.customerName} />
+              <Row
+                label="Pelanggan"
+                value={
+                  ticket.customerId ? (
+                    <Link
+                      to="/customers/$customerId"
+                      params={{ customerId: ticket.customerId }}
+                      className="hover:underline"
+                    >
+                      {ticket.customerName}
+                    </Link>
+                  ) : (
+                    ticket.customerName
+                  )
+                }
+              />
               <Row label="Prioritas" value={statusLabel(ticket.priority)} />
               <Row label="Teknisi" value={ticket.assignee ?? '—'} />
               <Row label="Dibuat" value={formatDateTime(ticket.createdAt)} />
@@ -221,7 +236,7 @@ function TimelineItem({ event }: { event: TicketEvent }) {
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex justify-between gap-4">
       <dt className="text-muted-foreground text-xs">{label}</dt>
