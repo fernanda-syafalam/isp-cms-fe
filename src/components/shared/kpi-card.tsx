@@ -12,7 +12,8 @@ type Accent = 'primary' | 'amber'
 
 type Props = {
   label: string
-  value: number
+  /** Number animates with a count-up; a string is shown verbatim (no format). */
+  value: number | string
   format?: (n: number) => string
   hint?: string
   hintTone?: HintTone
@@ -48,10 +49,14 @@ export function KpiCard({
   icon: Icon,
   series,
 }: Props) {
-  const animated = useCountUp(value)
+  const numeric = typeof value === 'number'
+  const animated = useCountUp(numeric ? value : 0)
   // Integer targets snap to whole numbers mid-animation; fractional targets
-  // (e.g. rates) keep precision so `format` can render them correctly.
-  const display = Number.isInteger(value) ? Math.round(animated) : animated
+  // (e.g. rates) keep precision so `format` can render them. String values
+  // (e.g. a status label) render verbatim.
+  const display = numeric
+    ? format(Number.isInteger(value) ? Math.round(animated) : animated)
+    : value
   const TrendIcon =
     hintTone === 'positive' ? TrendingUpIcon : hintTone === 'negative' ? TrendingDownIcon : null
 
@@ -70,7 +75,7 @@ export function KpiCard({
           </span>
         </div>
         <p className="truncate font-bold font-mono text-2xl tracking-tight tabular-nums">
-          {format(display)}
+          {display}
         </p>
         {hint ? (
           <p className={cn('flex items-center gap-1 text-xs', hintToneClass[hintTone])}>

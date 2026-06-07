@@ -65,15 +65,13 @@ export function CustomerPortalPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="Status layanan"
-          value={0}
-          format={() => statusLabel(customer.status)}
+          value={statusLabel(customer.status)}
           hint={customer.areaName}
           icon={WifiIcon}
         />
         <KpiCard
           label="Paket"
-          value={0}
-          format={() => customer.planName}
+          value={customer.planName}
           hint="langganan aktif"
           icon={PackageIcon}
         />
