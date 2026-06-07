@@ -11,6 +11,7 @@ export const InventoryItemSchema = z.object({
   serial: z.string(),
   status: InventoryStatusSchema,
   assignedTo: z.string().nullable(), // customer name when installed
+  assignedCustomerId: z.string().nullable(), // resolves to the subscriber, if any
 })
 
 export const InventoryListSchema = z.object({
