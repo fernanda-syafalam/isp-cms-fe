@@ -1877,6 +1877,10 @@ export const handlers = [
     const odp = TOPOLOGY_FIXTURES.find((n) => n.type === 'odp')
     const lat = body.lat ?? (odp ? odp.lat + (Math.random() - 0.5) * 0.004 : -6.5514)
     const lng = body.lng ?? (odp ? odp.lng + (Math.random() - 0.5) * 0.004 : 110.6811)
+    // Assign the next fiber core on the ODP and advance its used-port count, so
+    // the ODP planner ("port tersisa / core berikutnya") stays correct.
+    const nextCore = (odp?.meta?.portsUsed ?? 0) + 1
+    if (odp?.meta) odp.meta.portsUsed = nextCore
     TOPOLOGY_FIXTURES.push({
       id: `${customer.id}-node`,
       name: customer.fullName,
@@ -1885,6 +1889,11 @@ export const handlers = [
       lat,
       lng,
       parentId: odp ? odp.id : null,
+      meta: {
+        customerId: customer.id,
+        planName: customer.planName,
+        coreNo: nextCore,
+      },
     })
     persistDb()
     return HttpResponse.json(customer, { status: 201 })
