@@ -858,6 +858,28 @@ function renderTemplate(body: string): string {
     .replaceAll('{jatuh_tempo}', '10 Mei 2026')
 }
 
+// Record a dunning WhatsApp reminder in the notification log so "Kirim
+// pengingat" / the scheduler shows up in the WA history (Notifikasi WA).
+function logReminder(inv: {
+  customerName: string
+  invoiceNo: string
+  amount: number
+  lateFee: number
+  taxAmount: number
+}) {
+  const cust = CUSTOMER_FIXTURES.find((c) => c.fullName === inv.customerName)
+  const total = inv.amount + inv.lateFee + inv.taxAmount
+  NOTIFICATION_LOG_FIXTURES.unshift({
+    id: crypto.randomUUID(),
+    to: cust?.phone ?? '0812-0000-0000',
+    templateName: 'Pengingat tagihan',
+    channel: 'whatsapp' as const,
+    status: 'sent' as const,
+    body: `Halo ${inv.customerName}, tagihan ${inv.invoiceNo} sebesar Rp${total.toLocaleString('id-ID')} segera jatuh tempo. Mohon segera dibayar.`,
+    at: new Date().toISOString(),
+  })
+}
+
 // Per-subscriber data usage for the period (mock; real backend reads RADIUS
 // accounting). Quota derives from plan speed; FUP triggers over quota.
 const USAGE_FIXTURES = CUSTOMER_FIXTURES.filter(
@@ -2001,6 +2023,7 @@ export const handlers = [
       const targeted = ids ? ids.includes(inv.id) : inv.status === 'overdue'
       if (!targeted) continue
       inv.lastRemindedAt = now
+      logReminder(inv)
       reminded++
     }
     persistDb()
@@ -2111,9 +2134,11 @@ export const handlers = [
     for (const inv of INVOICE_FIXTURES) {
       if (inv.status === 'overdue') {
         inv.lastRemindedAt = nowIso
+        logReminder(inv)
         remindedOverdue++
       } else if (inv.status === 'pending' && inv.dueDate <= soon) {
         inv.lastRemindedAt = nowIso
+        logReminder(inv)
         remindedUpcoming++
       }
     }
