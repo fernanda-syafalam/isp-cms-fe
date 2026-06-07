@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActivityIcon, DownloadIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -46,7 +47,15 @@ export function UsagePage() {
         accessorKey: 'customerName',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
         meta: { title: 'Pelanggan' },
-        cell: ({ row }) => <span className="font-medium">{row.original.customerName}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/customers/$customerId"
+            params={{ customerId: row.original.customerId }}
+            className="font-medium hover:underline"
+          >
+            {row.original.customerName}
+          </Link>
+        ),
       },
       { accessorKey: 'planName', header: 'Paket', meta: { title: 'Paket' } },
       {

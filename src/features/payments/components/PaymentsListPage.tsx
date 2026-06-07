@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
 import { useMemo } from 'react'
@@ -45,7 +46,15 @@ export function PaymentsListPage() {
         accessorKey: 'invoiceNo',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tagihan" />,
         meta: { title: 'Tagihan' },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.invoiceNo}</span>,
+        cell: ({ row }) => (
+          <Link
+            to="/invoices/$invoiceId"
+            params={{ invoiceId: row.original.invoiceId }}
+            className="font-mono text-sm hover:underline"
+          >
+            {row.original.invoiceNo}
+          </Link>
+        ),
       },
       {
         accessorKey: 'customerName',

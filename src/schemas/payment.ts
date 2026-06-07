@@ -6,6 +6,7 @@ export const PaymentMethodSchema = z.enum(['qris', 'va', 'ewallet', 'transfer', 
 
 export const PaymentSchema = z.object({
   id: paymentId,
+  invoiceId: invoiceId,
   invoiceNo: z.string(),
   customerName: z.string(),
   amount: z.number().int().nonnegative(),
