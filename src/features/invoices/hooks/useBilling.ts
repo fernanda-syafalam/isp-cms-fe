@@ -19,6 +19,8 @@ function useInvalidateBilling() {
     qc.invalidateQueries({ queryKey: ['analytics'] })
     // Mass isolir flips topology nodes to "down" — refresh the map too.
     qc.invalidateQueries({ queryKey: ['topology'] })
+    // Reminders write to the WhatsApp notification log.
+    qc.invalidateQueries({ queryKey: ['notifications'] })
   }
 }
 
