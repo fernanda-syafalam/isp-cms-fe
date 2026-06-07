@@ -1,4 +1,4 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { RotateCwIcon, UploadCloudIcon, WifiIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -38,6 +38,16 @@ export function AcsPage() {
         accessorKey: 'customerName',
         header: 'Pelanggan',
         meta: { title: 'Pelanggan' },
+        // An ACS device's id is the subscriber id (built from CUSTOMER_FIXTURES).
+        cell: ({ row }) => (
+          <Link
+            to="/customers/$customerId"
+            params={{ customerId: row.original.id }}
+            className="font-medium hover:underline"
+          >
+            {row.original.customerName}
+          </Link>
+        ),
       },
       { accessorKey: 'model', header: 'Model', meta: { title: 'Model' } },
       {
