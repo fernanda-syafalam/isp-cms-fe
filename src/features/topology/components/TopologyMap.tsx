@@ -133,9 +133,11 @@ export function TopologyMap({
               [parent.lat, parent.lng],
             ]}
             pathOptions={{
-              color: active ? ACCENT : '#64748b',
-              weight: active ? 3 : 1.5,
-              opacity: dim ? 0.12 : active ? 0.9 : 0.5,
+              // The Dude-style: the segment feeding a node takes that node's
+              // health — a customer's drop cable turns red when they're down.
+              color: active ? ACCENT : STATUS_COLOR[node.status],
+              weight: active ? 3 : node.status === 'down' ? 2.5 : 1.6,
+              opacity: dim ? 0.12 : active ? 0.9 : node.status === 'up' ? 0.45 : 0.85,
             }}
           />
         )
