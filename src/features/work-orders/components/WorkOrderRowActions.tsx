@@ -62,8 +62,11 @@ export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={() => complete.mutate(workOrder.id)}>
-              Selesaikan
+            <AlertDialogAction
+              disabled={complete.isPending}
+              onClick={() => complete.mutate(workOrder.id)}
+            >
+              {complete.isPending ? 'Menyelesaikan…' : 'Selesaikan'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
