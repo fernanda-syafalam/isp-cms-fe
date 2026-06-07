@@ -19,11 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
 import {
+  type LinkBudget,
   STATUS_LABEL,
   TYPE_LABEL,
   downstreamIds,
   fiberId,
   formatLength,
+  linkBudget,
   segmentMeters,
   uplinkPath,
 } from '../lib/graph'
@@ -48,6 +50,8 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
   const path = uplinkPath(node, byId)
   const parent = node.parentId ? byId.get(node.parentId) : undefined
   const cableMeters = parent ? segmentMeters(node, parent) : undefined
+  // Optical power budget is meaningful below the OLT (after the first splitter).
+  const budget = node.type === 'olt' ? null : linkBudget(node, byId)
   const downstream = downstreamIds(node.id, nodes)
   const customerCount = nodes.filter((n) => n.type === 'customer' && downstream.has(n.id)).length
   // Blast radius when this node is down: downstream customers + itself if it is one.
@@ -85,6 +89,7 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
           </div>
         ) : null}
         <NodeMetaDetails node={node} cableMeters={cableMeters} />
+        {budget ? <PowerBudget budget={budget} /> : null}
         <div>
           <p className="mb-1 text-muted-foreground text-xs">Jalur uplink</p>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">
@@ -147,6 +152,32 @@ function rxTone(dbm: number): StatusTone {
   if (dbm >= -25) return 'success'
   if (dbm >= -27) return 'warning'
   return 'danger'
+}
+
+// GPON link budget panel: estimated end-to-end loss vs the Class B+ 28 dB
+// budget, with remaining margin — the check a field tech runs before blaming
+// the ONT. <3 dB margin = danger (likely link failure), <6 dB = tight.
+function PowerBudget({ budget }: { budget: LinkBudget }) {
+  const tone: StatusTone =
+    budget.marginDb < 3 ? 'danger' : budget.marginDb < 6 ? 'warning' : 'success'
+  const usedPct = Math.min(100, Math.round((budget.lossDb / budget.budgetDb) * 100))
+  const barClass =
+    tone === 'danger' ? 'bg-red-500' : tone === 'warning' ? 'bg-amber-500' : 'bg-green-600'
+  return (
+    <div className="space-y-2 border-border border-t pt-3">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs">Power budget (estimasi)</span>
+        <StatusBadge tone={tone} label={`margin ${budget.marginDb} dB`} dot={false} />
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className={`h-full rounded-full ${barClass}`} style={{ width: `${usedPct}%` }} />
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Loss ≈ <span className="font-mono">{budget.lossDb} dB</span> dari budget{' '}
+        <span className="font-mono">{budget.budgetDb} dB</span> (Class B+).
+      </p>
+    </div>
+  )
 }
 
 // Deterministic 12-point series seeded by node id, so the "last 12 readings"

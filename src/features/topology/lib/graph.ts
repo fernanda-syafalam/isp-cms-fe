@@ -95,6 +95,47 @@ export function formatLength(meters: number): string {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`
 }
 
+// GPON optical link budget (Class B+ = 28 dB). Typical values (ITU-T G.984 /
+// FOA): SMF ~0.35 dB/km @1490nm, connector ~0.5 dB, splice ~0.1 dB, and PON
+// splitter insertion loss per ratio. We estimate end-to-end loss along a node's
+// uplink so a technician can see if it's within budget.
+const FIBER_DB_PER_KM = 0.35
+const CONNECTOR_DB = 0.5
+const GPON_BUDGET_DB = 28 // Class B+
+const SPLITTER_LOSS_DB: Record<string, number> = {
+  '1:2': 3.5,
+  '1:4': 7.2,
+  '1:8': 10.5,
+  '1:16': 14,
+  '1:32': 17.5,
+  '1:64': 21,
+}
+
+export type LinkBudget = { lossDb: number; budgetDb: number; marginDb: number }
+
+// Estimated cumulative optical loss from the OLT down to `node`: fiber distance
+// loss over every uplink segment + each splitter (ODC/ODP) + a connector at
+// each passive joint (ODC, ODP, ONT) and at the OLT.
+export function linkBudget(node: NetworkNode, byId: Map<string, NetworkNode>): LinkBudget {
+  const path = uplinkPath(node, byId) // node → … → OLT
+  let loss = CONNECTOR_DB // OLT/ODF patch
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i]
+    const b = path[i + 1]
+    if (a && b) loss += (segmentMeters(a, b) / 1000) * FIBER_DB_PER_KM
+  }
+  for (const p of path) {
+    if (p.meta?.splitter) loss += SPLITTER_LOSS_DB[p.meta.splitter] ?? 0
+    if (p.type === 'odc' || p.type === 'odp' || p.type === 'customer') loss += CONNECTOR_DB
+  }
+  const lossDb = Math.round(loss * 10) / 10
+  return {
+    lossDb,
+    budgetDb: GPON_BUDGET_DB,
+    marginDb: Math.round((GPON_BUDGET_DB - loss) * 10) / 10,
+  }
+}
+
 // Tree node for the accessible list/hierarchy view (alternative to the map —
 // network graphs are poor for a11y, so we expose the same data as a tree).
 export type TreeNode = { node: NetworkNode; children: TreeNode[] }
