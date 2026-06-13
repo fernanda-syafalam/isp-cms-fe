@@ -104,6 +104,13 @@ export function NetworkTopologyPage() {
     setFlyToTarget(byId.get(id) ?? null)
   }
 
+  // Search result picked: select it, fly the map to it, and collapse the query.
+  const handleSearchPick = (node: NetworkNode) => {
+    setSelectedId(node.id)
+    setFlyToTarget(node)
+    setQuery('')
+  }
+
   const handleDelete = () => {
     if (selected) deleteNode.mutate(selected.id)
     setSelectedId(null)
@@ -139,6 +146,7 @@ export function NetworkTopologyPage() {
       />
 
       <TopologyControls
+        nodes={all}
         filters={{ typeFilter, statusFilter, base, query }}
         set={{
           type: setTypeFilter,
@@ -157,6 +165,7 @@ export function NetworkTopologyPage() {
           },
           toggleAdd: () => setAddMode((v) => !v),
         }}
+        onPick={handleSearchPick}
       />
 
       {isError ? (
