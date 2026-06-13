@@ -1,15 +1,16 @@
-import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
+import { BriefcaseIcon, ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useCan } from '@/features/auth'
+import { useCan, useCurrentUser } from '@/features/auth'
 import { cn } from '@/lib/cn'
 import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
 import { useGeolocation } from '../hooks/useGeolocation'
 import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
+import { useTopologyJobs } from '../hooks/useTopologyJobs'
 import { useTopologySearch } from '../hooks/useTopologySearch'
 import {
   buildForest,
@@ -26,12 +27,15 @@ import { TopologyAside } from './TopologyAside'
 import { TopologyControls } from './TopologyControls'
 import type { TopologyControlsProps } from './TopologyControlsBody'
 import { TopologyFilterSheet } from './TopologyFilterSheet'
+import { TopologyKpiStrip } from './TopologyKpiStrip'
 import { TopologyMap } from './TopologyMap'
 import { TopologyTree } from './TopologyTree'
 
 export function NetworkTopologyPage() {
   const { data, isLoading, isError } = useTopology()
   const canEdit = useCan('network.manage')
+  const currentUser = useCurrentUser()
+  const jobs = useTopologyJobs(currentUser.data?.fullName ?? null)
   const updateNode = useUpdateNode()
   const deleteNode = useDeleteNode()
 
@@ -54,6 +58,7 @@ export function NetworkTopologyPage() {
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [geoEnabled, setGeoEnabled] = useState(false)
+  const [myJobsOnly, setMyJobsOnly] = useState(false)
   // The node the map should fly to. Set when selecting from the list/tree (the
   // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
   const [flyToTarget, setFlyToTarget] = useState<NetworkNode | null>(null)
@@ -73,20 +78,41 @@ export function NetworkTopologyPage() {
     return c
   }, [all])
 
+  // Customer nodes whose subscriber has an open work order / ticket (badged on
+  // the map); the technician's own jobs (+ their uplink path) scope the filter.
+  const jobNodeIds = useMemo(
+    () =>
+      new Set(
+        all
+          .filter((n) => n.meta?.customerId && jobs.jobCustomerIds.has(n.meta.customerId))
+          .map((n) => n.id),
+      ),
+    [all, jobs.jobCustomerIds],
+  )
+  const myJobScopeIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const n of all) {
+      if (!n.meta?.customerId || !jobs.myJobCustomerIds.has(n.meta.customerId)) continue
+      for (const p of uplinkPath(n, byId)) ids.add(p.id)
+    }
+    return ids
+  }, [all, byId, jobs.myJobCustomerIds])
+
   const visible = useMemo(
     () =>
       all.filter(
         (n) =>
           (typeFilter === 'all' || n.type === typeFilter) &&
-          (statusFilter === 'all' || n.status === statusFilter),
+          (statusFilter === 'all' || n.status === statusFilter) &&
+          (!myJobsOnly || myJobScopeIds.has(n.id)),
       ),
-    [all, typeFilter, statusFilter],
+    [all, typeFilter, statusFilter, myJobsOnly, myJobScopeIds],
   )
   const visibleById = useMemo(() => indexById(visible), [visible])
   const forest = useMemo(() => buildForest(visible), [visible])
   const impactedCount = useMemo(() => impactedCustomerIds(all).size, [all])
-  // Refit the map when the visible set changes (filters/base) — not on selection.
-  const refitKey = `${typeFilter}:${statusFilter}:${base}`
+  // Refit the map when the visible set changes (filters/base/my-jobs) — not on selection.
+  const refitKey = `${typeFilter}:${statusFilter}:${base}:${myJobsOnly}`
 
   const highlightIds = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -194,8 +220,24 @@ export function NetworkTopologyPage() {
         }
       />
 
+      {!isLoading && all.length > 0 ? (
+        <TopologyKpiStrip nodes={all} downCount={counts.down} openJobsCount={jobs.openCount} />
+      ) : null}
+
       <TopologyControls {...controlsProps} />
       <TopologyFilterSheet {...controlsProps} />
+
+      {jobs.myCount > 0 ? (
+        <Button
+          variant={myJobsOnly ? 'default' : 'outline'}
+          size="sm"
+          className="h-9"
+          onClick={() => setMyJobsOnly((v) => !v)}
+        >
+          <BriefcaseIcon className="size-4" />
+          {myJobsOnly ? 'Tampilkan semua' : `Pekerjaan saya (${jobs.myCount})`}
+        </Button>
+      ) : null}
 
       {isError ? (
         <p className="text-destructive" role="alert">
@@ -242,6 +284,7 @@ export function NetworkTopologyPage() {
                 selectedId={selectedId}
                 activeIds={activeIds}
                 highlightIds={highlightIds}
+                jobNodeIds={jobNodeIds}
                 flyToTarget={flyToTarget}
                 userPosition={userPosition}
                 refitKey={refitKey}

@@ -29,6 +29,7 @@ type Props = {
   selectedId: string | null
   activeIds: Set<string> | null
   highlightIds: Set<string>
+  jobNodeIds: Set<string>
   flyToTarget: NetworkNode | null
   userPosition: GeoPosition | null
   refitKey: string
@@ -78,6 +79,7 @@ export function TopologyMap({
   selectedId,
   activeIds,
   highlightIds,
+  jobNodeIds,
   flyToTarget,
   userPosition,
   refitKey,
@@ -103,6 +105,7 @@ export function TopologyMap({
         selectedId={selectedId}
         activeIds={activeIds}
         highlightIds={highlightIds}
+        jobNodeIds={jobNodeIds}
         editMode={editMode}
         onSelect={onSelect}
         onMove={onMove}

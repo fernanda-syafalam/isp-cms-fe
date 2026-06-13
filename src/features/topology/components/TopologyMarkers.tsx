@@ -37,6 +37,7 @@ function nodeIcon(
   ring: boolean,
   dim: boolean,
   capacity: string | null,
+  job: boolean,
 ): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
@@ -44,11 +45,16 @@ function nodeIcon(
   const shadow = capacity
     ? `0 0 2px rgba(0,0,0,.5), 0 0 0 3px ${capacity}`
     : '0 0 2px rgba(0,0,0,.5)'
+  // An amber badge marks a customer with an open work order / ticket — stays
+  // fully opaque even when the node is dimmed so jobs stand out at a glance.
+  const badge = job
+    ? '<span style="position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:9999px;background:#f59e0b;border:1.5px solid #fff"></span>'
+    : ''
   return L.divIcon({
     className: 'topology-marker',
     iconSize: [size, size],
     iconAnchor: [r, r],
-    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>`,
+    html: `<span style="position:relative;display:block;width:${size}px;height:${size}px"><span style="display:block;width:100%;height:100%;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>${badge}</span>`,
   })
 }
 
@@ -57,6 +63,7 @@ type Props = {
   selectedId: string | null
   activeIds: Set<string> | null
   highlightIds: Set<string>
+  jobNodeIds: Set<string>
   editMode: boolean
   onSelect: (id: string) => void
   onMove: (id: string, lat: number, lng: number) => void
@@ -72,6 +79,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
   selectedId,
   activeIds,
   highlightIds,
+  jobNodeIds,
   editMode,
   onSelect,
   onMove,
@@ -85,7 +93,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
           <Marker
             key={node.id}
             position={[node.lat, node.lng]}
-            icon={nodeIcon(node, ring, dim, capacityColor(node))}
+            icon={nodeIcon(node, ring, dim, capacityColor(node), jobNodeIds.has(node.id))}
             draggable={editMode}
             eventHandlers={{
               click: () => onSelect(node.id),
