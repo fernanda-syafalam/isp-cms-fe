@@ -11,6 +11,7 @@ import {
   impactedCustomerIds,
   indexById,
   linkBudget,
+  nearestFreeOdp,
   segmentMeters,
   uplinkPath,
 } from './graph'
@@ -213,5 +214,28 @@ describe('linkBudget (GPON Class B+)', () => {
     expect(budget.lossDb).toBeGreaterThan(18)
     expect(budget.lossDb).toBeLessThan(28)
     expect(budget.marginDb).toBeCloseTo(budget.budgetDb - budget.lossDb, 1)
+  })
+})
+
+describe('nearestFreeOdp', () => {
+  const HERE = { lat: -6.5521, lng: 110.6821 }
+
+  it('returns the nearest ODP that still has a free port', () => {
+    const result = nearestFreeOdp(HERE, sampleNetwork())
+    // odp-2 is full (8/8); odp-1 has 4/8 free, so it must be the answer.
+    expect(result?.node.id).toBe('odp-1')
+    expect(result?.meters).toBeGreaterThanOrEqual(0)
+  })
+
+  it('returns null when every ODP is full', () => {
+    const full = sampleNetwork().map((n) =>
+      n.type === 'odp' ? { ...n, meta: { ...n.meta, portsUsed: 8, portsTotal: 8 } } : n,
+    )
+    expect(nearestFreeOdp(HERE, full)).toBeNull()
+  })
+
+  it('ignores non-ODP node types', () => {
+    const onlyCustomers = sampleNetwork().filter((n) => n.type === 'customer')
+    expect(nearestFreeOdp(HERE, onlyCustomers)).toBeNull()
   })
 })
