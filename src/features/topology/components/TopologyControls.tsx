@@ -2,11 +2,11 @@ import { MapPinPlusIcon, PencilIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/cn'
-import type { NodeStatus, NodeType } from '@/schemas/topology'
+import type { NetworkNode, NodeStatus, NodeType } from '@/schemas/topology'
 
 import { STATUS_COLOR, STATUS_LABEL } from '../lib/graph'
+import { TopologySearchBox } from './TopologySearchBox'
 
 const TYPE_FILTERS: Array<{ value: 'all' | NodeType; label: string }> = [
   { value: 'all', label: 'Semua' },
@@ -24,6 +24,7 @@ const STATUS_FILTERS: Array<{ value: 'all' | NodeStatus; label: string }> = [
 ]
 
 type Props = {
+  nodes: NetworkNode[]
   filters: {
     typeFilter: 'all' | NodeType
     statusFilter: 'all' | NodeStatus
@@ -44,9 +45,10 @@ type Props = {
     toggleEdit: () => void
     toggleAdd: () => void
   }
+  onPick: (node: NetworkNode) => void
 }
 
-export function TopologyControls({ filters, set, counts, edit }: Props) {
+export function TopologyControls({ nodes, filters, set, counts, edit, onPick }: Props) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
@@ -91,12 +93,11 @@ export function TopologyControls({ filters, set, counts, edit }: Props) {
               </button>
             ))}
           </div>
-          <Input
-            value={filters.query}
-            onChange={(e) => set.query(e.target.value)}
-            placeholder="Cari nama / ID node…"
-            className="h-8 max-w-xs"
-            aria-label="Cari node"
+          <TopologySearchBox
+            nodes={nodes}
+            query={filters.query}
+            onQueryChange={set.query}
+            onPick={onPick}
           />
           {edit.canEdit ? (
             <div className="ml-auto flex items-center gap-2">
