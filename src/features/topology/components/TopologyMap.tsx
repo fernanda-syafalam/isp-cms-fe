@@ -1,22 +1,13 @@
 import 'leaflet/dist/leaflet.css'
 
-import L from 'leaflet'
 import { useEffect, useRef } from 'react'
-import {
-  MapContainer,
-  Marker,
-  Polyline,
-  TileLayer,
-  Tooltip,
-  useMap,
-  useMapEvents,
-} from 'react-leaflet'
+import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
 
-import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL, TYPE_RADIUS, fiberCore } from '../lib/graph'
-
-const ACCENT = '#2563eb'
+import { FlyTo } from './FlyTo'
+import { TopologyEdges } from './TopologyEdges'
+import { TopologyMarkers } from './TopologyMarkers'
 
 const TILES = {
   map: {
@@ -29,60 +20,6 @@ const TILES = {
   },
 }
 
-// One-line technical summary shown under the node name on hover.
-function tooltipMeta(node: NetworkNode): string | null {
-  const m = node.meta
-  if (!m) return null
-  const parts: string[] = []
-  if (m.portsTotal) parts.push(`Port ${m.portsUsed ?? 0}/${m.portsTotal}`)
-  if (typeof m.rxPowerDbm === 'number') parts.push(`${m.rxPowerDbm} dBm`)
-  if (typeof m.uptimePct === 'number') parts.push(`${m.uptimePct}%`)
-  if (m.coreNo) parts.push(`Core ${fiberCore(m.coreNo).name}`)
-  if (m.planName) parts.push(m.planName)
-  return parts.length > 0 ? parts.join(' · ') : null
-}
-
-// Edge color: a customer's drop cable carries its fiber-core color (TIA-598) so
-// you can see which core feeds whom; a down customer still overrides to red.
-// Upstream segments stay status-colored (Dude-style).
-function edgeColor(node: NetworkNode): string {
-  if (node.type === 'customer' && node.meta?.coreNo && node.status !== 'down') {
-    return fiberCore(node.meta.coreNo).hex
-  }
-  return STATUS_COLOR[node.status]
-}
-
-// Capacity ring around a node when its ports are filling up (≥70% amber,
-// ≥90% red) — surfaces near-full ODP/ODC/OLT at a glance on the map.
-function capacityColor(node: NetworkNode): string | null {
-  const m = node.meta
-  if (!m?.portsTotal) return null
-  const pct = ((m.portsUsed ?? 0) / m.portsTotal) * 100
-  if (pct >= 90) return '#dc2626'
-  if (pct >= 70) return '#d97706'
-  return null
-}
-
-function nodeIcon(
-  node: NetworkNode,
-  ring: boolean,
-  dim: boolean,
-  capacity: string | null,
-): L.DivIcon {
-  const r = TYPE_RADIUS[node.type]
-  const size = r * 2
-  const border = ring ? `3px solid ${ACCENT}` : '2px solid #ffffff'
-  const shadow = capacity
-    ? `0 0 2px rgba(0,0,0,.5), 0 0 0 3px ${capacity}`
-    : '0 0 2px rgba(0,0,0,.5)'
-  return L.divIcon({
-    className: 'topology-marker',
-    iconSize: [size, size],
-    iconAnchor: [r, r],
-    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>`,
-  })
-}
-
 type Props = {
   nodes: NetworkNode[]
   byId: Map<string, NetworkNode>
@@ -90,6 +27,8 @@ type Props = {
   selectedId: string | null
   activeIds: Set<string> | null
   highlightIds: Set<string>
+  flyToTarget: NetworkNode | null
+  refitKey: string
   editMode: boolean
   addMode: boolean
   onSelect: (id: string) => void
@@ -97,17 +36,20 @@ type Props = {
   onMapClick: (lat: number, lng: number) => void
 }
 
-function FitBounds({ nodes }: { nodes: NetworkNode[] }) {
+// Refits the map to the given nodes whenever `refitKey` changes (e.g. the user
+// filters to "down" nodes) — but NOT on selection, so clicking around doesn't
+// re-zoom. Fits once on first render to frame the whole network.
+function FitBounds({ nodes, refitKey }: { nodes: NetworkNode[]; refitKey: string }) {
   const map = useMap()
-  const fitted = useRef(false)
+  const lastKey = useRef<string | null>(null)
   useEffect(() => {
-    if (fitted.current || nodes.length === 0) return
+    if (nodes.length === 0 || lastKey.current === refitKey) return
+    lastKey.current = refitKey
     map.fitBounds(
       nodes.map((n) => [n.lat, n.lng] as [number, number]),
       { padding: [48, 48] },
     )
-    fitted.current = true
-  }, [nodes, map])
+  }, [nodes, refitKey, map])
   return null
 }
 
@@ -133,6 +75,8 @@ export function TopologyMap({
   selectedId,
   activeIds,
   highlightIds,
+  flyToTarget,
+  refitKey,
   editMode,
   addMode,
   onSelect,
@@ -146,72 +90,19 @@ export function TopologyMap({
   return (
     <MapContainer center={center} zoom={13} className="h-full w-full" scrollWheelZoom>
       <TileLayer key={base} url={tile.url} attribution={tile.attribution} maxZoom={19} />
-      <FitBounds nodes={nodes} />
+      <FitBounds nodes={nodes} refitKey={refitKey} />
       <MapClick enabled={addMode} onClick={onMapClick} />
-
-      {nodes.map((node) => {
-        if (!node.parentId) return null
-        const parent = byId.get(node.parentId)
-        if (!parent) return null
-        const active = activeIds ? activeIds.has(node.id) && activeIds.has(parent.id) : false
-        const dim = activeIds !== null && !active
-        return (
-          <Polyline
-            key={`${node.id}->${parent.id}`}
-            positions={[
-              [node.lat, node.lng],
-              [parent.lat, parent.lng],
-            ]}
-            pathOptions={{
-              // Customer drops show their fiber-core color; upstream segments
-              // show node health; a down drop overrides to red (see edgeColor).
-              color: active ? ACCENT : edgeColor(node),
-              weight: active ? 3 : node.status === 'down' ? 2.5 : 1.6,
-              opacity: dim
-                ? 0.12
-                : active
-                  ? 0.9
-                  : node.type === 'customer'
-                    ? 0.8
-                    : node.status === 'up'
-                      ? 0.45
-                      : 0.85,
-            }}
-          />
-        )
-      })}
-
-      {nodes.map((node) => {
-        const dim = activeIds !== null && !activeIds.has(node.id)
-        const ring = node.id === selectedId || highlightIds.has(node.id)
-        return (
-          <Marker
-            key={node.id}
-            position={[node.lat, node.lng]}
-            icon={nodeIcon(node, ring, dim, capacityColor(node))}
-            draggable={editMode}
-            eventHandlers={{
-              click: () => onSelect(node.id),
-              dragend: (e) => {
-                const ll = e.target.getLatLng()
-                onMove(node.id, ll.lat, ll.lng)
-              },
-            }}
-          >
-            <Tooltip>
-              <span className="font-medium">{node.name}</span>
-              {' · '}
-              {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
-              {tooltipMeta(node) ? (
-                <>
-                  <br />
-                  <span className="text-[11px] opacity-80">{tooltipMeta(node)}</span>
-                </>
-              ) : null}
-            </Tooltip>
-          </Marker>
-        )
-      })}
+      <FlyTo target={flyToTarget} />
+      <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} />
+      <TopologyMarkers
+        nodes={nodes}
+        selectedId={selectedId}
+        activeIds={activeIds}
+        highlightIds={highlightIds}
+        editMode={editMode}
+        onSelect={onSelect}
+        onMove={onMove}
+      />
     </MapContainer>
   )
 }
