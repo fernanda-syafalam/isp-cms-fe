@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router'
 import {
   ExternalLinkIcon,
+  MessageCircleIcon,
   NavigationIcon,
   PencilIcon,
+  PhoneIcon,
   Trash2Icon,
   TriangleAlertIcon,
   XIcon,
@@ -328,6 +330,18 @@ function NodeMetaDetails({
             <dd className="text-right font-medium">{m.planName}</dd>
           </>
         ) : null}
+        {m?.onuSerial ? (
+          <>
+            <dt className="text-muted-foreground">ONU serial</dt>
+            <dd className="text-right font-mono">{m.onuSerial}</dd>
+          </>
+        ) : null}
+        {m?.ponPort ? (
+          <>
+            <dt className="text-muted-foreground">Port PON</dt>
+            <dd className="text-right font-mono">{m.ponPort}</dd>
+          </>
+        ) : null}
         {m?.coreNo ? (
           <>
             <dt className="text-muted-foreground">Tube</dt>
@@ -392,8 +406,29 @@ function NodeMetaDetails({
         </div>
       ) : null}
 
+      {m?.phone ? (
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm" className="h-9 flex-1">
+            <a href={`tel:${telNumber(m.phone)}`}>
+              <PhoneIcon className="size-4" />
+              Telepon
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="h-9 flex-1">
+            <a
+              href={`https://wa.me/${waNumber(m.phone)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircleIcon className="size-4" />
+              WhatsApp
+            </a>
+          </Button>
+        </div>
+      ) : null}
+
       {m?.customerId ? (
-        <Button asChild variant="outline" size="sm" className="h-8 w-full">
+        <Button asChild variant="outline" size="sm" className="h-9 w-full">
           <Link to="/customers/$customerId" params={{ customerId: m.customerId }}>
             <ExternalLinkIcon className="size-4" />
             Buka detail pelanggan
@@ -402,4 +437,15 @@ function NodeMetaDetails({
       ) : null}
     </div>
   )
+}
+
+// Phone helpers: tel: takes the digits as-is; WhatsApp needs an international
+// number, so a leading Indonesian "0" becomes "62". Exported for unit testing
+// the conversion (a wrong number means the technician can't reach the customer).
+export function telNumber(phone: string): string {
+  return phone.replace(/[^\d+]/g, '')
+}
+export function waNumber(phone: string): string {
+  const d = phone.replace(/\D/g, '')
+  return d.startsWith('0') ? `62${d.slice(1)}` : d
 }

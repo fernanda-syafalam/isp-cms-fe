@@ -581,6 +581,9 @@ const TOPOLOGY_FIXTURES = (() => {
         planName: c.planName,
         coreNo,
         ...(c.connection?.rxPower != null ? { rxPowerDbm: c.connection.rxPower } : {}),
+        ...(c.connection?.onuSerial ? { onuSerial: c.connection.onuSerial } : {}),
+        ...(c.connection?.ponPort ? { ponPort: c.connection.ponPort } : {}),
+        ...(c.phone ? { phone: c.phone } : {}),
       },
     })
   })
