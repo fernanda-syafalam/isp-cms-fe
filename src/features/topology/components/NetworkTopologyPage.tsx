@@ -1,4 +1,3 @@
-import { getRouteApi } from '@tanstack/react-router'
 import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -8,9 +7,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { cn } from '@/lib/cn'
-import type { NetworkNode, NodeStatus, NodeType } from '@/schemas/topology'
+import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
-import { useDeleteNode, useTopology, useUpdateNode } from '../hooks/useTopology'
+import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
+import { useTopologySearch } from '../hooks/useTopologySearch'
 import {
   FIBER_CORES,
   buildForest,
@@ -25,23 +25,33 @@ import { TopologyControls } from './TopologyControls'
 import { TopologyMap } from './TopologyMap'
 import { TopologyTree } from './TopologyTree'
 
-const routeApi = getRouteApi('/_auth/network/topology')
-
 export function NetworkTopologyPage() {
-  const { focus } = routeApi.useSearch()
   const { data, isLoading, isError } = useTopology()
   const canEdit = useCan('network.manage')
   const updateNode = useUpdateNode()
   const deleteNode = useDeleteNode()
 
-  const [view, setView] = useState<'map' | 'list'>('map')
-  const [base, setBase] = useState<'map' | 'satellite'>('satellite')
-  const [typeFilter, setTypeFilter] = useState<'all' | NodeType>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | NodeStatus>('all')
+  // Deep-linkable view state (view/base/filters/selection) lives in the URL.
+  const {
+    view,
+    base,
+    typeFilter,
+    statusFilter,
+    selectedId,
+    setView,
+    setBase,
+    setTypeFilter,
+    setStatusFilter,
+    setSelectedId,
+  } = useTopologySearch()
+
+  // Transient UI state — not worth sharing or persisting in the URL.
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(focus ?? null)
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
+  // The node the map should fly to. Set when selecting from the list/tree (the
+  // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
+  const [flyToTarget, setFlyToTarget] = useState<NetworkNode | null>(null)
   // Node form: { node } for edit, { latLng } for add, null when closed.
   const [form, setForm] = useState<
     { node: NetworkNode } | { latLng: { lat: number; lng: number } } | null
@@ -68,6 +78,8 @@ export function NetworkTopologyPage() {
   const visibleById = useMemo(() => indexById(visible), [visible])
   const forest = useMemo(() => buildForest(visible), [visible])
   const impactedCount = useMemo(() => impactedCustomerIds(all).size, [all])
+  // Refit the map when the visible set changes (filters/base) — not on selection.
+  const refitKey = `${typeFilter}:${statusFilter}:${base}`
 
   const highlightIds = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -85,6 +97,12 @@ export function NetworkTopologyPage() {
     for (const id of downstreamIds(selected.id, all)) ids.add(id)
     return ids
   }, [selected, byId, all])
+
+  // Select + fly: used by the list/tree where the picked node may be off-screen.
+  const selectAndFly = (id: string) => {
+    setSelectedId(id)
+    setFlyToTarget(byId.get(id) ?? null)
+  }
 
   const handleDelete = () => {
     if (selected) deleteNode.mutate(selected.id)
@@ -185,6 +203,8 @@ export function NetworkTopologyPage() {
               selectedId={selectedId}
               activeIds={activeIds}
               highlightIds={highlightIds}
+              flyToTarget={flyToTarget}
+              refitKey={refitKey}
               editMode={editMode}
               addMode={addMode}
               onSelect={setSelectedId}
@@ -199,7 +219,7 @@ export function NetworkTopologyPage() {
               forest={forest}
               selectedId={selectedId}
               highlightIds={highlightIds}
-              onSelect={setSelectedId}
+              onSelect={selectAndFly}
             />
           )}
         </div>
