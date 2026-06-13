@@ -1,5 +1,5 @@
-import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ListTreeIcon, MapIcon, MapPinnedIcon, TriangleAlertIcon } from 'lucide-react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
@@ -9,16 +9,21 @@ import { useCan } from '@/features/auth'
 import { cn } from '@/lib/cn'
 import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
+import { useGeolocation } from '../hooks/useGeolocation'
 import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
 import { useTopologySearch } from '../hooks/useTopologySearch'
 import {
   FIBER_CORES,
   buildForest,
   downstreamIds,
+  formatLength,
   impactedCustomerIds,
   indexById,
+  nearestFreeOdp,
+  segmentMeters,
   uplinkPath,
 } from '../lib/graph'
+import { LocateControl } from './LocateControl'
 import { NodeDetailPanel } from './NodeDetailPanel'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyControls } from './TopologyControls'
@@ -49,6 +54,7 @@ export function NetworkTopologyPage() {
   const [query, setQuery] = useState('')
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
+  const [geoEnabled, setGeoEnabled] = useState(false)
   // The node the map should fly to. Set when selecting from the list/tree (the
   // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
   const [flyToTarget, setFlyToTarget] = useState<NetworkNode | null>(null)
@@ -56,6 +62,8 @@ export function NetworkTopologyPage() {
   const [form, setForm] = useState<
     { node: NetworkNode } | { latLng: { lat: number; lng: number } } | null
   >(null)
+
+  const { position: userPosition, isLocating } = useGeolocation(geoEnabled)
 
   const all = useMemo(() => data?.items ?? [], [data])
   const byId = useMemo(() => indexById(all), [all])
@@ -97,6 +105,25 @@ export function NetworkTopologyPage() {
     for (const id of downstreamIds(selected.id, all)) ids.add(id)
     return ids
   }, [selected, byId, all])
+
+  // Distance from the technician to the selected node (straight line).
+  const distanceMeters =
+    userPosition && selected ? segmentMeters(userPosition, selected) : undefined
+  // When located with nothing selected, suggest the nearest ODP that has a free
+  // port — the "where can I hook up from here?" shortcut.
+  const nearestOdp = userPosition && !selected ? nearestFreeOdp(userPosition, all) : null
+
+  // Stable callbacks so the memoized markers don't rebuild on every GPS fix.
+  const setSelectedIdRef = useRef(setSelectedId)
+  setSelectedIdRef.current = setSelectedId
+  const updateNodeRef = useRef(updateNode)
+  updateNodeRef.current = updateNode
+  const handleMarkerSelect = useCallback((id: string) => setSelectedIdRef.current(id), [])
+  const handleMarkerMove = useCallback(
+    (id: string, lat: number, lng: number) =>
+      updateNodeRef.current.mutate({ id, input: { lat, lng } }),
+    [],
+  )
 
   // Select + fly: used by the list/tree where the picked node may be off-screen.
   const selectAndFly = (id: string) => {
@@ -198,31 +225,39 @@ export function NetworkTopologyPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div
           className={cn(
-            'h-[70vh] rounded-lg border bg-card',
+            'relative h-[70vh] rounded-lg border bg-card',
             view === 'map' ? 'overflow-hidden' : 'overflow-y-auto',
           )}
         >
           {isLoading || !data ? (
             <Skeleton className="h-full w-full" />
           ) : view === 'map' ? (
-            <TopologyMap
-              nodes={visible}
-              byId={visibleById}
-              base={base}
-              selectedId={selectedId}
-              activeIds={activeIds}
-              highlightIds={highlightIds}
-              flyToTarget={flyToTarget}
-              refitKey={refitKey}
-              editMode={editMode}
-              addMode={addMode}
-              onSelect={setSelectedId}
-              onMove={(id, lat, lng) => updateNode.mutate({ id, input: { lat, lng } })}
-              onMapClick={(lat, lng) => {
-                setForm({ latLng: { lat, lng } })
-                setAddMode(false)
-              }}
-            />
+            <>
+              <TopologyMap
+                nodes={visible}
+                byId={visibleById}
+                base={base}
+                selectedId={selectedId}
+                activeIds={activeIds}
+                highlightIds={highlightIds}
+                flyToTarget={flyToTarget}
+                userPosition={userPosition}
+                refitKey={refitKey}
+                editMode={editMode}
+                addMode={addMode}
+                onSelect={handleMarkerSelect}
+                onMove={handleMarkerMove}
+                onMapClick={(lat, lng) => {
+                  setForm({ latLng: { lat, lng } })
+                  setAddMode(false)
+                }}
+              />
+              <LocateControl
+                active={geoEnabled}
+                isLocating={isLocating}
+                onToggle={() => setGeoEnabled((v) => !v)}
+              />
+            </>
           ) : (
             <TopologyTree
               forest={forest}
@@ -239,6 +274,7 @@ export function NetworkTopologyPage() {
               byId={byId}
               nodes={all}
               editMode={editMode}
+              distanceMeters={distanceMeters}
               onClear={() => setSelectedId(null)}
               onEdit={() => setForm({ node: selected })}
               onDelete={handleDelete}
@@ -246,6 +282,21 @@ export function NetworkTopologyPage() {
           ) : (
             <Card>
               <CardContent className="pt-6 text-muted-foreground text-sm">
+                {nearestOdp ? (
+                  <Button
+                    variant="outline"
+                    className="mb-4 h-auto w-full justify-start gap-2 py-2 text-left"
+                    onClick={() => handleSearchPick(nearestOdp.node)}
+                  >
+                    <MapPinnedIcon className="size-4 shrink-0 text-primary" />
+                    <span className="flex flex-col">
+                      <span className="font-medium text-foreground">ODP kosong terdekat</span>
+                      <span className="text-muted-foreground text-xs">
+                        {nearestOdp.node.name} · {formatLength(nearestOdp.meters)}
+                      </span>
+                    </span>
+                  </Button>
+                ) : null}
                 <p className="font-medium text-foreground">Legenda peta</p>
                 <ul className="mt-2 space-y-2">
                   <li className="flex items-center gap-2">

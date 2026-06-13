@@ -48,12 +48,23 @@ type Props = {
   byId: Map<string, NetworkNode>
   nodes: NetworkNode[]
   editMode: boolean
+  /** Straight-line distance from the technician's location, when known. */
+  distanceMeters?: number | undefined
   onClear: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
-export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, onDelete }: Props) {
+export function NodeDetailPanel({
+  node,
+  byId,
+  nodes,
+  editMode,
+  distanceMeters,
+  onClear,
+  onEdit,
+  onDelete,
+}: Props) {
   const path = uplinkPath(node, byId)
   const parent = node.parentId ? byId.get(node.parentId) : undefined
   const cableMeters = parent ? segmentMeters(node, parent) : undefined
@@ -95,7 +106,7 @@ export function NodeDetailPanel({ node, byId, nodes, editMode, onClear, onEdit, 
             </span>
           </div>
         ) : null}
-        <NodeMetaDetails node={node} cableMeters={cableMeters} />
+        <NodeMetaDetails node={node} cableMeters={cableMeters} distanceMeters={distanceMeters} />
         {budget ? <PowerBudget budget={budget} /> : null}
         <Button asChild variant="outline" size="sm" className="h-8 w-full">
           <a
@@ -214,9 +225,11 @@ function metricSeries(seed: string, base: number, amp: number): number[] {
 function NodeMetaDetails({
   node,
   cableMeters,
+  distanceMeters,
 }: {
   node: NetworkNode
   cableMeters?: number | undefined
+  distanceMeters?: number | undefined
 }) {
   const m = node.meta
   const portPct =
@@ -344,6 +357,12 @@ function NodeMetaDetails({
         <dd className="text-right font-mono tabular-nums">
           {node.lat.toFixed(4)}, {node.lng.toFixed(4)}
         </dd>
+        {typeof distanceMeters === 'number' ? (
+          <>
+            <dt className="text-muted-foreground">Jarak dari Anda</dt>
+            <dd className="text-right font-mono tabular-nums">{formatLength(distanceMeters)}</dd>
+          </>
+        ) : null}
       </dl>
 
       {portPct !== null ? (

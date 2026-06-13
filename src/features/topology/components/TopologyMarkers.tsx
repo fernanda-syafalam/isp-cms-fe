@@ -1,4 +1,5 @@
 import L from 'leaflet'
+import { memo } from 'react'
 import { Marker, Tooltip } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
@@ -63,8 +64,10 @@ type Props = {
 
 // Infra node markers (OLT…customer). Selected/searched nodes get an accent
 // ring; nodes outside the active uplink path are dimmed. In edit mode markers
-// are draggable to reposition.
-export function TopologyMarkers({
+// are draggable to reposition. Memoized (with stable onSelect/onMove from the
+// page) so the technician's live GPS position updates don't rebuild every
+// divIcon on each fix.
+export const TopologyMarkers = memo(function TopologyMarkers({
   nodes,
   selectedId,
   activeIds,
@@ -108,4 +111,4 @@ export function TopologyMarkers({
       })}
     </>
   )
-}
+})

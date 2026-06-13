@@ -95,6 +95,24 @@ export function formatLength(meters: number): string {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`
 }
 
+// Nearest ODP that still has a free port, by straight-line distance from a
+// point (the technician's location). The answer to "where can I hook up this
+// new customer from here?" — returns null if every ODP is full or none exist.
+export function nearestFreeOdp(
+  from: { lat: number; lng: number },
+  nodes: NetworkNode[],
+): { node: NetworkNode; meters: number } | null {
+  let best: { node: NetworkNode; meters: number } | null = null
+  for (const n of nodes) {
+    if (n.type !== 'odp') continue
+    const total = n.meta?.portsTotal
+    if (!total || (n.meta?.portsUsed ?? 0) >= total) continue
+    const meters = segmentMeters(from, n)
+    if (!best || meters < best.meters) best = { node: n, meters }
+  }
+  return best
+}
+
 // GPON optical link budget (Class B+ = 28 dB). Typical values (ITU-T G.984 /
 // FOA): SMF ~0.35 dB/km @1490nm, connector ~0.5 dB, splice ~0.1 dB, and PON
 // splitter insertion loss per ratio. We estimate end-to-end loss along a node's

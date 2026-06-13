@@ -5,9 +5,11 @@ import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
 
+import type { GeoPosition } from '../hooks/useGeolocation'
 import { FlyTo } from './FlyTo'
 import { TopologyEdges } from './TopologyEdges'
 import { TopologyMarkers } from './TopologyMarkers'
+import { UserLocationLayer } from './UserLocationLayer'
 
 const TILES = {
   map: {
@@ -28,6 +30,7 @@ type Props = {
   activeIds: Set<string> | null
   highlightIds: Set<string>
   flyToTarget: NetworkNode | null
+  userPosition: GeoPosition | null
   refitKey: string
   editMode: boolean
   addMode: boolean
@@ -76,6 +79,7 @@ export function TopologyMap({
   activeIds,
   highlightIds,
   flyToTarget,
+  userPosition,
   refitKey,
   editMode,
   addMode,
@@ -103,6 +107,7 @@ export function TopologyMap({
         onSelect={onSelect}
         onMove={onMove}
       />
+      <UserLocationLayer position={userPosition} />
     </MapContainer>
   )
 }

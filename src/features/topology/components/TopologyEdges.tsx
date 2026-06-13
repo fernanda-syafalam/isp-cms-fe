@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Polyline } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
@@ -24,8 +25,9 @@ type Props = {
 
 // The parent→child fiber segments. Each edge connects a node to its uplink; the
 // active uplink path (a selected node's trace to the OLT) is accented in blue,
-// everything else is dimmed.
-export function TopologyEdges({ nodes, byId, activeIds }: Props) {
+// everything else is dimmed. Memoized: the technician's live GPS position
+// changes often but never the edges, so this skips re-rendering on every fix.
+export const TopologyEdges = memo(function TopologyEdges({ nodes, byId, activeIds }: Props) {
   return (
     <>
       {nodes.map((node) => {
@@ -59,4 +61,4 @@ export function TopologyEdges({ nodes, byId, activeIds }: Props) {
       })}
     </>
   )
-}
+})
