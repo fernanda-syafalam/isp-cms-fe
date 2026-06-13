@@ -19,6 +19,9 @@ export const NodeMetaSchema = z.object({
   customerId: z.string().optional(), // link a customer node to its record
   planName: z.string().optional(),
   coreNo: z.number().int().positive().optional(), // fiber core feeding a customer (TIA-598)
+  onuSerial: z.string().optional(), // ONU serial — match the physical unit on-site
+  ponPort: z.string().optional(), // OLT PON port feeding this customer (e.g. "0/1/1")
+  phone: z.string().optional(), // customer phone for tap-to-call / WhatsApp in the field
 })
 
 export const NetworkNodeSchema = z.object({
