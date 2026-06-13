@@ -1,9 +1,8 @@
-import { ListTreeIcon, MapIcon, MapPinnedIcon, TriangleAlertIcon } from 'lucide-react'
+import { ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { cn } from '@/lib/cn'
@@ -13,10 +12,8 @@ import { useGeolocation } from '../hooks/useGeolocation'
 import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
 import { useTopologySearch } from '../hooks/useTopologySearch'
 import {
-  FIBER_CORES,
   buildForest,
   downstreamIds,
-  formatLength,
   impactedCustomerIds,
   indexById,
   nearestFreeOdp,
@@ -24,9 +21,11 @@ import {
   uplinkPath,
 } from '../lib/graph'
 import { LocateControl } from './LocateControl'
-import { NodeDetailPanel } from './NodeDetailPanel'
 import { NodeFormDialog } from './NodeFormDialog'
+import { TopologyAside } from './TopologyAside'
 import { TopologyControls } from './TopologyControls'
+import type { TopologyControlsProps } from './TopologyControlsBody'
+import { TopologyFilterSheet } from './TopologyFilterSheet'
 import { TopologyMap } from './TopologyMap'
 import { TopologyTree } from './TopologyTree'
 
@@ -131,8 +130,8 @@ export function NetworkTopologyPage() {
     setFlyToTarget(byId.get(id) ?? null)
   }
 
-  // Search result picked: select it, fly the map to it, and collapse the query.
-  const handleSearchPick = (node: NetworkNode) => {
+  // Search/affordance pick: select it, fly the map to it, and collapse the query.
+  const handlePick = (node: NetworkNode) => {
     setSelectedId(node.id)
     setFlyToTarget(node)
     setQuery('')
@@ -143,8 +142,31 @@ export function NetworkTopologyPage() {
     setSelectedId(null)
   }
 
+  const controlsProps: TopologyControlsProps = {
+    nodes: all,
+    filters: { typeFilter, statusFilter, base, query },
+    set: {
+      type: setTypeFilter,
+      status: setStatusFilter,
+      base: setBase,
+      query: setQuery,
+    },
+    counts,
+    edit: {
+      canEdit,
+      editMode,
+      addMode,
+      toggleEdit: () => {
+        setEditMode((v) => !v)
+        setAddMode(false)
+      },
+      toggleAdd: () => setAddMode((v) => !v),
+    },
+    onPick: handlePick,
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <PageHeader
         title="Topologi Jaringan"
         description="Peta infrastruktur OLT → ODC → ODP → Tiang → Pelanggan. Klik node untuk menelusuri jalur uplink."
@@ -153,7 +175,7 @@ export function NetworkTopologyPage() {
             <Button
               variant={view === 'map' ? 'secondary' : 'ghost'}
               size="sm"
-              className="h-7"
+              className="h-9 sm:h-7"
               onClick={() => setView('map')}
             >
               <MapIcon className="size-4" />
@@ -162,7 +184,7 @@ export function NetworkTopologyPage() {
             <Button
               variant={view === 'list' ? 'secondary' : 'ghost'}
               size="sm"
-              className="h-7"
+              className="h-9 sm:h-7"
               onClick={() => setView('list')}
             >
               <ListTreeIcon className="size-4" />
@@ -172,28 +194,8 @@ export function NetworkTopologyPage() {
         }
       />
 
-      <TopologyControls
-        nodes={all}
-        filters={{ typeFilter, statusFilter, base, query }}
-        set={{
-          type: setTypeFilter,
-          status: setStatusFilter,
-          base: setBase,
-          query: setQuery,
-        }}
-        counts={counts}
-        edit={{
-          canEdit,
-          editMode,
-          addMode,
-          toggleEdit: () => {
-            setEditMode((v) => !v)
-            setAddMode(false)
-          },
-          toggleAdd: () => setAddMode((v) => !v),
-        }}
-        onPick={handleSearchPick}
-      />
+      <TopologyControls {...controlsProps} />
+      <TopologyFilterSheet {...controlsProps} />
 
       {isError ? (
         <p className="text-destructive" role="alert">
@@ -214,7 +216,7 @@ export function NetworkTopologyPage() {
           <Button
             variant="outline"
             size="sm"
-            className="ml-auto h-7"
+            className="ml-auto h-9 sm:h-7"
             onClick={() => setStatusFilter(statusFilter === 'down' ? 'all' : 'down')}
           >
             {statusFilter === 'down' ? 'Tampilkan semua' : 'Fokus node down'}
@@ -225,7 +227,7 @@ export function NetworkTopologyPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div
           className={cn(
-            'relative h-[70vh] rounded-lg border bg-card',
+            'relative h-[70dvh] rounded-lg border bg-card',
             view === 'map' ? 'overflow-hidden' : 'overflow-y-auto',
           )}
         >
@@ -267,68 +269,22 @@ export function NetworkTopologyPage() {
             />
           )}
         </div>
-        <div className="space-y-4">
-          {selected ? (
-            <NodeDetailPanel
-              node={selected}
-              byId={byId}
-              nodes={all}
-              editMode={editMode}
-              distanceMeters={distanceMeters}
-              onClear={() => setSelectedId(null)}
-              onEdit={() => setForm({ node: selected })}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-muted-foreground text-sm">
-                {nearestOdp ? (
-                  <Button
-                    variant="outline"
-                    className="mb-4 h-auto w-full justify-start gap-2 py-2 text-left"
-                    onClick={() => handleSearchPick(nearestOdp.node)}
-                  >
-                    <MapPinnedIcon className="size-4 shrink-0 text-primary" />
-                    <span className="flex flex-col">
-                      <span className="font-medium text-foreground">ODP kosong terdekat</span>
-                      <span className="text-muted-foreground text-xs">
-                        {nearestOdp.node.name} · {formatLength(nearestOdp.meters)}
-                      </span>
-                    </span>
-                  </Button>
-                ) : null}
-                <p className="font-medium text-foreground">Legenda peta</p>
-                <ul className="mt-2 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="size-2.5 shrink-0 rounded-full bg-green-600" />
-                    <span className="size-2.5 shrink-0 rotate-45 rounded-[2px] bg-red-600" />
-                    <span className="size-2.5 shrink-0 rounded-full border-2 border-amber-600" />
-                    Status node: Up / Down / Unknown
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="h-1 w-6 shrink-0 rounded-full bg-green-600/60" />
-                    <span className="h-1 w-6 shrink-0 rounded-full bg-red-600" />
-                    Kabel feeder (OLT→ODP) = warna status node.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="h-1 w-3 shrink-0 rounded-full bg-blue-600" />
-                    <span className="h-1 w-3 shrink-0 rounded-full bg-orange-500" />
-                    <span className="h-1 w-3 shrink-0 rounded-full bg-green-600" />
-                    Drop pelanggan = warna core fiber (TIA-598); merah bila down.
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="size-3 shrink-0 rounded-full bg-muted-foreground/30 ring-2 ring-amber-500" />
-                    <span className="size-3 shrink-0 rounded-full bg-muted-foreground/30 ring-2 ring-red-600" />
-                    Cincin = kapasitas port (≥70% amber, ≥90% merah).
-                  </li>
-                  <li>Ukuran titik = tipe (OLT terbesar → Pelanggan terkecil).</li>
-                  <li>Klik titik: sorot jalur uplink, detail teknis, & blast-radius.</li>
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          <FiberReference />
-        </div>
+        <aside className="space-y-4">
+          <TopologyAside
+            selected={selected}
+            byId={byId}
+            nodes={all}
+            editMode={editMode}
+            distanceMeters={distanceMeters}
+            nearestOdp={nearestOdp}
+            onClear={() => setSelectedId(null)}
+            onEdit={() => {
+              if (selected) setForm({ node: selected })
+            }}
+            onDelete={handleDelete}
+            onPickNearest={handlePick}
+          />
+        </aside>
       </div>
 
       {form ? (
@@ -342,38 +298,5 @@ export function NetworkTopologyPage() {
         />
       ) : null}
     </div>
-  )
-}
-
-// Field reference: the TIA-598-C 12-color fiber code (tube + core use the same
-// sequence). A collapsible card so a technician can read colors on-site.
-function FiberReference() {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <details>
-          <summary className="cursor-pointer font-medium text-foreground text-sm">
-            Referensi warna fiber (TIA-598)
-          </summary>
-          <p className="mt-2 text-muted-foreground text-xs">
-            Urutan core & tube identik; di atas 12 diulang dengan garis hitam.
-          </p>
-          <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5">
-            {FIBER_CORES.map((c, i) => (
-              <li key={c.name} className="flex items-center gap-2 text-xs">
-                <span className="w-4 text-right font-mono text-muted-foreground tabular-nums">
-                  {i + 1}
-                </span>
-                <span
-                  className="size-3 shrink-0 rounded-full border border-border"
-                  style={{ background: c.hex }}
-                />
-                <span>{c.name}</span>
-              </li>
-            ))}
-          </ol>
-        </details>
-      </CardContent>
-    </Card>
   )
 }

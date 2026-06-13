@@ -50,6 +50,8 @@ type Props = {
   editMode: boolean
   /** Straight-line distance from the technician's location, when known. */
   distanceMeters?: number | undefined
+  /** Hide the panel's own close button (e.g. inside a Sheet that has its own). */
+  showClose?: boolean
   onClear: () => void
   onEdit: () => void
   onDelete: () => void
@@ -61,6 +63,7 @@ export function NodeDetailPanel({
   nodes,
   editMode,
   distanceMeters,
+  showClose = true,
   onClear,
   onEdit,
   onDelete,
@@ -84,15 +87,17 @@ export function NodeDetailPanel({
         </div>
         <div className="flex items-center gap-1">
           <StatusBadge tone={STATUS_TONE[node.status]} label={STATUS_LABEL[node.status]} />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            aria-label="Tutup"
-            onClick={onClear}
-          >
-            <XIcon className="size-4" />
-          </Button>
+          {showClose ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label="Tutup"
+              onClick={onClear}
+            >
+              <XIcon className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
