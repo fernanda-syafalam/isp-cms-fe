@@ -19,6 +19,7 @@ import {
   impactedCustomerIds,
   indexById,
   nearestFreeOdp,
+  nodeSearchText,
   segmentMeters,
   uplinkPath,
 } from '../lib/graph'
@@ -125,9 +126,7 @@ export function NetworkTopologyPage() {
   const highlightIds = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return new Set<string>()
-    return new Set(
-      all.filter((n) => `${n.name} ${n.id}`.toLowerCase().includes(q)).map((n) => n.id),
-    )
+    return new Set(all.filter((n) => nodeSearchText(n).includes(q)).map((n) => n.id))
   }, [all, query])
 
   const selected = selectedId ? (byId.get(selectedId) ?? null) : null

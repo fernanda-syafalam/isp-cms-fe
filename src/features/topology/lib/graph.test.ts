@@ -11,7 +11,9 @@ import {
   impactedCustomerIds,
   indexById,
   linkBudget,
+  matchedField,
   nearestFreeOdp,
+  nodeSearchText,
   ratioCount,
   rxHealth,
   segmentMeters,
@@ -274,5 +276,32 @@ describe('ratioCount', () => {
 
   it('returns 0 for an unparseable ratio', () => {
     expect(ratioCount('nonsense')).toBe(0)
+  })
+})
+
+describe('nodeSearchText / matchedField', () => {
+  const cust = node({
+    id: 'c1-node',
+    type: 'customer',
+    name: 'Budi',
+    meta: {
+      customerId: 'c1',
+      phone: '081234',
+      onuSerial: 'ZTEGC0FFEE',
+      planName: 'Home 20',
+    },
+  })
+
+  it("includes the customer's contact/ONU/plan in the search haystack", () => {
+    const hay = nodeSearchText(cust)
+    expect(hay).toContain('081234')
+    expect(hay).toContain('ztegc0ffee')
+    expect(hay).toContain('home 20')
+  })
+
+  it('reports which meta field matched (and nothing for a name match)', () => {
+    expect(matchedField(cust, '081234')).toBe('Telepon: 081234')
+    expect(matchedField(cust, 'ztegc0')).toBe('ONU: ZTEGC0FFEE')
+    expect(matchedField(cust, 'budi')).toBeNull()
   })
 })
