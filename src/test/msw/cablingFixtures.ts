@@ -166,9 +166,15 @@ export function allocateDrop(
     ponPort?: string | null | undefined
     onuSerial?: string | null | undefined
   },
+  // When set, allocate this exact splitter port (= fiber core the technician
+  // picked); otherwise take the first free port. Returns null if it is taken.
+  portNo?: number | undefined,
 ): { coreNo: number } | null {
   const splitter = store.splitters.find((s) => s.nodeId === odp.id)
-  const port = splitter?.ports.find((p) => p.outNodeId === null)
+  const port =
+    portNo != null
+      ? splitter?.ports.find((p) => p.portNo === portNo && p.outNodeId === null)
+      : splitter?.ports.find((p) => p.outNodeId === null)
   if (!splitter || !port) return null
 
   const cableId = uuid()

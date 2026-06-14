@@ -3565,6 +3565,28 @@ export const handlers = [
     if (!odp) {
       return new HttpResponse(JSON.stringify({ message: 'ODP tidak ditemukan' }), { status: 404 })
     }
+    // If the technician picked a specific port, reject precisely when it is gone
+    // or already taken (someone else grabbed it) instead of the generic message.
+    if (body.portNo != null) {
+      const sp = CABLING_STORE.splitters.find((s) => s.nodeId === odp.id)
+      const port = sp?.ports.find((p) => p.portNo === body.portNo)
+      if (!port) {
+        return new HttpResponse(
+          JSON.stringify({
+            message: `Port #${body.portNo} tidak ada di ODP ini.`,
+          }),
+          { status: 404 },
+        )
+      }
+      if (port.outNodeId !== null) {
+        return new HttpResponse(
+          JSON.stringify({
+            message: `Port #${body.portNo} sudah terpakai. Pilih port lain.`,
+          }),
+          { status: 409 },
+        )
+      }
+    }
     const drop = allocateDrop(
       CABLING_STORE,
       TOPOLOGY_FIXTURES,
@@ -3574,6 +3596,7 @@ export const handlers = [
         ponPort: customer.connection?.ponPort,
         onuSerial: customer.connection?.onuSerial,
       },
+      body.portNo,
     )
     if (!drop) {
       return new HttpResponse(JSON.stringify({ message: 'Port splitter penuh. Pilih ODP lain.' }), {
