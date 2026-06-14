@@ -1,4 +1,11 @@
-import { BriefcaseIcon, ListTreeIcon, MapIcon, PlusIcon, TriangleAlertIcon } from 'lucide-react'
+import {
+  BriefcaseIcon,
+  DownloadIcon,
+  ListTreeIcon,
+  MapIcon,
+  PlusIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -6,12 +13,14 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan, useCurrentUser } from '@/features/auth'
 import { cn } from '@/lib/cn'
+import { downloadCsv } from '@/lib/csv'
 import type { NetworkNode, NodeStatus } from '@/schemas/topology'
 
 import { useGeolocation } from '../hooks/useGeolocation'
 import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
 import { useTopologyJobs } from '../hooks/useTopologyJobs'
 import { useTopologySearch } from '../hooks/useTopologySearch'
+import { nodesToCsvRows } from '../lib/export'
 import { localizeFaults } from '../lib/faults'
 import {
   buildForest,
@@ -235,7 +244,7 @@ export function NetworkTopologyPage() {
       <TopologyControls {...controlsProps} />
       <TopologyFilterSheet {...controlsProps} />
 
-      {jobs.myCount > 0 || canEdit ? (
+      {all.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2">
           {jobs.myCount > 0 ? (
             <Button
@@ -254,6 +263,16 @@ export function NetworkTopologyPage() {
               Pasang pelanggan
             </Button>
           ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            disabled={visible.length === 0}
+            onClick={() => downloadCsv('topologi', nodesToCsvRows(visible, visibleById))}
+          >
+            <DownloadIcon className="size-4" />
+            Ekspor CSV
+          </Button>
         </div>
       ) : null}
 
