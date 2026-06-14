@@ -7,6 +7,7 @@ import { CustomerDropSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
+import type { NodeLifecycle } from '@/schemas/topology'
 import { CreateNodeSchema, UpdateNodeSchema } from '@/schemas/topology'
 
 import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
@@ -469,6 +470,7 @@ const TOPOLOGY_FIXTURES = (() => {
       customerId?: string
       planName?: string
       coreNo?: number
+      lifecycle?: NodeLifecycle
     }
   }
   const nodes: TopoNode[] = []
@@ -555,11 +557,15 @@ const TOPOLOGY_FIXTURES = (() => {
 
   // Attach REAL subscribers as customer nodes (id `${customerId}-node`) so the
   // map mirrors the customer base and customer→topology deep-links resolve.
-  // Status follows lifecycle: aktif→up, isolir/berhenti→down, instalasi→unknown.
+  // NETWORK status (map color) is distinct from BILLING lifecycle: an isolir
+  // (suspended for non-payment) customer is still optically `up` — the fiber is
+  // not cut — so dispatch must not mistake "belum bayar" for "fiber putus".
+  // aktif/isolir → up (light present); berhenti (disconnected) / instalasi
+  // (not yet provisioned) → unknown. `meta.lifecycle` carries the billing state.
   const CUST_STATUS: Record<string, TopoNode['status']> = {
     aktif: 'up',
-    isolir: 'down',
-    berhenti: 'down',
+    isolir: 'up',
+    berhenti: 'unknown',
     instalasi: 'unknown',
     prospek: 'unknown',
   }
@@ -587,6 +593,7 @@ const TOPOLOGY_FIXTURES = (() => {
         customerId: c.id,
         planName: c.planName,
         coreNo,
+        lifecycle: c.status,
         ...(c.connection?.rxPower != null ? { rxPowerDbm: c.connection.rxPower } : {}),
         ...(c.connection?.onuSerial ? { onuSerial: c.connection.onuSerial } : {}),
         ...(c.connection?.ponPort ? { ponPort: c.connection.ponPort } : {}),
@@ -801,11 +808,19 @@ function setSecretsDisabledByCustomer(name: string | null, disabled: boolean) {
   }
 }
 
-// Reflect a subscriber's lifecycle on its topology node (created at onboarding),
-// so the network map mirrors aktif/isolir/berhenti in real time.
-function setTopoCustomerStatus(name: string, status: 'up' | 'down' | 'unknown') {
+// Reflect a subscriber's lifecycle on its topology node (created at onboarding).
+// Billing state is recorded on `meta.lifecycle`; the NETWORK status stays honest
+// and is derived from it, so dispatch never mistakes "belum bayar" for "fiber
+// putus": an isolir (suspended) customer is still optically `up` (the fiber is
+// not cut), while berhenti (disconnected) reads `unknown`.
+function setTopoCustomerLifecycle(name: string, lifecycle: NodeLifecycle) {
+  const status: 'up' | 'down' | 'unknown' =
+    lifecycle === 'aktif' || lifecycle === 'isolir' ? 'up' : 'unknown'
   for (const n of TOPOLOGY_FIXTURES) {
-    if (n.type === 'customer' && n.name === name) n.status = status
+    if (n.type === 'customer' && n.name === name) {
+      n.status = status
+      n.meta = { ...n.meta, lifecycle }
+    }
   }
 }
 
@@ -1478,7 +1493,7 @@ export const handlers = [
       })
     }
     found.status = 'berhenti'
-    setTopoCustomerStatus(found.fullName, 'down')
+    setTopoCustomerLifecycle(found.fullName, 'berhenti')
     recordAudit('customer.stop', 'Pelanggan', `Memberhentikan ${found.fullName}`)
     persistDb()
     return HttpResponse.json(found)
@@ -1560,7 +1575,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
-    setTopoCustomerStatus(found.fullName, 'down')
+    setTopoCustomerLifecycle(found.fullName, 'isolir')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
     return HttpResponse.json(found)
@@ -1575,7 +1590,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
-    setTopoCustomerStatus(found.fullName, 'up')
+    setTopoCustomerLifecycle(found.fullName, 'aktif')
     setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
     return HttpResponse.json(found)
@@ -1998,7 +2013,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
-    setTopoCustomerStatus(found.fullName, 'down')
+    setTopoCustomerLifecycle(found.fullName, 'isolir')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
     return HttpResponse.json(found)
@@ -2011,7 +2026,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
-    setTopoCustomerStatus(found.fullName, 'up')
+    setTopoCustomerLifecycle(found.fullName, 'aktif')
     found.outstanding = 0
     setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
@@ -2097,7 +2112,7 @@ export const handlers = [
       const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
       if (customer.status === 'isolir' && !hasOverdue) {
         customer.status = 'aktif'
-        setTopoCustomerStatus(customer.fullName, 'up')
+        setTopoCustomerLifecycle(customer.fullName, 'aktif')
         setSecretsDisabledByCustomer(customer.fullName, false)
       }
     }
@@ -2433,7 +2448,7 @@ export const handlers = [
         const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
         if (customer.status === 'isolir' && !hasOverdue) {
           customer.status = 'aktif'
-          setTopoCustomerStatus(customer.fullName, 'up')
+          setTopoCustomerLifecycle(customer.fullName, 'aktif')
           setSecretsDisabledByCustomer(customer.fullName, false)
         }
       }
@@ -2785,7 +2800,7 @@ export const handlers = [
       if (customer && customer.status !== 'aktif') {
         const seq = CUSTOMER_FIXTURES.indexOf(customer)
         customer.status = 'aktif'
-        setTopoCustomerStatus(customer.fullName, 'up')
+        setTopoCustomerLifecycle(customer.fullName, 'aktif')
         // Consume an ONU from the warehouse: assign it to the customer + log
         // the stock movement, so inventory reflects the install. Falls back to
         // a synthetic serial if no ONU is in stock.
@@ -3565,11 +3580,17 @@ export const handlers = [
         status: 409,
       })
     }
+    // Network status follows lifecycle (aktif/isolir = light present); a fresh
+    // install of a not-yet-provisioned subscriber reads `unknown` until lit.
+    const netStatus =
+      customer.status === 'aktif' || customer.status === 'isolir'
+        ? ('up' as const)
+        : ('unknown' as const)
     const node = {
       id: nodeId,
       name: customer.fullName,
       type: 'customer' as const,
-      status: 'unknown' as const,
+      status: netStatus,
       lat: body.lat,
       lng: body.lng,
       parentId: odp.id,
@@ -3577,6 +3598,7 @@ export const handlers = [
         customerId: customer.id,
         planName: customer.planName,
         coreNo: drop.coreNo,
+        lifecycle: customer.status,
         ...(customer.connection?.onuSerial ? { onuSerial: customer.connection.onuSerial } : {}),
         ...(customer.connection?.ponPort ? { ponPort: customer.connection.ponPort } : {}),
         ...(customer.connection?.rxPower != null
