@@ -8,8 +8,10 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { NetworkNode } from '@/schemas/topology'
 
+import type { OdpCapacity } from '../lib/graph'
 import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
+import { CapacityPanel } from './CapacityPanel'
 import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
 import { MaintenanceButton } from './MaintenanceButton'
@@ -27,6 +29,7 @@ type Props = {
   distanceMeters?: number | undefined
   nearestOdp: { node: NetworkNode; meters: number } | null
   faults: ProbableFault[]
+  capacity: OdpCapacity[]
   onClear: () => void
   onEdit: () => void
   onDelete: () => void
@@ -48,6 +51,7 @@ export function TopologyAside({
   distanceMeters,
   nearestOdp,
   faults,
+  capacity,
   onClear,
   onEdit,
   onDelete,
@@ -59,6 +63,8 @@ export function TopologyAside({
   // Probable outage roots stay visible above everything else — even with a node
   // selected — so an active fault is never out of sight in the field.
   const faultCard = <FaultDiagnosis faults={faults} onSelect={onSelectFault} />
+  // Capacity planning is a "nothing selected" overview, shown with the legend.
+  const capacityCard = <CapacityPanel items={capacity} onSelect={onSelectFault} />
   // An ODC/ODP carries a splitter; show its per-port occupancy beside the panel.
   const splitters = useSplitters().data?.items
   const splitter =
@@ -71,6 +77,7 @@ export function TopologyAside({
     return (
       <>
         {faultCard}
+        {capacityCard}
         {legend}
         <FiberReference />
         <Sheet open={selected !== null} onOpenChange={(open) => !open && onClear()}>
@@ -124,7 +131,10 @@ export function TopologyAside({
           onDelete={onDelete}
         />
       ) : (
-        legend
+        <>
+          {capacityCard}
+          {legend}
+        </>
       )}
       {selected && canManage ? <MaintenanceButton node={selected} /> : null}
       {selected ? splitterCard : null}

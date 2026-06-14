@@ -146,6 +146,29 @@ export function matchedField(n: NetworkNode, query: string): string | null {
   return null
 }
 
+export type OdpCapacity = {
+  node: NetworkNode
+  used: number
+  total: number
+  pct: number
+}
+
+// ODPs at or above `minPct` port occupancy, fullest first — the capacity-
+// planning question "where am I about to run out of ports?" so ops can add a
+// splitter/ODP before the next install is rejected.
+export function nearFullOdps(nodes: NetworkNode[], minPct = 70): OdpCapacity[] {
+  const out: OdpCapacity[] = []
+  for (const n of nodes) {
+    if (n.type !== 'odp') continue
+    const total = n.meta?.portsTotal
+    if (!total) continue
+    const used = n.meta?.portsUsed ?? 0
+    const pct = Math.round((used / total) * 100)
+    if (pct >= minPct) out.push({ node: n, used, total, pct })
+  }
+  return out.sort((a, b) => b.pct - a.pct)
+}
+
 // Nearest ODP that still has a free port, by straight-line distance from a
 // point (the technician's location). The answer to "where can I hook up this
 // new customer from here?" — returns null if every ODP is full or none exist.

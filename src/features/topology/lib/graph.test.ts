@@ -12,6 +12,7 @@ import {
   indexById,
   linkBudget,
   matchedField,
+  nearFullOdps,
   nearestFreeOdp,
   nodeSearchText,
   ratioCount,
@@ -303,5 +304,20 @@ describe('nodeSearchText / matchedField', () => {
     expect(matchedField(cust, '081234')).toBe('Telepon: 081234')
     expect(matchedField(cust, 'ztegc0')).toBe('ONU: ZTEGC0FFEE')
     expect(matchedField(cust, 'budi')).toBeNull()
+  })
+})
+
+describe('nearFullOdps', () => {
+  it('lists only ODPs at/above the default threshold, fullest first', () => {
+    // sampleNetwork: odp-1 is 4/8 (50%), odp-2 is 8/8 (100%).
+    const result = nearFullOdps(sampleNetwork())
+    expect(result.map((c) => c.node.id)).toEqual(['odp-2'])
+    expect(result[0]?.pct).toBe(100)
+  })
+
+  it('honors a custom threshold and sorts by occupancy', () => {
+    const result = nearFullOdps(sampleNetwork(), 50)
+    expect(result.map((c) => c.node.id)).toEqual(['odp-2', 'odp-1'])
+    expect(result[1]).toMatchObject({ used: 4, total: 8, pct: 50 })
   })
 })
