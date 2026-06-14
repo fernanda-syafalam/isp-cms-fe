@@ -7,7 +7,12 @@ import { SplitterRatioSchema } from './splitter'
 // derived from those links. Self-contained mock dataset (not the Customer
 // schema) — see ADR-0004.
 export const NodeTypeSchema = z.enum(['olt', 'odc', 'odp', 'pole', 'customer'])
+// NETWORK/optical status — this is what the map color means (online / LOS /
+// unknown), NOT billing. A suspended (isolir) customer is optically `up`.
 export const NodeStatusSchema = z.enum(['up', 'down', 'unknown'])
+// Billing/service lifecycle of a customer node, kept separate from the network
+// status so "belum bayar" (isolir) is never mistaken for "fiber putus" (down).
+export const NodeLifecycleSchema = z.enum(['prospek', 'instalasi', 'aktif', 'isolir', 'berhenti'])
 
 // Type-specific technical metadata (all optional; populated per node type).
 export const NodeMetaSchema = z.object({
@@ -24,6 +29,7 @@ export const NodeMetaSchema = z.object({
   onuSerial: z.string().optional(), // ONU serial — match the physical unit on-site
   ponPort: z.string().optional(), // OLT PON port feeding this customer (e.g. "0/1/1")
   phone: z.string().optional(), // customer phone for tap-to-call / WhatsApp in the field
+  lifecycle: NodeLifecycleSchema.optional(), // billing/service state (≠ network status)
 })
 
 export const NetworkNodeSchema = z.object({
@@ -76,6 +82,7 @@ export const UpdateNodeSchema = z
 
 export type NodeType = z.infer<typeof NodeTypeSchema>
 export type NodeStatus = z.infer<typeof NodeStatusSchema>
+export type NodeLifecycle = z.infer<typeof NodeLifecycleSchema>
 export type NodeMeta = z.infer<typeof NodeMetaSchema>
 export type NetworkNode = z.infer<typeof NetworkNodeSchema>
 export type Topology = z.infer<typeof TopologySchema>

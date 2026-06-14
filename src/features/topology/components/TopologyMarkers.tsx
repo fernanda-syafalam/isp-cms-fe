@@ -4,7 +4,22 @@ import { Marker, Tooltip } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
 
-import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL, TYPE_RADIUS, fiberCore } from '../lib/graph'
+import {
+  STATUS_COLOR,
+  STATUS_LABEL,
+  SUSPEND_COLOR,
+  TYPE_LABEL,
+  TYPE_RADIUS,
+  fiberCore,
+} from '../lib/graph'
+
+const LIFECYCLE_LABEL: Record<string, string> = {
+  prospek: 'Prospek',
+  instalasi: 'Instalasi',
+  aktif: 'Aktif',
+  isolir: 'Isolir (ditangguhkan)',
+  berhenti: 'Berhenti',
+}
 
 const ACCENT = '#2563eb'
 
@@ -38,6 +53,7 @@ function nodeIcon(
   dim: boolean,
   capacity: string | null,
   job: boolean,
+  suspended: boolean,
 ): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
@@ -45,6 +61,10 @@ function nodeIcon(
   const shadow = capacity
     ? `0 0 2px rgba(0,0,0,.5), 0 0 0 3px ${capacity}`
     : '0 0 2px rgba(0,0,0,.5)'
+  // A billing-suspended customer is optically up but not serving — recolor it
+  // slate so it never reads as a fiber fault (red). Network status still drives
+  // every other node's color.
+  const fill = suspended ? SUSPEND_COLOR : STATUS_COLOR[node.status]
   // An amber badge marks a customer with an open work order / ticket — stays
   // fully opaque even when the node is dimmed so jobs stand out at a glance.
   const badge = job
@@ -54,7 +74,7 @@ function nodeIcon(
     className: 'topology-marker',
     iconSize: [size, size],
     iconAnchor: [r, r],
-    html: `<span style="position:relative;display:block;width:${size}px;height:${size}px"><span style="display:block;width:100%;height:100%;border-radius:9999px;background:${STATUS_COLOR[node.status]};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>${badge}</span>`,
+    html: `<span style="position:relative;display:block;width:${size}px;height:${size}px"><span style="display:block;width:100%;height:100%;border-radius:9999px;background:${fill};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>${badge}</span>`,
   })
 }
 
@@ -89,11 +109,21 @@ export const TopologyMarkers = memo(function TopologyMarkers({
       {nodes.map((node) => {
         const dim = activeIds !== null && !activeIds.has(node.id)
         const ring = node.id === selectedId || highlightIds.has(node.id)
+        const lifecycle = node.meta?.lifecycle
+        const suspended =
+          node.type === 'customer' && (lifecycle === 'isolir' || lifecycle === 'berhenti')
         return (
           <Marker
             key={node.id}
             position={[node.lat, node.lng]}
-            icon={nodeIcon(node, ring, dim, capacityColor(node), jobNodeIds.has(node.id))}
+            icon={nodeIcon(
+              node,
+              ring,
+              dim,
+              capacityColor(node),
+              jobNodeIds.has(node.id),
+              suspended,
+            )}
             draggable={editMode}
             eventHandlers={{
               click: () => onSelect(node.id),
@@ -107,6 +137,12 @@ export const TopologyMarkers = memo(function TopologyMarkers({
               <span className="font-medium">{node.name}</span>
               {' · '}
               {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
+              {lifecycle && lifecycle !== 'aktif' ? (
+                <span className="text-[11px] opacity-80">
+                  {' · '}
+                  {LIFECYCLE_LABEL[lifecycle] ?? lifecycle}
+                </span>
+              ) : null}
               {tooltipMeta(node) ? (
                 <>
                   <br />

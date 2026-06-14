@@ -45,6 +45,16 @@ as mock-first Zod entities (ADR-0003): `Cable` + `StrandAssignment`
   so the node graph and cabling are consistent by construction. A single shared
   `allocateDrop()/freeDrop()` is the only capacity mutator; onboarding and the
   install flow both use it.
+- **Network status and billing lifecycle are separate facts on a customer node.**
+  `NetworkNode.status` (`up`/`down`/`unknown`) is the OPTICAL/network state — what
+  the map color means — while `meta.lifecycle`
+  (`prospek`/`instalasi`/`aktif`/`isolir`/`berhenti`) is the billing/service state.
+  A suspended (isolir) customer is still optically `up` (the fiber is not cut), so
+  the map must not paint it red; it renders slate (`SUSPEND_COLOR`) and the detail
+  panel shows both badges. `berhenti` (disconnected) reads `unknown`, not `down`.
+  This keeps dispatch from mistaking "belum bayar" for "fiber putus" and keeps the
+  blast-radius alert (`status === 'down'`) measuring real faults only. The mock's
+  `setTopoCustomerLifecycle()` is the single writer that keeps the two in sync.
 
 As a consequence, **projected `portsUsed` now reflects true occupancy**, so the
 seed's previously arbitrary values change to the real customer/child counts. This

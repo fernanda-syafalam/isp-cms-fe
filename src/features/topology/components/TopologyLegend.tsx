@@ -40,7 +40,17 @@ export function TopologyLegend({ nearestOdp, onPickNearest }: Props) {
             <span className="size-2.5 shrink-0 rounded-full bg-green-600" />
             <span className="size-2.5 shrink-0 rotate-45 rounded-[2px] bg-red-600" />
             <span className="size-2.5 shrink-0 rounded-full border-2 border-amber-600" />
-            Status node: Up / Down / Unknown
+            Status jaringan: Up / Down / Unknown
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-full bg-slate-600" />
+            Pelanggan abu-abu = isolir/berhenti (ditangguhkan, fiber tetap up).
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="relative size-2.5 shrink-0 rounded-full bg-green-600">
+              <span className="-top-0.5 -right-0.5 absolute size-1.5 rounded-full border border-white bg-amber-500" />
+            </span>
+            Titik kuning = ada tiket/WO terbuka di pelanggan ini.
           </li>
           <li className="flex items-center gap-2">
             <span className="h-1 w-6 shrink-0 rounded-full bg-green-600/60" />

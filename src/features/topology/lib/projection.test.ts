@@ -100,4 +100,30 @@ describe('projectNodeMeta', () => {
     expect(out?.meta?.planName).toBe('Home 20')
     expect(out?.meta?.phone).toBe('0812')
   })
+
+  it('preserves billing lifecycle (a pass-through fact) through projection', () => {
+    const cust: NetworkNode = {
+      id: 'c2-node',
+      name: 'C2',
+      type: 'customer',
+      status: 'up',
+      lat: 0,
+      lng: 0,
+      parentId: 'pole-1',
+      meta: { customerId: 'c2', lifecycle: 'isolir' },
+    }
+    const strand: StrandAssignment = {
+      id: 'st-2',
+      cableId: 'cb-2',
+      tubeNo: 1,
+      coreNo: 3,
+      status: 'allocated',
+      circuitId: null,
+      customerId: 'c2',
+    }
+    const [out] = projectNodeMeta([cust], { splitters: [], strands: [strand] })
+    // coreNo is recomputed by the cabling layer, but lifecycle must survive.
+    expect(out?.meta?.coreNo).toBe(3)
+    expect(out?.meta?.lifecycle).toBe('isolir')
+  })
 })

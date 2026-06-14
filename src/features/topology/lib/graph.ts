@@ -30,6 +30,12 @@ export const STATUS_COLOR: Record<NodeStatus, string> = {
   unknown: '#d97706',
 }
 
+// Billing-suspended (isolir) / disconnected (berhenti) customers render slate —
+// distinct from green/red/amber so a tech reads "ditangguhkan, bukan gangguan"
+// (suspended, not a fault) at a glance. Network status stays the source of truth
+// for the chain; this only recolors the customer marker.
+export const SUSPEND_COLOR = '#475569'
+
 // Fiber core color code (TIA-598-C) — each core/strand in a cable has a distinct
 // color; one core feeds one customer. Beyond 12, the sequence repeats (striped).
 // Ref: TIA-598-C / FOA. Names in Indonesian for the UI.

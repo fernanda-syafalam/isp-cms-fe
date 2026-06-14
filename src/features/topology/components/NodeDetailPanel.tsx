@@ -25,7 +25,7 @@ import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { NetworkNode, NodeStatus } from '@/schemas/topology'
+import type { NetworkNode, NodeLifecycle, NodeStatus } from '@/schemas/topology'
 
 import {
   type LinkBudget,
@@ -43,6 +43,24 @@ const STATUS_TONE: Record<NodeStatus, StatusTone> = {
   up: 'success',
   down: 'danger',
   unknown: 'warning',
+}
+
+// Billing/service lifecycle, shown alongside (not instead of) the network
+// status: a tech must see "fiber up but isolir for non-payment" as two facts.
+const LIFECYCLE_LABEL: Record<NodeLifecycle, string> = {
+  prospek: 'Prospek',
+  instalasi: 'Instalasi',
+  aktif: 'Aktif',
+  isolir: 'Isolir',
+  berhenti: 'Berhenti',
+}
+
+const LIFECYCLE_TONE: Record<NodeLifecycle, StatusTone> = {
+  prospek: 'neutral',
+  instalasi: 'info',
+  aktif: 'success',
+  isolir: 'warning',
+  berhenti: 'neutral',
 }
 
 type Props = {
@@ -79,6 +97,7 @@ export function NodeDetailPanel({
   const customerCount = nodes.filter((n) => n.type === 'customer' && downstream.has(n.id)).length
   // Blast radius when this node is down: downstream customers + itself if it is one.
   const impacted = customerCount + (node.type === 'customer' ? 1 : 0)
+  const lifecycle = node.type === 'customer' ? node.meta?.lifecycle : undefined
 
   return (
     <Card>
@@ -88,6 +107,9 @@ export function NodeDetailPanel({
           <p className="mt-1 text-muted-foreground text-xs">{TYPE_LABEL[node.type]}</p>
         </div>
         <div className="flex items-center gap-1">
+          {lifecycle ? (
+            <StatusBadge tone={LIFECYCLE_TONE[lifecycle]} label={LIFECYCLE_LABEL[lifecycle]} />
+          ) : null}
           <StatusBadge tone={STATUS_TONE[node.status]} label={STATUS_LABEL[node.status]} />
           {showClose ? (
             <Button
