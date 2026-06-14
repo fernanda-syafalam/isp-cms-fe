@@ -5,7 +5,7 @@ import { SLA_HOURS } from '@/lib/sla'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { TicketEvent } from '@/schemas/ticket'
 
-import { allocateDrop, deriveCabling } from './cablingFixtures'
+import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -3533,6 +3533,18 @@ export const handlers = [
       })
     }
     const removed = TOPOLOGY_FIXTURES[idx]
+    // Cascade-free the cabling a node holds: a customer drop releases its
+    // splitter port + strand + drop cable + circuit; an ODC/ODP removes its
+    // splitter + closure. Keeps the projected capacity honest after a delete.
+    if (removed?.type === 'customer' && removed.meta?.customerId) {
+      freeDrop(CABLING_STORE, removed.meta.customerId, removed.id)
+    }
+    if (removed && (removed.type === 'odc' || removed.type === 'odp')) {
+      const si = SPLITTER_FIXTURES.findIndex((s) => s.nodeId === removed.id)
+      if (si !== -1) SPLITTER_FIXTURES.splice(si, 1)
+      const ci = CLOSURE_FIXTURES.findIndex((c) => c.nodeId === removed.id)
+      if (ci !== -1) CLOSURE_FIXTURES.splice(ci, 1)
+    }
     // Reparent any children up to the removed node's parent so the tree stays connected.
     if (removed) {
       for (const n of TOPOLOGY_FIXTURES) {
@@ -3543,6 +3555,39 @@ export const handlers = [
     persistDb()
     return new HttpResponse(null, { status: 204 })
   }),
+  http.get('*/api/cables', () =>
+    HttpResponse.json({ items: CABLE_FIXTURES, total: CABLE_FIXTURES.length }),
+  ),
+  http.get('*/api/strands', () =>
+    HttpResponse.json({
+      items: STRAND_FIXTURES,
+      total: STRAND_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/closures', () =>
+    HttpResponse.json({
+      items: CLOSURE_FIXTURES,
+      total: CLOSURE_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/splices', () =>
+    HttpResponse.json({
+      items: SPLICE_FIXTURES,
+      total: SPLICE_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/splitters', () =>
+    HttpResponse.json({
+      items: SPLITTER_FIXTURES,
+      total: SPLITTER_FIXTURES.length,
+    }),
+  ),
+  http.get('*/api/circuits', () =>
+    HttpResponse.json({
+      items: CIRCUIT_FIXTURES,
+      total: CIRCUIT_FIXTURES.length,
+    }),
+  ),
 
   // Settings (single record)
   http.get('*/api/settings', () => HttpResponse.json(SETTINGS_FIXTURE)),
