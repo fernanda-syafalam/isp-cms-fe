@@ -29,7 +29,10 @@ export function useUpdateNode() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateNodeInput }) => updateNode(id, input),
     onSuccess: () => {
+      // Moving or re-homing a node re-syncs drop-cable geometry and may reassign
+      // splitter ports, so refresh the cabling layer alongside the topology.
       qc.invalidateQueries({ queryKey: ['topology'] })
+      qc.invalidateQueries({ queryKey: ['cabling'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

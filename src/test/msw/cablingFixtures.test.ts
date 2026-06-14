@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { projectNodeMeta } from '@/features/topology/lib/projection'
 import type { NetworkNode } from '@/schemas/topology'
 
-import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
+import {
+  allocateDrop,
+  deriveCabling,
+  freeDrop,
+  rehomeCustomerDrop,
+  syncNodeGeometry,
+} from './cablingFixtures'
 
 // OLT → ODC → ODP → pole → {c1, c2}. Customers hang off the pole; the serving
 // ODP is the pole's parent (the nearest-ODP-ancestor case).
@@ -74,6 +80,12 @@ function odpFrom(nodes: NetworkNode[]): NetworkNode {
   return odp
 }
 
+function c1From(nodes: NetworkNode[]): NetworkNode {
+  const c1 = nodes.find((n) => n.id === 'c1-node')
+  if (!c1) throw new Error('fixture missing c1-node')
+  return c1
+}
+
 describe('deriveCabling', () => {
   it('builds a splitter per ODC/ODP and a drop strand + cable + circuit per customer', () => {
     const c = deriveCabling(network())
@@ -122,5 +134,93 @@ describe('deriveCabling', () => {
     expect(occupied()).toBe(2)
     expect(store.cables.some((c) => c.toNodeId === 'c3-node')).toBe(false)
     expect(store.circuits.some((c) => c.customerId === 'c3')).toBe(false)
+  })
+})
+
+describe('syncNodeGeometry', () => {
+  it('recomputes a moved customer drop cable route + length', () => {
+    const nodes = network()
+    const store = deriveCabling(nodes)
+    const cable = store.cables.find((c) => c.toNodeId === 'c1-node')
+    if (!cable) throw new Error('no drop cable for c1')
+    const before = cable.lengthM
+
+    // Drag the customer far away, then re-sync from the moved node.
+    const c1 = nodes.find((n) => n.id === 'c1-node')
+    if (!c1) throw new Error('no c1 node')
+    c1.lat = 0.09
+    c1.lng = 0.09
+    syncNodeGeometry(store, nodes, c1)
+
+    expect(cable.lengthM).not.toBe(before)
+    expect(cable.lengthM).toBeGreaterThan(before)
+    expect(cable.route.at(-1)).toEqual({ lat: 0.09, lng: 0.09 })
+  })
+})
+
+// OLT → ODC → {odp-1 (pole-1 → c1), odp-2}. Lets a customer re-home odp-1→odp-2.
+function twoOdpNetwork(): NetworkNode[] {
+  return [
+    ...network(),
+    {
+      id: 'odp-2',
+      name: 'ODP 2',
+      type: 'odp',
+      status: 'up',
+      lat: 0.05,
+      lng: 0.05,
+      parentId: 'odc-1',
+    },
+  ]
+}
+
+describe('rehomeCustomerDrop', () => {
+  const occupied = (store: ReturnType<typeof deriveCabling>, odpId: string): number =>
+    store.splitters.find((s) => s.nodeId === odpId)?.ports.filter((p) => p.outNodeId !== null)
+      .length ?? 0
+
+  it('moves a customer port from the old ODP to the new serving ODP', () => {
+    const nodes = twoOdpNetwork()
+    const store = deriveCabling(nodes)
+    expect(occupied(store, 'odp-1')).toBe(2)
+    expect(occupied(store, 'odp-2')).toBe(0)
+
+    // c1 now hangs directly off odp-2 (its new serving ODP).
+    const moved: NetworkNode = { ...c1From(nodes), parentId: 'odp-2' }
+    const res = rehomeCustomerDrop(store, nodes, moved, {})
+
+    expect(res.status).toBe('rehomed')
+    expect(occupied(store, 'odp-1')).toBe(1) // c1 released
+    expect(occupied(store, 'odp-2')).toBe(1) // c1 re-allocated
+    expect(
+      store.splitters.find((s) => s.nodeId === 'odp-2')?.ports.some((p) => p.customerId === 'c1'),
+    ).toBe(true)
+  })
+
+  it('is a no-op when the serving ODP is unchanged', () => {
+    const nodes = twoOdpNetwork()
+    const store = deriveCabling(nodes)
+    expect(rehomeCustomerDrop(store, nodes, c1From(nodes), {}).status).toBe('unchanged')
+  })
+
+  it('reports no-odp when the new uplink has no ODP ancestor', () => {
+    const nodes = twoOdpNetwork()
+    const store = deriveCabling(nodes)
+    const orphan: NetworkNode = { ...c1From(nodes), parentId: 'olt-1' }
+    expect(rehomeCustomerDrop(store, nodes, orphan, {}).status).toBe('no-odp')
+  })
+
+  it('reports full (no mutation) when the target ODP splitter is full', () => {
+    const nodes = twoOdpNetwork()
+    const store = deriveCabling(nodes)
+    // Fill every port of odp-2.
+    const sp2 = store.splitters.find((s) => s.nodeId === 'odp-2')
+    for (const p of sp2?.ports ?? []) p.outNodeId = 'x'
+    const before = occupied(store, 'odp-1')
+
+    const moved: NetworkNode = { ...c1From(nodes), parentId: 'odp-2' }
+    expect(rehomeCustomerDrop(store, nodes, moved, {}).status).toBe('full')
+    // old ODP untouched — the rejected rehome must not free the existing port
+    expect(occupied(store, 'odp-1')).toBe(before)
   })
 })

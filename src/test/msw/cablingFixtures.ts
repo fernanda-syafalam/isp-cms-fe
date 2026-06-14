@@ -223,6 +223,72 @@ export function freeDrop(store: CablingStore, customerId: string, customerNodeId
   spliceOut(store.circuits, (c) => c.customerId === customerId)
 }
 
+// Re-sync the geometry of every stored cable that touches `node`, after the node
+// was moved (dragged) on the map. Drop cables are straight runs, so the route is
+// just [from, to]; recompute it and the surveyed length from the current node
+// coordinates, keeping the physical layer and the link-budget distance honest.
+export function syncNodeGeometry(store: CablingStore, nodes: NetworkNode[], node: Point): void {
+  const byId = indexById(nodes)
+  for (const cable of store.cables) {
+    if (cable.fromNodeId !== node.id && cable.toNodeId !== node.id) continue
+    const from = byId.get(cable.fromNodeId)
+    const to = byId.get(cable.toNodeId)
+    if (!from || !to) continue
+    cable.route = [
+      { lat: from.lat, lng: from.lng },
+      { lat: to.lat, lng: to.lng },
+    ]
+    cable.lengthM = segmentMeters(from, to)
+  }
+}
+
+export type RehomeResult =
+  | { status: 'rehomed'; coreNo: number }
+  | { status: 'unchanged' }
+  | { status: 'no-odp' }
+  | { status: 'full' }
+
+// Re-home a customer's drop when its serving ODP changed (the technician edited
+// the uplink). Frees the port/strand/cable/circuit on the old ODP and allocates
+// a fresh one on the new serving ODP — keeping projected capacity correct on
+// BOTH ODPs. Returns 'full' (caller should reject, the new ODP has no free
+// port), 'unchanged' (same serving ODP), or 'no-odp' (no ODP ancestor) WITHOUT
+// mutating. The customer node passed in already carries its new parentId/coords.
+export function rehomeCustomerDrop(
+  store: CablingStore,
+  nodes: NetworkNode[],
+  customerNode: NetworkNode,
+  conn: {
+    ponPort?: string | null | undefined
+    onuSerial?: string | null | undefined
+  },
+): RehomeResult {
+  const customerId = customerNode.meta?.customerId
+  if (!customerId) return { status: 'unchanged' }
+  const newOdp = servingOdp(customerNode, indexById(nodes))
+  if (!newOdp) return { status: 'no-odp' }
+  const bound = store.splitters.find((s) => s.ports.some((p) => p.customerId === customerId))
+  if (bound?.nodeId === newOdp.id) return { status: 'unchanged' }
+  const target = store.splitters.find((s) => s.nodeId === newOdp.id)
+  if (!target?.ports.some((p) => p.outNodeId === null)) {
+    return { status: 'full' }
+  }
+  freeDrop(store, customerId, customerNode.id)
+  const drop = allocateDrop(
+    store,
+    nodes,
+    newOdp,
+    {
+      id: customerNode.id,
+      lat: customerNode.lat,
+      lng: customerNode.lng,
+      customerId,
+    },
+    conn,
+  )
+  return drop ? { status: 'rehomed', coreNo: drop.coreNo } : { status: 'full' }
+}
+
 function spliceOut<T>(arr: T[], match: (item: T) => boolean): void {
   for (let i = arr.length - 1; i >= 0; i--) {
     const item = arr[i]

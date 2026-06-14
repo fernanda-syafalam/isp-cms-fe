@@ -10,7 +10,13 @@ import type { TicketEvent } from '@/schemas/ticket'
 import type { NodeLifecycle } from '@/schemas/topology'
 import { CreateNodeSchema, UpdateNodeSchema } from '@/schemas/topology'
 
-import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
+import {
+  allocateDrop,
+  deriveCabling,
+  freeDrop,
+  rehomeCustomerDrop,
+  syncNodeGeometry,
+} from './cablingFixtures'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -3667,6 +3673,36 @@ export const handlers = [
       })
     }
     const body = UpdateNodeSchema.parse(await request.json())
+    const moved = body.lat !== undefined || body.lng !== undefined
+    const parentChanged = body.parentId !== undefined && body.parentId !== found.parentId
+
+    // A customer whose uplink changed may be re-homed to a different serving ODP.
+    // Validate capacity on the NEW ODP first (against a shadow node carrying the
+    // pending parent/coords) so a full target rejects WITHOUT mutating anything.
+    let rehomedCore: number | undefined
+    if (found.type === 'customer' && found.meta?.customerId && parentChanged) {
+      const customer = CUSTOMER_FIXTURES.find((c) => c.id === found.meta?.customerId)
+      const shadow = {
+        ...found,
+        parentId: body.parentId ?? found.parentId,
+        lat: body.lat ?? found.lat,
+        lng: body.lng ?? found.lng,
+      }
+      const res = rehomeCustomerDrop(CABLING_STORE, TOPOLOGY_FIXTURES, shadow, {
+        ponPort: customer?.connection?.ponPort,
+        onuSerial: customer?.connection?.onuSerial,
+      })
+      if (res.status === 'full') {
+        return new HttpResponse(
+          JSON.stringify({
+            message: 'Port splitter penuh di ODP tujuan. Pilih ODP lain.',
+          }),
+          { status: 409 },
+        )
+      }
+      if (res.status === 'rehomed') rehomedCore = res.coreNo
+    }
+
     if (body.name !== undefined) found.name = body.name
     if (body.type !== undefined) found.type = body.type
     if (body.status !== undefined) found.status = body.status
@@ -3680,9 +3716,15 @@ export const handlers = [
         ...(body.model !== undefined ? { model: body.model } : {}),
       }
     }
+    if (rehomedCore !== undefined) {
+      found.meta = { ...found.meta, coreNo: rehomedCore }
+    }
     if (body.splitterRatio && (found.type === 'odc' || found.type === 'odp')) {
       setSplitterRatio(found.id, body.splitterRatio)
     }
+    // Keep stored drop-cable geometry in step with a dragged node (its own drop,
+    // or — if an ODP/pole moved — every drop fed from it).
+    if (moved) syncNodeGeometry(CABLING_STORE, TOPOLOGY_FIXTURES, found)
     persistDb()
     return HttpResponse.json(found)
   }),
