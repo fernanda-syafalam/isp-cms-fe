@@ -12,6 +12,7 @@ import { useGeolocation } from '../hooks/useGeolocation'
 import { useTopology, useDeleteNode, useUpdateNode } from '../hooks/useTopology'
 import { useTopologyJobs } from '../hooks/useTopologyJobs'
 import { useTopologySearch } from '../hooks/useTopologySearch'
+import { localizeFaults } from '../lib/faults'
 import {
   buildForest,
   downstreamIds,
@@ -115,6 +116,9 @@ export function NetworkTopologyPage() {
   const visibleById = useMemo(() => indexById(visible), [visible])
   const forest = useMemo(() => buildForest(visible), [visible])
   const impactedCount = useMemo(() => impactedCustomerIds(all).size, [all])
+  // Probable outage roots correlated from the dark customers (the NOC's first
+  // question: where's the fault, not which ONUs are red).
+  const faults = useMemo(() => localizeFaults(all), [all])
   // Refit the map when the visible set changes (filters/base/my-jobs) — not on selection.
   const refitKey = `${typeFilter}:${statusFilter}:${base}:${myJobsOnly}`
 
@@ -336,12 +340,14 @@ export function NetworkTopologyPage() {
             editMode={editMode}
             distanceMeters={distanceMeters}
             nearestOdp={nearestOdp}
+            faults={faults}
             onClear={() => setSelectedId(null)}
             onEdit={() => {
               if (selected) setForm({ node: selected })
             }}
             onDelete={handleDelete}
             onPickNearest={handlePick}
+            onSelectFault={selectAndFly}
           />
         </aside>
       </div>

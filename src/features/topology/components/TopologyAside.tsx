@@ -8,7 +8,9 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { NetworkNode } from '@/schemas/topology'
 
+import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
+import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
 import { NodeDetailPanel } from './NodeDetailPanel'
 import { SplitterPorts } from './SplitterPorts'
@@ -21,10 +23,12 @@ type Props = {
   editMode: boolean
   distanceMeters?: number | undefined
   nearestOdp: { node: NetworkNode; meters: number } | null
+  faults: ProbableFault[]
   onClear: () => void
   onEdit: () => void
   onDelete: () => void
   onPickNearest: (node: NetworkNode) => void
+  onSelectFault: (id: string) => void
 }
 
 // The right-hand region. On desktop it's the side column (node detail, or the
@@ -39,13 +43,18 @@ export function TopologyAside({
   editMode,
   distanceMeters,
   nearestOdp,
+  faults,
   onClear,
   onEdit,
   onDelete,
   onPickNearest,
+  onSelectFault,
 }: Props) {
   const isMobile = useIsMobile()
   const legend = <TopologyLegend nearestOdp={nearestOdp} onPickNearest={onPickNearest} />
+  // Probable outage roots stay visible above everything else — even with a node
+  // selected — so an active fault is never out of sight in the field.
+  const faultCard = <FaultDiagnosis faults={faults} onSelect={onSelectFault} />
   // An ODC/ODP carries a splitter; show its per-port occupancy beside the panel.
   const splitters = useSplitters().data?.items
   const splitter =
@@ -57,6 +66,7 @@ export function TopologyAside({
   if (isMobile) {
     return (
       <>
+        {faultCard}
         {legend}
         <FiberReference />
         <Sheet open={selected !== null} onOpenChange={(open) => !open && onClear()}>
@@ -87,6 +97,7 @@ export function TopologyAside({
 
   return (
     <>
+      {faultCard}
       {selected ? (
         <NodeDetailPanel
           node={selected}
