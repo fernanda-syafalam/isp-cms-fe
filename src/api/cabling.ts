@@ -1,5 +1,12 @@
-import { type CableList, CableListSchema, type StrandList, StrandListSchema } from '@/schemas/cable'
+import {
+  type CableList,
+  CableListSchema,
+  type CustomerDropInput,
+  type StrandList,
+  StrandListSchema,
+} from '@/schemas/cable'
 import { type CircuitList, CircuitListSchema } from '@/schemas/circuit'
+import { type NetworkNode, NetworkNodeSchema } from '@/schemas/topology'
 import {
   type ClosureList,
   ClosureListSchema,
@@ -36,4 +43,9 @@ export async function listSplitters(): Promise<SplitterList> {
 
 export async function listCircuits(): Promise<CircuitList> {
   return CircuitListSchema.parse(await api.get('circuits').json())
+}
+
+// Provision a subscriber's drop on the target ODP; returns the new customer node.
+export async function installCustomerDrop(input: CustomerDropInput): Promise<NetworkNode> {
+  return NetworkNodeSchema.parse(await api.post('topology/customer-drop', { json: input }).json())
 }

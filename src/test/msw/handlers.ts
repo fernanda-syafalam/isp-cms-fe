@@ -1,8 +1,11 @@
 import { HttpResponse, http } from 'msw'
 
+import { ratioCount } from '@/features/topology/lib/graph'
 import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
+import { CustomerDropSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
+import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
 
 import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
@@ -3487,6 +3490,66 @@ export const handlers = [
     })
     return HttpResponse.json({ items, total: items.length })
   }),
+  // "Pasang pelanggan": provision a subscriber's drop atomically — validate
+  // first, then allocate the splitter port + drop cable + strand + circuit and
+  // push the customer node. Returns the new node (projected meta on next GET).
+  http.post('*/api/topology/customer-drop', async ({ request }) => {
+    const body = CustomerDropSchema.parse(await request.json())
+    const customer = CUSTOMER_FIXTURES.find((c) => c.id === body.customerId)
+    if (!customer) {
+      return new HttpResponse(JSON.stringify({ message: 'Pelanggan tidak ditemukan' }), {
+        status: 404,
+      })
+    }
+    const nodeId = `${customer.id}-node`
+    if (TOPOLOGY_FIXTURES.some((n) => n.id === nodeId)) {
+      return new HttpResponse(JSON.stringify({ message: 'Pelanggan sudah terpasang di peta' }), {
+        status: 409,
+      })
+    }
+    const odp = TOPOLOGY_FIXTURES.find((n) => n.id === body.odpId && n.type === 'odp')
+    if (!odp) {
+      return new HttpResponse(JSON.stringify({ message: 'ODP tidak ditemukan' }), { status: 404 })
+    }
+    const drop = allocateDrop(
+      CABLING_STORE,
+      TOPOLOGY_FIXTURES,
+      odp,
+      { id: nodeId, lat: body.lat, lng: body.lng, customerId: customer.id },
+      {
+        ponPort: customer.connection?.ponPort,
+        onuSerial: customer.connection?.onuSerial,
+      },
+    )
+    if (!drop) {
+      return new HttpResponse(JSON.stringify({ message: 'Port splitter penuh. Pilih ODP lain.' }), {
+        status: 409,
+      })
+    }
+    const node = {
+      id: nodeId,
+      name: customer.fullName,
+      type: 'customer' as const,
+      status: 'unknown' as const,
+      lat: body.lat,
+      lng: body.lng,
+      parentId: odp.id,
+      meta: {
+        customerId: customer.id,
+        planName: customer.planName,
+        coreNo: drop.coreNo,
+        ...(customer.connection?.onuSerial ? { onuSerial: customer.connection.onuSerial } : {}),
+        ...(customer.connection?.ponPort ? { ponPort: customer.connection.ponPort } : {}),
+        ...(customer.connection?.rxPower != null
+          ? { rxPowerDbm: customer.connection.rxPower }
+          : {}),
+        ...(customer.phone ? { phone: customer.phone } : {}),
+      },
+    }
+    TOPOLOGY_FIXTURES.push(node)
+    persistDb()
+    return HttpResponse.json(node, { status: 201 })
+  }),
   http.post('*/api/topology', async ({ request }) => {
     const body = (await request.json()) as {
       name: string
@@ -3498,6 +3561,24 @@ export const handlers = [
     }
     const node = { id: crypto.randomUUID(), ...body }
     TOPOLOGY_FIXTURES.push(node)
+    // A new ODC/ODP gets a splitter (+ derived capacity) so the projection has a
+    // source for its splitter/portsTotal/portsUsed.
+    if (node.type === 'odc' || node.type === 'odp') {
+      const ratio: SplitterRatio = node.type === 'odc' ? '1:4' : '1:8'
+      SPLITTER_FIXTURES.push({
+        id: `${node.id}-splitter`,
+        nodeId: node.id,
+        ratio,
+        inCableId: null,
+        inStrandId: null,
+        ports: Array.from({ length: ratioCount(ratio) }, (_, i) => ({
+          portNo: i + 1,
+          outNodeId: null,
+          customerId: null,
+          strandId: null,
+        })),
+      })
+    }
     persistDb()
     return HttpResponse.json(node, { status: 201 })
   }),

@@ -50,6 +50,17 @@ export const CreateCableSchema = CableSchema.omit({ id: true })
 export const UpdateCableSchema = CreateCableSchema.partial()
 export const CreateStrandSchema = StrandAssignmentSchema.omit({ id: true })
 
+// "Pasang pelanggan": provision a subscriber's drop onto a target ODP. The
+// server allocates the splitter port + drop cable + strand + circuit and returns
+// the created customer NetworkNode.
+export const CustomerDropSchema = z.object({
+  customerId: z.string().min(1),
+  odpId: z.string().min(1),
+  lat: z.number(),
+  lng: z.number(),
+})
+export type CustomerDropInput = z.infer<typeof CustomerDropSchema>
+
 export type LatLng = z.infer<typeof LatLngSchema>
 export type CableKind = z.infer<typeof CableKindSchema>
 export type CableStatus = z.infer<typeof CableStatusSchema>

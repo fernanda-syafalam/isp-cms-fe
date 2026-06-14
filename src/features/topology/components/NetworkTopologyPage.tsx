@@ -1,4 +1,4 @@
-import { BriefcaseIcon, ListTreeIcon, MapIcon, TriangleAlertIcon } from 'lucide-react'
+import { BriefcaseIcon, ListTreeIcon, MapIcon, PlusIcon, TriangleAlertIcon } from 'lucide-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
@@ -22,6 +22,7 @@ import {
   uplinkPath,
 } from '../lib/graph'
 import { LocateControl } from './LocateControl'
+import { InstallCustomerDialog } from './InstallCustomerDialog'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyAside } from './TopologyAside'
 import { TopologyControls } from './TopologyControls'
@@ -60,6 +61,7 @@ export function NetworkTopologyPage() {
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [geoEnabled, setGeoEnabled] = useState(false)
+  const [installOpen, setInstallOpen] = useState(false)
   const [myJobsOnly, setMyJobsOnly] = useState(false)
   // The node the map should fly to. Set when selecting from the list/tree (the
   // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
@@ -230,16 +232,26 @@ export function NetworkTopologyPage() {
       <TopologyControls {...controlsProps} />
       <TopologyFilterSheet {...controlsProps} />
 
-      {jobs.myCount > 0 ? (
-        <Button
-          variant={myJobsOnly ? 'default' : 'outline'}
-          size="sm"
-          className="h-9"
-          onClick={() => setMyJobsOnly((v) => !v)}
-        >
-          <BriefcaseIcon className="size-4" />
-          {myJobsOnly ? 'Tampilkan semua' : `Pekerjaan saya (${jobs.myCount})`}
-        </Button>
+      {jobs.myCount > 0 || canEdit ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {jobs.myCount > 0 ? (
+            <Button
+              variant={myJobsOnly ? 'default' : 'outline'}
+              size="sm"
+              className="h-9"
+              onClick={() => setMyJobsOnly((v) => !v)}
+            >
+              <BriefcaseIcon className="size-4" />
+              {myJobsOnly ? 'Tampilkan semua' : `Pekerjaan saya (${jobs.myCount})`}
+            </Button>
+          ) : null}
+          {canEdit ? (
+            <Button size="sm" className="h-9" onClick={() => setInstallOpen(true)}>
+              <PlusIcon className="size-4" />
+              Pasang pelanggan
+            </Button>
+          ) : null}
+        </div>
       ) : null}
 
       {isError ? (
@@ -342,6 +354,15 @@ export function NetworkTopologyPage() {
           }}
           nodes={all}
           {...('node' in form ? { node: form.node } : { latLng: form.latLng })}
+        />
+      ) : null}
+
+      {installOpen ? (
+        <InstallCustomerDialog
+          open
+          onOpenChange={setInstallOpen}
+          nodes={all}
+          onInstalled={handlePick}
         />
       ) : null}
     </div>
