@@ -40,10 +40,12 @@ function setup(selected: NetworkNode | null) {
       nodes={NODES}
       editMode={false}
       nearestOdp={null}
+      faults={[]}
       onClear={vi.fn()}
       onEdit={vi.fn()}
       onDelete={vi.fn()}
       onPickNearest={vi.fn()}
+      onSelectFault={vi.fn()}
     />,
   )
 }
