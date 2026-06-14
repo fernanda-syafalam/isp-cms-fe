@@ -43,4 +43,11 @@ describe('cableStyle', () => {
     expect(cableStyle(node('customer', 'up', 3), true, false).color).toBe('#2563eb')
     expect(cableStyle(node('customer', 'up', 3), false, true).opacity).toBeLessThan(0.2)
   })
+
+  it('paints the traced active circuit in the given fiber-core colour', () => {
+    const traced = cableStyle(node('odc', 'up'), true, false, fiberCore(3).hex)
+    expect(traced.color).toBe(fiberCore(3).hex)
+    // a non-active cable ignores the trace colour
+    expect(cableStyle(node('odc', 'up'), false, false, fiberCore(3).hex).color).toBe('#64748b')
+  })
 })

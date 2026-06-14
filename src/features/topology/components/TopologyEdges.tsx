@@ -21,13 +21,20 @@ type Props = {
   nodes: NetworkNode[]
   byId: Map<string, NetworkNode>
   activeIds: Set<string> | null
+  /** Fiber-core colour for the traced (active) circuit when a customer is selected. */
+  traceColor?: string | null
 }
 
 // The parent→child fiber segments. Each edge connects a node to its uplink; the
 // active uplink path (a selected node's trace to the OLT) is accented in blue,
 // everything else is dimmed. Memoized: the technician's live GPS position
 // changes often but never the edges, so this skips re-rendering on every fix.
-export const TopologyEdges = memo(function TopologyEdges({ nodes, byId, activeIds }: Props) {
+export const TopologyEdges = memo(function TopologyEdges({
+  nodes,
+  byId,
+  activeIds,
+  traceColor,
+}: Props) {
   return (
     <>
       {nodes.map((node) => {
@@ -44,7 +51,7 @@ export const TopologyEdges = memo(function TopologyEdges({ nodes, byId, activeId
               [parent.lat, parent.lng],
             ]}
             pathOptions={{
-              color: active ? ACCENT : edgeColor(node),
+              color: active ? (traceColor ?? ACCENT) : edgeColor(node),
               weight: active ? 3 : node.status === 'down' ? 2.5 : 1.6,
               opacity: dim
                 ? 0.12

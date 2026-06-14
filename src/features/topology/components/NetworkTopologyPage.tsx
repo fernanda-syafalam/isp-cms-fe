@@ -31,6 +31,7 @@ import {
   nearestFreeOdp,
   nodeSearchText,
   segmentMeters,
+  traceCircuit,
   uplinkPath,
 } from '../lib/graph'
 import { LocateControl } from './LocateControl'
@@ -149,6 +150,13 @@ export function NetworkTopologyPage() {
     for (const id of downstreamIds(selected.id, all)) ids.add(id)
     return ids
   }, [selected, byId, all])
+
+  // Trace the selected customer's circuit: its uplink path lights up in the
+  // fiber-core colour (null for infra → plain accent).
+  const traceColor = useMemo(
+    () => (selected ? traceCircuit(selected, byId).coreHex : null),
+    [selected, byId],
+  )
 
   // Distance from the technician to the selected node (straight line).
   const distanceMeters =
@@ -324,6 +332,7 @@ export function NetworkTopologyPage() {
                 layer={layer}
                 selectedId={selectedId}
                 activeIds={activeIds}
+                traceColor={traceColor}
                 highlightIds={highlightIds}
                 jobNodeIds={jobNodeIds}
                 flyToTarget={flyToTarget}
