@@ -94,6 +94,9 @@ describe('deriveCabling', () => {
     expect(c.cables).toHaveLength(2)
     expect(c.circuits).toHaveLength(2)
     expect(c.closures).toHaveLength(2)
+    expect(c.splices).toHaveLength(2) // one fusion splice per customer drop
+    // each splice lives in its serving ODP's closure and joins to the drop core
+    expect(c.splices.every((s) => s.closureId === 'odp-1-closure')).toBe(true)
   })
 
   it('projected portsUsed equals the real downstream count (occupancy invariant)', () => {
@@ -129,11 +132,13 @@ describe('deriveCabling', () => {
     expect(result?.coreNo).toBe(3)
     expect(occupied()).toBe(3)
     expect(store.cables.some((c) => c.toNodeId === 'c3-node')).toBe(true)
+    expect(store.splices).toHaveLength(3) // a splice was added for the new drop
 
     freeDrop(store, 'c3', 'c3-node')
     expect(occupied()).toBe(2)
     expect(store.cables.some((c) => c.toNodeId === 'c3-node')).toBe(false)
     expect(store.circuits.some((c) => c.customerId === 'c3')).toBe(false)
+    expect(store.splices).toHaveLength(2) // and removed on free
   })
 })
 

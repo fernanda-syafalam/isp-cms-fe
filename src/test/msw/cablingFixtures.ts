@@ -14,7 +14,7 @@ import {
 } from '@/features/topology/lib/graph'
 import type { Cable, StrandAssignment } from '@/schemas/cable'
 import type { Circuit } from '@/schemas/circuit'
-import type { Closure } from '@/schemas/closure'
+import type { Closure, Splice } from '@/schemas/closure'
 import type { Splitter, SplitterRatio } from '@/schemas/splitter'
 import type { NetworkNode } from '@/schemas/topology'
 
@@ -25,8 +25,27 @@ export type CablingStore = {
   strands: StrandAssignment[]
   splitters: Splitter[]
   closures: Closure[]
-  splices: never[] // splice fixtures are a deferred OSP phase (schema exists)
+  splices: Splice[]
   circuits: Circuit[]
+}
+
+// A fusion splice inside an ODP closure joining the (logical) distribution feed
+// to a customer's drop strand. The feeder/distribution cable isn't stored (it's
+// rendered from the parentId edges, see ADR-0005), so the in-side references it
+// by a derived id; the out-side is the real drop strand.
+function dropSplice(odp: NetworkNode, strand: StrandAssignment): Splice {
+  return {
+    id: `${strand.id}-splice`,
+    closureId: `${odp.id}-closure`,
+    inCableId: `${odp.id}-feeder`,
+    inTubeNo: 1,
+    inCoreNo: ((strand.coreNo - 1) % 12) + 1,
+    outCableId: strand.cableId,
+    outTubeNo: strand.tubeNo,
+    outCoreNo: strand.coreNo,
+    type: 'fusion',
+    lossDb: 0.1,
+  }
 }
 
 const splitterRatioFor = (type: NetworkNode['type']): SplitterRatio =>
@@ -66,6 +85,7 @@ export function deriveCabling(nodes: NetworkNode[]): CablingStore {
   const closures: Closure[] = []
   const cables: Cable[] = []
   const strands: StrandAssignment[] = []
+  const splices: Splice[] = []
   const circuits: Circuit[] = []
 
   // A splitter + closure on every ODC (1:4) and ODP (1:8).
@@ -121,7 +141,7 @@ export function deriveCabling(nodes: NetworkNode[]): CablingStore {
     const strandId = `${n.id}-strand`
     const circuitId = `${customerId}-circuit`
     cables.push(dropCable(odp, n, cableId, n.status === 'unknown'))
-    strands.push({
+    const strand: StrandAssignment = {
       id: strandId,
       cableId,
       tubeNo: fid.tubeNo,
@@ -129,7 +149,9 @@ export function deriveCabling(nodes: NetworkNode[]): CablingStore {
       status: n.status === 'down' ? 'dead' : 'allocated',
       circuitId,
       customerId,
-    })
+    }
+    strands.push(strand)
+    splices.push(dropSplice(odp, strand))
     circuits.push({
       id: circuitId,
       customerId,
@@ -144,7 +166,7 @@ export function deriveCabling(nodes: NetworkNode[]): CablingStore {
     port.strandId = strandId
   }
 
-  return { cables, strands, splitters, closures, splices: [], circuits }
+  return { cables, strands, splitters, closures, splices, circuits }
 }
 
 const uuid = (): string =>
@@ -181,7 +203,7 @@ export function allocateDrop(
   const strandId = uuid()
   const circuitId = uuid()
   store.cables.push(dropCable(odp, customer, cableId, false))
-  store.strands.push({
+  const strand: StrandAssignment = {
     id: strandId,
     cableId,
     tubeNo: 1,
@@ -189,7 +211,9 @@ export function allocateDrop(
     status: 'allocated',
     circuitId,
     customerId: customer.customerId,
-  })
+  }
+  store.strands.push(strand)
+  store.splices.push(dropSplice(odp, strand))
   store.circuits.push({
     id: circuitId,
     customerId: customer.customerId,
@@ -218,6 +242,12 @@ export function freeDrop(store: CablingStore, customerId: string, customerNodeId
       }
     }
   }
+  // Drop the customer's splices (matched via their drop-strand cable) before the
+  // strands/cables they reference are removed.
+  const dropCableIds = new Set(
+    store.strands.filter((s) => s.customerId === customerId).map((s) => s.cableId),
+  )
+  spliceOut(store.splices, (sp) => dropCableIds.has(sp.outCableId))
   spliceOut(store.cables, (c) => c.toNodeId === customerNodeId)
   spliceOut(store.strands, (s) => s.customerId === customerId)
   spliceOut(store.circuits, (c) => c.customerId === customerId)
