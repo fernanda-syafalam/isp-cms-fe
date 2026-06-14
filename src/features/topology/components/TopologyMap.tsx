@@ -31,6 +31,8 @@ type Props = {
   layer: TopologyLayer
   selectedId: string | null
   activeIds: Set<string> | null
+  /** Core colour of the selected customer's circuit (null otherwise). */
+  traceColor: string | null
   highlightIds: Set<string>
   jobNodeIds: Set<string>
   flyToTarget: NetworkNode | null
@@ -82,6 +84,7 @@ export function TopologyMap({
   layer,
   selectedId,
   activeIds,
+  traceColor,
   highlightIds,
   jobNodeIds,
   flyToTarget,
@@ -104,9 +107,9 @@ export function TopologyMap({
       <MapClick enabled={addMode} onClick={onMapClick} />
       <FlyTo target={flyToTarget} />
       {layer === 'physical' ? (
-        <CableLayer nodes={nodes} byId={byId} activeIds={activeIds} />
+        <CableLayer nodes={nodes} byId={byId} activeIds={activeIds} traceColor={traceColor} />
       ) : (
-        <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} />
+        <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} traceColor={traceColor} />
       )}
       <TopologyMarkers
         nodes={nodes}

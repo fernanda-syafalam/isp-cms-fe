@@ -313,6 +313,19 @@ export function uplinkPath(start: NetworkNode, byId: Map<string, NetworkNode>): 
   return path
 }
 
+export type CircuitTrace = { pathIds: Set<string>; coreHex: string | null }
+
+// Trace a customer's end-to-end circuit: the node ids along its uplink (the
+// physical path customer→ODP→ODC→OLT) plus the TIA-598 colour of the fiber core
+// that serves it. `coreHex` is null for a non-customer (or a customer with no
+// assigned core), so the caller falls back to the plain selection accent.
+export function traceCircuit(node: NetworkNode, byId: Map<string, NetworkNode>): CircuitTrace {
+  const pathIds = new Set(uplinkPath(node, byId).map((n) => n.id))
+  const coreHex =
+    node.type === 'customer' && node.meta?.coreNo ? fiberCore(node.meta.coreNo).hex : null
+  return { pathIds, coreHex }
+}
+
 // All descendants of a node (its downstream subtree), by parentId links.
 export function downstreamIds(rootId: string, nodes: NetworkNode[]): Set<string> {
   const childrenOf = new Map<string, string[]>()

@@ -31,11 +31,14 @@ export function cableStyle(
   node: NetworkNode,
   active: boolean,
   dim: boolean,
+  traceColor?: string | null,
 ): { color: string; weight: number; opacity: number } {
   const tier = tierOf(node)
   const weight = active ? 5 : tier === 'feeder' ? 4.5 : tier === 'distribution' ? 3 : 1.8
   let color = CABLE_COLOR
-  if (active) color = ACCENT
+  // When tracing a selected customer's circuit, the active path takes the fiber
+  // core colour instead of the generic accent.
+  if (active) color = traceColor ?? ACCENT
   else if (tier === 'drop') {
     color =
       node.status === 'down'
@@ -52,12 +55,14 @@ type Props = {
   nodes: NetworkNode[]
   byId: Map<string, NetworkNode>
   activeIds: Set<string> | null
+  /** Fiber-core colour to paint the traced (active) circuit, when a customer is selected. */
+  traceColor?: string | null
 }
 
 // The physical cabling view: every parent→child edge drawn as a tier-styled
 // cable with a length tooltip. Replaces the logical TopologyEdges when the
 // "Fisik" layer is active. Memoized so GPS/position updates don't rebuild it.
-export const CableLayer = memo(function CableLayer({ nodes, byId, activeIds }: Props) {
+export const CableLayer = memo(function CableLayer({ nodes, byId, activeIds, traceColor }: Props) {
   return (
     <>
       {nodes.map((node) => {
@@ -73,7 +78,7 @@ export const CableLayer = memo(function CableLayer({ nodes, byId, activeIds }: P
               [node.lat, node.lng],
               [parent.lat, parent.lng],
             ]}
-            pathOptions={cableStyle(node, active, dim)}
+            pathOptions={cableStyle(node, active, dim, traceColor)}
           >
             <Tooltip>
               {TIER_LABEL[tierOf(node)]} · {parent.name} → {node.name}

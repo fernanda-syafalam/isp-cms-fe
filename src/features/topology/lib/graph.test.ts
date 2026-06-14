@@ -18,6 +18,7 @@ import {
   ratioCount,
   rxHealth,
   segmentMeters,
+  traceCircuit,
   uplinkPath,
 } from './graph'
 
@@ -176,6 +177,27 @@ describe('uplinkPath', () => {
       'odc-1',
       'olt-1',
     ])
+  })
+})
+
+describe('traceCircuit', () => {
+  it("traces a customer's path + its core colour", () => {
+    const nodes = sampleNetwork()
+    const byId = indexById(nodes)
+    const cust = byId.get('cust-1')
+    if (!cust) throw new Error('fixture missing cust-1')
+    const trace = traceCircuit(cust, byId)
+    expect([...trace.pathIds].sort()).toEqual(['cust-1', 'odc-1', 'odp-1', 'olt-1', 'pole-1'])
+    // cust-1 has coreNo 1 → TIA-598 "Biru".
+    expect(trace.coreHex).toBe('#2563eb')
+  })
+
+  it('has no core colour for an infra node (plain accent)', () => {
+    const nodes = sampleNetwork()
+    const byId = indexById(nodes)
+    const odp = byId.get('odp-1')
+    if (!odp) throw new Error('fixture missing odp-1')
+    expect(traceCircuit(odp, byId).coreHex).toBeNull()
   })
 })
 
