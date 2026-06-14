@@ -1,10 +1,10 @@
 import { HttpResponse, http } from 'msw'
 
-import { ratioCount } from '@/features/topology/lib/graph'
+import { ratioCount, routeLength } from '@/features/topology/lib/graph'
 import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
-import { CustomerDropSchema } from '@/schemas/cable'
+import { CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
@@ -3815,6 +3815,20 @@ export const handlers = [
   http.get('*/api/cables', () =>
     HttpResponse.json({ items: CABLE_FIXTURES, total: CABLE_FIXTURES.length }),
   ),
+  // Replace a cable's surveyed route; recompute lengthM from the polyline.
+  http.patch('*/api/cables/:id', async ({ params, request }) => {
+    const cable = CABLE_FIXTURES.find((c) => c.id === params.id)
+    if (!cable) {
+      return new HttpResponse(JSON.stringify({ message: 'Kabel tidak ditemukan' }), {
+        status: 404,
+      })
+    }
+    const body = UpdateCableRouteSchema.parse(await request.json())
+    cable.route = body.route
+    cable.lengthM = routeLength(body.route)
+    persistDb()
+    return HttpResponse.json(cable)
+  }),
   http.get('*/api/strands', () =>
     HttpResponse.json({
       items: STRAND_FIXTURES,

@@ -8,6 +8,7 @@ import type { NetworkNode } from '@/schemas/topology'
 import type { GeoPosition } from '../hooks/useGeolocation'
 import type { TopologyLayer } from '../hooks/useTopologySearch'
 import { CableLayer } from './CableLayer'
+import { DropRouteLayer } from './DropRouteLayer'
 import { FlyTo } from './FlyTo'
 import { TopologyEdges } from './TopologyEdges'
 import { TopologyMarkers } from './TopologyMarkers'
@@ -30,6 +31,8 @@ type Props = {
   base: 'map' | 'satellite'
   layer: TopologyLayer
   selectedId: string | null
+  /** The selected node (for the drop-route overlay); null when nothing selected. */
+  selectedNode: NetworkNode | null
   activeIds: Set<string> | null
   /** Core colour of the selected customer's circuit (null otherwise). */
   traceColor: string | null
@@ -83,6 +86,7 @@ export function TopologyMap({
   base,
   layer,
   selectedId,
+  selectedNode,
   activeIds,
   traceColor,
   highlightIds,
@@ -111,6 +115,7 @@ export function TopologyMap({
       ) : (
         <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} traceColor={traceColor} />
       )}
+      <DropRouteLayer selected={selectedNode} editMode={editMode} />
       <TopologyMarkers
         nodes={nodes}
         selectedId={selectedId}

@@ -331,6 +331,7 @@ export function NetworkTopologyPage() {
                 base={base}
                 layer={layer}
                 selectedId={selectedId}
+                selectedNode={selected}
                 activeIds={activeIds}
                 traceColor={traceColor}
                 highlightIds={highlightIds}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { installCustomerDrop, listSplitters } from './cabling'
+import { installCustomerDrop, listCables, listSplitters, updateCableRoute } from './cabling'
 import { listCustomers } from './customers'
 import { createNode, deleteNode, listTopology, updateNode } from './topology'
 
@@ -159,5 +159,29 @@ describe('infra node provisioning (form directives)', () => {
     const updated = (await listTopology()).items.find((n) => n.id === node.id)
     expect(updated?.meta?.ipAddress).toBe('10.1.1.1')
     expect(updated?.meta?.model).toBe('ZTE C320')
+  })
+})
+
+describe('cable route update', () => {
+  it("replaces a cable's route and recomputes its length", async () => {
+    const cable = (await listCables()).items[0]
+    if (!cable) throw new Error('seed has no cables')
+    const [from] = cable.route
+    const to = cable.route.at(-1)
+    if (!from || !to) throw new Error('cable has no endpoints')
+    // add a bend between the endpoints — the routed length must exceed straight.
+    const bend = {
+      lat: (from.lat + to.lat) / 2 + 0.01,
+      lng: (from.lng + to.lng) / 2 + 0.01,
+    }
+
+    const updated = await updateCableRoute(cable.id, {
+      route: [from, bend, to],
+    })
+    expect(updated.route).toHaveLength(3)
+    expect(updated.lengthM).toBeGreaterThan(cable.lengthM)
+
+    const persisted = (await listCables()).items.find((c) => c.id === cable.id)
+    expect(persisted?.route).toHaveLength(3)
   })
 })

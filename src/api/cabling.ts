@@ -1,9 +1,12 @@
 import {
+  type Cable,
   type CableList,
   CableListSchema,
+  CableSchema,
   type CustomerDropInput,
   type StrandList,
   StrandListSchema,
+  type UpdateCableRouteInput,
 } from '@/schemas/cable'
 import { type CircuitList, CircuitListSchema } from '@/schemas/circuit'
 import { type NetworkNode, NetworkNodeSchema } from '@/schemas/topology'
@@ -48,4 +51,9 @@ export async function listCircuits(): Promise<CircuitList> {
 // Provision a subscriber's drop on the target ODP; returns the new customer node.
 export async function installCustomerDrop(input: CustomerDropInput): Promise<NetworkNode> {
   return NetworkNodeSchema.parse(await api.post('topology/customer-drop', { json: input }).json())
+}
+
+// Replace a cable's surveyed route; the server recomputes lengthM.
+export async function updateCableRoute(id: string, input: UpdateCableRouteInput): Promise<Cable> {
+  return CableSchema.parse(await api.patch(`cables/${id}`, { json: input }).json())
 }

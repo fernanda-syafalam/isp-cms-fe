@@ -50,6 +50,13 @@ export const CreateCableSchema = CableSchema.omit({ id: true })
 export const UpdateCableSchema = CreateCableSchema.partial()
 export const CreateStrandSchema = StrandAssignmentSchema.omit({ id: true })
 
+// Replace a cable's surveyed route (the polyline waypoints). The server
+// recomputes lengthM from the route. At least the two endpoints are required.
+export const UpdateCableRouteSchema = z.object({
+  route: z.array(LatLngSchema).min(2),
+})
+export type UpdateCableRouteInput = z.infer<typeof UpdateCableRouteSchema>
+
 // "Pasang pelanggan": provision a subscriber's drop onto a target ODP. The
 // server allocates the splitter port + drop cable + strand + circuit and returns
 // the created customer NetworkNode.
