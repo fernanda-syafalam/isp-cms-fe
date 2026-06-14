@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/command'
 import type { NetworkNode } from '@/schemas/topology'
 
-import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL } from '../lib/graph'
+import { STATUS_COLOR, STATUS_LABEL, TYPE_LABEL, matchedField, nodeSearchText } from '../lib/graph'
 
 const MAX_RESULTS = 8
 
@@ -25,13 +25,12 @@ type Props = {
 // Search box that actually takes you somewhere: typing filters the network and
 // shows a results dropdown; picking a result selects the node and flies the map
 // to it (see NetworkTopologyPage.onPick). cmdk gives keyboard nav (↑/↓/Enter)
-// and combobox semantics for free; we filter ourselves (name + id substring).
+// and combobox semantics for free; we filter ourselves over a shared haystack
+// (name + id + customer phone / ONU serial / IP / PON / plan).
 export function TopologySearchBox({ nodes, query, onQueryChange, onPick }: Props) {
   const [open, setOpen] = useState(false)
   const q = query.trim().toLowerCase()
-  const matches = q
-    ? nodes.filter((n) => `${n.name} ${n.id}`.toLowerCase().includes(q)).slice(0, MAX_RESULTS)
-    : []
+  const matches = q ? nodes.filter((n) => nodeSearchText(n).includes(q)).slice(0, MAX_RESULTS) : []
   const showList = open && q.length > 0
 
   return (
@@ -40,7 +39,7 @@ export function TopologySearchBox({ nodes, query, onQueryChange, onPick }: Props
         <CommandInput
           value={query}
           onValueChange={onQueryChange}
-          placeholder="Cari nama / ID node…"
+          placeholder="Cari nama, telepon, ONU, IP…"
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
         />
@@ -53,26 +52,34 @@ export function TopologySearchBox({ nodes, query, onQueryChange, onPick }: Props
           >
             <CommandEmpty>Tidak ada node yang cocok.</CommandEmpty>
             <CommandGroup>
-              {matches.map((n) => (
-                <CommandItem
-                  key={n.id}
-                  value={n.id}
-                  onSelect={() => {
-                    onPick(n)
-                    setOpen(false)
-                  }}
-                >
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ background: STATUS_COLOR[n.status] }}
-                    aria-hidden
-                  />
-                  <span className="truncate">{n.name}</span>
-                  <span className="ml-auto shrink-0 text-muted-foreground text-xs">
-                    {TYPE_LABEL[n.type]} · {STATUS_LABEL[n.status]}
-                  </span>
-                </CommandItem>
-              ))}
+              {matches.map((n) => {
+                const hint = matchedField(n, q)
+                return (
+                  <CommandItem
+                    key={n.id}
+                    value={n.id}
+                    onSelect={() => {
+                      onPick(n)
+                      setOpen(false)
+                    }}
+                  >
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ background: STATUS_COLOR[n.status] }}
+                      aria-hidden
+                    />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate">{n.name}</span>
+                      {hint ? (
+                        <span className="truncate text-[11px] text-muted-foreground">{hint}</span>
+                      ) : null}
+                    </span>
+                    <span className="ml-auto shrink-0 text-muted-foreground text-xs">
+                      {TYPE_LABEL[n.type]} · {STATUS_LABEL[n.status]}
+                    </span>
+                  </CommandItem>
+                )
+              })}
             </CommandGroup>
           </CommandList>
         ) : null}

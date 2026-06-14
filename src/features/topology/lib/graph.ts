@@ -106,6 +106,46 @@ export function formatLength(meters: number): string {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`
 }
 
+// Lowercased haystack for searching a node: its name + id plus the meta facts a
+// technician is likely to have in hand — the customer's phone or ONU serial off
+// a support call, an OLT/ODC IP, the PON port, the plan. So "find this customer"
+// works from whatever identifier is at hand, not just the node name.
+export function nodeSearchText(n: NetworkNode): string {
+  const m = n.meta
+  return [
+    n.name,
+    n.id,
+    m?.phone,
+    m?.onuSerial,
+    m?.ipAddress,
+    m?.ponPort,
+    m?.planName,
+    m?.customerId,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+// Why a node matched a query (for the result subtitle): the first meta field
+// whose value contains the query, labelled. Null when it matched only the name.
+export function matchedField(n: NetworkNode, query: string): string | null {
+  const q = query.trim().toLowerCase()
+  if (!q) return null
+  const m = n.meta
+  const fields: Array<[string, string | undefined]> = [
+    ['Telepon', m?.phone],
+    ['ONU', m?.onuSerial],
+    ['IP', m?.ipAddress],
+    ['PON', m?.ponPort],
+    ['Paket', m?.planName],
+  ]
+  for (const [label, value] of fields) {
+    if (value?.toLowerCase().includes(q)) return `${label}: ${value}`
+  }
+  return null
+}
+
 // Nearest ODP that still has a free port, by straight-line distance from a
 // point (the technician's location). The answer to "where can I hook up this
 // new customer from here?" — returns null if every ODP is full or none exist.
