@@ -12,6 +12,7 @@ import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
 import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
+import { MaintenanceButton } from './MaintenanceButton'
 import { NodeDetailPanel } from './NodeDetailPanel'
 import { NodeHistory } from './NodeHistory'
 import { SplitterPorts } from './SplitterPorts'
@@ -22,6 +23,7 @@ type Props = {
   byId: Map<string, NetworkNode>
   nodes: NetworkNode[]
   editMode: boolean
+  canManage: boolean
   distanceMeters?: number | undefined
   nearestOdp: { node: NetworkNode; meters: number } | null
   faults: ProbableFault[]
@@ -42,6 +44,7 @@ export function TopologyAside({
   byId,
   nodes,
   editMode,
+  canManage,
   distanceMeters,
   nearestOdp,
   faults,
@@ -90,7 +93,12 @@ export function TopologyAside({
               />
             ) : null}
             {selected ? (
-              <div className="space-y-4 px-0 pb-4">
+              <div className="space-y-4 pb-4">
+                {canManage ? (
+                  <div className="px-4">
+                    <MaintenanceButton node={selected} />
+                  </div>
+                ) : null}
                 {splitterCard}
                 <NodeHistory nodeId={selected.id} />
               </div>
@@ -118,6 +126,7 @@ export function TopologyAside({
       ) : (
         legend
       )}
+      {selected && canManage ? <MaintenanceButton node={selected} /> : null}
       {selected ? splitterCard : null}
       {selected ? <NodeHistory nodeId={selected.id} /> : null}
       <FiberReference />

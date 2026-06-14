@@ -36,6 +36,11 @@ export const STATUS_COLOR: Record<NodeStatus, string> = {
 // for the chain; this only recolors the customer marker.
 export const SUSPEND_COLOR = '#475569'
 
+// Nodes under planned maintenance render sky-blue — "kerja terjadwal, bukan
+// gangguan" — so planned work is never mistaken for an outage. Overrides the
+// status/suspend color on the marker.
+export const MAINTENANCE_COLOR = '#0ea5e9'
+
 // Fiber core color code (TIA-598-C) — each core/strand in a cable has a distinct
 // color; one core feeds one customer. Beyond 12, the sequence repeats (striped).
 // Ref: TIA-598-C / FOA. Names in Indonesian for the UI.

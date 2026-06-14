@@ -478,6 +478,7 @@ const TOPOLOGY_FIXTURES = (() => {
       planName?: string
       coreNo?: number
       lifecycle?: NodeLifecycle
+      maintenance?: boolean
     }
   }
   const nodes: TopoNode[] = []
@@ -3738,6 +3739,9 @@ export const handlers = [
         ...(body.model !== undefined ? { model: body.model } : {}),
       }
     }
+    if (body.maintenance !== undefined) {
+      found.meta = { ...found.meta, maintenance: body.maintenance }
+    }
     if (rehomedCore !== undefined) {
       found.meta = { ...found.meta, coreNo: rehomedCore }
     }
@@ -3747,14 +3751,25 @@ export const handlers = [
     // Keep stored drop-cable geometry in step with a dragged node (its own drop,
     // or — if an ODP/pole moved — every drop fed from it).
     if (moved) syncNodeGeometry(CABLING_STORE, TOPOLOGY_FIXTURES, found)
-    // Note the most significant change for the trail: re-home > move > generic.
+    // Note the most significant change for the trail: maintenance > re-home >
+    // move > generic.
     const change =
-      rehomedCore !== undefined || parentChanged
-        ? 'uplink dipindah'
-        : moved
-          ? 'lokasi digeser'
-          : 'diperbarui'
-    recordAudit('topology.update', 'Topologi', `Node "${found.name}" ${change}`, 'Admin', found.id)
+      body.maintenance !== undefined
+        ? body.maintenance
+          ? 'ditandai pemeliharaan'
+          : 'selesai pemeliharaan'
+        : rehomedCore !== undefined || parentChanged
+          ? 'uplink dipindah'
+          : moved
+            ? 'lokasi digeser'
+            : 'diperbarui'
+    recordAudit(
+      body.maintenance !== undefined ? 'topology.maintenance' : 'topology.update',
+      'Topologi',
+      `Node "${found.name}" ${change}`,
+      'Admin',
+      found.id,
+    )
     persistDb()
     return HttpResponse.json(found)
   }),
