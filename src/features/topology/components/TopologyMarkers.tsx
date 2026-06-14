@@ -1,9 +1,10 @@
 import L from 'leaflet'
-import { memo } from 'react'
-import { Marker, Tooltip } from 'react-leaflet'
+import { memo, useState } from 'react'
+import { Marker, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 
 import type { NetworkNode } from '@/schemas/topology'
 
+import { clusterCellDeg, clusterPoints } from '../lib/cluster'
 import {
   MAINTENANCE_COLOR,
   STATUS_COLOR,
@@ -84,6 +85,19 @@ function nodeIcon(
   })
 }
 
+// Cluster bubble for a group of nearby customers (zoomed out). Red when any
+// member is down, so an outage stays visible even when collapsed.
+function clusterIcon(count: number, hasDown: boolean): L.DivIcon {
+  const size = count >= 50 ? 40 : count >= 10 ? 34 : 28
+  const bg = hasDown ? '#dc2626' : '#2563eb'
+  return L.divIcon({
+    className: 'topology-cluster',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<span style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:9999px;background:${bg}e0;border:2px solid #fff;color:#fff;font-size:12px;font-weight:600;box-shadow:0 0 3px rgba(0,0,0,.5)">${count}</span>`,
+  })
+}
+
 type Props = {
   nodes: NetworkNode[]
   selectedId: string | null
@@ -110,58 +124,96 @@ export const TopologyMarkers = memo(function TopologyMarkers({
   onSelect,
   onMove,
 }: Props) {
+  const map = useMap()
+  const [zoom, setZoom] = useState(() => map.getZoom())
+  useMapEvents({ zoomend: () => setZoom(map.getZoom()) })
+
+  const renderMarker = (node: NetworkNode) => {
+    const dim = activeIds !== null && !activeIds.has(node.id)
+    const ring = node.id === selectedId || highlightIds.has(node.id)
+    const lifecycle = node.meta?.lifecycle
+    const suspended =
+      node.type === 'customer' && (lifecycle === 'isolir' || lifecycle === 'berhenti')
+    const maintenance = node.meta?.maintenance === true
+    return (
+      <Marker
+        key={node.id}
+        position={[node.lat, node.lng]}
+        icon={nodeIcon(
+          node,
+          ring,
+          dim,
+          capacityColor(node),
+          jobNodeIds.has(node.id),
+          suspended,
+          maintenance,
+        )}
+        draggable={editMode}
+        eventHandlers={{
+          click: () => onSelect(node.id),
+          dragend: (e) => {
+            const ll = e.target.getLatLng()
+            onMove(node.id, ll.lat, ll.lng)
+          },
+        }}
+      >
+        <Tooltip>
+          <span className="font-medium">{node.name}</span>
+          {' · '}
+          {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
+          {maintenance ? <span className="text-[11px] opacity-80"> · Pemeliharaan</span> : null}
+          {lifecycle && lifecycle !== 'aktif' ? (
+            <span className="text-[11px] opacity-80">
+              {' · '}
+              {LIFECYCLE_LABEL[lifecycle] ?? lifecycle}
+            </span>
+          ) : null}
+          {tooltipMeta(node) ? (
+            <>
+              <br />
+              <span className="text-[11px] opacity-80">{tooltipMeta(node)}</span>
+            </>
+          ) : null}
+        </Tooltip>
+      </Marker>
+    )
+  }
+
+  // Cluster only the dense customer markers when zoomed out; infra and any
+  // selected / searched / job-flagged customer always render individually so
+  // they're never hidden in a bubble.
+  const cellDeg = clusterCellDeg(zoom)
+  const forcedVisible = (n: NetworkNode) =>
+    n.id === selectedId || highlightIds.has(n.id) || jobNodeIds.has(n.id)
+  const individual: NetworkNode[] = []
+  const clusterable: NetworkNode[] = []
+  for (const n of nodes) {
+    if (n.type !== 'customer' || cellDeg <= 0 || forcedVisible(n)) {
+      individual.push(n)
+    } else {
+      clusterable.push(n)
+    }
+  }
+  const { clusters, singles } = clusterPoints(clusterable, cellDeg)
+
   return (
     <>
-      {nodes.map((node) => {
-        const dim = activeIds !== null && !activeIds.has(node.id)
-        const ring = node.id === selectedId || highlightIds.has(node.id)
-        const lifecycle = node.meta?.lifecycle
-        const suspended =
-          node.type === 'customer' && (lifecycle === 'isolir' || lifecycle === 'berhenti')
-        const maintenance = node.meta?.maintenance === true
-        return (
-          <Marker
-            key={node.id}
-            position={[node.lat, node.lng]}
-            icon={nodeIcon(
-              node,
-              ring,
-              dim,
-              capacityColor(node),
-              jobNodeIds.has(node.id),
-              suspended,
-              maintenance,
-            )}
-            draggable={editMode}
-            eventHandlers={{
-              click: () => onSelect(node.id),
-              dragend: (e) => {
-                const ll = e.target.getLatLng()
-                onMove(node.id, ll.lat, ll.lng)
-              },
-            }}
-          >
-            <Tooltip>
-              <span className="font-medium">{node.name}</span>
-              {' · '}
-              {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
-              {maintenance ? <span className="text-[11px] opacity-80"> · Pemeliharaan</span> : null}
-              {lifecycle && lifecycle !== 'aktif' ? (
-                <span className="text-[11px] opacity-80">
-                  {' · '}
-                  {LIFECYCLE_LABEL[lifecycle] ?? lifecycle}
-                </span>
-              ) : null}
-              {tooltipMeta(node) ? (
-                <>
-                  <br />
-                  <span className="text-[11px] opacity-80">{tooltipMeta(node)}</span>
-                </>
-              ) : null}
-            </Tooltip>
-          </Marker>
-        )
-      })}
+      {individual.map(renderMarker)}
+      {singles.map(renderMarker)}
+      {clusters.map((c) => (
+        <Marker
+          key={`cluster-${c.ids[0]}-${c.count}`}
+          position={[c.lat, c.lng]}
+          icon={clusterIcon(c.count, c.hasDown)}
+          eventHandlers={{
+            click: () => map.flyTo([c.lat, c.lng], Math.min(zoom + 2, 16)),
+          }}
+        >
+          <Tooltip>
+            {c.count} pelanggan{c.hasDown ? ' · ada gangguan' : ''}
+          </Tooltip>
+        </Marker>
+      ))}
     </>
   )
 })
