@@ -43,11 +43,13 @@ export function NetworkTopologyPage() {
   const {
     view,
     base,
+    layer,
     typeFilter,
     statusFilter,
     selectedId,
     setView,
     setBase,
+    setLayer,
     setTypeFilter,
     setStatusFilter,
     setSelectedId,
@@ -170,11 +172,12 @@ export function NetworkTopologyPage() {
 
   const controlsProps: TopologyControlsProps = {
     nodes: all,
-    filters: { typeFilter, statusFilter, base, query },
+    filters: { typeFilter, statusFilter, base, layer, query },
     set: {
       type: setTypeFilter,
       status: setStatusFilter,
       base: setBase,
+      layer: setLayer,
       query: setQuery,
     },
     counts,
@@ -281,6 +284,7 @@ export function NetworkTopologyPage() {
                 nodes={visible}
                 byId={visibleById}
                 base={base}
+                layer={layer}
                 selectedId={selectedId}
                 activeIds={activeIds}
                 highlightIds={highlightIds}

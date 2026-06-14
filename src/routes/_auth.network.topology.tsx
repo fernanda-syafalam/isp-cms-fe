@@ -18,6 +18,7 @@ const searchSchema = z.object({
   sel: z.string().optional(),
   view: z.enum(['map', 'list']).optional(),
   base: z.enum(['map', 'satellite']).optional(),
+  layer: z.enum(['logical', 'physical']).optional(),
   type: z.union([z.literal('all'), NodeTypeSchema]).optional(),
   status: z.union([z.literal('all'), NodeStatusSchema]).optional(),
 })

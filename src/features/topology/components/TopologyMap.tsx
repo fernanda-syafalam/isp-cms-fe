@@ -6,6 +6,8 @@ import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import type { NetworkNode } from '@/schemas/topology'
 
 import type { GeoPosition } from '../hooks/useGeolocation'
+import type { TopologyLayer } from '../hooks/useTopologySearch'
+import { CableLayer } from './CableLayer'
 import { FlyTo } from './FlyTo'
 import { TopologyEdges } from './TopologyEdges'
 import { TopologyMarkers } from './TopologyMarkers'
@@ -26,6 +28,7 @@ type Props = {
   nodes: NetworkNode[]
   byId: Map<string, NetworkNode>
   base: 'map' | 'satellite'
+  layer: TopologyLayer
   selectedId: string | null
   activeIds: Set<string> | null
   highlightIds: Set<string>
@@ -76,6 +79,7 @@ export function TopologyMap({
   nodes,
   byId,
   base,
+  layer,
   selectedId,
   activeIds,
   highlightIds,
@@ -99,7 +103,11 @@ export function TopologyMap({
       <FitBounds nodes={nodes} refitKey={refitKey} />
       <MapClick enabled={addMode} onClick={onMapClick} />
       <FlyTo target={flyToTarget} />
-      <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} />
+      {layer === 'physical' ? (
+        <CableLayer nodes={nodes} byId={byId} activeIds={activeIds} />
+      ) : (
+        <TopologyEdges nodes={nodes} byId={byId} activeIds={activeIds} />
+      )}
       <TopologyMarkers
         nodes={nodes}
         selectedId={selectedId}
