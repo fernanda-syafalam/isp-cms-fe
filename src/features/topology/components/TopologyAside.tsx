@@ -13,6 +13,7 @@ import { useSplitters } from '../hooks/useCabling'
 import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
 import { NodeDetailPanel } from './NodeDetailPanel'
+import { NodeHistory } from './NodeHistory'
 import { SplitterPorts } from './SplitterPorts'
 import { TopologyLegend } from './TopologyLegend'
 
@@ -88,7 +89,12 @@ export function TopologyAside({
                 onDelete={onDelete}
               />
             ) : null}
-            {selected ? <div className="px-0 pb-4">{splitterCard}</div> : null}
+            {selected ? (
+              <div className="space-y-4 px-0 pb-4">
+                {splitterCard}
+                <NodeHistory nodeId={selected.id} />
+              </div>
+            ) : null}
           </SheetContent>
         </Sheet>
       </>
@@ -113,6 +119,7 @@ export function TopologyAside({
         legend
       )}
       {selected ? splitterCard : null}
+      {selected ? <NodeHistory nodeId={selected.id} /> : null}
       <FiberReference />
     </>
   )

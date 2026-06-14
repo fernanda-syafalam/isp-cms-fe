@@ -18,6 +18,7 @@ export function useCreateNode() {
     mutationFn: (input: CreateNodeInput) => createNode(input),
     onSuccess: (node) => {
       qc.invalidateQueries({ queryKey: ['topology'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
       toast.success(`Node "${node.name}" ditambahkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -33,6 +34,7 @@ export function useUpdateNode() {
       // splitter ports, so refresh the cabling layer alongside the topology.
       qc.invalidateQueries({ queryKey: ['topology'] })
       qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -48,6 +50,7 @@ export function useDeleteNode() {
       qc.invalidateQueries({ queryKey: ['topology'] })
       qc.invalidateQueries({ queryKey: ['cabling'] })
       qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
       toast.success('Node dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

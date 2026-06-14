@@ -8,6 +8,7 @@ export const AuditEntrySchema = z.object({
   action: z.string(), // short verb-phrase, e.g. "billing.run"
   entity: z.string(), // affected domain, e.g. "Tagihan", "Pelanggan"
   summary: z.string(), // human-readable description
+  entityId: z.string().optional(), // affected record id, for per-record history
 })
 
 export const AuditListSchema = z.object({
