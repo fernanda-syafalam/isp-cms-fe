@@ -8,8 +8,10 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { NetworkNode } from '@/schemas/topology'
 
+import { useSplitters } from '../hooks/useCabling'
 import { FiberReference } from './FiberReference'
 import { NodeDetailPanel } from './NodeDetailPanel'
+import { SplitterPorts } from './SplitterPorts'
 import { TopologyLegend } from './TopologyLegend'
 
 type Props = {
@@ -44,6 +46,13 @@ export function TopologyAside({
 }: Props) {
   const isMobile = useIsMobile()
   const legend = <TopologyLegend nearestOdp={nearestOdp} onPickNearest={onPickNearest} />
+  // An ODC/ODP carries a splitter; show its per-port occupancy beside the panel.
+  const splitters = useSplitters().data?.items
+  const splitter =
+    selected && (selected.type === 'odc' || selected.type === 'odp')
+      ? splitters?.find((s) => s.nodeId === selected.id)
+      : undefined
+  const splitterCard = splitter ? <SplitterPorts splitter={splitter} byId={byId} /> : null
 
   if (isMobile) {
     return (
@@ -69,6 +78,7 @@ export function TopologyAside({
                 onDelete={onDelete}
               />
             ) : null}
+            {selected ? <div className="px-0 pb-4">{splitterCard}</div> : null}
           </SheetContent>
         </Sheet>
       </>
@@ -91,6 +101,7 @@ export function TopologyAside({
       ) : (
         legend
       )}
+      {selected ? splitterCard : null}
       <FiberReference />
     </>
   )
