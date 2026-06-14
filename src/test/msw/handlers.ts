@@ -3,6 +3,7 @@ import { HttpResponse, http } from 'msw'
 import { ratioCount } from '@/features/topology/lib/graph'
 import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
+import type { AuditEntry } from '@/schemas/audit'
 import { CustomerDropSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
@@ -906,7 +907,7 @@ const AUDIT_SEED: Array<{
     summary: 'Memasang ONU SN-500137',
   },
 ]
-const AUDIT_FIXTURES = AUDIT_SEED.map((e, i) => ({
+const AUDIT_FIXTURES: AuditEntry[] = AUDIT_SEED.map((e, i) => ({
   id: oid('a0d17000', i),
   at: iso(2026, 4, 28 - i),
   actor: e.actor,
@@ -916,7 +917,13 @@ const AUDIT_FIXTURES = AUDIT_SEED.map((e, i) => ({
 }))
 
 // Append an audit entry. Callers persist via their own persistDb().
-function recordAudit(action: string, entity: string, summary: string, actor = 'Admin') {
+function recordAudit(
+  action: string,
+  entity: string,
+  summary: string,
+  actor = 'Admin',
+  entityId?: string,
+) {
   AUDIT_FIXTURES.unshift({
     id: crypto.randomUUID(),
     at: new Date().toISOString(),
@@ -924,6 +931,7 @@ function recordAudit(action: string, entity: string, summary: string, actor = 'A
     action,
     entity,
     summary,
+    ...(entityId ? { entityId } : {}),
   })
 }
 
@@ -3637,6 +3645,13 @@ export const handlers = [
       },
     }
     TOPOLOGY_FIXTURES.push(node)
+    recordAudit(
+      'topology.install',
+      'Topologi',
+      `Pelanggan "${customer.fullName}" dipasang di ${odp.name} (core ${drop.coreNo})`,
+      'Admin',
+      node.id,
+    )
     persistDb()
     return HttpResponse.json(node, { status: 201 })
   }),
@@ -3662,6 +3677,13 @@ export const handlers = [
     if (node.type === 'odc' || node.type === 'odp') {
       setSplitterRatio(node.id, body.splitterRatio ?? (node.type === 'odc' ? '1:4' : '1:8'))
     }
+    recordAudit(
+      'topology.create',
+      'Topologi',
+      `Node ${node.type.toUpperCase()} "${node.name}" ditambahkan`,
+      'Admin',
+      node.id,
+    )
     persistDb()
     return HttpResponse.json(node, { status: 201 })
   }),
@@ -3725,6 +3747,14 @@ export const handlers = [
     // Keep stored drop-cable geometry in step with a dragged node (its own drop,
     // or — if an ODP/pole moved — every drop fed from it).
     if (moved) syncNodeGeometry(CABLING_STORE, TOPOLOGY_FIXTURES, found)
+    // Note the most significant change for the trail: re-home > move > generic.
+    const change =
+      rehomedCore !== undefined || parentChanged
+        ? 'uplink dipindah'
+        : moved
+          ? 'lokasi digeser'
+          : 'diperbarui'
+    recordAudit('topology.update', 'Topologi', `Node "${found.name}" ${change}`, 'Admin', found.id)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -3755,6 +3785,15 @@ export const handlers = [
       }
     }
     TOPOLOGY_FIXTURES.splice(idx, 1)
+    if (removed) {
+      recordAudit(
+        'topology.delete',
+        'Topologi',
+        `Node "${removed.name}" dihapus`,
+        'Admin',
+        removed.id,
+      )
+    }
     persistDb()
     return new HttpResponse(null, { status: 204 })
   }),
@@ -3809,9 +3848,11 @@ export const handlers = [
   }),
 
   // Audit log (newest first)
-  http.get('*/api/audit', () =>
-    HttpResponse.json({ items: AUDIT_FIXTURES, total: AUDIT_FIXTURES.length }),
-  ),
+  http.get('*/api/audit', ({ request }) => {
+    const entityId = new URL(request.url).searchParams.get('entityId')
+    const items = entityId ? AUDIT_FIXTURES.filter((e) => e.entityId === entityId) : AUDIT_FIXTURES
+    return HttpResponse.json({ items, total: items.length })
+  }),
 
   // WhatsApp notifications
   http.get('*/api/notifications/templates', () =>

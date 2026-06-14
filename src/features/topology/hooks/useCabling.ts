@@ -72,6 +72,7 @@ export function useInstallCustomer() {
       qc.invalidateQueries({ queryKey: ['topology'] })
       qc.invalidateQueries({ queryKey: ['cabling'] })
       qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['audit'] })
       toast.success(`Pelanggan "${node.name}" terpasang`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
