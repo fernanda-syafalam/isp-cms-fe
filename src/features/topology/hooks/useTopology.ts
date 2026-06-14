@@ -40,7 +40,11 @@ export function useDeleteNode() {
   return useMutation({
     mutationFn: (id: string) => deleteNode(id),
     onSuccess: () => {
+      // Deleting a customer node cascade-frees its drop (cabling) and returns
+      // the subscriber to the install picker, so refresh both.
       qc.invalidateQueries({ queryKey: ['topology'] })
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: ['customers'] })
       toast.success('Node dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
