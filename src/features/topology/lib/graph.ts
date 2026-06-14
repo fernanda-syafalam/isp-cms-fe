@@ -125,7 +125,15 @@ export function nearestFreeOdp(
 // uplink so a technician can see if it's within budget.
 const FIBER_DB_PER_KM = 0.35
 const CONNECTOR_DB = 0.5
+const SPLICE_DB = 0.1 // fusion splice loss per joint (one per ODC/ODP closure)
 const GPON_BUDGET_DB = 28 // Class B+
+// GPON downstream launch power at the OLT (typ. Class B+, ITU-T G.984). Used to
+// predict the ONU RX power from the cumulative loss.
+const OLT_TX_DBM = 3
+// ONU receiver window (Class B+): above the overload point the receiver
+// saturates (too hot — also a fault); below sensitivity the link drops (LOS).
+const RX_OVERLOAD_DBM = -8
+const RX_SENSITIVITY_DBM = -27
 const SPLITTER_LOSS_DB: Record<string, number> = {
   '1:2': 3.5,
   '1:4': 7.2,
@@ -142,11 +150,20 @@ export function ratioCount(ratio: string): number {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
-export type LinkBudget = { lossDb: number; budgetDb: number; marginDb: number }
+export type LinkBudget = {
+  lossDb: number
+  budgetDb: number
+  marginDb: number
+  // OLT_TX − loss: the RX power we EXPECT at this node. Compare to the ONU's
+  // measured reading to spot a fault the budget can't see (dirty connector,
+  // macrobend, bad splice on the drop).
+  predictedRxDbm: number
+}
 
 // Estimated cumulative optical loss from the OLT down to `node`: fiber distance
 // loss over every uplink segment + each splitter (ODC/ODP) + a connector at
-// each passive joint (ODC, ODP, ONT) and at the OLT.
+// each passive joint (ODC, ODP, ONT) and at the OLT + a fusion splice at each
+// closure (ODC/ODP).
 export function linkBudget(node: NetworkNode, byId: Map<string, NetworkNode>): LinkBudget {
   const path = uplinkPath(node, byId) // node → … → OLT
   let loss = CONNECTOR_DB // OLT/ODF patch
@@ -157,14 +174,29 @@ export function linkBudget(node: NetworkNode, byId: Map<string, NetworkNode>): L
   }
   for (const p of path) {
     if (p.meta?.splitter) loss += SPLITTER_LOSS_DB[p.meta.splitter] ?? 0
-    if (p.type === 'odc' || p.type === 'odp' || p.type === 'customer') loss += CONNECTOR_DB
+    if (p.type === 'odc' || p.type === 'odp') loss += CONNECTOR_DB + SPLICE_DB
+    if (p.type === 'customer') loss += CONNECTOR_DB
   }
   const lossDb = Math.round(loss * 10) / 10
   return {
     lossDb,
     budgetDb: GPON_BUDGET_DB,
     marginDb: Math.round((GPON_BUDGET_DB - loss) * 10) / 10,
+    predictedRxDbm: Math.round((OLT_TX_DBM - loss) * 10) / 10,
   }
+}
+
+export type RxHealth = 'overload' | 'good' | 'marginal' | 'critical'
+
+// Classify an ONU's measured RX power against the GPON receiver window. Above
+// the overload point the receiver is saturated (too hot — install an
+// attenuator); below sensitivity the link is failing (LOS). 'good' keeps a few
+// dB of headroom; 'marginal' is the last stretch before sensitivity.
+export function rxHealth(dbm: number): RxHealth {
+  if (dbm > RX_OVERLOAD_DBM) return 'overload'
+  if (dbm >= -25) return 'good'
+  if (dbm >= RX_SENSITIVITY_DBM) return 'marginal'
+  return 'critical'
 }
 
 // Tree node for the accessible list/hierarchy view (alternative to the map —

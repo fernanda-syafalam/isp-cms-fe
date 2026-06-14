@@ -1,14 +1,4 @@
-import { Link } from '@tanstack/react-router'
-import {
-  ExternalLinkIcon,
-  MessageCircleIcon,
-  NavigationIcon,
-  PencilIcon,
-  PhoneIcon,
-  Trash2Icon,
-  TriangleAlertIcon,
-  XIcon,
-} from 'lucide-react'
+import { NavigationIcon, PencilIcon, Trash2Icon, TriangleAlertIcon, XIcon } from 'lucide-react'
 
 import {
   AlertDialog,
@@ -21,23 +11,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { NetworkNode, NodeLifecycle, NodeStatus } from '@/schemas/topology'
 
 import {
-  type LinkBudget,
   STATUS_LABEL,
   TYPE_LABEL,
   downstreamIds,
-  fiberId,
-  formatLength,
   linkBudget,
   segmentMeters,
   uplinkPath,
 } from '../lib/graph'
+import { NodeMetaDetails } from './NodeMetaDetails'
+import { PowerBudget } from './NodePowerBudget'
 
 const STATUS_TONE: Record<NodeStatus, StatusTone> = {
   up: 'success',
@@ -136,7 +124,7 @@ export function NodeDetailPanel({
           </div>
         ) : null}
         <NodeMetaDetails node={node} cableMeters={cableMeters} distanceMeters={distanceMeters} />
-        {budget ? <PowerBudget budget={budget} /> : null}
+        {budget ? <PowerBudget budget={budget} measuredRxDbm={node.meta?.rxPowerDbm} /> : null}
         <Button asChild variant="outline" size="sm" className="h-8 w-full">
           <a
             href={`https://www.google.com/maps/dir/?api=1&destination=${node.lat},${node.lng}`}
@@ -202,272 +190,4 @@ export function NodeDetailPanel({
       </CardContent>
     </Card>
   )
-}
-
-// Optical RX power health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
-function rxTone(dbm: number): StatusTone {
-  if (dbm >= -25) return 'success'
-  if (dbm >= -27) return 'warning'
-  return 'danger'
-}
-
-// GPON link budget panel: estimated end-to-end loss vs the Class B+ 28 dB
-// budget, with remaining margin — the check a field tech runs before blaming
-// the ONT. <3 dB margin = danger (likely link failure), <6 dB = tight.
-function PowerBudget({ budget }: { budget: LinkBudget }) {
-  const tone: StatusTone =
-    budget.marginDb < 3 ? 'danger' : budget.marginDb < 6 ? 'warning' : 'success'
-  const usedPct = Math.min(100, Math.round((budget.lossDb / budget.budgetDb) * 100))
-  const barClass =
-    tone === 'danger' ? 'bg-red-500' : tone === 'warning' ? 'bg-amber-500' : 'bg-green-600'
-  return (
-    <div className="space-y-2 border-border border-t pt-3">
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs">Power budget (estimasi)</span>
-        <StatusBadge tone={tone} label={`margin ${budget.marginDb} dB`} dot={false} />
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className={`h-full rounded-full ${barClass}`} style={{ width: `${usedPct}%` }} />
-      </div>
-      <p className="text-muted-foreground text-xs">
-        Loss ≈ <span className="font-mono">{budget.lossDb} dB</span> dari budget{' '}
-        <span className="font-mono">{budget.budgetDb} dB</span> (Class B+).
-      </p>
-    </div>
-  )
-}
-
-// Deterministic 12-point series seeded by node id, so the "last 12 readings"
-// sparkline is stable across renders (mock; a real backend would poll).
-function metricSeries(seed: string, base: number, amp: number): number[] {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
-  const out: number[] = []
-  for (let i = 0; i < 12; i++) {
-    h = (h * 1103515245 + 12345) >>> 0
-    out.push(Math.round((base + ((h % 1000) / 1000 - 0.5) * amp) * 10) / 10)
-  }
-  return out
-}
-
-// Per-type technical detail + a customer-node link to its subscriber record.
-function NodeMetaDetails({
-  node,
-  cableMeters,
-  distanceMeters,
-}: {
-  node: NetworkNode
-  cableMeters?: number | undefined
-  distanceMeters?: number | undefined
-}) {
-  const m = node.meta
-  const portPct =
-    m?.portsTotal && m.portsTotal > 0 ? Math.round(((m.portsUsed ?? 0) / m.portsTotal) * 100) : null
-  // A "last 12 readings" sparkline: utilization for infra, RX power for CPE.
-  const spark =
-    portPct !== null
-      ? {
-          label: 'Utilisasi port (12 jam)',
-          data: metricSeries(node.id, portPct, 18),
-        }
-      : typeof m?.rxPowerDbm === 'number'
-        ? {
-            label: 'Redaman RX (12 jam)',
-            data: metricSeries(node.id, m.rxPowerDbm, 2),
-          }
-        : null
-
-  return (
-    <div className="space-y-3 border-border border-t pt-3">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-        {m?.model ? (
-          <>
-            <dt className="text-muted-foreground">Model</dt>
-            <dd className="text-right font-medium">{m.model}</dd>
-          </>
-        ) : null}
-        {m?.ipAddress ? (
-          <>
-            <dt className="text-muted-foreground">IP</dt>
-            <dd className="text-right font-mono">{m.ipAddress}</dd>
-          </>
-        ) : null}
-        {m?.splitter ? (
-          <>
-            <dt className="text-muted-foreground">Splitter</dt>
-            <dd className="text-right font-mono">{m.splitter}</dd>
-          </>
-        ) : null}
-        {m?.portsTotal ? (
-          <>
-            <dt className="text-muted-foreground">Port</dt>
-            <dd className="text-right font-mono tabular-nums">
-              {m.portsUsed ?? 0}/{m.portsTotal}
-            </dd>
-          </>
-        ) : null}
-        {node.type === 'odp' && m?.portsTotal ? (
-          <>
-            <dt className="text-muted-foreground">Port tersisa</dt>
-            <dd className="text-right font-mono tabular-nums">
-              {m.portsTotal - (m.portsUsed ?? 0)}
-            </dd>
-            <dt className="text-muted-foreground">Core berikutnya</dt>
-            <dd className="flex items-center justify-end gap-1.5 text-right">
-              {(m.portsUsed ?? 0) < m.portsTotal ? (
-                <>
-                  <span
-                    className="size-3 shrink-0 rounded-full border border-border"
-                    style={{
-                      background: fiberId((m.portsUsed ?? 0) + 1).core.hex,
-                    }}
-                  />
-                  <span>
-                    #{(m.portsUsed ?? 0) + 1} {fiberId((m.portsUsed ?? 0) + 1).core.name}
-                  </span>
-                </>
-              ) : (
-                <span className="text-destructive">Penuh</span>
-              )}
-            </dd>
-          </>
-        ) : null}
-        {typeof m?.rxPowerDbm === 'number' ? (
-          <>
-            <dt className="text-muted-foreground">Redaman (RX)</dt>
-            <dd className="text-right">
-              <StatusBadge tone={rxTone(m.rxPowerDbm)} label={`${m.rxPowerDbm} dBm`} dot={false} />
-            </dd>
-          </>
-        ) : null}
-        {typeof m?.uptimePct === 'number' ? (
-          <>
-            <dt className="text-muted-foreground">Uptime</dt>
-            <dd className="text-right font-mono tabular-nums">{m.uptimePct}%</dd>
-          </>
-        ) : null}
-        {m?.planName ? (
-          <>
-            <dt className="text-muted-foreground">Paket</dt>
-            <dd className="text-right font-medium">{m.planName}</dd>
-          </>
-        ) : null}
-        {m?.onuSerial ? (
-          <>
-            <dt className="text-muted-foreground">ONU serial</dt>
-            <dd className="text-right font-mono">{m.onuSerial}</dd>
-          </>
-        ) : null}
-        {m?.ponPort ? (
-          <>
-            <dt className="text-muted-foreground">Port PON</dt>
-            <dd className="text-right font-mono">{m.ponPort}</dd>
-          </>
-        ) : null}
-        {m?.coreNo ? (
-          <>
-            <dt className="text-muted-foreground">Tube</dt>
-            <dd className="flex items-center justify-end gap-1.5 text-right">
-              <span
-                className="size-3 shrink-0 rounded-full border border-border"
-                style={{ background: fiberId(m.coreNo).tube.hex }}
-              />
-              <span>
-                #{fiberId(m.coreNo).tubeNo} {fiberId(m.coreNo).tube.name}
-              </span>
-            </dd>
-            <dt className="text-muted-foreground">Core (inti)</dt>
-            <dd className="flex items-center justify-end gap-1.5 text-right">
-              <span
-                className="size-3 shrink-0 rounded-full border border-border"
-                style={{ background: fiberId(m.coreNo).core.hex }}
-              />
-              <span>
-                #{fiberId(m.coreNo).coreNo} {fiberId(m.coreNo).core.name}
-              </span>
-            </dd>
-          </>
-        ) : null}
-        {typeof cableMeters === 'number' ? (
-          <>
-            <dt className="text-muted-foreground">Panjang kabel</dt>
-            <dd className="text-right font-mono tabular-nums">{formatLength(cableMeters)}</dd>
-          </>
-        ) : null}
-        <dt className="text-muted-foreground">Koordinat</dt>
-        <dd className="text-right font-mono tabular-nums">
-          {node.lat.toFixed(4)}, {node.lng.toFixed(4)}
-        </dd>
-        {typeof distanceMeters === 'number' ? (
-          <>
-            <dt className="text-muted-foreground">Jarak dari Anda</dt>
-            <dd className="text-right font-mono tabular-nums">{formatLength(distanceMeters)}</dd>
-          </>
-        ) : null}
-      </dl>
-
-      {portPct !== null ? (
-        <div className="space-y-1">
-          <div className="flex justify-between text-muted-foreground text-xs">
-            <span>Utilisasi port</span>
-            <span>{portPct}%</span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className={`h-full rounded-full ${portPct >= 90 ? 'bg-red-500' : portPct >= 70 ? 'bg-amber-500' : 'bg-primary'}`}
-              style={{ width: `${Math.max(2, portPct)}%` }}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {spark ? (
-        <div className="space-y-1">
-          <p className="text-muted-foreground text-xs">{spark.label}</p>
-          <Sparkline data={spark.data} className="text-primary/70" />
-        </div>
-      ) : null}
-
-      {m?.phone ? (
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="h-9 flex-1">
-            <a href={`tel:${telNumber(m.phone)}`}>
-              <PhoneIcon className="size-4" />
-              Telepon
-            </a>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="h-9 flex-1">
-            <a
-              href={`https://wa.me/${waNumber(m.phone)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageCircleIcon className="size-4" />
-              WhatsApp
-            </a>
-          </Button>
-        </div>
-      ) : null}
-
-      {m?.customerId ? (
-        <Button asChild variant="outline" size="sm" className="h-9 w-full">
-          <Link to="/customers/$customerId" params={{ customerId: m.customerId }}>
-            <ExternalLinkIcon className="size-4" />
-            Buka detail pelanggan
-          </Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
-
-// Phone helpers: tel: takes the digits as-is; WhatsApp needs an international
-// number, so a leading Indonesian "0" becomes "62". Exported for unit testing
-// the conversion (a wrong number means the technician can't reach the customer).
-export function telNumber(phone: string): string {
-  return phone.replace(/[^\d+]/g, '')
-}
-export function waNumber(phone: string): string {
-  const d = phone.replace(/\D/g, '')
-  return d.startsWith('0') ? `62${d.slice(1)}` : d
 }

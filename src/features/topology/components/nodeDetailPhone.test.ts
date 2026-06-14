@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { telNumber, waNumber } from './NodeDetailPanel'
+import { telNumber, waNumber } from '../lib/phone'
 
 // The phone formatting behind the on-site tap-to-call / WhatsApp buttons. A
 // wrong number means the technician can't reach the customer, so the 0 → 62
