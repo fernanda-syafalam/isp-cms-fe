@@ -9,9 +9,10 @@ import {
   listSplices,
   listSplitters,
   listStrands,
+  updateCableRoute,
 } from '@/api/cabling'
 import { getErrorMessage } from '@/lib/errors'
-import type { CustomerDropInput } from '@/schemas/cable'
+import type { CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
 import type { NetworkNode } from '@/schemas/topology'
 
 // Read hooks for the OSP cabling layer (cables/strands/splitters/closures/
@@ -74,6 +75,20 @@ export function useInstallCustomer() {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['audit'] })
       toast.success(`Pelanggan "${node.name}" terpasang`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Update a drop cable's surveyed route (waypoints). Invalidates cabling so the
+// route + recomputed length refresh on the map.
+export function useUpdateCableRoute() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateCableRouteInput }) =>
+      updateCableRoute(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

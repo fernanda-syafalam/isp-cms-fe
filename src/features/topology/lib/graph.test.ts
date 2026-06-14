@@ -16,6 +16,7 @@ import {
   nearestFreeOdp,
   nodeSearchText,
   ratioCount,
+  routeLength,
   rxHealth,
   segmentMeters,
   traceCircuit,
@@ -118,6 +119,15 @@ describe('segmentMeters / formatLength', () => {
     expect(formatLength(850)).toBe('850 m')
     expect(formatLength(1000)).toBe('1.00 km')
     expect(formatLength(2540)).toBe('2.54 km')
+  })
+
+  it('routeLength sums the polyline segments (longer than a straight run)', () => {
+    const a = { lat: -6.55, lng: 110.68 }
+    const b = { lat: -6.552, lng: 110.682 }
+    expect(routeLength([a, b])).toBe(segmentMeters(a, b))
+    const bend = { lat: -6.553, lng: 110.681 }
+    expect(routeLength([a, bend, b])).toBeGreaterThan(segmentMeters(a, b))
+    expect(routeLength([a])).toBe(0)
   })
 })
 

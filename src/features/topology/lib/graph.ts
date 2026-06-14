@@ -106,6 +106,19 @@ export function formatLength(meters: number): string {
   return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(2)} km`
 }
 
+// Total length (m) of a polyline route — the sum of its consecutive segments.
+// A surveyed cable route bends around poles/roads, so its real length is longer
+// than the straight from→to. Returns 0 for fewer than two points.
+export function routeLength(points: Array<{ lat: number; lng: number }>): number {
+  let total = 0
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]
+    const b = points[i + 1]
+    if (a && b) total += segmentMeters(a, b)
+  }
+  return total
+}
+
 // Lowercased haystack for searching a node: its name + id plus the meta facts a
 // technician is likely to have in hand — the customer's phone or ONU serial off
 // a support call, an OLT/ODC IP, the PON port, the plan. So "find this customer"

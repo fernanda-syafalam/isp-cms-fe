@@ -13,6 +13,7 @@ import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
 import { CapacityPanel } from './CapacityPanel'
 import { ClosureDetail } from './ClosureDetail'
+import { DropRouteControls } from './DropRouteControls'
 import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
 import { MaintenanceButton } from './MaintenanceButton'
@@ -78,6 +79,12 @@ export function TopologyAside({
     selected && (selected.type === 'odc' || selected.type === 'odp') ? (
       <ClosureDetail nodeId={selected.id} />
     ) : null
+  // Drop-route editor for a selected customer in edit mode (drag handles live on
+  // the map; add-bend/straighten here).
+  const routeControls =
+    selected && selected.type === 'customer' && editMode && canManage ? (
+      <DropRouteControls node={selected} />
+    ) : null
 
   if (isMobile) {
     return (
@@ -112,6 +119,7 @@ export function TopologyAside({
                     <MaintenanceButton node={selected} />
                   </div>
                 ) : null}
+                {routeControls ? <div className="px-4">{routeControls}</div> : null}
                 {splitterCard}
                 {closureCard}
                 <NodeHistory nodeId={selected.id} />
@@ -144,6 +152,7 @@ export function TopologyAside({
         </>
       )}
       {selected && canManage ? <MaintenanceButton node={selected} /> : null}
+      {routeControls}
       {selected ? splitterCard : null}
       {selected ? closureCard : null}
       {selected ? <NodeHistory nodeId={selected.id} /> : null}
