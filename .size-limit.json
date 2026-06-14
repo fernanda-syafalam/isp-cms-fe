@@ -16,5 +16,11 @@
     "path": "dist/assets/login.lazy-*.js",
     "limit": "10 kB",
     "gzip": true
+  },
+  {
+    "name": "Topology route chunk (Leaflet is a separate shared chunk)",
+    "path": "dist/assets/_auth.network.topology*.js",
+    "limit": "40 kB",
+    "gzip": true
   }
 ]
