@@ -162,7 +162,10 @@ export function allocateDrop(
   nodes: NetworkNode[],
   odp: NetworkNode,
   customer: Point & { customerId: string },
-  conn: { ponPort?: string | null; onuSerial?: string | null },
+  conn: {
+    ponPort?: string | null | undefined
+    onuSerial?: string | null | undefined
+  },
 ): { coreNo: number } | null {
   const splitter = store.splitters.find((s) => s.nodeId === odp.id)
   const port = splitter?.ports.find((p) => p.outNodeId === null)
