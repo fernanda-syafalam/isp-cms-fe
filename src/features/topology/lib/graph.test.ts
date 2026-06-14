@@ -13,6 +13,7 @@ import {
   linkBudget,
   nearestFreeOdp,
   ratioCount,
+  rxHealth,
   segmentMeters,
   uplinkPath,
 } from './graph'
@@ -215,6 +216,29 @@ describe('linkBudget (GPON Class B+)', () => {
     expect(budget.lossDb).toBeGreaterThan(18)
     expect(budget.lossDb).toBeLessThan(28)
     expect(budget.marginDb).toBeCloseTo(budget.budgetDb - budget.lossDb, 1)
+  })
+
+  it('predicts ONU RX power as OLT TX minus the cumulative loss', () => {
+    const nodes = sampleNetwork()
+    const byId = indexById(nodes)
+    const cust = byId.get('cust-1')
+    if (!cust) throw new Error('fixture missing cust-1')
+    const budget = linkBudget(cust, byId)
+    // predictedRx = OLT_TX (3 dBm) − loss.
+    expect(budget.predictedRxDbm).toBeCloseTo(3 - budget.lossDb, 1)
+    expect(budget.predictedRxDbm).toBeLessThan(0)
+  })
+})
+
+describe('rxHealth (ONU receiver window)', () => {
+  it('flags an overload reading (too hot)', () => {
+    expect(rxHealth(-5)).toBe('overload')
+  })
+
+  it('classifies the healthy / marginal / critical bands', () => {
+    expect(rxHealth(-22)).toBe('good')
+    expect(rxHealth(-26)).toBe('marginal')
+    expect(rxHealth(-29)).toBe('critical')
   })
 })
 
