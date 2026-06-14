@@ -84,30 +84,39 @@ export function useTopologySearch(): TopologySearch {
     typeFilter,
     statusFilter,
     selectedId,
+    // resetScroll:false — these are in-page state changes (selecting a node,
+    // toggling a filter), NOT page navigations; without it, clicking a node on
+    // the map would jump the page back to the top.
     setView: (v) =>
       navigate({
         search: toSearch(v, base, typeFilter, statusFilter, layer, selectedId),
+        resetScroll: false,
       }),
     setBase: (b) =>
       navigate({
         search: toSearch(view, b, typeFilter, statusFilter, layer, selectedId),
+        resetScroll: false,
       }),
     setLayer: (l) =>
       navigate({
         search: toSearch(view, base, typeFilter, statusFilter, l, selectedId),
+        resetScroll: false,
       }),
     setTypeFilter: (t) =>
       navigate({
         search: toSearch(view, base, t, statusFilter, layer, selectedId),
+        resetScroll: false,
       }),
     setStatusFilter: (s) =>
       navigate({
         search: toSearch(view, base, typeFilter, s, layer, selectedId),
+        resetScroll: false,
       }),
     setSelectedId: (id) =>
       navigate({
         search: toSearch(view, base, typeFilter, statusFilter, layer, id),
         replace: true,
+        resetScroll: false,
       }),
   }
 }

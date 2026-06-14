@@ -27,13 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { SplitterRatioSchema } from '@/schemas/splitter'
 import { type NetworkNode, NodeStatusSchema, NodeTypeSchema } from '@/schemas/topology'
 
-import { TYPE_LABEL } from '../lib/graph'
 import { useCreateNode, useUpdateNode } from '../hooks/useTopology'
+import { TYPE_LABEL } from '../lib/graph'
+import { NodeMetaFields } from './NodeMetaFields'
 
 const NO_PARENT = 'none'
-const TYPES = NodeTypeSchema.options
 const STATUSES = NodeStatusSchema.options
 
 const FormSchema = z.object({
@@ -41,8 +42,13 @@ const FormSchema = z.object({
   type: NodeTypeSchema,
   status: NodeStatusSchema,
   parentId: z.string(),
+  lat: z.number().finite('Lat tidak valid'),
+  lng: z.number().finite('Lng tidak valid'),
+  splitterRatio: SplitterRatioSchema,
+  ipAddress: z.string(),
+  model: z.string(),
 })
-type FormValues = z.infer<typeof FormSchema>
+export type NodeFormValues = z.infer<typeof FormSchema>
 
 type Props = {
   open: boolean
@@ -59,40 +65,53 @@ export function NodeFormDialog({ open, onOpenChange, nodes, node, latLng }: Prop
   const create = useCreateNode()
   const update = useUpdateNode()
 
-  const form = useForm<FormValues>({
+  const form = useForm<NodeFormValues>({
     resolver: zodResolver(FormSchema),
     values: {
       name: node?.name ?? '',
-      type: node?.type ?? 'customer',
+      type: node?.type ?? 'odp',
       status: node?.status ?? 'up',
       parentId: node?.parentId ?? NO_PARENT,
+      lat: node?.lat ?? latLng?.lat ?? 0,
+      lng: node?.lng ?? latLng?.lng ?? 0,
+      splitterRatio: SplitterRatioSchema.catch('1:8').parse(node?.meta?.splitter),
+      ipAddress: node?.meta?.ipAddress ?? '',
+      model: node?.meta?.model ?? '',
     },
   })
 
+  // Customers are provisioned via "Pasang pelanggan" (which allocates cabling),
+  // never created bare here — so hide that type except when editing one.
+  const types = NodeTypeSchema.options.filter((t) => t !== 'customer' || node?.type === 'customer')
+  const watchedType = form.watch('type')
   const parentOptions = nodes.filter((n) => n.id !== node?.id)
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parentId = values.parentId === NO_PARENT ? null : values.parentId
+    // Only send the directives relevant to the chosen type.
+    const infra =
+      values.type === 'olt'
+        ? {
+            ipAddress: values.ipAddress || undefined,
+            model: values.model || undefined,
+          }
+        : values.type === 'odc' || values.type === 'odp'
+          ? { splitterRatio: values.splitterRatio }
+          : {}
+    const base = {
+      name: values.name,
+      type: values.type,
+      status: values.status,
+      parentId,
+      lat: values.lat,
+      lng: values.lng,
+      ...infra,
+    }
     try {
       if (node) {
-        await update.mutateAsync({
-          id: node.id,
-          input: {
-            name: values.name,
-            type: values.type,
-            status: values.status,
-            parentId,
-          },
-        })
-      } else if (latLng) {
-        await create.mutateAsync({
-          name: values.name,
-          type: values.type,
-          status: values.status,
-          parentId,
-          lat: latLng.lat,
-          lng: latLng.lng,
-        })
+        await update.mutateAsync({ id: node.id, input: base })
+      } else {
+        await create.mutateAsync(base)
       }
       onOpenChange(false)
     } catch {
@@ -106,9 +125,7 @@ export function NodeFormDialog({ open, onOpenChange, nodes, node, latLng }: Prop
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit node' : 'Tambah node'}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Perbarui nama, tipe, status, dan uplink.'
-              : `Titik baru pada ${latLng?.lat.toFixed(5)}, ${latLng?.lng.toFixed(5)}.`}
+            {isEdit ? 'Perbarui detail node, uplink, dan koordinat.' : 'Titik infrastruktur baru.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -140,7 +157,7 @@ export function NodeFormDialog({ open, onOpenChange, nodes, node, latLng }: Prop
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {TYPES.map((t) => (
+                        {types.map((t) => (
                           <SelectItem key={t} value={t}>
                             {TYPE_LABEL[t]}
                           </SelectItem>
@@ -176,6 +193,9 @@ export function NodeFormDialog({ open, onOpenChange, nodes, node, latLng }: Prop
                 )}
               />
             </div>
+
+            <NodeMetaFields form={form} type={watchedType} />
+
             <FormField
               control={form.control}
               name="parentId"
@@ -201,6 +221,46 @@ export function NodeFormDialog({ open, onOpenChange, nodes, node, latLng }: Prop
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="lat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lat</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lng"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lng</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="any"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"

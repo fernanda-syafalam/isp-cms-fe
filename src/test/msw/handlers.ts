@@ -7,6 +7,7 @@ import { CustomerDropSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
+import { CreateNodeSchema, UpdateNodeSchema } from '@/schemas/topology'
 
 import { allocateDrop, deriveCabling, freeDrop } from './cablingFixtures'
 
@@ -614,6 +615,44 @@ const CABLING_STORE = {
   closures: CLOSURE_FIXTURES,
   splices: SPLICE_FIXTURES,
   circuits: CIRCUIT_FIXTURES,
+}
+
+// Create or re-size an ODC/ODP splitter to a ratio. Growing appends free ports;
+// shrinking is refused if it would drop an occupied port (so live drops aren't
+// orphaned). Used by the node create/edit handlers.
+function setSplitterRatio(nodeId: string, ratio: SplitterRatio) {
+  const newSize = ratioCount(ratio)
+  const existing = SPLITTER_FIXTURES.find((s) => s.nodeId === nodeId)
+  if (!existing) {
+    SPLITTER_FIXTURES.push({
+      id: `${nodeId}-splitter`,
+      nodeId,
+      ratio,
+      inCableId: null,
+      inStrandId: null,
+      ports: Array.from({ length: newSize }, (_, i) => ({
+        portNo: i + 1,
+        outNodeId: null,
+        customerId: null,
+        strandId: null,
+      })),
+    })
+    return
+  }
+  if (newSize < existing.ports.length) {
+    if (existing.ports.slice(newSize).some((p) => p.outNodeId !== null)) return // would orphan a drop
+    existing.ports.length = newSize
+  } else {
+    for (let i = existing.ports.length; i < newSize; i++) {
+      existing.ports.push({
+        portNo: i + 1,
+        outNodeId: null,
+        customerId: null,
+        strandId: null,
+      })
+    }
+  }
+  existing.ratio = ratio
 }
 
 // Mikrotik PPP: profiles + PPPoE secrets per router.
@@ -3551,33 +3590,26 @@ export const handlers = [
     return HttpResponse.json(node, { status: 201 })
   }),
   http.post('*/api/topology', async ({ request }) => {
-    const body = (await request.json()) as {
-      name: string
-      type: 'olt' | 'odc' | 'odp' | 'pole' | 'customer'
-      status: 'up' | 'down' | 'unknown'
-      parentId: string | null
-      lat: number
-      lng: number
+    const body = CreateNodeSchema.parse(await request.json())
+    const metaEntries = {
+      ...(body.ipAddress ? { ipAddress: body.ipAddress } : {}),
+      ...(body.model ? { model: body.model } : {}),
     }
-    const node = { id: crypto.randomUUID(), ...body }
+    const node = {
+      id: crypto.randomUUID(),
+      name: body.name,
+      type: body.type,
+      status: body.status,
+      parentId: body.parentId,
+      lat: body.lat,
+      lng: body.lng,
+      ...(Object.keys(metaEntries).length > 0 ? { meta: metaEntries } : {}),
+    }
     TOPOLOGY_FIXTURES.push(node)
-    // A new ODC/ODP gets a splitter (+ derived capacity) so the projection has a
-    // source for its splitter/portsTotal/portsUsed.
+    // A new ODC/ODP gets a splitter (capacity source for the projection) at the
+    // chosen ratio (default per tier).
     if (node.type === 'odc' || node.type === 'odp') {
-      const ratio: SplitterRatio = node.type === 'odc' ? '1:4' : '1:8'
-      SPLITTER_FIXTURES.push({
-        id: `${node.id}-splitter`,
-        nodeId: node.id,
-        ratio,
-        inCableId: null,
-        inStrandId: null,
-        ports: Array.from({ length: ratioCount(ratio) }, (_, i) => ({
-          portNo: i + 1,
-          outNodeId: null,
-          customerId: null,
-          strandId: null,
-        })),
-      })
+      setSplitterRatio(node.id, body.splitterRatio ?? (node.type === 'odc' ? '1:4' : '1:8'))
     }
     persistDb()
     return HttpResponse.json(node, { status: 201 })
@@ -3589,20 +3621,23 @@ export const handlers = [
         status: 404,
       })
     }
-    const body = (await request.json()) as {
-      name?: string
-      type?: 'olt' | 'odc' | 'odp' | 'pole' | 'customer'
-      status?: 'up' | 'down' | 'unknown'
-      parentId?: string | null
-      lat?: number
-      lng?: number
-    }
+    const body = UpdateNodeSchema.parse(await request.json())
     if (body.name !== undefined) found.name = body.name
     if (body.type !== undefined) found.type = body.type
     if (body.status !== undefined) found.status = body.status
     if (body.parentId !== undefined) found.parentId = body.parentId
     if (body.lat !== undefined) found.lat = body.lat
     if (body.lng !== undefined) found.lng = body.lng
+    if (body.ipAddress !== undefined || body.model !== undefined) {
+      found.meta = {
+        ...found.meta,
+        ...(body.ipAddress !== undefined ? { ipAddress: body.ipAddress } : {}),
+        ...(body.model !== undefined ? { model: body.model } : {}),
+      }
+    }
+    if (body.splitterRatio && (found.type === 'odc' || found.type === 'odp')) {
+      setSplitterRatio(found.id, body.splitterRatio)
+    }
     persistDb()
     return HttpResponse.json(found)
   }),

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { SplitterRatioSchema } from './splitter'
+
 // Network topology node. The physical chain is OLT → ODC → ODP → pole →
 // customer, expressed as a parent link (`parentId`) on each node; edges are
 // derived from those links. Self-contained mock dataset (not the Customer
@@ -40,23 +42,37 @@ export const TopologySchema = z.object({
   total: z.number().int().nonnegative(),
 })
 
-export const CreateNodeSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi').max(120),
-  type: NodeTypeSchema,
-  status: NodeStatusSchema,
-  parentId: z.string().nullable(),
-  lat: z.number(),
-  lng: z.number(),
+// Infra directives accepted on create/update: splitterRatio provisions/updates
+// an ODC/ODP's splitter (capacity); ipAddress/model are OLT/ODC node facts. They
+// are NOT customer fields — a customer is created via the install flow, never
+// this generic schema.
+const InfraFieldsSchema = z.object({
+  splitterRatio: SplitterRatioSchema.optional(),
+  ipAddress: z.string().optional(),
+  model: z.string().optional(),
 })
 
-export const UpdateNodeSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
-  type: NodeTypeSchema.optional(),
-  status: NodeStatusSchema.optional(),
-  parentId: z.string().nullable().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
-})
+export const CreateNodeSchema = z
+  .object({
+    name: z.string().min(1, 'Nama wajib diisi').max(120),
+    type: NodeTypeSchema,
+    status: NodeStatusSchema,
+    parentId: z.string().nullable(),
+    lat: z.number(),
+    lng: z.number(),
+  })
+  .extend(InfraFieldsSchema.shape)
+
+export const UpdateNodeSchema = z
+  .object({
+    name: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
+    type: NodeTypeSchema.optional(),
+    status: NodeStatusSchema.optional(),
+    parentId: z.string().nullable().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+  })
+  .extend(InfraFieldsSchema.shape)
 
 export type NodeType = z.infer<typeof NodeTypeSchema>
 export type NodeStatus = z.infer<typeof NodeStatusSchema>

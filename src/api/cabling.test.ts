@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { installCustomerDrop, listSplitters } from './cabling'
 import { listCustomers } from './customers'
-import { deleteNode, listTopology } from './topology'
+import { createNode, deleteNode, listTopology, updateNode } from './topology'
 
 // Integration over the MSW layer (server from test/setup.ts; resetMockDb runs
 // before each test). Proves the DELETE cascade frees the cabling a customer drop
@@ -71,5 +71,44 @@ describe('install customer drop', () => {
         lng: odp.lng,
       }),
     ).rejects.toThrow()
+  })
+})
+
+describe('infra node provisioning (form directives)', () => {
+  it('creates an ODP with the chosen splitter ratio', async () => {
+    const olt = (await listTopology()).items.find((n) => n.type === 'olt')
+    const node = await createNode({
+      name: 'ODP Baru',
+      type: 'odp',
+      status: 'up',
+      parentId: olt?.id ?? null,
+      lat: -6.55,
+      lng: 110.68,
+      splitterRatio: '1:16',
+    })
+    const sp = (await listSplitters()).items.find((s) => s.nodeId === node.id)
+    expect(sp?.ratio).toBe('1:16')
+    expect(sp?.ports).toHaveLength(16)
+  })
+
+  it('stores OLT ip/model on create and preserves model on a partial edit', async () => {
+    const node = await createNode({
+      name: 'OLT Baru',
+      type: 'olt',
+      status: 'up',
+      parentId: null,
+      lat: -6.55,
+      lng: 110.68,
+      ipAddress: '10.9.9.9',
+      model: 'ZTE C320',
+    })
+    const created = (await listTopology()).items.find((n) => n.id === node.id)
+    expect(created?.meta?.ipAddress).toBe('10.9.9.9')
+    expect(created?.meta?.model).toBe('ZTE C320')
+
+    await updateNode(node.id, { ipAddress: '10.1.1.1' })
+    const updated = (await listTopology()).items.find((n) => n.id === node.id)
+    expect(updated?.meta?.ipAddress).toBe('10.1.1.1')
+    expect(updated?.meta?.model).toBe('ZTE C320')
   })
 })
