@@ -89,7 +89,9 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      {/* Flex column capped at the viewport so a long subscriber list scrolls
+          inside the body while the header + footer stay pinned (no overlap). */}
+      <DialogContent className="flex max-h-[85dvh] flex-col">
         <DialogHeader>
           <DialogTitle>Pasang pelanggan</DialogTitle>
           <DialogDescription>
@@ -97,7 +99,7 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
           <SubscriberPicker customers={available} value={customerId} onChange={setCustomerId} />
 
           <div className="space-y-1.5">

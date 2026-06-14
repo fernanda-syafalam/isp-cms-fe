@@ -31,7 +31,9 @@ export function SubscriberPicker({ customers, value, onChange }: Props) {
   ).slice(0, MAX_RESULTS)
 
   return (
-    <Command shouldFilter={false} className="rounded-md border">
+    // h-auto overrides the shadcn Command's default h-full, which would otherwise
+    // stretch the picker to fill the dialog and push the footer over the form.
+    <Command shouldFilter={false} className="h-auto rounded-md border">
       <CommandInput value={query} onValueChange={setQuery} placeholder="Cari pelanggan…" />
       <CommandList className="max-h-48">
         <CommandEmpty>Tidak ada pelanggan tanpa node.</CommandEmpty>
