@@ -338,6 +338,7 @@ export function NetworkTopologyPage() {
             byId={byId}
             nodes={all}
             editMode={editMode}
+            canManage={canEdit}
             distanceMeters={distanceMeters}
             nearestOdp={nearestOdp}
             faults={faults}

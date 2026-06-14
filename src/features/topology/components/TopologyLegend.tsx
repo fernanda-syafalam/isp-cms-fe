@@ -47,6 +47,10 @@ export function TopologyLegend({ nearestOdp, onPickNearest }: Props) {
             Pelanggan abu-abu = isolir/berhenti (ditangguhkan, fiber tetap up).
           </li>
           <li className="flex items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-full bg-sky-500" />
+            Biru langit = dalam pemeliharaan (kerja terjadwal, bukan gangguan).
+          </li>
+          <li className="flex items-center gap-2">
             <span className="relative size-2.5 shrink-0 rounded-full bg-green-600">
               <span className="-top-0.5 -right-0.5 absolute size-1.5 rounded-full border border-white bg-amber-500" />
             </span>

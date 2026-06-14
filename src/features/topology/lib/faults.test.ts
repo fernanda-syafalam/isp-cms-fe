@@ -82,6 +82,40 @@ describe('localizeFaults', () => {
     expect(faults[0]?.downCount).toBe(2)
   })
 
+  it('suppresses a node under maintenance (planned work, not a fault)', () => {
+    const nodes = [
+      ...base(),
+      node({
+        id: 'odp-1',
+        type: 'odp',
+        status: 'down',
+        parentId: 'odc-1',
+        meta: { maintenance: true },
+      }),
+      ...customers('odp-1', ['up', 'up', 'up']),
+    ]
+    expect(localizeFaults(nodes)).toEqual([])
+  })
+
+  it('still reports a real fault while another node is under maintenance', () => {
+    const nodes = [
+      ...base(),
+      node({
+        id: 'odp-1',
+        type: 'odp',
+        status: 'down',
+        parentId: 'odc-1',
+        meta: { maintenance: true },
+      }),
+      ...customers('odp-1', ['up', 'up']),
+      node({ id: 'odp-2', type: 'odp', status: 'down', parentId: 'odc-1' }),
+      ...customers('odp-2', ['up', 'up']),
+    ]
+    const faults = localizeFaults(nodes)
+    expect(faults).toHaveLength(1)
+    expect(faults[0]?.node.id).toBe('odp-2')
+  })
+
   it('rolls a down ODC up: it explains the ODPs beneath it (one entry)', () => {
     const nodes = [
       ...base().map((n) => (n.id === 'odc-1' ? { ...n, status: 'down' as const } : n)),

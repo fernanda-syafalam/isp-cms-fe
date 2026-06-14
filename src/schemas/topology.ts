@@ -30,6 +30,7 @@ export const NodeMetaSchema = z.object({
   ponPort: z.string().optional(), // OLT PON port feeding this customer (e.g. "0/1/1")
   phone: z.string().optional(), // customer phone for tap-to-call / WhatsApp in the field
   lifecycle: NodeLifecycleSchema.optional(), // billing/service state (≠ network status)
+  maintenance: z.boolean().optional(), // under planned work — suppressed from fault alarms
 })
 
 export const NetworkNodeSchema = z.object({
@@ -56,6 +57,7 @@ const InfraFieldsSchema = z.object({
   splitterRatio: SplitterRatioSchema.optional(),
   ipAddress: z.string().optional(),
   model: z.string().optional(),
+  maintenance: z.boolean().optional(), // toggle planned-work state
 })
 
 export const CreateNodeSchema = z

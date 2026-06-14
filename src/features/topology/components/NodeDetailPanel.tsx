@@ -95,6 +95,7 @@ export function NodeDetailPanel({
           <p className="mt-1 text-muted-foreground text-xs">{TYPE_LABEL[node.type]}</p>
         </div>
         <div className="flex items-center gap-1">
+          {node.meta?.maintenance ? <StatusBadge tone="info" label="Pemeliharaan" /> : null}
           {lifecycle ? (
             <StatusBadge tone={LIFECYCLE_TONE[lifecycle]} label={LIFECYCLE_LABEL[lifecycle]} />
           ) : null}

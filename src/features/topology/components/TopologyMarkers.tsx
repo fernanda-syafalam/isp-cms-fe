@@ -5,6 +5,7 @@ import { Marker, Tooltip } from 'react-leaflet'
 import type { NetworkNode } from '@/schemas/topology'
 
 import {
+  MAINTENANCE_COLOR,
   STATUS_COLOR,
   STATUS_LABEL,
   SUSPEND_COLOR,
@@ -54,6 +55,7 @@ function nodeIcon(
   capacity: string | null,
   job: boolean,
   suspended: boolean,
+  maintenance: boolean,
 ): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
@@ -61,10 +63,14 @@ function nodeIcon(
   const shadow = capacity
     ? `0 0 2px rgba(0,0,0,.5), 0 0 0 3px ${capacity}`
     : '0 0 2px rgba(0,0,0,.5)'
-  // A billing-suspended customer is optically up but not serving — recolor it
-  // slate so it never reads as a fiber fault (red). Network status still drives
-  // every other node's color.
-  const fill = suspended ? SUSPEND_COLOR : STATUS_COLOR[node.status]
+  // Planned maintenance (sky) wins over billing-suspended (slate) and over the
+  // network status color, so a node under scheduled work never reads as a fiber
+  // fault (red). Network status still drives every other node's color.
+  const fill = maintenance
+    ? MAINTENANCE_COLOR
+    : suspended
+      ? SUSPEND_COLOR
+      : STATUS_COLOR[node.status]
   // An amber badge marks a customer with an open work order / ticket — stays
   // fully opaque even when the node is dimmed so jobs stand out at a glance.
   const badge = job
@@ -112,6 +118,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
         const lifecycle = node.meta?.lifecycle
         const suspended =
           node.type === 'customer' && (lifecycle === 'isolir' || lifecycle === 'berhenti')
+        const maintenance = node.meta?.maintenance === true
         return (
           <Marker
             key={node.id}
@@ -123,6 +130,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
               capacityColor(node),
               jobNodeIds.has(node.id),
               suspended,
+              maintenance,
             )}
             draggable={editMode}
             eventHandlers={{
@@ -137,6 +145,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
               <span className="font-medium">{node.name}</span>
               {' · '}
               {TYPE_LABEL[node.type]} · {STATUS_LABEL[node.status]}
+              {maintenance ? <span className="text-[11px] opacity-80"> · Pemeliharaan</span> : null}
               {lifecycle && lifecycle !== 'aktif' ? (
                 <span className="text-[11px] opacity-80">
                   {' · '}

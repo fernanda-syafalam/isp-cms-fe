@@ -29,12 +29,25 @@ const LIKELY_RATIO = 0.6
 // is intentionally NOT reported (no upstream root) — that is a CPE matter.
 export function localizeFaults(nodes: NetworkNode[]): ProbableFault[] {
   const byId = indexById(nodes)
-  const dark = impactedCustomerIds(nodes)
+
+  // Customers under planned maintenance are dark on purpose — drop them from the
+  // signal so a maintenance window never raises an outage alarm (and never makes
+  // a sibling look "likely" by inflating dark counts upstream).
+  const maintained = new Set<string>()
+  for (const n of nodes) {
+    if (!n.meta?.maintenance) continue
+    if (n.type === 'customer') maintained.add(n.id)
+    for (const id of downstreamIds(n.id, nodes)) {
+      if (byId.get(id)?.type === 'customer') maintained.add(id)
+    }
+  }
+  const dark = new Set([...impactedCustomerIds(nodes)].filter((id) => !maintained.has(id)))
   if (dark.size === 0) return []
 
   const candidates: ProbableFault[] = []
   for (const n of nodes) {
     if (n.type !== 'olt' && n.type !== 'odc' && n.type !== 'odp') continue
+    if (n.meta?.maintenance) continue // planned work, not a fault
     let total = 0
     let down = 0
     for (const id of downstreamIds(n.id, nodes)) {

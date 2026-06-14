@@ -39,6 +39,7 @@ function setup(selected: NetworkNode | null) {
       byId={byId}
       nodes={NODES}
       editMode={false}
+      canManage={false}
       nearestOdp={null}
       faults={[]}
       onClear={vi.fn()}
