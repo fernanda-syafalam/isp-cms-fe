@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
 import type { NetworkNode, NodeStatus, NodeType } from '@/schemas/topology'
 
+import type { TopologyLayer } from '../hooks/useTopologySearch'
 import { STATUS_COLOR, STATUS_LABEL } from '../lib/graph'
 import { TopologySearchBox } from './TopologySearchBox'
 
@@ -28,12 +29,14 @@ export type TopologyControlsProps = {
     typeFilter: 'all' | NodeType
     statusFilter: 'all' | NodeStatus
     base: 'map' | 'satellite'
+    layer: TopologyLayer
     query: string
   }
   set: {
     type: (v: 'all' | NodeType) => void
     status: (v: 'all' | NodeStatus) => void
     base: (v: 'map' | 'satellite') => void
+    layer: (v: TopologyLayer) => void
     query: (v: string) => void
   }
   counts: Record<NodeStatus, number>
@@ -105,6 +108,22 @@ export function TopologyControlsBody({
               )}
             >
               {b === 'map' ? 'Map' : 'Satelit'}
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex overflow-hidden rounded-md border">
+          {(['logical', 'physical'] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => set.layer(l)}
+              className={cn(
+                'px-3 text-sm transition-colors',
+                compact ? 'py-1' : 'py-2.5',
+                filters.layer === l ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
+              )}
+            >
+              {l === 'logical' ? 'Logis' : 'Fisik (kabel)'}
             </button>
           ))}
         </div>
