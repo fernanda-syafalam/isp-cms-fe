@@ -42,6 +42,7 @@ function setup(selected: NetworkNode | null) {
       canManage={false}
       nearestOdp={null}
       faults={[]}
+      capacity={[]}
       onClear={vi.fn()}
       onEdit={vi.fn()}
       onDelete={vi.fn()}

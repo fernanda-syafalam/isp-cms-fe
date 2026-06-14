@@ -27,6 +27,7 @@ import {
   downstreamIds,
   impactedCustomerIds,
   indexById,
+  nearFullOdps,
   nearestFreeOdp,
   nodeSearchText,
   segmentMeters,
@@ -129,6 +130,8 @@ export function NetworkTopologyPage() {
   // Probable outage roots correlated from the dark customers (the NOC's first
   // question: where's the fault, not which ONUs are red).
   const faults = useMemo(() => localizeFaults(all), [all])
+  // ODPs running low on free ports — capacity planning before installs fail.
+  const capacity = useMemo(() => nearFullOdps(all), [all])
   // Refit the map when the visible set changes (filters/base/my-jobs) — not on selection.
   const refitKey = `${typeFilter}:${statusFilter}:${base}:${myJobsOnly}`
 
@@ -360,6 +363,7 @@ export function NetworkTopologyPage() {
             distanceMeters={distanceMeters}
             nearestOdp={nearestOdp}
             faults={faults}
+            capacity={capacity}
             onClear={() => setSelectedId(null)}
             onEdit={() => {
               if (selected) setForm({ node: selected })
