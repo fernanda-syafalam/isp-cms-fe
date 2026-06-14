@@ -58,6 +58,9 @@ export const CustomerDropSchema = z.object({
   odpId: z.string().min(1),
   lat: z.number(),
   lng: z.number(),
+  // Optional: the exact splitter output port (= fiber core) the technician
+  // chose. When omitted the server allocates the first free port.
+  portNo: z.number().int().positive().optional(),
 })
 export type CustomerDropInput = z.infer<typeof CustomerDropSchema>
 

@@ -20,8 +20,9 @@ import {
 } from '@/components/ui/select'
 import type { NetworkNode } from '@/schemas/topology'
 
-import { useInstallCustomer } from '../hooks/useCabling'
-import { fiberId, formatLength, nearestFreeOdp, segmentMeters } from '../lib/graph'
+import { useInstallCustomer, useSplitters } from '../hooks/useCabling'
+import { nearestFreeOdp, segmentMeters } from '../lib/graph'
+import { InstallAllocation } from './InstallAllocation'
 import { SubscriberPicker } from './SubscriberPicker'
 
 type Props = {
@@ -41,6 +42,7 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
     queryFn: () => listCustomers(),
   })
   const install = useInstallCustomer()
+  const splittersQ = useSplitters()
 
   const nodeIds = new Set(nodes.map((n) => n.id))
   const available = (customersQ.data?.items ?? []).filter((c) => !nodeIds.has(`${c.id}-node`))
@@ -56,21 +58,27 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
   const [odpId, setOdpId] = useState<string>(
     () => nearestFreeOdp(point, nodes)?.node.id ?? freeOdps[0]?.id ?? '',
   )
+  const [portNo, setPortNo] = useState<number | null>(null)
 
   const odp = nodes.find((n) => n.id === odpId)
-  const nextPort = (odp?.meta?.portsUsed ?? 0) + 1
-  const previewCore = fiberId(nextPort).core
+  // Real free ports of the selected ODP's splitter (the source of truth, not the
+  // projected count — which can disagree if ports were freed out of order).
+  const splitter = splittersQ.data?.items.find((s) => s.nodeId === odpId)
+  const freePorts = splitter?.ports.filter((p) => p.outNodeId === null) ?? []
+  // Auto-correct the selection when the ODP changes or the picked port fills up.
+  const selectedPort = freePorts.find((p) => p.portNo === portNo) ?? freePorts[0] ?? null
   const dropMeters = odp ? segmentMeters(odp, point) : 0
-  const canSubmit = Boolean(customerId && odp) && !install.isPending
+  const canSubmit = Boolean(customerId && odp && selectedPort) && !install.isPending
 
   const submit = async () => {
-    if (!customerId || !odp) return
+    if (!customerId || !odp || !selectedPort) return
     try {
       const node = await install.mutateAsync({
         customerId,
         odpId: odp.id,
         lat: point.lat,
         lng: point.lng,
+        portNo: selectedPort.portNo,
       })
       onInstalled(node)
       onOpenChange(false)
@@ -108,23 +116,14 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
             </Select>
           </div>
 
-          {odp ? (
-            <div className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
-              <span className="text-muted-foreground">Alokasi:</span>
-              <span className="flex items-center gap-1.5">
-                <span
-                  className="size-3 shrink-0 rounded-full border border-border"
-                  style={{ background: previewCore.hex }}
-                />
-                Port #{nextPort} {previewCore.name}
-              </span>
-              <span className="ml-auto font-mono text-muted-foreground tabular-nums">
-                drop ≈ {formatLength(dropMeters)}
-              </span>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">Tidak ada ODP dengan port tersisa.</p>
-          )}
+          <InstallAllocation
+            ports={freePorts}
+            selectedPort={selectedPort}
+            onPortChange={setPortNo}
+            loading={splittersQ.isLoading}
+            dropMeters={dropMeters}
+            hasOdp={Boolean(odp)}
+          />
         </div>
 
         <DialogFooter>

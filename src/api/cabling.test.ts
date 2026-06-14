@@ -55,6 +55,55 @@ describe('install customer drop', () => {
     expect(odpAfter?.meta?.portsUsed).toBe(before + 1)
   })
 
+  it('allocates the exact splitter port the technician picked', async () => {
+    const candidate = (await listCustomers({ status: 'prospek' })).items[0]
+    if (!candidate) throw new Error('seed has no node-less (prospek) subscriber')
+    const odp = (await listTopology()).items.find(
+      (n) => n.type === 'odp' && (n.meta?.portsTotal ?? 0) > (n.meta?.portsUsed ?? 0),
+    )
+    if (!odp) throw new Error('no ODP with a free port')
+    const sp = (await listSplitters()).items.find((s) => s.nodeId === odp.id)
+    const free = sp?.ports.filter((p) => p.outNodeId === null) ?? []
+    // pick the LAST free port to prove allocation honors the choice, not just first-free
+    const chosen = free[free.length - 1]
+    if (!chosen) throw new Error('odp has no free port')
+
+    const node = await installCustomerDrop({
+      customerId: candidate.id,
+      odpId: odp.id,
+      lat: odp.lat,
+      lng: odp.lng,
+      portNo: chosen.portNo,
+    })
+    expect(node.meta?.coreNo).toBe(chosen.portNo)
+
+    const spAfter = (await listSplitters()).items.find((s) => s.nodeId === odp.id)
+    const occupied = spAfter?.ports.find((p) => p.portNo === chosen.portNo)
+    expect(occupied?.customerId).toBe(candidate.id)
+  })
+
+  it('rejects a port that is already taken', async () => {
+    const candidate = (await listCustomers({ status: 'prospek' })).items[0]
+    if (!candidate) throw new Error('seed has no node-less (prospek) subscriber')
+    const topo = await listTopology()
+    const odpType = new Set(topo.items.filter((n) => n.type === 'odp').map((n) => n.id))
+    const taken = (await listSplitters()).items
+      .filter((s) => odpType.has(s.nodeId))
+      .flatMap((s) => s.ports.filter((p) => p.outNodeId !== null).map((p) => ({ s, p })))[0]
+    if (!taken) throw new Error('no occupied ODP port in seed')
+    const odp = topo.items.find((n) => n.id === taken.s.nodeId)
+
+    await expect(
+      installCustomerDrop({
+        customerId: candidate.id,
+        odpId: taken.s.nodeId,
+        lat: odp?.lat ?? 0,
+        lng: odp?.lng ?? 0,
+        portNo: taken.p.portNo,
+      }),
+    ).rejects.toThrow()
+  })
+
   it('rejects a customer already on the map', async () => {
     const topo = await listTopology()
     const existing = topo.items.find((n) => n.type === 'customer' && n.meta?.customerId)
