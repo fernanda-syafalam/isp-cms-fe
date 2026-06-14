@@ -12,6 +12,7 @@ import {
   indexById,
   linkBudget,
   nearestFreeOdp,
+  ratioCount,
   segmentMeters,
   uplinkPath,
 } from './graph'
@@ -237,5 +238,17 @@ describe('nearestFreeOdp', () => {
   it('ignores non-ODP node types', () => {
     const onlyCustomers = sampleNetwork().filter((n) => n.type === 'customer')
     expect(nearestFreeOdp(HERE, onlyCustomers)).toBeNull()
+  })
+})
+
+describe('ratioCount', () => {
+  it('returns the output-port count of a PON splitter ratio', () => {
+    expect(ratioCount('1:8')).toBe(8)
+    expect(ratioCount('1:4')).toBe(4)
+    expect(ratioCount('1:64')).toBe(64)
+  })
+
+  it('returns 0 for an unparseable ratio', () => {
+    expect(ratioCount('nonsense')).toBe(0)
   })
 })

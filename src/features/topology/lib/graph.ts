@@ -129,6 +129,13 @@ const SPLITTER_LOSS_DB: Record<string, number> = {
   '1:64': 21,
 }
 
+// Output-port count of a PON splitter ratio: "1:8" → 8. The capacity of an
+// ODC/ODP, derived from its splitter rather than hand-set.
+export function ratioCount(ratio: string): number {
+  const n = Number(ratio.split(':')[1])
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
 export type LinkBudget = { lossDb: number; budgetDb: number; marginDb: number }
 
 // Estimated cumulative optical loss from the OLT down to `node`: fiber distance

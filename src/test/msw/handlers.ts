@@ -1,8 +1,11 @@
 import { HttpResponse, http } from 'msw'
 
+import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { TicketEvent } from '@/schemas/ticket'
+
+import { allocateDrop, deriveCabling } from './cablingFixtures'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -590,6 +593,26 @@ const TOPOLOGY_FIXTURES = (() => {
   return nodes
 })()
 
+// OSP cabling layer, DERIVED from the topology nodes so the two stay consistent.
+// These become live MSW collections; the topology GET projects node.meta from
+// them (splitter/ports/coreNo). See cablingFixtures.ts + lib/projection.ts.
+const _cabling = deriveCabling(TOPOLOGY_FIXTURES)
+const CABLE_FIXTURES = _cabling.cables
+const STRAND_FIXTURES = _cabling.strands
+const SPLITTER_FIXTURES = _cabling.splitters
+const CLOSURE_FIXTURES = _cabling.closures
+const SPLICE_FIXTURES = _cabling.splices
+const CIRCUIT_FIXTURES = _cabling.circuits
+// Bundle of live arrays for the shared allocateDrop/freeDrop capacity mutators.
+const CABLING_STORE = {
+  cables: CABLE_FIXTURES,
+  strands: STRAND_FIXTURES,
+  splitters: SPLITTER_FIXTURES,
+  closures: CLOSURE_FIXTURES,
+  splices: SPLICE_FIXTURES,
+  circuits: CIRCUIT_FIXTURES,
+}
+
 // Mikrotik PPP: profiles + PPPoE secrets per router.
 const PROFILE_PRESETS = [
   { suffix: 'home20', name: 'Home 20', rateLimit: '20M/20M', isIsolir: false },
@@ -1163,7 +1186,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v20'
+const DB_KEY = 'isp-cms-mock-db-v21'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1181,6 +1204,12 @@ const COLLECTIONS: Record<string, unknown[]> = {
   coverage: COVERAGE_FIXTURES,
   tickets: TICKET_FIXTURES,
   topology: TOPOLOGY_FIXTURES,
+  cables: CABLE_FIXTURES,
+  strands: STRAND_FIXTURES,
+  splitters: SPLITTER_FIXTURES,
+  closures: CLOSURE_FIXTURES,
+  splices: SPLICE_FIXTURES,
+  circuits: CIRCUIT_FIXTURES,
   mikrotikProfiles: MIKROTIK_PROFILE_FIXTURES,
   mikrotikSecrets: MIKROTIK_SECRET_FIXTURES,
   mikrotikSessions: MIKROTIK_SESSION_FIXTURES,
@@ -1878,18 +1907,31 @@ export const handlers = [
       status: 'scheduled' as const,
       createdAt: new Date().toISOString(),
     })
-    // Drop the new subscriber onto the topology map under the nearest ODP, at
-    // the picked coordinates (falls back near that ODP). Status starts
-    // "unknown" until the install WO is completed → "up".
-    const odp = TOPOLOGY_FIXTURES.find((n) => n.type === 'odp')
+    // Drop the new subscriber onto the topology map under an ODP that still has
+    // a free splitter port, at the picked coordinates. allocateDrop creates the
+    // drop cable + strand + circuit and binds the splitter port (the single
+    // capacity path); projected node.meta.portsUsed/coreNo follow from it.
+    const odp = TOPOLOGY_FIXTURES.find(
+      (n) =>
+        n.type === 'odp' &&
+        SPLITTER_FIXTURES.some(
+          (s) => s.nodeId === n.id && s.ports.some((p) => p.outNodeId === null),
+        ),
+    )
     const lat = body.lat ?? (odp ? odp.lat + (Math.random() - 0.5) * 0.004 : -6.5514)
     const lng = body.lng ?? (odp ? odp.lng + (Math.random() - 0.5) * 0.004 : 110.6811)
-    // Assign the next fiber core on the ODP and advance its used-port count, so
-    // the ODP planner ("port tersisa / core berikutnya") stays correct.
-    const nextCore = (odp?.meta?.portsUsed ?? 0) + 1
-    if (odp?.meta) odp.meta.portsUsed = nextCore
+    const nodeId = `${customer.id}-node`
+    const drop = odp
+      ? allocateDrop(
+          CABLING_STORE,
+          TOPOLOGY_FIXTURES,
+          odp,
+          { id: nodeId, lat, lng, customerId: customer.id },
+          {}, // new install: no ONU/PON yet (connection provisioned later)
+        )
+      : null
     TOPOLOGY_FIXTURES.push({
-      id: `${customer.id}-node`,
+      id: nodeId,
       name: customer.fullName,
       type: 'customer' as const,
       status: 'unknown' as const,
@@ -1899,7 +1941,7 @@ export const handlers = [
       meta: {
         customerId: customer.id,
         planName: customer.planName,
-        coreNo: nextCore,
+        ...(drop ? { coreNo: drop.coreNo } : {}),
       },
     })
     persistDb()
@@ -3436,12 +3478,15 @@ export const handlers = [
   }),
 
   // Network topology
-  http.get('*/api/topology', () =>
-    HttpResponse.json({
-      items: TOPOLOGY_FIXTURES,
-      total: TOPOLOGY_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/topology', () => {
+    // node.meta (splitter/ports/coreNo) is projected from the cabling layer; the
+    // rest of meta passes through. A real backend computes this server-side.
+    const items = projectNodeMeta(TOPOLOGY_FIXTURES, {
+      splitters: SPLITTER_FIXTURES,
+      strands: STRAND_FIXTURES,
+    })
+    return HttpResponse.json({ items, total: items.length })
+  }),
   http.post('*/api/topology', async ({ request }) => {
     const body = (await request.json()) as {
       name: string
