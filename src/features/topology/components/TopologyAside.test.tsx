@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { NetworkNode } from '@/schemas/topology'
+import { renderWithProviders } from '@/test/helpers'
 
 import { TopologyAside } from './TopologyAside'
 
@@ -32,7 +33,7 @@ const NODES = [OLT, ODP]
 const byId = new Map(NODES.map((n) => [n.id, n]))
 
 function setup(selected: NetworkNode | null) {
-  return render(
+  return renderWithProviders(
     <TopologyAside
       selected={selected}
       byId={byId}
