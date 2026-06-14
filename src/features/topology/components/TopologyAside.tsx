@@ -12,6 +12,7 @@ import type { OdpCapacity } from '../lib/graph'
 import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
 import { CapacityPanel } from './CapacityPanel'
+import { ClosureDetail } from './ClosureDetail'
 import { FaultDiagnosis } from './FaultDiagnosis'
 import { FiberReference } from './FiberReference'
 import { MaintenanceButton } from './MaintenanceButton'
@@ -72,6 +73,11 @@ export function TopologyAside({
       ? splitters?.find((s) => s.nodeId === selected.id)
       : undefined
   const splitterCard = splitter ? <SplitterPorts splitter={splitter} byId={byId} /> : null
+  // The co-located closure (tray/fiber capacity + its fusion splices).
+  const closureCard =
+    selected && (selected.type === 'odc' || selected.type === 'odp') ? (
+      <ClosureDetail nodeId={selected.id} />
+    ) : null
 
   if (isMobile) {
     return (
@@ -107,6 +113,7 @@ export function TopologyAside({
                   </div>
                 ) : null}
                 {splitterCard}
+                {closureCard}
                 <NodeHistory nodeId={selected.id} />
               </div>
             ) : null}
@@ -138,6 +145,7 @@ export function TopologyAside({
       )}
       {selected && canManage ? <MaintenanceButton node={selected} /> : null}
       {selected ? splitterCard : null}
+      {selected ? closureCard : null}
       {selected ? <NodeHistory nodeId={selected.id} /> : null}
       <FiberReference />
     </>
