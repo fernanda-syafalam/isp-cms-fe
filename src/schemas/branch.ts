@@ -28,7 +28,13 @@ export const CreateBranchSchema = z.object({
   phone: z.string().min(1, 'Telepon wajib diisi').max(20),
 })
 
+// Edit a branch: its profile fields and/or active status (deactivate a POP).
+export const UpdateBranchSchema = CreateBranchSchema.partial().extend({
+  status: BranchStatusSchema.optional(),
+})
+
 export type BranchStatus = z.infer<typeof BranchStatusSchema>
 export type Branch = z.infer<typeof BranchSchema>
 export type BranchList = z.infer<typeof BranchListSchema>
 export type CreateBranchInput = z.infer<typeof CreateBranchSchema>
+export type UpdateBranchInput = z.infer<typeof UpdateBranchSchema>

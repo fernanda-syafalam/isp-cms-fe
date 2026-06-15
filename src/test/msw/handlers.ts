@@ -4,6 +4,7 @@ import { ratioCount, routeLength } from '@/features/topology/lib/graph'
 import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
+import { UpdateBranchSchema } from '@/schemas/branch'
 import { CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
@@ -1871,6 +1872,23 @@ export const handlers = [
     recordAudit('branch.create', 'Cabang', `Cabang baru ${body.name}`)
     persistDb()
     return HttpResponse.json(branch, { status: 201 })
+  }),
+  http.patch('*/api/branches/:id', async ({ params, request }) => {
+    const found = BRANCH_FIXTURES.find((b) => b.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Cabang tidak ditemukan' }), {
+        status: 404,
+      })
+    }
+    const body = UpdateBranchSchema.parse(await request.json())
+    if (body.name !== undefined) found.name = body.name
+    if (body.city !== undefined) found.city = body.city
+    if (body.manager !== undefined) found.manager = body.manager
+    if (body.phone !== undefined) found.phone = body.phone
+    if (body.status !== undefined) found.status = body.status
+    recordAudit('branch.update', 'Cabang', `Memperbarui cabang ${found.name}`, 'Admin', found.id)
+    persistDb()
+    return HttpResponse.json(found)
   }),
 
   // Account security: 2FA + active sessions

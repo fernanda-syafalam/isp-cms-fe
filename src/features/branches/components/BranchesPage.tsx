@@ -14,6 +14,7 @@ import type { Branch } from '@/schemas/branch'
 
 import { useBranches } from '../hooks/useBranches'
 import { BranchFormDialog } from './BranchFormDialog'
+import { BranchRowActions } from './BranchRowActions'
 
 export function BranchesPage() {
   const { data, isLoading, isError } = useBranches()
@@ -75,8 +76,21 @@ export function BranchesPage() {
           />
         ),
       },
+      ...(canManage
+        ? [
+            {
+              id: 'actions',
+              meta: { title: 'Aksi' },
+              cell: ({ row }) => (
+                <div className="text-right">
+                  <BranchRowActions branch={row.original} />
+                </div>
+              ),
+            } satisfies ColumnDef<Branch>,
+          ]
+        : []),
     ],
-    [],
+    [canManage],
   )
 
   return (
