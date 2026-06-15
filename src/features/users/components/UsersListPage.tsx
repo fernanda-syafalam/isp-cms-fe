@@ -21,6 +21,7 @@ import type { AppUser } from '@/schemas/user'
 
 import { CreateUserDialog } from './CreateUserDialog'
 import { UserRoleBadge } from './UserRoleBadge'
+import { UserRowActions } from './UserRowActions'
 import { useUsersList } from '../hooks/useUsers'
 
 const ROLE_OPTIONS = ['all', 'admin', 'staff', 'customer'] as const
@@ -68,8 +69,21 @@ export function UsersListPage() {
         meta: { title: 'Dibuat' },
         cell: ({ row }) => formatDate(row.original.createdAt),
       },
+      ...(canManage
+        ? [
+            {
+              id: 'actions',
+              meta: { title: 'Aksi' },
+              cell: ({ row }) => (
+                <div className="text-right">
+                  <UserRowActions user={row.original} />
+                </div>
+              ),
+            } satisfies ColumnDef<AppUser>,
+          ]
+        : []),
     ],
-    [],
+    [canManage],
   )
 
   return (

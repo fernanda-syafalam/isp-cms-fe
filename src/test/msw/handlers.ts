@@ -8,6 +8,7 @@ import { CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
+import { UpdateUserSchema } from '@/schemas/user'
 import type { NodeLifecycle } from '@/schemas/topology'
 import { CreateNodeSchema, UpdateNodeSchema } from '@/schemas/topology'
 
@@ -1398,6 +1399,20 @@ export const handlers = [
     APP_USER_FIXTURES.unshift(user)
     persistDb()
     return HttpResponse.json(user, { status: 201 })
+  }),
+  http.patch('*/api/users/:id', async ({ params, request }) => {
+    const found = APP_USER_FIXTURES.find((u) => u.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      })
+    }
+    const body = UpdateUserSchema.parse(await request.json())
+    if (body.fullName !== undefined) found.fullName = body.fullName
+    if (body.role !== undefined) found.role = body.role
+    recordAudit('user.update', 'Staf', `Memperbarui staf ${found.fullName}`, 'Admin', found.id)
+    persistDb()
+    return HttpResponse.json(found)
   }),
 
   // Plans

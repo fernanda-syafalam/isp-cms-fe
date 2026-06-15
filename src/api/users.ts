@@ -4,6 +4,7 @@ import {
   UserListSchema,
   type AppUser,
   type CreateUserInput,
+  type UpdateUserInput,
   type UserList,
 } from '@/schemas/user'
 
@@ -25,5 +26,10 @@ export async function listUsers(params: ListUsersParams = {}): Promise<UserList>
 
 export async function createUser(input: CreateUserInput): Promise<AppUser> {
   const json = await api.post('users', { json: input }).json()
+  return AppUserSchema.parse(json)
+}
+
+export async function updateUser(id: string, input: UpdateUserInput): Promise<AppUser> {
+  const json = await api.patch(`users/${id}`, { json: input }).json()
   return AppUserSchema.parse(json)
 }
