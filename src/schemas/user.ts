@@ -29,7 +29,15 @@ export const CreateUserSchema = z.object({
   role: UserRoleSchema,
 })
 
+// Edit an existing staff account: name and/or role. Email and password are not
+// editable here (identity / credential changes are a separate concern).
+export const UpdateUserSchema = z.object({
+  fullName: z.string().min(1, 'Name is required').max(120).optional(),
+  role: UserRoleSchema.optional(),
+})
+
 export type UserRole = z.infer<typeof UserRoleSchema>
 export type AppUser = z.infer<typeof AppUserSchema>
 export type UserList = z.infer<typeof UserListSchema>
 export type CreateUserInput = z.infer<typeof CreateUserSchema>
+export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
