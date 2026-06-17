@@ -2415,12 +2415,22 @@ export const handlers = [
   }),
 
   // Payments
-  http.get('*/api/payments', () =>
-    HttpResponse.json({
-      items: PAYMENT_FIXTURES,
-      total: PAYMENT_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/payments', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(PAYMENT_FIXTURES, url.searchParams, {
+        searchFields: ['invoiceNo', 'customerName'],
+        sortAccessors: {
+          paidAt: (p) => p.paidAt,
+          invoiceNo: (p) => p.invoiceNo,
+          amount: (p) => p.amount,
+          customerName: (p) => p.customerName,
+        },
+        // Mirrors the BE default ORDER BY `paidAt desc`.
+        defaultCompare: (a, b) => (a.paidAt < b.paidAt ? 1 : a.paidAt > b.paidAt ? -1 : 0),
+      }),
+    )
+  }),
   // Payment gateway: create a charge (QRIS/VA/e-wallet) for an invoice.
   http.post('*/api/payments/intent', async ({ request }) => {
     const body = (await request.json()) as {
