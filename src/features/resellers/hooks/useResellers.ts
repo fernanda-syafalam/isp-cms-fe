@@ -3,6 +3,8 @@ import { toast } from 'sonner'
 
 import { listCustomers } from '@/api/customers'
 import {
+  RESELLER_EXPORT_LIMIT,
+  type ResellerFilter,
   addLedgerEntry,
   getReseller,
   listResellerLedger,
@@ -12,11 +14,31 @@ import {
 import { getErrorMessage } from '@/lib/errors'
 import type { AddLedgerEntryInput, UpdateResellerInput } from '@/schemas/reseller'
 
-export function useResellersList() {
+export function useResellersList(filter: ResellerFilter = {}) {
   return useQuery({
-    queryKey: ['resellers', 'list'] as const,
-    queryFn: listResellers,
+    queryKey: ['resellers', 'list', filter] as const,
+    queryFn: () => listResellers(filter),
   })
+}
+
+/**
+ * Returns a callback that fetches the full filtered reseller set (one max-size
+ * page) for CSV export. With server pagination the table holds only the current
+ * page, so export must re-query without the page window.
+ */
+export function useExportResellers() {
+  const qc = useQueryClient()
+  return (filter: ResellerFilter = {}) => {
+    const exportFilter: ResellerFilter = {
+      ...filter,
+      limit: RESELLER_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['resellers', 'list', exportFilter] as const,
+      queryFn: () => listResellers(exportFilter),
+    })
+  }
 }
 
 // Customers registered by a reseller — joins the customer base by resellerName.
