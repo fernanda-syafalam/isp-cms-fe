@@ -3977,11 +3977,25 @@ export const handlers = [
     return HttpResponse.json(SETTINGS_FIXTURE)
   }),
 
-  // Audit log (newest first)
+  // Audit log (newest first). entityId is an equality filter applied before the
+  // shared list-query engine handles q/sort/order/limit/offset.
   http.get('*/api/audit', ({ request }) => {
-    const entityId = new URL(request.url).searchParams.get('entityId')
-    const items = entityId ? AUDIT_FIXTURES.filter((e) => e.entityId === entityId) : AUDIT_FIXTURES
-    return HttpResponse.json({ items, total: items.length })
+    const url = new URL(request.url)
+    const entityId = url.searchParams.get('entityId')
+    const rows = entityId ? AUDIT_FIXTURES.filter((e) => e.entityId === entityId) : AUDIT_FIXTURES
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['actor', 'action', 'entity', 'summary'],
+        sortAccessors: {
+          at: (e) => e.at,
+          actor: (e) => e.actor,
+          action: (e) => e.action,
+          entity: (e) => e.entity,
+        },
+        // Default mirrors the backend ORDER BY at DESC (newest first).
+        defaultCompare: (a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0),
+      }),
+    )
   }),
 
   // WhatsApp notifications
