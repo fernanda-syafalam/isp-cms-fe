@@ -16,9 +16,18 @@ export const BranchSchema = z.object({
   deviceCount: z.number().int().nonnegative(),
 })
 
+// Overview KPIs computed over the FULL branch set (independent of search /
+// paging) so the header cards stay stable while the operator filters the table.
+export const BranchSummarySchema = z.object({
+  branches: z.number().int().nonnegative(),
+  customers: z.number().int().nonnegative(),
+  mrr: z.number().int().nonnegative(),
+})
+
 export const BranchListSchema = z.object({
   items: z.array(BranchSchema),
   total: z.number().int().nonnegative(),
+  summary: BranchSummarySchema,
 })
 
 export const CreateBranchSchema = z.object({
@@ -35,6 +44,7 @@ export const UpdateBranchSchema = CreateBranchSchema.partial().extend({
 
 export type BranchStatus = z.infer<typeof BranchStatusSchema>
 export type Branch = z.infer<typeof BranchSchema>
+export type BranchSummary = z.infer<typeof BranchSummarySchema>
 export type BranchList = z.infer<typeof BranchListSchema>
 export type CreateBranchInput = z.infer<typeof CreateBranchSchema>
 export type UpdateBranchInput = z.infer<typeof UpdateBranchSchema>

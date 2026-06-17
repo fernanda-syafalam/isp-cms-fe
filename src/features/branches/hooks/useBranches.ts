@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { createBranch, listBranches, updateBranch } from '@/api/branches'
+import { type BranchFilter, createBranch, listBranches, updateBranch } from '@/api/branches'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreateBranchInput, UpdateBranchInput } from '@/schemas/branch'
 
-export function useBranches() {
+export function useBranches(filter: BranchFilter = {}) {
   return useQuery({
-    queryKey: ['branches', 'list'] as const,
-    queryFn: listBranches,
+    queryKey: ['branches', 'list', filter] as const,
+    queryFn: () => listBranches(filter),
   })
 }
 
