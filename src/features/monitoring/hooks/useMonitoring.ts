@@ -4,15 +4,16 @@ import { toast } from 'sonner'
 import {
   acknowledgeAlert,
   createTicketFromAlert,
+  type DeviceMetricFilter,
   listAlerts,
   listDeviceMetrics,
 } from '@/api/monitoring'
 import { getErrorMessage } from '@/lib/errors'
 
-export function useDeviceMetrics() {
+export function useDeviceMetrics(filter: DeviceMetricFilter = {}) {
   return useQuery({
-    queryKey: ['monitoring', 'metrics'] as const,
-    queryFn: listDeviceMetrics,
+    queryKey: ['monitoring', 'metrics', filter] as const,
+    queryFn: () => listDeviceMetrics(filter),
   })
 }
 
