@@ -2508,12 +2508,28 @@ export const handlers = [
   }),
 
   // Devices
-  http.get('*/api/devices', () =>
-    HttpResponse.json({
-      items: DEVICE_FIXTURES,
-      total: DEVICE_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/devices', ({ request }) => {
+    const url = new URL(request.url)
+    // Equality filters first (type, status), then the shared search/sort/page
+    // engine mirrors the backend list contract.
+    let rows = DEVICE_FIXTURES
+    const type = url.searchParams.get('type')
+    if (type) rows = rows.filter((d) => d.type === type)
+    rows = filterByStatus(rows, url.searchParams.get('status'))
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['name', 'ipAddress', 'areaName'],
+        sortAccessors: {
+          name: (d) => d.name,
+          status: (d) => d.status,
+          rxPower: (d) => d.rxPower,
+          uptimeHours: (d) => d.uptimeHours,
+          lastSeenAt: (d) => d.lastSeenAt,
+        },
+        defaultCompare: (a, b) => a.name.localeCompare(b.name),
+      }),
+    )
+  }),
   http.get('*/api/devices/:id', ({ params }) => {
     const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
     return found

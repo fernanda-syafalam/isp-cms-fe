@@ -1,15 +1,43 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { deleteDevice, getDevice, listDevices, rebootDevice, updateDevice } from '@/api/devices'
+import {
+  type DeviceFilter,
+  DEVICE_EXPORT_LIMIT,
+  deleteDevice,
+  getDevice,
+  listDevices,
+  rebootDevice,
+  updateDevice,
+} from '@/api/devices'
 import { getErrorMessage } from '@/lib/errors'
 import type { UpdateDeviceInput } from '@/schemas/device'
 
-export function useDevicesList() {
+export function useDevicesList(filter: DeviceFilter = {}) {
   return useQuery({
-    queryKey: ['devices', 'list'] as const,
-    queryFn: listDevices,
+    queryKey: ['devices', 'list', filter] as const,
+    queryFn: () => listDevices(filter),
   })
+}
+
+/**
+ * Returns a callback that fetches the full filtered device set (one max-size
+ * page) for CSV export. With server pagination the table holds only the current
+ * page, so export must re-query without the page window.
+ */
+export function useExportDevices() {
+  const qc = useQueryClient()
+  return (filter: DeviceFilter = {}) => {
+    const exportFilter: DeviceFilter = {
+      ...filter,
+      limit: DEVICE_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['devices', 'list', exportFilter] as const,
+      queryFn: () => listDevices(exportFilter),
+    })
+  }
 }
 
 export function useDevice(id: string) {
