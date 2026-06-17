@@ -8,7 +8,7 @@ import { listPlans } from '@/api/plans'
 export function usePlanOptions() {
   return useQuery({
     queryKey: ['plans', 'options'] as const,
-    queryFn: listPlans,
+    queryFn: () => listPlans(),
     select: (data) =>
       data.items
         .filter((plan) => plan.status === 'active')

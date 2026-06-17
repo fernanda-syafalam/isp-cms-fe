@@ -1,15 +1,39 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { archivePlan, createPlan, listPlans, updatePlan } from '@/api/plans'
+import {
+  archivePlan,
+  createPlan,
+  listPlans,
+  PLAN_EXPORT_LIMIT,
+  type PlanFilter,
+  updatePlan,
+} from '@/api/plans'
 import { getErrorMessage } from '@/lib/errors'
-import type { CreatePlanInput } from '@/schemas/plan'
+import type { CreatePlanInput, PlanList } from '@/schemas/plan'
 
-export function usePlansList() {
+export function usePlansList(filter: PlanFilter = {}) {
   return useQuery({
-    queryKey: ['plans', 'list'] as const,
-    queryFn: listPlans,
+    queryKey: ['plans', 'list', filter] as const,
+    queryFn: () => listPlans(filter),
   })
+}
+
+// Export the full filtered set (server pagination keeps only the page in the
+// table) by fetching a single max-size page through the query cache.
+export function useExportPlans() {
+  const qc = useQueryClient()
+  return (filter: PlanFilter): Promise<PlanList> => {
+    const exportFilter: PlanFilter = {
+      ...filter,
+      limit: PLAN_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['plans', 'list', exportFilter] as const,
+      queryFn: () => listPlans(exportFilter),
+    })
+  }
 }
 
 export function useCreatePlan() {

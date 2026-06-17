@@ -1418,13 +1418,25 @@ export const handlers = [
   }),
 
   // Plans
-  http.get('*/api/plans', () => {
+  http.get('*/api/plans', ({ request }) => {
+    const url = new URL(request.url)
     // Attach a live subscriber count per plan from the customer base.
-    const items = PLAN_FIXTURES.map((p) => ({
+    const rows = PLAN_FIXTURES.map((p) => ({
       ...p,
       subscriberCount: CUSTOMER_FIXTURES.filter((c) => c.planName === p.name).length,
     }))
-    return HttpResponse.json({ items, total: items.length })
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['name'],
+        sortAccessors: {
+          name: (r) => r.name,
+          speedMbps: (r) => r.speedMbps,
+          priceMonthly: (r) => r.priceMonthly,
+          status: (r) => r.status,
+        },
+        defaultCompare: (a, b) => a.name.localeCompare(b.name),
+      }),
+    )
   }),
   http.post('*/api/plans', async ({ request }) => {
     const body = (await request.json()) as {
