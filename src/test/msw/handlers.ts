@@ -3202,9 +3202,23 @@ export const handlers = [
 
   // Tickets
   http.get('*/api/tickets', ({ request }) => {
-    const status = new URL(request.url).searchParams.get('status')
-    const items = filterByStatus(TICKET_FIXTURES, status)
-    return HttpResponse.json({ items, total: items.length })
+    const url = new URL(request.url)
+    // Equality filter first (status), then the shared search/sort/page engine
+    // mirrors the backend list contract.
+    const rows = filterByStatus(TICKET_FIXTURES, url.searchParams.get('status'))
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['code', 'subject', 'customerName'],
+        sortAccessors: {
+          code: (t) => t.code,
+          status: (t) => t.status,
+          priority: (t) => t.priority,
+          slaDueAt: (t) => t.slaDueAt,
+          createdAt: (t) => t.createdAt,
+        },
+        defaultCompare: (a, b) => b.createdAt.localeCompare(a.createdAt),
+      }),
+    )
   }),
   http.post('*/api/tickets', async ({ request }) => {
     const body = (await request.json()) as {
