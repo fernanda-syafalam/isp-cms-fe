@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import {
   INVENTORY_EXPORT_LIMIT,
   type InventoryFilter,
+  STOCK_MOVEMENT_EXPORT_LIMIT,
+  type StockMovementFilter,
   deleteInventory,
   listInventory,
   listStockMovements,
@@ -46,11 +48,31 @@ export function useExportInventory() {
   }
 }
 
-export function useStockMovements() {
+export function useStockMovements(filter: StockMovementFilter = {}) {
   return useQuery({
-    queryKey: ['inventory', 'movements'] as const,
-    queryFn: listStockMovements,
+    queryKey: ['inventory', 'movements', filter] as const,
+    queryFn: () => listStockMovements(filter),
   })
+}
+
+/**
+ * Returns a callback that fetches the full filtered movement history (one
+ * max-size page) for CSV export. With server pagination the table holds only
+ * the current page, so export must re-query without the page window.
+ */
+export function useExportStockMovements() {
+  const qc = useQueryClient()
+  return (filter: StockMovementFilter = {}) => {
+    const exportFilter: StockMovementFilter = {
+      ...filter,
+      limit: STOCK_MOVEMENT_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['inventory', 'movements', exportFilter] as const,
+      queryFn: () => listStockMovements(exportFilter),
+    })
+  }
 }
 
 export function useStockIn() {
