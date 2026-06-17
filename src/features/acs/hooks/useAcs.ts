@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { bulkAcs, listAcsDevices } from '@/api/acs'
+import { type AcsDeviceFilter, bulkAcs, listAcsDevices } from '@/api/acs'
 import { getErrorMessage } from '@/lib/errors'
 import type { BulkAcsInput } from '@/schemas/acs'
 
-export function useAcsDevices() {
+export function useAcsDevices(filter: AcsDeviceFilter = {}) {
   return useQuery({
-    queryKey: ['acs', 'devices'] as const,
-    queryFn: listAcsDevices,
+    queryKey: ['acs', 'devices', filter] as const,
+    queryFn: () => listAcsDevices(filter),
   })
 }
 

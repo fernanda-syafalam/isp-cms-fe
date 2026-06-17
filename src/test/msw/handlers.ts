@@ -3494,12 +3494,24 @@ export const handlers = [
   ),
 
   // TR-069 / GenieACS
-  http.get('*/api/acs/devices', () =>
-    HttpResponse.json({
-      items: ACS_DEVICE_FIXTURES,
-      total: ACS_DEVICE_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/acs/devices', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(ACS_DEVICE_FIXTURES, url.searchParams, {
+        searchFields: ['serial', 'customerName'],
+        sortAccessors: {
+          serial: (d) => d.serial,
+          customerName: (d) => d.customerName,
+          model: (d) => d.model,
+          firmware: (d) => d.firmware,
+          rxPowerDbm: (d) => d.rxPowerDbm,
+          status: (d) => d.status,
+          lastInform: (d) => d.lastInform,
+        },
+        defaultCompare: (a, b) => a.serial.localeCompare(b.serial),
+      }),
+    )
+  }),
   // Bulk task: firmware upgrades flip the firmware version; reboot/wifi just ack.
   http.post('*/api/acs/bulk', async ({ request }) => {
     const body = (await request.json()) as {
