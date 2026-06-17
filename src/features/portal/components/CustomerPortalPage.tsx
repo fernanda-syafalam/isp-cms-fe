@@ -66,7 +66,7 @@ export function CustomerPortalPage() {
         <KpiCard
           label="Status layanan"
           value={statusLabel(customer.status)}
-          hint={customer.areaName}
+          hint={customer.areaName ?? 'Tanpa area'}
           icon={WifiIcon}
         />
         <KpiCard
