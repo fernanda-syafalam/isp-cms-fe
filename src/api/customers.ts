@@ -14,12 +14,28 @@ import {
 export type CustomerFilter = {
   q?: string | undefined
   status?: string | undefined
+  // Service-area scope (resolved from the active branch); a repeated `area`
+  // param. Omitted = no area constraint. Unassigned customers are included by
+  // the server in every scope, so they are never filtered out here.
+  area?: string[] | undefined
+  sort?: string | undefined
+  order?: 'asc' | 'desc' | undefined
+  limit?: number | undefined
+  offset?: number | undefined
 }
+
+// Upper bound for an "export all" pull (the CSV download ignores paging).
+export const CUSTOMER_EXPORT_LIMIT = 500
 
 export async function listCustomers(filter: CustomerFilter = {}): Promise<CustomerList> {
   const searchParams = new URLSearchParams()
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.status) searchParams.set('status', filter.status)
+  for (const area of filter.area ?? []) searchParams.append('area', area)
+  if (filter.sort) searchParams.set('sort', filter.sort)
+  if (filter.order) searchParams.set('order', filter.order)
+  if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
+  if (filter.offset !== undefined) searchParams.set('offset', String(filter.offset))
   const json = await api.get('customers', { searchParams }).json()
   return CustomerListSchema.parse(json)
 }

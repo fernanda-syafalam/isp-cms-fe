@@ -1482,15 +1482,27 @@ export const handlers = [
   // Customers
   http.get('*/api/customers', ({ request }) => {
     const url = new URL(request.url)
-    const q = url.searchParams.get('q')?.toLowerCase() ?? ''
-    const status = url.searchParams.get('status')
-    let items = filterByStatus(CUSTOMER_FIXTURES, status)
-    if (q) {
-      items = items.filter(
-        (c) => c.fullName.toLowerCase().includes(q) || c.customerNo.toLowerCase().includes(q),
-      )
+    let items = filterByStatus(CUSTOMER_FIXTURES, url.searchParams.get('status'))
+    // Branch scope: the client resolves its active branch to the service areas it
+    // covers and sends them as repeated `area` params. Unassigned customers
+    // (areaName null) stay visible in every scope so ops never lose track of them.
+    const areas = url.searchParams.getAll('area')
+    if (areas.length > 0) {
+      items = items.filter((c) => c.areaName === null || areas.includes(c.areaName))
     }
-    return HttpResponse.json({ items, total: items.length })
+    const result = applyListQuery(items, url.searchParams, {
+      searchFields: ['fullName', 'customerNo', 'phone'],
+      sortAccessors: {
+        customerNo: (c) => c.customerNo,
+        fullName: (c) => c.fullName,
+        areaName: (c) => c.areaName,
+        status: (c) => c.status,
+        joinedAt: (c) => c.joinedAt,
+      },
+      // No sort param ⇒ preserve fixture order (mirrors the BE default ORDER BY).
+      defaultCompare: () => 0,
+    })
+    return HttpResponse.json(result)
   }),
   http.get('*/api/customers/:id', ({ params }) => {
     const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
