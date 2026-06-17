@@ -3084,9 +3084,30 @@ export const handlers = [
 
   // Vouchers (prepaid hotspot/PPPoE)
   http.get('*/api/vouchers', ({ request }) => {
-    const status = new URL(request.url).searchParams.get('status')
-    const items = filterByStatus(VOUCHER_FIXTURES, status)
-    return HttpResponse.json({ items, total: items.length })
+    const url = new URL(request.url)
+    // Summary is a full-set invariant: rolled up over ALL vouchers, before any
+    // status/q filter or paging — so the KPI cards never shift with the table.
+    const used = VOUCHER_FIXTURES.filter((v) => v.status === 'used')
+    const summary = {
+      total: VOUCHER_FIXTURES.length,
+      unused: VOUCHER_FIXTURES.filter((v) => v.status === 'unused').length,
+      used: used.length,
+      revenue: used.reduce((sum, v) => sum + v.priceIdr, 0),
+    }
+    const filtered = filterByStatus(VOUCHER_FIXTURES, url.searchParams.get('status'))
+    const { items, total } = applyListQuery(filtered, url.searchParams, {
+      searchFields: ['code', 'profile'],
+      sortAccessors: {
+        code: (v) => v.code,
+        profile: (v) => v.profile,
+        priceIdr: (v) => v.priceIdr,
+        durationDays: (v) => v.durationDays,
+        status: (v) => v.status,
+        createdAt: (v) => v.createdAt,
+      },
+      defaultCompare: () => 0, // preserve insertion order (newest first, mirrors BE desc(createdAt))
+    })
+    return HttpResponse.json({ items, total, summary })
   }),
   // Generate a batch of identical unused vouchers.
   http.post('*/api/vouchers/batch', async ({ request }) => {

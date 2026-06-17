@@ -1,8 +1,10 @@
 import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CheckCircle2Icon, DownloadIcon, TicketIcon, WalletIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
+import type { VoucherFilter } from '@/api/vouchers'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -18,12 +20,14 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
+import { getErrorMessage } from '@/lib/errors'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Voucher, VoucherStatus } from '@/schemas/voucher'
 
-import { useVouchersList } from '../hooks/useVouchers'
+import { useExportVouchers, useVouchersList } from '../hooks/useVouchers'
 import { GenerateBatchDialog } from './GenerateBatchDialog'
 import { VoucherRowActions } from './VoucherRowActions'
 
@@ -45,93 +49,108 @@ const toCsvRow = (v: Voucher) => ({
   Dibuat: formatDate(v.createdAt),
 })
 
+// Static column defs (no component state). Sortable keys (code/priceIdr/
+// durationDays/status) match the backend sort whitelist; Profil/Batch are plain.
+const COLUMNS: ColumnDef<Voucher>[] = [
+  {
+    accessorKey: 'code',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
+    meta: { title: 'Kode' },
+    cell: ({ row }) => <span className="font-medium font-mono text-sm">{row.original.code}</span>,
+  },
+  {
+    accessorKey: 'profile',
+    header: 'Profil',
+    meta: { title: 'Profil' },
+  },
+  {
+    accessorKey: 'priceIdr',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
+    meta: { title: 'Harga', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{formatCurrency(row.original.priceIdr)}</span>
+    ),
+  },
+  {
+    accessorKey: 'durationDays',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Masa aktif" />,
+    meta: { title: 'Masa aktif' },
+    cell: ({ row }) => `${formatNumber(row.original.durationDays)} hari`,
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={STATUS_TONE[row.original.status]}
+        label={statusLabel(row.original.status)}
+      />
+    ),
+  },
+  {
+    accessorKey: 'batchId',
+    header: 'Batch',
+    meta: { title: 'Batch' },
+    cell: ({ row }) => (
+      <span className="font-mono text-muted-foreground text-xs">{row.original.batchId}</span>
+    ),
+  },
+  {
+    id: 'actions',
+    meta: { title: 'Aksi', align: 'right' },
+    cell: ({ row }) => (
+      <div className="flex justify-end">
+        <VoucherRowActions voucher={row.original} />
+      </div>
+    ),
+  },
+]
+
 const routeApi = getRouteApi('/_auth/vouchers')
 
 export function VouchersListPage() {
   const { status: statusParam } = routeApi.useSearch()
   const status = statusParam ?? 'all'
   const navigate = routeApi.useNavigate()
-  const setStatus = (value: string) =>
-    navigate({ search: value === 'all' ? {} : { status: value } })
   const canManage = useCan('vouchers.manage')
+  const table = useTableQuery({ pageSize: 20 })
+  const exportVouchers = useExportVouchers()
+  const [isExporting, setIsExporting] = useState(false)
 
-  // Unfiltered set powers the summary so it stays correct under any filter.
-  const all = useVouchersList()
-  const { data, isLoading, isError } = useVouchersList({
+  // Status is a URL filter the table does not own — rewind to page 1 on change.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
+  const baseFilter: VoucherFilter = {
     status: status === 'all' ? undefined : status,
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+  }
+  const { data, isLoading, isError } = useVouchersList({
+    ...baseFilter,
+    limit: table.params.limit,
+    offset: table.params.offset,
   })
+  const total = data?.total ?? 0
+  // KPI summary is a full-set server aggregate (ignores status/q/paging), so the
+  // cards stay correct under any table filter.
+  const summary = data?.summary
 
-  const summary = useMemo(() => {
-    const items = all.data?.items ?? []
-    const used = items.filter((v) => v.status === 'used')
-    return {
-      total: items.length,
-      unused: items.filter((v) => v.status === 'unused').length,
-      used: used.length,
-      revenue: used.reduce((sum, v) => sum + v.priceIdr, 0),
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportVouchers(baseFilter)
+      downloadCsv('voucher', result.items.map(toCsvRow))
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setIsExporting(false)
     }
-  }, [all.data])
-
-  const columns = useMemo<ColumnDef<Voucher>[]>(
-    () => [
-      {
-        accessorKey: 'code',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
-        meta: { title: 'Kode' },
-        cell: ({ row }) => (
-          <span className="font-medium font-mono text-sm">{row.original.code}</span>
-        ),
-      },
-      {
-        accessorKey: 'profile',
-        header: 'Profil',
-        meta: { title: 'Profil' },
-      },
-      {
-        accessorKey: 'priceIdr',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        meta: { title: 'Harga', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{formatCurrency(row.original.priceIdr)}</span>
-        ),
-      },
-      {
-        accessorKey: 'durationDays',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Masa aktif" />,
-        meta: { title: 'Masa aktif' },
-        cell: ({ row }) => `${formatNumber(row.original.durationDays)} hari`,
-      },
-      {
-        accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={STATUS_TONE[row.original.status]}
-            label={statusLabel(row.original.status)}
-          />
-        ),
-      },
-      {
-        accessorKey: 'batchId',
-        header: 'Batch',
-        meta: { title: 'Batch' },
-        cell: ({ row }) => (
-          <span className="font-mono text-muted-foreground text-xs">{row.original.batchId}</span>
-        ),
-      },
-      {
-        id: 'actions',
-        meta: { title: 'Aksi', align: 'right' },
-        cell: ({ row }) => (
-          <div className="flex justify-end">
-            <VoucherRowActions voucher={row.original} />
-          </div>
-        ),
-      },
-    ],
-    [],
-  )
+  }
 
   return (
     <div className="space-y-6">
@@ -141,7 +160,7 @@ export function VouchersListPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {all.isLoading || !all.data ? (
+        {!summary ? (
           <>
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
@@ -182,12 +201,24 @@ export function VouchersListPage() {
       </div>
 
       <DataTable
-        columns={columns}
+        columns={COLUMNS}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada voucher."
+        emptyMessage={
+          table.search ? `Tidak ada voucher cocok dengan "${table.search}".` : 'Belum ada voucher.'
+        }
         searchPlaceholder="Cari kode / profil…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         toolbar={
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="h-8 w-40" aria-label="Filter status">
@@ -208,8 +239,8 @@ export function VouchersListPage() {
               variant="outline"
               size="sm"
               className="h-8"
-              disabled={!data?.items.length}
-              onClick={() => downloadCsv('voucher', (data?.items ?? []).map(toCsvRow))}
+              disabled={!total || isExporting}
+              onClick={handleExport}
             >
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Ekspor</span>

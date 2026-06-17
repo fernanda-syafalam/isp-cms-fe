@@ -19,9 +19,22 @@ export const VoucherSchema = z.object({
   usedBy: z.string().nullable(), // who redeemed it (free-text in mock)
 })
 
+// Full-set rollup over ALL vouchers, computed before any status/q filter or
+// paging — so the KPI cards stay a dashboard invariant under any table filter
+// (mirrors the accounting journal `totals` invariant).
+export const VoucherSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  unused: z.number().int().nonnegative(),
+  used: z.number().int().nonnegative(),
+  revenue: z.number().int().nonnegative(), // sum of priceIdr over redeemed vouchers
+})
+
 export const VoucherListSchema = z.object({
   items: z.array(VoucherSchema),
+  // Count AFTER status+q filtering but BEFORE limit/offset paging — drives the
+  // table's page count. `items` is the current page; `total` the filtered set.
   total: z.number().int().nonnegative(),
+  summary: VoucherSummarySchema,
 })
 
 // Generate a batch of identical vouchers in one go.
@@ -40,6 +53,7 @@ export const VoucherBatchResultSchema = z.object({
 
 export type VoucherStatus = z.infer<typeof VoucherStatusSchema>
 export type Voucher = z.infer<typeof VoucherSchema>
+export type VoucherSummary = z.infer<typeof VoucherSummarySchema>
 export type VoucherList = z.infer<typeof VoucherListSchema>
 export type GenerateVoucherBatchInput = z.infer<typeof GenerateVoucherBatchSchema>
 export type VoucherBatchResult = z.infer<typeof VoucherBatchResultSchema>
