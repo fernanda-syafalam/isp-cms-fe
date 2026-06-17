@@ -3603,9 +3603,41 @@ export const handlers = [
   }),
 
   // FTTH / ODP capacity
-  http.get('*/api/odp', () =>
-    HttpResponse.json({ items: ODP_FIXTURES, total: ODP_FIXTURES.length }),
-  ),
+  http.get('*/api/odp', ({ request }) => {
+    const url = new URL(request.url)
+    const all = ODP_FIXTURES
+    const free = (o: (typeof all)[number]) => o.totalPorts - o.usedPorts
+    // Capacity/health summary spans the FULL ODP set (ignores view/q/sort/
+    // paging) so the planning KPI cards stay correct under any table filter.
+    const totalPorts = all.reduce((s, o) => s + o.totalPorts, 0)
+    const usedPorts = all.reduce((s, o) => s + o.usedPorts, 0)
+    const summary = {
+      totalOdp: all.length,
+      utilization: totalPorts ? Math.round((usedPorts / totalPorts) * 100) : 0,
+      full: all.filter((o) => free(o) === 0).length,
+      optical: all.filter((o) => o.status !== 'healthy').length,
+    }
+    // Server-owned capacity/health "view" filter, applied before search/sort/page.
+    const view = url.searchParams.get('view')
+    const viewed =
+      view === 'available'
+        ? all.filter((o) => free(o) > 0)
+        : view === 'full'
+          ? all.filter((o) => free(o) === 0)
+          : view === 'optical'
+            ? all.filter((o) => o.status !== 'healthy')
+            : all
+    const { items, total } = applyListQuery(viewed, url.searchParams, {
+      searchFields: ['name', 'area'],
+      sortAccessors: {
+        name: (o) => o.name,
+        usedPorts: (o) => o.usedPorts,
+        avgRxPowerDbm: (o) => o.avgRxPowerDbm,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ items, total, summary })
+  }),
 
   // TR-069 / GenieACS
   http.get('*/api/acs/devices', ({ request }) => {
