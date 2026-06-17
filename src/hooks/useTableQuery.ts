@@ -57,6 +57,11 @@ export function useTableQuery(options: UseTableQueryOptions = {}) {
     setPageIndex(next.pageIndex)
   }
 
+  // Jump back to the first page. Call this when an external filter the table
+  // does not own (e.g. a URL status/type dropdown) changes, so the user is
+  // never stranded on a now-out-of-range page.
+  const resetPage = () => setPageIndex(0)
+
   const params = useMemo<TableQueryParams>(() => {
     const first = sorting[0]
     return {
@@ -77,5 +82,6 @@ export function useTableQuery(options: UseTableQueryOptions = {}) {
     onSearchChange,
     onSortingChange,
     onPaginationChange,
+    resetPage,
   }
 }

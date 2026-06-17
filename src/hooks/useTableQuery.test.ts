@@ -59,4 +59,14 @@ describe('useTableQuery', () => {
     expect(result.current.pageIndex).toBe(0)
     expect(result.current.params).toMatchObject({ limit: 50, offset: 0 })
   })
+
+  it('resetPage jumps back to the first page for external filter changes', () => {
+    const { result } = renderHook(() => useTableQuery({ pageSize: 10 }))
+    act(() => result.current.onPaginationChange({ pageIndex: 5, pageSize: 10 }))
+    expect(result.current.pageIndex).toBe(5)
+
+    act(() => result.current.resetPage())
+    expect(result.current.pageIndex).toBe(0)
+    expect(result.current.params).toMatchObject({ offset: 0 })
+  })
 })
