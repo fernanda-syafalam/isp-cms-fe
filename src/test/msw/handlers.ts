@@ -3113,10 +3113,22 @@ export const handlers = [
       }),
     )
   }),
-  // Full stock movement history (newest first).
-  http.get('*/api/inventory/movements', () => {
-    const items = [...STOCK_MOVEMENT_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
-    return HttpResponse.json({ items, total: items.length })
+  // Full stock movement history (default newest first).
+  http.get('*/api/inventory/movements', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(STOCK_MOVEMENT_FIXTURES, url.searchParams, {
+        searchFields: ['serial', 'note'],
+        sortAccessors: {
+          at: (m) => m.at,
+          serial: (m) => m.serial,
+          type: (m) => m.type,
+          kind: (m) => m.kind,
+        },
+        // Newest first by default (mirrors the BE default `at desc`).
+        defaultCompare: (a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0),
+      }),
+    )
   }),
   // Stock-in: register a new device into the warehouse + log an "in" movement.
   http.post('*/api/inventory', async ({ request }) => {
