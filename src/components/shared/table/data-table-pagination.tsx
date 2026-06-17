@@ -19,7 +19,11 @@ const PAGE_SIZES = [10, 20, 30, 50] as const
 
 export function DataTablePagination<TData>({ table }: { table: Table<TData> }) {
   const selected = table.getFilteredSelectedRowModel().rows.length
-  const total = table.getFilteredRowModel().rows.length
+  // In manual (server) mode the filtered row model is just the current page, so
+  // read the server total via getRowCount(); client mode reports filtered rows.
+  const total = table.options.manualPagination
+    ? table.getRowCount()
+    : table.getFilteredRowModel().rows.length
   const { pageIndex, pageSize } = table.getState().pagination
   const pageCount = table.getPageCount()
 
