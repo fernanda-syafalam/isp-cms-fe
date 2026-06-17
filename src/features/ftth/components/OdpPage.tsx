@@ -1,7 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon, NetworkIcon, PlugZapIcon, SignalIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
+import type { OdpFilter, OdpView } from '@/api/odp'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -15,10 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
+import { getErrorMessage } from '@/lib/errors'
 import type { OdpRecord, OdpStatus } from '@/schemas/odp'
 
-import { useOdpList } from '../hooks/useOdp'
+import { useExportOdp, useOdpList } from '../hooks/useOdp'
 
 const STATUS_TONE: Record<OdpStatus, StatusTone> = {
   healthy: 'success',
@@ -32,6 +37,7 @@ const STATUS_LABEL: Record<OdpStatus, string> = {
   critical: 'Kritis',
 }
 
+// 'all' has no server view param; the rest map straight to the `view` query.
 const FILTERS = ['all', 'available', 'full', 'optical'] as const
 type Filter = (typeof FILTERS)[number]
 const FILTER_LABEL: Record<Filter, string> = {
@@ -53,98 +59,108 @@ const toCsvRow = (o: OdpRecord) => ({
   Status: STATUS_LABEL[o.status],
 })
 
+// Static column defs (no component state). Sortable keys (name/usedPorts/
+// avgRxPowerDbm) match the backend sort whitelist; the rest are plain.
+const COLUMNS: ColumnDef<OdpRecord>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="ODP" />,
+    meta: { title: 'ODP' },
+    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+  },
+  { accessorKey: 'area', header: 'Area', meta: { title: 'Area' } },
+  {
+    accessorKey: 'splitter',
+    header: 'Splitter',
+    meta: { title: 'Splitter' },
+    cell: ({ row }) => <span className="font-mono text-sm">{row.original.splitter}</span>,
+  },
+  {
+    accessorKey: 'usedPorts',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Kapasitas port" />,
+    meta: { title: 'Kapasitas port' },
+    cell: ({ row }) => {
+      const { usedPorts, totalPorts } = row.original
+      const p = Math.round((usedPorts / totalPorts) * 100)
+      return (
+        <div className="w-36">
+          <div className="flex justify-between text-xs">
+            <span className="font-mono tabular-nums">
+              {usedPorts}/{totalPorts}
+            </span>
+            <span className="text-muted-foreground">{p}%</span>
+          </div>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full ${p >= 100 ? 'bg-red-500' : p >= 80 ? 'bg-amber-500' : 'bg-primary'}`}
+              style={{ width: `${Math.max(2, p)}%` }}
+            />
+          </div>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'avgRxPowerDbm',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
+    meta: { title: 'Redaman', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{row.original.avgRxPowerDbm} dBm</span>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Optik',
+    meta: { title: 'Optik' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={STATUS_TONE[row.original.status]}
+        label={STATUS_LABEL[row.original.status]}
+      />
+    ),
+  },
+]
+
 export function OdpPage() {
-  const { data, isLoading, isError } = useOdpList()
+  const table = useTableQuery({ pageSize: 20 })
+  const exportOdp = useExportOdp()
   const [filter, setFilter] = useState<Filter>('all')
+  const [isExporting, setIsExporting] = useState(false)
 
-  const items = useMemo(() => {
-    const all = data?.items ?? []
-    switch (filter) {
-      case 'available':
-        return all.filter((o) => free(o) > 0)
-      case 'full':
-        return all.filter((o) => free(o) === 0)
-      case 'optical':
-        return all.filter((o) => o.status !== 'healthy')
-      default:
-        return all
+  // The capacity/health view is a local filter the table does not own — rewind
+  // to page 1 on change so the user is never stranded on an out-of-range page.
+  const setView = (value: string) => {
+    setFilter(value as Filter)
+    table.resetPage()
+  }
+
+  const baseFilter: OdpFilter = {
+    view: filter === 'all' ? undefined : (filter as OdpView),
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+  }
+  const { data, isLoading, isError } = useOdpList({
+    ...baseFilter,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const total = data?.total ?? 0
+  // KPI summary is a full-set server aggregate (ignores view/q/paging), so the
+  // cards stay correct under any table filter.
+  const summary = data?.summary
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportOdp(baseFilter)
+      downloadCsv('odp', result.items.map(toCsvRow))
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setIsExporting(false)
     }
-  }, [data, filter])
-
-  const summary = useMemo(() => {
-    const all = data?.items ?? []
-    const totalPorts = all.reduce((s, o) => s + o.totalPorts, 0)
-    const usedPorts = all.reduce((s, o) => s + o.usedPorts, 0)
-    return {
-      total: all.length,
-      utilization: totalPorts ? Math.round((usedPorts / totalPorts) * 100) : 0,
-      full: all.filter((o) => free(o) === 0).length,
-      optical: all.filter((o) => o.status !== 'healthy').length,
-    }
-  }, [data])
-
-  const columns = useMemo<ColumnDef<OdpRecord>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="ODP" />,
-        meta: { title: 'ODP' },
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-      },
-      { accessorKey: 'area', header: 'Area', meta: { title: 'Area' } },
-      {
-        accessorKey: 'splitter',
-        header: 'Splitter',
-        meta: { title: 'Splitter' },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.splitter}</span>,
-      },
-      {
-        accessorKey: 'usedPorts',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Kapasitas port" />,
-        meta: { title: 'Kapasitas port' },
-        cell: ({ row }) => {
-          const { usedPorts, totalPorts } = row.original
-          const p = Math.round((usedPorts / totalPorts) * 100)
-          return (
-            <div className="w-36">
-              <div className="flex justify-between text-xs">
-                <span className="font-mono tabular-nums">
-                  {usedPorts}/{totalPorts}
-                </span>
-                <span className="text-muted-foreground">{p}%</span>
-              </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className={`h-full rounded-full ${p >= 100 ? 'bg-red-500' : p >= 80 ? 'bg-amber-500' : 'bg-primary'}`}
-                  style={{ width: `${Math.max(2, p)}%` }}
-                />
-              </div>
-            </div>
-          )
-        },
-      },
-      {
-        accessorKey: 'avgRxPowerDbm',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
-        meta: { title: 'Redaman', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{row.original.avgRxPowerDbm} dBm</span>
-        ),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Optik',
-        meta: { title: 'Optik' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={STATUS_TONE[row.original.status]}
-            label={STATUS_LABEL[row.original.status]}
-          />
-        ),
-      },
-    ],
-    [],
-  )
+  }
 
   return (
     <div className="space-y-6">
@@ -154,11 +170,16 @@ export function OdpPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading || !data ? (
-          <KpiSkeleton />
+        {!summary ? (
+          <>
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </>
         ) : (
           <>
-            <KpiCard label="Total ODP" value={summary.total} icon={NetworkIcon} />
+            <KpiCard label="Total ODP" value={summary.totalOdp} icon={NetworkIcon} />
             <KpiCard
               label="Utilisasi port"
               value={summary.utilization}
@@ -186,14 +207,26 @@ export function OdpPage() {
       </div>
 
       <DataTable
-        columns={columns}
-        data={isLoading ? undefined : items}
+        columns={COLUMNS}
+        data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Tidak ada ODP yang cocok."
+        emptyMessage={
+          table.search ? `Tidak ada ODP cocok dengan "${table.search}".` : 'Tidak ada ODP.'
+        }
         searchPlaceholder="Cari ODP / area…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         toolbar={
-          <Select value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+          <Select value={filter} onValueChange={setView}>
             <SelectTrigger className="h-8 w-48" aria-label="Filter ODP">
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -211,8 +244,8 @@ export function OdpPage() {
             variant="outline"
             size="sm"
             className="h-8"
-            disabled={!items.length}
-            onClick={() => downloadCsv('odp', items.map(toCsvRow))}
+            disabled={!total || isExporting}
+            onClick={handleExport}
           >
             <DownloadIcon className="size-4" />
             <span className="hidden sm:inline">Ekspor</span>
@@ -220,15 +253,5 @@ export function OdpPage() {
         }
       />
     </div>
-  )
-}
-
-function KpiSkeleton() {
-  return (
-    <>
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
-      ))}
-    </>
   )
 }
