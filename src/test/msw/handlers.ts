@@ -3381,12 +3381,24 @@ export const handlers = [
   }),
 
   // Coverage
-  http.get('*/api/coverage', () =>
-    HttpResponse.json({
-      items: COVERAGE_FIXTURES,
-      total: COVERAGE_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/coverage', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(COVERAGE_FIXTURES, url.searchParams, {
+        searchFields: ['name', 'region'],
+        sortAccessors: {
+          name: (c) => c.name,
+          region: (c) => c.region,
+          status: (c) => c.status,
+          capacity: (c) => c.capacity,
+          activeConnections: (c) => c.activeConnections,
+          type: (c) => c.type,
+        },
+        // Default mirrors the backend ORDER BY name ASC.
+        defaultCompare: (a, b) => a.name.localeCompare(b.name),
+      }),
+    )
+  }),
 
   // Usage / quota / FUP
   http.get('*/api/usage', () =>
