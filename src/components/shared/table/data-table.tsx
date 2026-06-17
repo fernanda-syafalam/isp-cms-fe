@@ -1,12 +1,14 @@
 import {
   type ColumnDef,
   flexRender,
+  functionalUpdate,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   type RowSelectionState,
   type SortingState,
+  type TableOptions,
   type VisibilityState,
   useReactTable,
 } from '@tanstack/react-table'
@@ -42,6 +44,24 @@ const SKELETON_ROW_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const
 const alignClass = (align: 'right' | 'center' | undefined) =>
   align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : undefined
 
+/**
+ * Server-driven table state. When provided, the table delegates paging,
+ * sorting, and filtering to the server (manual mode): `data` is the current
+ * page only and `rowCount` is the server total. The owning page wires this up
+ * with `useTableQuery`. Omit it to keep the default client-side behavior.
+ */
+export type DataTableServerState = {
+  pageIndex: number
+  pageSize: number
+  /** Total rows on the server (drives the page count, not `data.length`). */
+  rowCount: number
+  sorting: SortingState
+  search: string
+  onPaginationChange: (next: { pageIndex: number; pageSize: number }) => void
+  onSortingChange: (next: SortingState) => void
+  onSearchChange: (next: string) => void
+}
+
 type DataTableProps<T> = {
   columns: ColumnDef<T>[]
   data: T[] | undefined
@@ -50,7 +70,7 @@ type DataTableProps<T> = {
   emptyMessage?: string
   errorMessage?: string
   searchPlaceholder?: string
-  /** Seeds the search box (e.g. from a `?q=` deep-link). */
+  /** Seeds the search box (e.g. from a `?q=` deep-link). Client mode only. */
   initialSearch?: string | undefined
   /** Extra filter controls rendered in the left of the toolbar. */
   toolbar?: ReactNode
@@ -59,6 +79,8 @@ type DataTableProps<T> = {
   enableSelection?: boolean
   /** Renders a bulk-action bar when rows are selected. */
   bulkActions?: (selected: T[]) => ReactNode
+  /** Enables server-side paging/sorting/search (see {@link DataTableServerState}). */
+  server?: DataTableServerState
 }
 
 const SELECT_COLUMN_ID = '__select__'
@@ -76,6 +98,7 @@ export function DataTable<T>({
   actions,
   enableSelection = false,
   bulkActions,
+  server,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -108,25 +131,62 @@ export function DataTable<T>({
     enableHiding: false,
   }
 
-  const table = useReactTable({
+  // Shared options for both modes; the mode-specific bits (state, change
+  // handlers, manual flags, row models) are merged in below.
+  const baseOptions: TableOptions<T> = {
     data: data ?? [],
     columns: enableSelection ? [selectColumn, ...columns] : columns,
-    state: { sorting, columnVisibility, rowSelection, globalFilter },
     enableRowSelection: enableSelection,
-    onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
-  })
+  }
+
+  const table = useReactTable<T>(
+    server
+      ? {
+          ...baseOptions,
+          state: {
+            columnVisibility,
+            rowSelection,
+            sorting: server.sorting,
+            pagination: {
+              pageIndex: server.pageIndex,
+              pageSize: server.pageSize,
+            },
+          },
+          manualPagination: true,
+          manualSorting: true,
+          manualFiltering: true,
+          rowCount: server.rowCount,
+          onSortingChange: (updater) =>
+            server.onSortingChange(functionalUpdate(updater, server.sorting)),
+          onPaginationChange: (updater) =>
+            server.onPaginationChange(
+              functionalUpdate(updater, {
+                pageIndex: server.pageIndex,
+                pageSize: server.pageSize,
+              }),
+            ),
+        }
+      : {
+          ...baseOptions,
+          state: { sorting, columnVisibility, rowSelection, globalFilter },
+          onSortingChange: setSorting,
+          onGlobalFilterChange: setGlobalFilter,
+          getPaginationRowModel: getPaginationRowModel(),
+          initialState: { pagination: { pageSize: 10 } },
+        },
+  )
 
   const rows = table.getRowModel().rows
   const headerColSpan = table.getAllLeafColumns().length
   const selectedRows = table.getFilteredSelectedRowModel().rows.map((r) => r.original)
+
+  const searchValue = server ? server.search : globalFilter
+  const onSearchChange = server ? server.onSearchChange : setGlobalFilter
 
   return (
     <div className="space-y-3">
@@ -135,8 +195,8 @@ export function DataTable<T>({
           <div className="relative w-full sm:max-w-xs">
             <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
             <Input
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
               className="h-8 pl-9"
             />
