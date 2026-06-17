@@ -9,12 +9,13 @@ const BRANCH_AREAS: Record<string, string[]> = {
   'Cabang Bangsri': ['Bangsri'],
 }
 
-// Whether an area falls under the active branch scope (null scope = all areas).
-// An unassigned customer (areaName null) belongs to no branch's coverage; show
-// it in every scope rather than silently hiding it, so ops can still find it.
-export function areaInScope(areaName: string | null, scope: BranchScope): boolean {
-  if (!scope) return true
-  if (areaName === null) return true
-  const areas = BRANCH_AREAS[scope.name]
-  return areas ? areas.includes(areaName) : true
+// Resolve a branch scope to the list of service areas it covers, for sending to
+// a server-side `area` filter. Returns null (= no area constraint) when there is
+// no scope OR the branch name is unknown, so picking any branch still yields its
+// real customers (no silent empties). Unassigned (null-area) customers are NOT
+// encoded here; the list endpoint includes them in every scope on its own, so an
+// unassigned subscriber is never hidden and ops can always find it.
+export function scopeAreas(scope: BranchScope): string[] | null {
+  if (!scope) return null
+  return BRANCH_AREAS[scope.name] ?? null
 }

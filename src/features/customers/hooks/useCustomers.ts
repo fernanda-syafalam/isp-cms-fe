@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  CUSTOMER_EXPORT_LIMIT,
   type CustomerFilter,
   activateCustomer,
   createCustomer,
@@ -36,6 +37,19 @@ export function useCustomersList(filter: CustomerFilter = {}) {
     queryKey: ['customers', 'list', filter] as const,
     queryFn: () => listCustomers(filter),
   })
+}
+
+// Export-all: fetch one max-size page that honours the current filter (status +
+// branch scope + search) but ignores paging, for a CSV download.
+export function useExportCustomers() {
+  const qc = useQueryClient()
+  return (filter: CustomerFilter) => {
+    const exportFilter = { ...filter, limit: CUSTOMER_EXPORT_LIMIT, offset: 0 }
+    return qc.fetchQuery({
+      queryKey: ['customers', 'list', exportFilter] as const,
+      queryFn: () => listCustomers(exportFilter),
+    })
+  }
 }
 
 export function useCustomer(id: string) {
