@@ -3087,9 +3087,21 @@ export const handlers = [
 
   // Inventory
   http.get('*/api/inventory', ({ request }) => {
-    const status = new URL(request.url).searchParams.get('status')
-    const items = filterByStatus(INVENTORY_FIXTURES, status)
-    return HttpResponse.json({ items, total: items.length })
+    const url = new URL(request.url)
+    const rows = filterByStatus(INVENTORY_FIXTURES, url.searchParams.get('status'))
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['serial', 'assignedTo'],
+        sortAccessors: {
+          serial: (i) => i.serial,
+          status: (i) => i.status,
+          kind: (i) => i.kind,
+        },
+        // Preserve the seed order (mirrors the BE default `createdAt desc`); the
+        // fixture has no createdAt, so a stable no-op keeps insertion order.
+        defaultCompare: () => 0,
+      }),
+    )
   }),
   // Full stock movement history (newest first).
   http.get('*/api/inventory/movements', () => {

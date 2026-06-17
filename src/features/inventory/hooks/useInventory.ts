@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  INVENTORY_EXPORT_LIMIT,
   type InventoryFilter,
   deleteInventory,
   listInventory,
@@ -23,6 +24,26 @@ export function useInventoryList(filter: InventoryFilter = {}) {
     queryKey: ['inventory', 'list', filter] as const,
     queryFn: () => listInventory(filter),
   })
+}
+
+/**
+ * Returns a callback that fetches the full filtered inventory set (one max-size
+ * page) for CSV export. With server pagination the table holds only the current
+ * page, so export must re-query without the page window.
+ */
+export function useExportInventory() {
+  const qc = useQueryClient()
+  return (filter: InventoryFilter = {}) => {
+    const exportFilter: InventoryFilter = {
+      ...filter,
+      limit: INVENTORY_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['inventory', 'list', exportFilter] as const,
+      queryFn: () => listInventory(exportFilter),
+    })
+  }
 }
 
 export function useStockMovements() {
