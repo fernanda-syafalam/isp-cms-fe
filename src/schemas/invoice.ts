@@ -23,11 +23,26 @@ export const InvoiceSchema = z.object({
   lastRemindedAt: z.iso.datetime().nullable(),
 })
 
+// Accounts-receivable rollup over ALL invoices, computed before any status/q
+// filter or paging — so the AR KPI cards stay a dashboard invariant under any
+// table filter (mirrors the accounting journal `totals` invariant). Amounts are
+// grand totals (DPP + late fee + PPN), in IDR.
+export const InvoiceSummarySchema = z.object({
+  outstanding: z.number().int().nonnegative(), // sum over pending + overdue
+  overdue: z.number().int().nonnegative(), // sum over overdue only
+  unpaidCount: z.number().int().nonnegative(), // count of pending + overdue
+  total: z.number().int().nonnegative(), // count of ALL invoices
+})
+
 export const InvoiceListSchema = z.object({
   items: z.array(InvoiceSchema),
+  // Count AFTER status+q filtering but BEFORE limit/offset paging — drives the
+  // table's page count. `items` is the current page; `total` the filtered set.
   total: z.number().int().nonnegative(),
+  summary: InvoiceSummarySchema,
 })
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>
 export type Invoice = z.infer<typeof InvoiceSchema>
+export type InvoiceSummary = z.infer<typeof InvoiceSummarySchema>
 export type InvoiceList = z.infer<typeof InvoiceListSchema>
