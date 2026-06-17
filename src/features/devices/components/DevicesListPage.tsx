@@ -1,8 +1,10 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DownloadIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
+import type { DeviceFilter } from '@/api/devices'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -15,12 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
+import { getErrorMessage } from '@/lib/errors'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Device, DeviceStatus } from '@/schemas/device'
 
-import { useDevicesList } from '../hooks/useDevices'
+import { useDevicesList, useExportDevices } from '../hooks/useDevices'
 import { DeviceRowActions } from './DeviceRowActions'
 
 const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
@@ -52,114 +56,154 @@ const toCsvRow = (d: Device) => ({
   Status: statusLabel(d.status),
 })
 
+// Static column defs (no component state): sortable keys (name/rxPower/
+// uptimeHours/lastSeenAt/status) match the backend sort whitelist.
+const COLUMNS: ColumnDef<Device>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
+    meta: { title: 'Perangkat' },
+    cell: ({ row }) => (
+      <Link
+        to="/network/devices/$deviceId"
+        params={{ deviceId: row.original.id }}
+        className="font-medium hover:underline"
+      >
+        {row.original.name}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'type',
+    header: 'Tipe',
+    meta: { title: 'Tipe' },
+    cell: ({ row }) => <span className="uppercase">{row.original.type}</span>,
+  },
+  {
+    accessorKey: 'ipAddress',
+    header: 'Alamat IP',
+    meta: { title: 'Alamat IP' },
+    cell: ({ row }) => <span className="font-mono text-sm">{row.original.ipAddress}</span>,
+  },
+  { accessorKey: 'areaName', header: 'Area', meta: { title: 'Area' } },
+  {
+    accessorKey: 'rxPower',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
+    meta: { title: 'Redaman', align: 'right' },
+    cell: ({ row }) =>
+      row.original.rxPower == null ? (
+        <span className="text-muted-foreground">—</span>
+      ) : (
+        <StatusBadge
+          tone={rxTone(row.original.rxPower)}
+          label={`${row.original.rxPower} dBm`}
+          dot={false}
+        />
+      ),
+  },
+  {
+    accessorKey: 'uptimeHours',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Uptime" />,
+    meta: { title: 'Uptime', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">
+        {formatNumber(Math.round(row.original.uptimeHours))} j
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'lastSeenAt',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Terakhir terlihat" />,
+    meta: { title: 'Terakhir terlihat' },
+    cell: ({ row }) => formatDateTime(row.original.lastSeenAt),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={STATUS_TONE[row.original.status]}
+        label={statusLabel(row.original.status)}
+      />
+    ),
+  },
+  {
+    id: 'actions',
+    meta: { align: 'right' },
+    enableHiding: false,
+    cell: ({ row }) => <DeviceRowActions device={row.original} />,
+  },
+]
+
 export function DevicesListPage() {
-  const [type, setType] = useState('all')
   const { status: statusParam } = routeApi.useSearch()
   const status = statusParam ?? 'all'
   const navigate = routeApi.useNavigate()
-  const setStatus = (value: string) =>
+  const [type, setTypeState] = useState('all')
+  const table = useTableQuery({ pageSize: 20 })
+  const exportDevices = useExportDevices()
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Changing a filter resets the page so the user is never on an out-of-range
+  // page. Status lives in the URL (deep-link); type is a local control.
+  const setStatus = (value: string) => {
+    table.resetPage()
     navigate({ search: value === 'all' ? {} : { status: value } })
-  const { data, isLoading, isError } = useDevicesList()
+  }
+  const setType = (value: string) => {
+    table.resetPage()
+    setTypeState(value)
+  }
 
-  const items = useMemo(
-    () =>
-      (data?.items ?? []).filter(
-        (d) => (type === 'all' || d.type === type) && (status === 'all' || d.status === status),
-      ),
-    [data, type, status],
-  )
+  // Equality filters drive the server query; search/sort/paging from the table.
+  const baseFilter: DeviceFilter = {
+    ...(status === 'all' ? {} : { status }),
+    ...(type === 'all' ? {} : { type }),
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+  }
+  const { data, isLoading, isError } = useDevicesList({
+    ...baseFilter,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const items = data?.items ?? []
+  const total = data?.total ?? 0
 
-  const columns = useMemo<ColumnDef<Device>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Perangkat" />,
-        meta: { title: 'Perangkat' },
-        cell: ({ row }) => (
-          <Link
-            to="/network/devices/$deviceId"
-            params={{ deviceId: row.original.id }}
-            className="font-medium hover:underline"
-          >
-            {row.original.name}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: 'type',
-        header: 'Tipe',
-        meta: { title: 'Tipe' },
-        cell: ({ row }) => <span className="uppercase">{row.original.type}</span>,
-      },
-      {
-        accessorKey: 'ipAddress',
-        header: 'Alamat IP',
-        meta: { title: 'Alamat IP' },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.ipAddress}</span>,
-      },
-      { accessorKey: 'areaName', header: 'Area', meta: { title: 'Area' } },
-      {
-        accessorKey: 'rxPower',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
-        meta: { title: 'Redaman', align: 'right' },
-        cell: ({ row }) =>
-          row.original.rxPower == null ? (
-            <span className="text-muted-foreground">—</span>
-          ) : (
-            <StatusBadge
-              tone={rxTone(row.original.rxPower)}
-              label={`${row.original.rxPower} dBm`}
-              dot={false}
-            />
-          ),
-      },
-      {
-        accessorKey: 'uptimeHours',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Uptime" />,
-        meta: { title: 'Uptime', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">
-            {formatNumber(Math.round(row.original.uptimeHours))} j
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'lastSeenAt',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Terakhir terlihat" />,
-        meta: { title: 'Terakhir terlihat' },
-        cell: ({ row }) => formatDateTime(row.original.lastSeenAt),
-      },
-      {
-        accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={STATUS_TONE[row.original.status]}
-            label={statusLabel(row.original.status)}
-          />
-        ),
-      },
-      {
-        id: 'actions',
-        meta: { align: 'right' },
-        enableHiding: false,
-        cell: ({ row }) => <DeviceRowActions device={row.original} />,
-      },
-    ],
-    [],
-  )
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportDevices(baseFilter)
+      downloadCsv('perangkat', result.items.map(toCsvRow))
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader title="Perangkat Jaringan" description="Perangkat OLT, ONU, dan Mikrotik." />
       <DataTable
-        columns={columns}
+        columns={COLUMNS}
         data={items}
         isLoading={isLoading}
         isError={isError}
         emptyMessage="Belum ada perangkat."
         searchPlaceholder="Cari perangkat / IP…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         toolbar={
           <>
             <Select value={type} onValueChange={setType}>
@@ -193,8 +237,8 @@ export function DevicesListPage() {
             variant="outline"
             size="sm"
             className="h-8"
-            disabled={!items.length}
-            onClick={() => downloadCsv('perangkat', items.map(toCsvRow))}
+            disabled={!total || isExporting}
+            onClick={handleExport}
           >
             <DownloadIcon className="size-4" />
             <span className="hidden sm:inline">Ekspor</span>
