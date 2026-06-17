@@ -186,7 +186,9 @@ export function useRelocateCustomer(id: string) {
     mutationFn: (input: RelocateCustomerInput) => relocateCustomer(id, input),
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
-      toast.success(`Pelanggan "${customer.fullName}" dimutasi ke ${customer.areaName}`)
+      toast.success(
+        `Pelanggan "${customer.fullName}" dimutasi ke ${customer.areaName ?? 'alamat baru'}`,
+      )
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

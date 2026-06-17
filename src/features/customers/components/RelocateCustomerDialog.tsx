@@ -46,7 +46,7 @@ export function RelocateCustomerDialog({ customer, open, onOpenChange }: Props) 
 
   const form = useForm<RelocateCustomerInput>({
     resolver: zodResolver(RelocateCustomerSchema),
-    values: { address: customer.address, areaName: customer.areaName },
+    values: { address: customer.address, areaName: customer.areaName ?? '' },
   })
 
   const handleSubmit = form.handleSubmit(async (values) => {

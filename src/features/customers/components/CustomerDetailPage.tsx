@@ -107,7 +107,7 @@ export function CustomerDetailPage({ customerId }: Props) {
       <BackLink />
       <PageHeader
         title={customer.fullName}
-        description={`${customer.customerNo} · ${customer.areaName}`}
+        description={`${customer.customerNo} · ${customer.areaName ?? 'Tanpa area'}`}
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
@@ -122,7 +122,9 @@ export function CustomerDetailPage({ customerId }: Props) {
             <Button asChild variant="outline" size="sm" className="h-8">
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  `${customer.address}, ${customer.areaName}, Jepara, Jawa Tengah`,
+                  [customer.address, customer.areaName, 'Jepara', 'Jawa Tengah']
+                    .filter(Boolean)
+                    .join(', '),
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -260,7 +262,7 @@ function ProfileCard({ customer }: { customer: Customer }) {
     { label: 'Telepon', value: customer.phone, copy: true },
     { label: 'Email', value: customer.email ?? '—', copy: true },
     { label: 'Alamat', value: customer.address },
-    { label: 'Area', value: customer.areaName },
+    { label: 'Area', value: customer.areaName ?? '—' },
     { label: 'NPWP', value: customer.npwp ?? '—', copy: true },
     { label: 'Reseller', value: customer.resellerName ?? '—' },
     { label: 'Bergabung', value: formatDate(customer.joinedAt) },

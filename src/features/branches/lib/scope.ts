@@ -10,8 +10,11 @@ const BRANCH_AREAS: Record<string, string[]> = {
 }
 
 // Whether an area falls under the active branch scope (null scope = all areas).
-export function areaInScope(areaName: string, scope: BranchScope): boolean {
+// An unassigned customer (areaName null) belongs to no branch's coverage; show
+// it in every scope rather than silently hiding it, so ops can still find it.
+export function areaInScope(areaName: string | null, scope: BranchScope): boolean {
   if (!scope) return true
+  if (areaName === null) return true
   const areas = BRANCH_AREAS[scope.name]
   return areas ? areas.includes(areaName) : true
 }

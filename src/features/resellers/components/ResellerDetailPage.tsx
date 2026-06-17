@@ -247,7 +247,7 @@ function ResellerCustomersCard({ resellerName }: { resellerName: string }) {
                 <>
                   <span className="block truncate font-medium text-sm">{c.fullName}</span>
                   <span className="font-mono text-muted-foreground text-xs">
-                    {c.customerNo} · {c.areaName}
+                    {c.customerNo} · {c.areaName ?? '—'}
                   </span>
                 </>
               )

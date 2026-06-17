@@ -48,7 +48,7 @@ const toCsvRow = (c: Customer) => ({
   No: c.customerNo,
   Nama: c.fullName,
   Telepon: c.phone,
-  Area: c.areaName,
+  Area: c.areaName ?? '',
   Paket: c.planName,
   Status: statusLabel(c.status),
   Bergabung: formatDate(c.joinedAt),
@@ -97,6 +97,8 @@ export function CustomersListPage() {
         accessorKey: 'areaName',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Area" />,
         meta: { title: 'Area' },
+        cell: ({ row }) =>
+          row.original.areaName ?? <span className="text-muted-foreground">—</span>,
       },
       { accessorKey: 'planName', header: 'Paket', meta: { title: 'Paket' } },
       {

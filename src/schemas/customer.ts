@@ -27,8 +27,10 @@ export const CustomerSchema = z.object({
   phone: z.string(),
   email: z.email().nullable(),
   address: z.string(),
-  areaId: areaId,
-  areaName: z.string(),
+  // Service area is unassigned until ops links the subscriber to one (the BE
+  // customer response returns these nullable — no areas module wires them yet).
+  areaId: areaId.nullable(),
+  areaName: z.string().nullable(),
   planId: planId,
   planName: z.string(),
   status: CustomerStatusSchema,
