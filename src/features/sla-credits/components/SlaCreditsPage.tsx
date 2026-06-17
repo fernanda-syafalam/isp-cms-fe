@@ -15,7 +15,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { SlaCredit, SlaCreditStatus } from '@/schemas/slaCredit'
@@ -32,23 +34,25 @@ const STATUS_TONE: Record<SlaCreditStatus, StatusTone> = {
 }
 
 export function SlaCreditsPage() {
-  const { data, isLoading, isError } = useSlaCredits()
   const canManage = useCan('billing.run')
   const apply = useApplySlaCredit()
   const voidCredit = useVoidSlaCredit()
   // Deep-link prefill from a breached ticket: open the issue dialog pre-filled.
   const { customer, ticket } = routeApi.useSearch()
   const [addOpen, setAddOpen] = useState(Boolean(customer))
+  const table = useTableQuery({ pageSize: 20 })
 
-  const summary = useMemo(() => {
-    const items = data?.items ?? []
-    const active = items.filter((c) => c.status !== 'void')
-    return {
-      total: active.reduce((s, c) => s + c.amount, 0),
-      pending: items.filter((c) => c.status === 'pending').length,
-      applied: items.filter((c) => c.status === 'applied').length,
-    }
-  }, [data])
+  const { data, isLoading, isError } = useSlaCredits({
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const total = data?.total ?? 0
+  // Full-set server aggregate (ignores q/sort/paging), so the KPI cards stay
+  // correct under any table search.
+  const summary = data?.summary
 
   const columns = useMemo<ColumnDef<SlaCredit>[]>(
     () => [
@@ -170,20 +174,35 @@ export function SlaCreditsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Total kredit aktif"
-          value={summary.total}
-          format={formatCurrency}
-          icon={WalletIcon}
-        />
-        <KpiCard
-          label="Menunggu"
-          value={summary.pending}
-          hint="belum diterapkan"
-          hintTone="negative"
-          icon={HandCoinsIcon}
-        />
-        <KpiCard label="Diterapkan" value={summary.applied} hintTone="positive" icon={CheckIcon} />
+        {!summary ? (
+          <>
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              label="Total kredit aktif"
+              value={summary.activeAmount}
+              format={formatCurrency}
+              icon={WalletIcon}
+            />
+            <KpiCard
+              label="Menunggu"
+              value={summary.pending}
+              hint="belum diterapkan"
+              hintTone="negative"
+              icon={HandCoinsIcon}
+            />
+            <KpiCard
+              label="Diterapkan"
+              value={summary.applied}
+              hintTone="positive"
+              icon={CheckIcon}
+            />
+          </>
+        )}
       </div>
 
       <DataTable
@@ -191,8 +210,22 @@ export function SlaCreditsPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada kredit SLA."
+        emptyMessage={
+          table.search
+            ? `Tidak ada kredit SLA cocok dengan "${table.search}".`
+            : 'Belum ada kredit SLA.'
+        }
         searchPlaceholder="Cari pelanggan / alasan…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
       />
 
       {canManage ? (

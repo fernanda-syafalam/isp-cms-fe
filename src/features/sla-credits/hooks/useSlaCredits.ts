@@ -1,14 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { applySlaCredit, createSlaCredit, listSlaCredits, voidSlaCredit } from '@/api/slaCredits'
+import {
+  type SlaCreditFilter,
+  applySlaCredit,
+  createSlaCredit,
+  listSlaCredits,
+  voidSlaCredit,
+} from '@/api/slaCredits'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreateSlaCreditInput } from '@/schemas/slaCredit'
 
-export function useSlaCredits() {
+export function useSlaCredits(filter: SlaCreditFilter = {}) {
   return useQuery({
-    queryKey: ['sla-credits', 'list'] as const,
-    queryFn: listSlaCredits,
+    queryKey: ['sla-credits', 'list', filter] as const,
+    queryFn: () => listSlaCredits(filter),
   })
 }
 
