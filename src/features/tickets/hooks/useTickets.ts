@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import {
   type TicketFilter,
+  TICKET_EXPORT_LIMIT,
   addTicketComment,
   createTicket,
   createWorkOrderFromTicket,
@@ -58,6 +59,26 @@ export function useTicketsList(filter: TicketFilter = {}) {
     queryKey: ['tickets', 'list', filter] as const,
     queryFn: () => listTickets(filter),
   })
+}
+
+/**
+ * Returns a callback that fetches the full filtered ticket set (one max-size
+ * page) for CSV export. With server pagination the table holds only the current
+ * page, so export must re-query without the page window.
+ */
+export function useExportTickets() {
+  const qc = useQueryClient()
+  return (filter: TicketFilter = {}) => {
+    const exportFilter: TicketFilter = {
+      ...filter,
+      limit: TICKET_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['tickets', 'list', exportFilter] as const,
+      queryFn: () => listTickets(exportFilter),
+    })
+  }
 }
 
 export function useCreateTicket() {
