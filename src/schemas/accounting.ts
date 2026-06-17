@@ -15,6 +15,11 @@ export const JournalLineSchema = z.object({
 export const JournalSchema = z.object({
   period: z.string(), // "YYYY-MM"
   lines: z.array(JournalLineSchema),
+  // Count of lines AFTER `q` search but BEFORE limit/offset paging, so the table
+  // can derive its page count. `lines` is the current page; `total` the filtered set.
+  total: z.number().int().nonnegative(),
+  // Full-period double-entry balance: ALWAYS computed over the whole period,
+  // unaffected by `q`/paging, so the "balanced" badge stays a period invariant.
   totals: z.object({
     debit: z.number().int().nonnegative(),
     credit: z.number().int().nonnegative(),

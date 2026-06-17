@@ -3609,7 +3609,8 @@ export const handlers = [
   // Accounting: cash-basis GL journal for a period (derived from settled
   // invoices). Dr Kas, Cr Revenue + Denda + PPN Keluaran.
   http.get('*/api/accounting/journal', ({ request }) => {
-    const period = new URL(request.url).searchParams.get('period') ?? ''
+    const url = new URL(request.url)
+    const period = url.searchParams.get('period') ?? ''
     const lines: Array<{
       id: string
       date: string
@@ -3670,7 +3671,28 @@ export const handlers = [
       debit += total
       credit += total
     }
-    return HttpResponse.json({ period, lines, totals: { debit, credit } })
+    // `totals` is the FULL-period balance (computed above over every line) and
+    // must ignore q/paging — the "balanced" badge is a period invariant. Only
+    // the returned `lines` are searched/sorted/paged; `total` is the filtered
+    // line count.
+    const { items, total: lineCount } = applyListQuery(lines, url.searchParams, {
+      searchFields: ['accountCode', 'accountName', 'description'],
+      sortAccessors: {
+        date: (l) => l.date,
+        accountCode: (l) => l.accountCode,
+        accountName: (l) => l.accountName,
+        debit: (l) => l.debit,
+        credit: (l) => l.credit,
+      },
+      // Preserve posting order (Dr→Cr per invoice, chronological) when unsorted.
+      defaultCompare: () => 0,
+    })
+    return HttpResponse.json({
+      period,
+      lines: items,
+      total: lineCount,
+      totals: { debit, credit },
+    })
   }),
 
   // Customer experience: CSAT (post-ticket), NPS, churn risk (all derived).
