@@ -3514,12 +3514,29 @@ export const handlers = [
   }),
 
   // Usage / quota / FUP
-  http.get('*/api/usage', () =>
-    HttpResponse.json({
-      items: USAGE_FIXTURES,
-      total: USAGE_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/usage', ({ request }) => {
+    const url = new URL(request.url)
+    const all = USAGE_FIXTURES
+    const totalUsedGb = all.reduce((s, u) => s + u.usedGb, 0)
+    // Full-set aggregate for the KPI cards: ignores q/sort/paging so the cards
+    // stay correct under any table search.
+    const summary = {
+      totalUsedGb,
+      throttled: all.filter((u) => u.fupThrottled).length,
+      avgUsedGb: all.length ? Math.round(totalUsedGb / all.length) : 0,
+    }
+    const { items, total } = applyListQuery(all, url.searchParams, {
+      searchFields: ['customerName', 'planName'],
+      sortAccessors: {
+        customerName: (u) => u.customerName,
+        quotaGb: (u) => u.quotaGb,
+        usedGb: (u) => u.usedGb,
+      },
+      // Deterministic default mirrors the backend ORDER BY customerName ASC.
+      defaultCompare: (a, b) => a.customerName.localeCompare(b.customerName),
+    })
+    return HttpResponse.json({ items, total, summary })
+  }),
 
   // NOC monitoring
   http.get('*/api/monitoring/metrics', ({ request }) => {

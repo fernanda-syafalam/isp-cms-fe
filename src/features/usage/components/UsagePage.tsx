@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActivityIcon, DownloadIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
+import type { UsageFilter } from '@/api/usage'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -10,11 +12,13 @@ import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
+import { getErrorMessage } from '@/lib/errors'
 import { formatNumber } from '@/lib/format'
 import type { UsageRecord } from '@/schemas/usage'
 
-import { useUsageList } from '../hooks/useUsage'
+import { useExportUsage, useUsageList } from '../hooks/useUsage'
 
 const pct = (used: number, quota: number) =>
   quota <= 0 ? 0 : Math.min(100, Math.round((used / quota) * 100))
@@ -28,18 +32,36 @@ const toCsvRow = (u: UsageRecord) => ({
 })
 
 export function UsagePage() {
-  const { data, isLoading, isError } = useUsageList()
+  const table = useTableQuery({ pageSize: 20 })
+  const exportUsage = useExportUsage()
+  const [isExporting, setIsExporting] = useState(false)
 
-  const summary = useMemo(() => {
-    const items = data?.items ?? []
-    const total = items.reduce((s, u) => s + u.usedGb, 0)
-    const throttled = items.filter((u) => u.fupThrottled).length
-    return {
-      total,
-      throttled,
-      avg: items.length ? Math.round(total / items.length) : 0,
+  const baseFilter: UsageFilter = {
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+  }
+  const { data, isLoading, isError } = useUsageList({
+    ...baseFilter,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const total = data?.total ?? 0
+  // Full-set server aggregate (ignores q/sort/paging), so the KPI cards stay
+  // correct under any table search.
+  const summary = data?.summary
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportUsage(baseFilter)
+      downloadCsv('pemakaian', result.items.map(toCsvRow))
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setIsExporting(false)
     }
-  }, [data])
+  }
 
   const columns = useMemo<ColumnDef<UsageRecord>[]>(
     () => [
@@ -117,7 +139,7 @@ export function UsagePage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {isLoading || !data ? (
+        {!summary ? (
           <>
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
@@ -127,7 +149,7 @@ export function UsagePage() {
           <>
             <KpiCard
               label="Total pemakaian"
-              value={summary.total}
+              value={summary.totalUsedGb}
               format={(v) => `${formatNumber(v)} GB`}
               hint="periode berjalan"
               icon={ActivityIcon}
@@ -141,7 +163,7 @@ export function UsagePage() {
             />
             <KpiCard
               label="Rata-rata / pelanggan"
-              value={summary.avg}
+              value={summary.avgUsedGb}
               format={(v) => `${formatNumber(v)} GB`}
               icon={GaugeIcon}
             />
@@ -154,15 +176,29 @@ export function UsagePage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada data pemakaian."
+        emptyMessage={
+          table.search
+            ? `Tidak ada data pemakaian cocok dengan "${table.search}".`
+            : 'Belum ada data pemakaian.'
+        }
         searchPlaceholder="Cari pelanggan / paket…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         actions={
           <Button
             variant="outline"
             size="sm"
             className="h-8"
-            disabled={!data?.items.length}
-            onClick={() => downloadCsv('pemakaian', (data?.items ?? []).map(toCsvRow))}
+            disabled={!total || isExporting}
+            onClick={handleExport}
           >
             <DownloadIcon className="size-4" />
             <span className="hidden sm:inline">Ekspor</span>
