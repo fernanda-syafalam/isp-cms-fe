@@ -10,7 +10,9 @@ import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import type { Alert, DeviceMetric, MetricStatus } from '@/schemas/monitoring'
 
@@ -34,24 +36,31 @@ const METRIC_LABEL: Record<MetricStatus, string> = {
 }
 
 export function MonitoringPage() {
-  const metrics = useDeviceMetrics()
+  const table = useTableQuery({ pageSize: 20 })
+  const metrics = useDeviceMetrics({
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
   const alerts = useAlerts()
   const canManage = useCan('network.manage')
 
-  const summary = useMemo(() => {
-    const items = metrics.data?.items ?? []
-    const up = items.filter((m) => m.status === 'up').length
-    const avgUptime = items.length
-      ? Math.round((items.reduce((s, m) => s + m.uptimePct, 0) / items.length) * 10) / 10
-      : 0
-    const activeAlerts = (alerts.data?.items ?? []).filter((a) => !a.acknowledged).length
-    const overall = items.some((m) => m.status === 'down')
+  // Fleet-health aggregate is a full-set server value (ignores q/sort/paging),
+  // so the KPI cards + overall badge stay correct under any table filter.
+  const summary = metrics.data?.summary
+  const total = metrics.data?.total ?? 0
+  const alertItems = alerts.data?.items
+  const activeAlerts = (alertItems ?? []).filter((a) => !a.acknowledged).length
+  const kpiReady = summary !== undefined && alertItems !== undefined
+  const overall = !summary
+    ? { tone: 'neutral' as StatusTone, label: 'Memuat…' }
+    : summary.down > 0
       ? { tone: 'danger' as StatusTone, label: 'Gangguan' }
-      : items.some((m) => m.status === 'degraded')
+      : summary.degraded > 0
         ? { tone: 'warning' as StatusTone, label: 'Menurun' }
         : { tone: 'success' as StatusTone, label: 'Operasional' }
-    return { up, total: items.length, avgUptime, activeAlerts, overall }
-  }, [metrics.data, alerts.data])
 
   const columns = useMemo<ColumnDef<DeviceMetric>[]>(
     () => [
@@ -120,31 +129,41 @@ export function MonitoringPage() {
       <PageHeader
         title="Monitoring NOC"
         description="Kesehatan perangkat jaringan & alert."
-        actions={<StatusBadge tone={summary.overall.tone} label={summary.overall.label} />}
+        actions={<StatusBadge tone={overall.tone} label={overall.label} />}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Perangkat online"
-          value={summary.up}
-          format={(v) => `${formatNumber(v)} / ${summary.total}`}
-          hint="up saat ini"
-          icon={ServerIcon}
-        />
-        <KpiCard
-          label="Uptime rata-rata"
-          value={summary.avgUptime}
-          format={(v) => `${v}%`}
-          hint="30 hari"
-          icon={ActivitySquareIcon}
-        />
-        <KpiCard
-          label="Alert aktif"
-          value={summary.activeAlerts}
-          hint="belum ditangani"
-          hintTone={summary.activeAlerts > 0 ? 'negative' : 'positive'}
-          icon={BellIcon}
-        />
+        {!kpiReady || !summary ? (
+          <>
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+            <Skeleton className="h-28 rounded-xl" />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              label="Perangkat online"
+              value={summary.up}
+              format={(v) => `${formatNumber(v)} / ${summary.total}`}
+              hint="up saat ini"
+              icon={ServerIcon}
+            />
+            <KpiCard
+              label="Uptime rata-rata"
+              value={summary.avgUptimePct}
+              format={(v) => `${v}%`}
+              hint="30 hari"
+              icon={ActivitySquareIcon}
+            />
+            <KpiCard
+              label="Alert aktif"
+              value={activeAlerts}
+              hint="belum ditangani"
+              hintTone={activeAlerts > 0 ? 'negative' : 'positive'}
+              icon={BellIcon}
+            />
+          </>
+        )}
       </div>
 
       <Card>
@@ -161,8 +180,22 @@ export function MonitoringPage() {
         data={metrics.data?.items}
         isLoading={metrics.isLoading}
         isError={metrics.isError}
-        emptyMessage="Belum ada data perangkat."
+        emptyMessage={
+          table.search
+            ? `Tidak ada perangkat cocok dengan "${table.search}".`
+            : 'Belum ada data perangkat.'
+        }
         searchPlaceholder="Cari perangkat / area…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
       />
     </div>
   )

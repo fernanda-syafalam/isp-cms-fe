@@ -14,9 +14,21 @@ export const DeviceMetricSchema = z.object({
   utilizationPct: z.number().int().nonnegative(), // link utilization
 })
 
+// Fleet-health aggregate computed over the FULL device set (ignores q/sort/
+// paging) so the NOC KPI cards + overall status badge stay correct under any
+// table filter.
+export const DeviceMetricSummarySchema = z.object({
+  up: z.number().int().nonnegative(),
+  degraded: z.number().int().nonnegative(),
+  down: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+  avgUptimePct: z.number().nonnegative(),
+})
+
 export const DeviceMetricListSchema = z.object({
   items: z.array(DeviceMetricSchema),
   total: z.number().int().nonnegative(),
+  summary: DeviceMetricSummarySchema,
 })
 
 export const AlertSeveritySchema = z.enum(['warning', 'critical'])
@@ -38,6 +50,7 @@ export const AlertListSchema = z.object({
 
 export type MetricStatus = z.infer<typeof MetricStatusSchema>
 export type DeviceMetric = z.infer<typeof DeviceMetricSchema>
+export type DeviceMetricSummary = z.infer<typeof DeviceMetricSummarySchema>
 export type DeviceMetricList = z.infer<typeof DeviceMetricListSchema>
 export type AlertSeverity = z.infer<typeof AlertSeveritySchema>
 export type Alert = z.infer<typeof AlertSchema>

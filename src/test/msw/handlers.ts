@@ -3503,12 +3503,33 @@ export const handlers = [
   ),
 
   // NOC monitoring
-  http.get('*/api/monitoring/metrics', () =>
-    HttpResponse.json({
-      items: MONITORING_METRIC_FIXTURES,
-      total: MONITORING_METRIC_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/monitoring/metrics', ({ request }) => {
+    const url = new URL(request.url)
+    // Fleet-health summary is computed over the FULL device set (ignores q/sort/
+    // paging) so the NOC KPI cards + overall badge stay correct under any filter.
+    const all = MONITORING_METRIC_FIXTURES
+    const summary = {
+      up: all.filter((m) => m.status === 'up').length,
+      degraded: all.filter((m) => m.status === 'degraded').length,
+      down: all.filter((m) => m.status === 'down').length,
+      total: all.length,
+      avgUptimePct: all.length
+        ? Math.round((all.reduce((s, m) => s + m.uptimePct, 0) / all.length) * 10) / 10
+        : 0,
+    }
+    const { items, total } = applyListQuery(all, url.searchParams, {
+      searchFields: ['name', 'areaName'],
+      sortAccessors: {
+        name: (m) => m.name,
+        status: (m) => m.status,
+        uptimePct: (m) => m.uptimePct,
+        latencyMs: (m) => m.latencyMs,
+        utilizationPct: (m) => m.utilizationPct,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ items, total, summary })
+  }),
   http.get('*/api/monitoring/alerts', () => {
     const items = [...MONITORING_ALERT_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
     return HttpResponse.json({ items, total: items.length })
