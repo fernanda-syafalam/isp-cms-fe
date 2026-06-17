@@ -2599,12 +2599,25 @@ export const handlers = [
   }),
 
   // Routers (Mikrotik / RADIUS)
-  http.get('*/api/routers', () =>
-    HttpResponse.json({
-      items: ROUTER_FIXTURES,
-      total: ROUTER_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/routers', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(ROUTER_FIXTURES, url.searchParams, {
+        searchFields: ['name', 'address', 'model'],
+        sortAccessors: {
+          name: (r) => r.name,
+          address: (r) => r.address,
+          model: (r) => r.model,
+          secretCount: (r) => r.secretCount,
+          lastSyncAt: (r) => r.lastSyncAt,
+          status: (r) => r.status,
+        },
+        // No createdAt on the fixture; preserve insertion order (newest first
+        // via unshift on create), mirroring the backend default desc(createdAt).
+        defaultCompare: () => 0,
+      }),
+    )
+  }),
   // Probe a RouterOS device (API) → identity / board-name / version. Fails
   // auth when the password is empty (to exercise the error path).
   http.post('*/api/routers/test-connection', async ({ request }) => {
