@@ -1805,9 +1805,28 @@ export const handlers = [
   }),
 
   // SLA compensation credits
-  http.get('*/api/sla-credits', () => {
-    const items = [...SLA_CREDIT_FIXTURES].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    return HttpResponse.json({ items, total: items.length })
+  http.get('*/api/sla-credits', ({ request }) => {
+    const url = new URL(request.url)
+    // Full-set aggregate for the KPI cards — computed over every credit before
+    // any search/sort/paging, so the cards stay correct under any table filter.
+    const summary = {
+      activeAmount: SLA_CREDIT_FIXTURES.filter((c) => c.status !== 'void').reduce(
+        (s, c) => s + c.amount,
+        0,
+      ),
+      pending: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'pending').length,
+      applied: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'applied').length,
+    }
+    const { items, total } = applyListQuery(SLA_CREDIT_FIXTURES, url.searchParams, {
+      searchFields: ['customerName', 'reason'],
+      sortAccessors: {
+        customerName: (c) => c.customerName,
+        amount: (c) => c.amount,
+        createdAt: (c) => c.createdAt,
+      },
+      defaultCompare: (a, b) => (a.createdAt < b.createdAt ? 1 : -1), // createdAt desc
+    })
+    return HttpResponse.json({ items, total, summary })
   }),
   http.post('*/api/sla-credits', async ({ request }) => {
     const body = (await request.json()) as {
