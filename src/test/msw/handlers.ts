@@ -2123,9 +2123,32 @@ export const handlers = [
 
   // Invoices
   http.get('*/api/invoices', ({ request }) => {
-    const status = new URL(request.url).searchParams.get('status')
-    const items = filterByStatus(INVOICE_FIXTURES, status)
-    return HttpResponse.json({ items, total: items.length })
+    const url = new URL(request.url)
+    // AR summary: full-set invariant over ALL invoices (ignores status/q/paging).
+    // Grand total = DPP + late fee + PPN (mirrors lib/invoice.invoiceTotal).
+    const grandTotal = (i: (typeof INVOICE_FIXTURES)[number]) => i.amount + i.lateFee + i.taxAmount
+    const unpaid = INVOICE_FIXTURES.filter((i) => i.status === 'pending' || i.status === 'overdue')
+    const overdueList = INVOICE_FIXTURES.filter((i) => i.status === 'overdue')
+    const summary = {
+      outstanding: unpaid.reduce((sum, i) => sum + grandTotal(i), 0),
+      overdue: overdueList.reduce((sum, i) => sum + grandTotal(i), 0),
+      unpaidCount: unpaid.length,
+      total: INVOICE_FIXTURES.length,
+    }
+    const filtered = filterByStatus(INVOICE_FIXTURES, url.searchParams.get('status'))
+    const { items, total } = applyListQuery(filtered, url.searchParams, {
+      searchFields: ['invoiceNo', 'customerName'],
+      sortAccessors: {
+        invoiceNo: (i) => i.invoiceNo,
+        customerName: (i) => i.customerName,
+        amount: (i) => i.amount,
+        dueDate: (i) => i.dueDate,
+        status: (i) => i.status,
+        lastRemindedAt: (i) => i.lastRemindedAt,
+      },
+      defaultCompare: (a, b) => b.dueDate.localeCompare(a.dueDate), // dueDate desc, mirrors BE
+    })
+    return HttpResponse.json({ items, total, summary })
   }),
   http.get('*/api/invoices/:id', ({ params }) => {
     const found = INVOICE_FIXTURES.find((inv) => inv.id === params.id)

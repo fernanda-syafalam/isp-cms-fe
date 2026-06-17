@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { type InvoiceFilter, getInvoice, listInvoices, payInvoice } from '@/api/invoices'
+import {
+  INVOICE_EXPORT_LIMIT,
+  type InvoiceFilter,
+  getInvoice,
+  listInvoices,
+  payInvoice,
+} from '@/api/invoices'
 import { getErrorMessage } from '@/lib/errors'
+import type { InvoiceList } from '@/schemas/invoice'
 import type { RecordPaymentInput } from '@/schemas/payment'
 
 export function useInvoicesList(filter: InvoiceFilter = {}) {
@@ -10,6 +17,23 @@ export function useInvoicesList(filter: InvoiceFilter = {}) {
     queryKey: ['invoices', 'list', filter] as const,
     queryFn: () => listInvoices(filter),
   })
+}
+
+// Export the full filtered set (server pagination keeps only the page in the
+// table) by fetching a single max-size page through the query cache.
+export function useExportInvoices() {
+  const qc = useQueryClient()
+  return (filter: InvoiceFilter): Promise<InvoiceList> => {
+    const exportFilter: InvoiceFilter = {
+      ...filter,
+      limit: INVOICE_EXPORT_LIMIT,
+      offset: 0,
+    }
+    return qc.fetchQuery({
+      queryKey: ['invoices', 'list', exportFilter] as const,
+      queryFn: () => listInvoices(exportFilter),
+    })
+  }
 }
 
 export function useInvoice(id: string) {

@@ -7,15 +7,16 @@ import {
   TriangleAlertIcon,
   WalletIcon,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
+import type { InvoiceFilter } from '@/api/invoices'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -23,15 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
+import { getErrorMessage } from '@/lib/errors'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 
 import { useRemindOverdue } from '../hooks/useBilling'
-import { useInvoicesList } from '../hooks/useInvoices'
+import { useExportInvoices, useInvoicesList } from '../hooks/useInvoices'
 import { BillingActions } from './BillingActions'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
@@ -54,113 +58,130 @@ const toCsvRow = (inv: Invoice) => ({
   Pengingat: inv.lastRemindedAt ? formatDate(inv.lastRemindedAt) : '—',
 })
 
+// Static column defs (no component state). Sortable keys (invoiceNo/amount/
+// dueDate/status/lastRemindedAt) match the backend sort whitelist; Pelanggan is
+// a plain header.
+const COLUMNS: ColumnDef<Invoice>[] = [
+  {
+    accessorKey: 'invoiceNo',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="No. Tagihan" />,
+    meta: { title: 'No. Tagihan' },
+    cell: ({ row }) => (
+      <Link
+        to="/invoices/$invoiceId"
+        params={{ invoiceId: row.original.id }}
+        className="font-medium font-mono text-sm hover:underline"
+      >
+        {row.original.invoiceNo}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'customerName',
+    header: 'Pelanggan',
+    meta: { title: 'Pelanggan' },
+    cell: ({ row }) => (
+      <Link
+        to="/customers/$customerId"
+        params={{ customerId: row.original.customerId }}
+        className="font-medium hover:underline"
+      >
+        {row.original.customerName}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: 'amount',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
+    meta: { title: 'Jumlah', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{formatCurrency(invoiceTotal(row.original))}</span>
+    ),
+  },
+  {
+    accessorKey: 'dueDate',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Jatuh tempo" />,
+    meta: { title: 'Jatuh tempo' },
+    cell: ({ row }) => formatDate(row.original.dueDate),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={STATUS_TONE[row.original.status]}
+        label={statusLabel(row.original.status)}
+      />
+    ),
+  },
+  {
+    accessorKey: 'lastRemindedAt',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Pengingat" />,
+    meta: { title: 'Pengingat' },
+    cell: ({ row }) =>
+      row.original.lastRemindedAt ? (
+        <span className="text-muted-foreground text-sm">
+          {formatDate(row.original.lastRemindedAt)}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+]
+
 const routeApi = getRouteApi('/_auth/invoices/')
 
 export function InvoicesListPage() {
   const { status: statusParam } = routeApi.useSearch()
   const status = statusParam ?? 'all'
   const navigate = routeApi.useNavigate()
-  const setStatus = (value: string) =>
-    navigate({ search: value === 'all' ? {} : { status: value } })
-  // Unfiltered set powers the AR summary so it stays correct under any filter.
-  const all = useInvoicesList()
-  const { data, isLoading, isError } = useInvoicesList({
-    status: status === 'all' ? undefined : status,
-  })
   const canRemind = useCan('billing.run')
   const remind = useRemindOverdue()
+  const table = useTableQuery({ pageSize: 20 })
+  const exportInvoices = useExportInvoices()
+  const [isExporting, setIsExporting] = useState(false)
 
-  const ar = useMemo(() => {
-    const items = all.data?.items ?? []
-    const unpaid = items.filter((i) => i.status === 'pending' || i.status === 'overdue')
-    const overdue = items.filter((i) => i.status === 'overdue')
-    return {
-      outstanding: unpaid.reduce((sum, i) => sum + invoiceTotal(i), 0),
-      overdue: overdue.reduce((sum, i) => sum + invoiceTotal(i), 0),
-      unpaidCount: unpaid.length,
+  // Status is a URL filter the table does not own — rewind to page 1 on change.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
+  const baseFilter: InvoiceFilter = {
+    status: status === 'all' ? undefined : status,
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+  }
+  const { data, isLoading, isError } = useInvoicesList({
+    ...baseFilter,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const total = data?.total ?? 0
+  // AR summary is a full-set server aggregate (ignores status/q/paging), so the
+  // KPI cards stay correct under any table filter.
+  const summary = data?.summary
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportInvoices(baseFilter)
+      downloadCsv('tagihan', result.items.map(toCsvRow))
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setIsExporting(false)
     }
-  }, [all.data])
-
-  const columns = useMemo<ColumnDef<Invoice>[]>(
-    () => [
-      {
-        accessorKey: 'invoiceNo',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="No. Tagihan" />,
-        meta: { title: 'No. Tagihan' },
-        cell: ({ row }) => (
-          <Link
-            to="/invoices/$invoiceId"
-            params={{ invoiceId: row.original.id }}
-            className="font-medium font-mono text-sm hover:underline"
-          >
-            {row.original.invoiceNo}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: 'customerName',
-        header: 'Pelanggan',
-        meta: { title: 'Pelanggan' },
-        cell: ({ row }) => (
-          <Link
-            to="/customers/$customerId"
-            params={{ customerId: row.original.customerId }}
-            className="font-medium hover:underline"
-          >
-            {row.original.customerName}
-          </Link>
-        ),
-      },
-      {
-        accessorKey: 'amount',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
-        meta: { title: 'Jumlah', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">
-            {formatCurrency(invoiceTotal(row.original))}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'dueDate',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Jatuh tempo" />,
-        meta: { title: 'Jatuh tempo' },
-        cell: ({ row }) => formatDate(row.original.dueDate),
-      },
-      {
-        accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={STATUS_TONE[row.original.status]}
-            label={statusLabel(row.original.status)}
-          />
-        ),
-      },
-      {
-        accessorKey: 'lastRemindedAt',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Pengingat" />,
-        meta: { title: 'Pengingat' },
-        cell: ({ row }) =>
-          row.original.lastRemindedAt ? (
-            <span className="text-muted-foreground text-sm">
-              {formatDate(row.original.lastRemindedAt)}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
-      },
-    ],
-    [],
-  )
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader title="Tagihan" description="Penagihan bulanan & piutang (AR)." />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {all.isLoading || !all.data ? (
+        {!summary ? (
           <>
             <Skeleton className="h-28 rounded-xl" />
             <Skeleton className="h-28 rounded-xl" />
@@ -170,15 +191,15 @@ export function InvoicesListPage() {
           <>
             <KpiCard
               label="Total piutang (AR)"
-              value={ar.outstanding}
+              value={summary.outstanding}
               format={formatCurrency}
-              hint={`${formatNumber(ar.unpaidCount)} tagihan belum bayar`}
+              hint={`${formatNumber(summary.unpaidCount)} tagihan belum bayar`}
               accent="amber"
               icon={WalletIcon}
             />
             <KpiCard
               label="Terlambat"
-              value={ar.overdue}
+              value={summary.overdue}
               format={formatCurrency}
               hint="jatuh tempo terlewat"
               hintTone="negative"
@@ -186,7 +207,7 @@ export function InvoicesListPage() {
             />
             <KpiCard
               label="Total tagihan"
-              value={all.data.total}
+              value={summary.total}
               hint="periode berjalan"
               icon={ReceiptTextIcon}
             />
@@ -195,12 +216,24 @@ export function InvoicesListPage() {
       </div>
 
       <DataTable
-        columns={columns}
+        columns={COLUMNS}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada tagihan."
+        emptyMessage={
+          table.search ? `Tidak ada tagihan cocok dengan "${table.search}".` : 'Belum ada tagihan.'
+        }
         searchPlaceholder="Cari tagihan…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         enableSelection={canRemind}
         bulkActions={(selected) => {
           const unpaid = selected.filter(
@@ -239,8 +272,8 @@ export function InvoicesListPage() {
               variant="outline"
               size="sm"
               className="h-8"
-              disabled={!data?.items.length}
-              onClick={() => downloadCsv('tagihan', (data?.items ?? []).map(toCsvRow))}
+              disabled={!total || isExporting}
+              onClick={handleExport}
             >
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Ekspor</span>
