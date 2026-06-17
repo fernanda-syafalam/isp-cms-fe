@@ -2969,12 +2969,25 @@ export const handlers = [
   }),
 
   // Resellers
-  http.get('*/api/resellers', () =>
-    HttpResponse.json({
-      items: RESELLER_FIXTURES,
-      total: RESELLER_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/resellers', ({ request }) => {
+    const url = new URL(request.url)
+    const rows = filterByStatus(RESELLER_FIXTURES, url.searchParams.get('status'))
+    return HttpResponse.json(
+      applyListQuery(rows, url.searchParams, {
+        searchFields: ['name', 'area'],
+        sortAccessors: {
+          name: (r) => r.name,
+          area: (r) => r.area,
+          balance: (r) => r.balance,
+          commissionPct: (r) => r.commissionPct,
+          status: (r) => r.status,
+        },
+        // Preserve the seed order (mirrors the BE default `createdAt desc`); the
+        // fixture has no createdAt, so a stable no-op keeps insertion order.
+        defaultCompare: () => 0,
+      }),
+    )
+  }),
   http.get('*/api/resellers/:id', ({ params }) => {
     const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
     return found
