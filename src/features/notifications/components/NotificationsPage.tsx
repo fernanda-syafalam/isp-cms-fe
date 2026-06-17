@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { PencilIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatDateTime } from '@/lib/format'
 import type {
   NotificationEvent,
@@ -36,49 +37,61 @@ const EVENT_LABEL: Record<NotificationEvent, string> = {
   ticket_update: 'Update tiket',
 }
 
+// Static column defs (no component state): sortable keys (at/to/templateName/
+// status) match the backend send-log sort whitelist; `to` maps to the recipient
+// column server-side. `body` is a non-sortable preview, not a sort target.
+const LOG_COLUMNS: ColumnDef<NotificationLog>[] = [
+  {
+    accessorKey: 'at',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Waktu" />,
+    meta: { title: 'Waktu' },
+    cell: ({ row }) => formatDateTime(row.original.at),
+  },
+  {
+    accessorKey: 'to',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Tujuan" />,
+    meta: { title: 'Tujuan' },
+  },
+  {
+    accessorKey: 'templateName',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Template" />,
+    meta: { title: 'Template' },
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={row.original.status === 'sent' ? 'success' : 'danger'}
+        label={row.original.status === 'sent' ? 'Terkirim' : 'Gagal'}
+      />
+    ),
+  },
+  {
+    accessorKey: 'body',
+    header: 'Isi',
+    meta: { title: 'Isi' },
+    cell: ({ row }) => (
+      <span className="line-clamp-1 max-w-md text-muted-foreground text-sm">
+        {row.original.body}
+      </span>
+    ),
+  },
+]
+
 export function NotificationsPage() {
   const templates = useNotificationTemplates()
-  const log = useNotificationLog()
   const canManage = useCan('settings.manage')
-
-  const logColumns = useMemo<ColumnDef<NotificationLog>[]>(
-    () => [
-      {
-        accessorKey: 'at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Waktu" />,
-        meta: { title: 'Waktu' },
-        cell: ({ row }) => formatDateTime(row.original.at),
-      },
-      { accessorKey: 'to', header: 'Tujuan', meta: { title: 'Tujuan' } },
-      {
-        accessorKey: 'templateName',
-        header: 'Template',
-        meta: { title: 'Template' },
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={row.original.status === 'sent' ? 'success' : 'danger'}
-            label={row.original.status === 'sent' ? 'Terkirim' : 'Gagal'}
-          />
-        ),
-      },
-      {
-        accessorKey: 'body',
-        header: 'Isi',
-        meta: { title: 'Isi' },
-        cell: ({ row }) => (
-          <span className="line-clamp-1 max-w-md text-muted-foreground text-sm">
-            {row.original.body}
-          </span>
-        ),
-      },
-    ],
-    [],
-  )
+  const logTable = useTableQuery({ pageSize: 20 })
+  const log = useNotificationLog({
+    q: logTable.params.q,
+    sort: logTable.params.sort,
+    order: logTable.params.order,
+    limit: logTable.params.limit,
+    offset: logTable.params.offset,
+  })
+  const logTotal = log.data?.total ?? 0
 
   return (
     <div className="space-y-6">
@@ -115,12 +128,22 @@ export function NotificationsPage() {
 
         <TabsContent value="log">
           <DataTable
-            columns={logColumns}
+            columns={LOG_COLUMNS}
             data={log.data?.items}
             isLoading={log.isLoading}
             isError={log.isError}
             emptyMessage="Belum ada pesan terkirim."
             searchPlaceholder="Cari tujuan / template…"
+            server={{
+              pageIndex: logTable.pageIndex,
+              pageSize: logTable.pageSize,
+              rowCount: logTotal,
+              sorting: logTable.sorting,
+              search: logTable.search,
+              onPaginationChange: logTable.onPaginationChange,
+              onSortingChange: logTable.onSortingChange,
+              onSearchChange: logTable.onSearchChange,
+            }}
           />
         </TabsContent>
       </Tabs>

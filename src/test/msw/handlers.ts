@@ -4058,9 +4058,20 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(found)
   }),
-  http.get('*/api/notifications/log', () => {
-    const items = [...NOTIFICATION_LOG_FIXTURES].sort((a, b) => (a.at < b.at ? 1 : -1))
-    return HttpResponse.json({ items, total: items.length })
+  http.get('*/api/notifications/log', ({ request }) => {
+    const url = new URL(request.url)
+    return HttpResponse.json(
+      applyListQuery(NOTIFICATION_LOG_FIXTURES, url.searchParams, {
+        searchFields: ['to', 'templateName'],
+        sortAccessors: {
+          at: (r) => r.at,
+          to: (r) => r.to,
+          templateName: (r) => r.templateName,
+          status: (r) => r.status,
+        },
+        defaultCompare: (a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0),
+      }),
+    )
   }),
   // Send a (test) message rendered from a template; appends to the log.
   http.post('*/api/notifications/send', async ({ request }) => {
