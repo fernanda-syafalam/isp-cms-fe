@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import {
   listNotificationLog,
+  type NotificationLogFilter,
   listNotificationTemplates,
   sendNotification,
   updateNotificationTemplate,
@@ -17,10 +18,10 @@ export function useNotificationTemplates() {
   })
 }
 
-export function useNotificationLog() {
+export function useNotificationLog(filter: NotificationLogFilter = {}) {
   return useQuery({
-    queryKey: ['notifications', 'log'] as const,
-    queryFn: listNotificationLog,
+    queryKey: ['notifications', 'log', filter] as const,
+    queryFn: () => listNotificationLog(filter),
   })
 }
 

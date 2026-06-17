@@ -23,8 +23,24 @@ export async function updateNotificationTemplate(
   return NotificationTemplateSchema.parse(json)
 }
 
-export async function listNotificationLog(): Promise<NotificationLogList> {
-  const json = await api.get('notifications/log').json()
+export type NotificationLogFilter = {
+  q?: string | undefined
+  sort?: string | undefined
+  order?: 'asc' | 'desc' | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
+export async function listNotificationLog(
+  filter: NotificationLogFilter = {},
+): Promise<NotificationLogList> {
+  const searchParams = new URLSearchParams()
+  if (filter.q) searchParams.set('q', filter.q)
+  if (filter.sort) searchParams.set('sort', filter.sort)
+  if (filter.order) searchParams.set('order', filter.order)
+  if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
+  if (filter.offset !== undefined) searchParams.set('offset', String(filter.offset))
+  const json = await api.get('notifications/log', { searchParams }).json()
   return NotificationLogListSchema.parse(json)
 }
 
