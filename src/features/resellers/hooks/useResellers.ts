@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import { listCustomers } from '@/api/customers'
 import {
+  type LedgerFilter,
   RESELLER_EXPORT_LIMIT,
   type ResellerFilter,
   addLedgerEntry,
@@ -57,10 +58,10 @@ export function useReseller(id: string) {
   })
 }
 
-export function useResellerLedger(id: string) {
+export function useResellerLedger(id: string, filter: LedgerFilter = {}) {
   return useQuery({
-    queryKey: ['resellers', 'detail', id, 'ledger'] as const,
-    queryFn: () => listResellerLedger(id),
+    queryKey: ['resellers', 'detail', id, 'ledger', filter] as const,
+    queryFn: () => listResellerLedger(id, filter),
   })
 }
 

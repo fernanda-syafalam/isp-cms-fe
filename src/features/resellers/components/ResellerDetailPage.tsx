@@ -8,7 +8,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isRouteAllowed } from '@/components/shared/nav'
 import { useCan, useEffectiveRole } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatCurrency, formatDateTime, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
@@ -47,69 +48,70 @@ const LEDGER_TONE: Record<LedgerEntryType, StatusTone> = {
   withdrawal: 'neutral',
 }
 
+// Stateless ledger columns (no component callbacks) — hoisted so they are not
+// rebuilt per render. Sortable keys match the backend whitelist
+// (at, type, amount, balanceAfter); "note" is free-text searched, not sorted.
+const LEDGER_COLUMNS: ColumnDef<LedgerEntry>[] = [
+  {
+    accessorKey: 'at',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal" />,
+    meta: { title: 'Tanggal' },
+    cell: ({ row }) => formatDateTime(row.original.at),
+  },
+  {
+    accessorKey: 'type',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Tipe" />,
+    meta: { title: 'Tipe' },
+    cell: ({ row }) => (
+      <StatusBadge tone={LEDGER_TONE[row.original.type]} label={statusLabel(row.original.type)} />
+    ),
+  },
+  {
+    accessorKey: 'note',
+    header: 'Catatan',
+    meta: { title: 'Catatan' },
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'amount',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
+    meta: { title: 'Jumlah', align: 'right' },
+    cell: ({ row }) => {
+      const positive = row.original.amount >= 0
+      return (
+        <span
+          className={`font-mono tabular-nums ${positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+        >
+          {positive ? '+' : '−'}
+          {formatCurrency(Math.abs(row.original.amount))}
+        </span>
+      )
+    },
+  },
+  {
+    accessorKey: 'balanceAfter',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
+    meta: { title: 'Saldo', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{formatCurrency(row.original.balanceAfter)}</span>
+    ),
+  },
+]
+
 type Props = {
   resellerId: string
 }
 
 export function ResellerDetailPage({ resellerId }: Props) {
   const { data: reseller, isLoading, isError } = useReseller(resellerId)
-  const ledger = useResellerLedger(resellerId)
+  const table = useTableQuery({ pageSize: 20 })
+  const ledger = useResellerLedger(resellerId, table.params)
   const canManage = useCan('resellers.manage')
   const [dialogType, setDialogType] = useState<LedgerEntryType | null>(null)
 
   const estimatedCommission = reseller
     ? Math.round(reseller.customerCount * ARPU * reseller.commissionPct)
     : 0
-
-  const columns = useMemo<ColumnDef<LedgerEntry>[]>(
-    () => [
-      {
-        accessorKey: 'at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal" />,
-        meta: { title: 'Tanggal' },
-        cell: ({ row }) => formatDateTime(row.original.at),
-      },
-      {
-        accessorKey: 'type',
-        header: 'Tipe',
-        meta: { title: 'Tipe' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={LEDGER_TONE[row.original.type]}
-            label={statusLabel(row.original.type)}
-          />
-        ),
-      },
-      { accessorKey: 'note', header: 'Catatan', meta: { title: 'Catatan' } },
-      {
-        accessorKey: 'amount',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
-        meta: { title: 'Jumlah', align: 'right' },
-        cell: ({ row }) => {
-          const positive = row.original.amount >= 0
-          return (
-            <span
-              className={`font-mono tabular-nums ${positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-            >
-              {positive ? '+' : '−'}
-              {formatCurrency(Math.abs(row.original.amount))}
-            </span>
-          )
-        },
-      },
-      {
-        accessorKey: 'balanceAfter',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
-        meta: { title: 'Saldo', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">
-            {formatCurrency(row.original.balanceAfter)}
-          </span>
-        ),
-      },
-    ],
-    [],
-  )
 
   if (isLoading) {
     return (
@@ -199,12 +201,26 @@ export function ResellerDetailPage({ resellerId }: Props) {
       <ResellerCustomersCard resellerName={reseller.name} />
 
       <DataTable
-        columns={columns}
+        columns={LEDGER_COLUMNS}
         data={ledger.data?.items}
         isLoading={ledger.isLoading}
         isError={ledger.isError}
-        emptyMessage="Belum ada transaksi."
+        emptyMessage={
+          table.search
+            ? `Tidak ada transaksi cocok dengan "${table.search}".`
+            : 'Belum ada transaksi.'
+        }
         searchPlaceholder="Cari catatan…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: ledger.data?.total ?? 0,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
       />
 
       {dialogType ? (
