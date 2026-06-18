@@ -74,10 +74,7 @@ export function DeviceRowActions({ device }: { device: Device }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={() => remove.mutate(device.id)}
-            >
+            <AlertDialogAction variant="destructive" onClick={() => remove.mutate(device.id)}>
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

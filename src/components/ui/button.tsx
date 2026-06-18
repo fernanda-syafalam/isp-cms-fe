@@ -5,7 +5,11 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  // The coarse-pointer min size is an accessibility safety net: on touch devices
+  // every button gets at least a 44×44px hit area (WCAG 2.5.5) regardless of its
+  // visual size, while fine-pointer (mouse) layouts stay exactly as designed. It
+  // can only ever enlarge a tap target, never shrink or hide one.
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11",
   {
     variants: {
       variant: {
@@ -23,6 +27,10 @@ const buttonVariants = cva(
         sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5',
         lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
         icon: 'size-9',
+        // Explicit 44px targets for primary mobile actions and icon-only controls
+        // that must always meet the touch minimum, even on fine-pointer devices.
+        touch: 'h-11 rounded-md px-5 has-[>svg]:px-4',
+        'icon-touch': 'size-11',
       },
     },
     defaultVariants: {

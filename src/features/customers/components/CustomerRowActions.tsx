@@ -127,10 +127,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={() => stop.mutate(customer.id)}
-            >
+            <AlertDialogAction variant="destructive" onClick={() => stop.mutate(customer.id)}>
               Berhentikan
             </AlertDialogAction>
           </AlertDialogFooter>
