@@ -171,10 +171,10 @@ export function useDisconnectSession(routerId: string) {
 }
 
 // Queues
-export function useQueues(routerId: string) {
+export function useQueues(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'queues'] as const,
-    queryFn: () => listQueues(routerId),
+    queryKey: ['routers', routerId, 'queues', filter] as const,
+    queryFn: () => listQueues(routerId, filter),
   })
 }
 

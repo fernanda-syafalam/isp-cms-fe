@@ -146,8 +146,15 @@ export async function disconnectSession(routerId: string, id: string): Promise<v
 }
 
 // Simple queues
-export async function listQueues(routerId: string): Promise<SimpleQueueList> {
-  const json = await api.get(`routers/${routerId}/queues`).json()
+export async function listQueues(
+  routerId: string,
+  filter: MikrotikListFilter = {},
+): Promise<SimpleQueueList> {
+  const json = await api
+    .get(`routers/${routerId}/queues`, {
+      searchParams: toSearchParams(filter),
+    })
+    .json()
   return SimpleQueueListSchema.parse(json)
 }
 

@@ -1,7 +1,7 @@
-import type { SortingState } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import type { SortingState } from '@tanstack/react-table'
+import { useMemo, useState } from 'react'
 
-import { useDebounce } from "./useDebounce";
+import { useDebounce } from './useDebounce'
 
 /**
  * Server list query params derived from table state. Mirrors the backend list
@@ -9,21 +9,21 @@ import { useDebounce } from "./useDebounce";
  * `sort`/`order` column. Undefined fields are omitted by the api layer.
  */
 export type TableQueryParams = {
-  limit: number;
-  offset: number;
-  q: string | undefined;
-  sort: string | undefined;
-  order: "asc" | "desc" | undefined;
-};
+  limit: number
+  offset: number
+  q: string | undefined
+  sort: string | undefined
+  order: 'asc' | 'desc' | undefined
+}
 
 type UseTableQueryOptions = {
   /** Rows per page (defaults to 20). */
-  pageSize?: number;
+  pageSize?: number
   /** Debounce for the search box before it hits the server (defaults to 300ms). */
-  searchDelayMs?: number;
+  searchDelayMs?: number
   /** Seeds the search box once on mount (e.g. from a `?q=` deep-link). */
-  initialSearch?: string | undefined;
-};
+  initialSearch?: string | undefined
+}
 
 /**
  * Drives a server-paginated DataTable: owns page/sort/search state, debounces
@@ -33,54 +33,47 @@ type UseTableQueryOptions = {
  * the `params` to feed the list query.
  */
 export function useTableQuery(options: UseTableQueryOptions = {}) {
-  const {
-    pageSize: initialPageSize = 20,
-    searchDelayMs = 300,
-    initialSearch = "",
-  } = options;
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(initialPageSize);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [search, setSearch] = useState(initialSearch);
-  const debouncedSearch = useDebounce(search, searchDelayMs);
+  const { pageSize: initialPageSize = 20, searchDelayMs = 300, initialSearch = '' } = options
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(initialPageSize)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [search, setSearch] = useState(initialSearch)
+  const debouncedSearch = useDebounce(search, searchDelayMs)
 
   const onSearchChange = (value: string) => {
-    setSearch(value);
-    setPageIndex(0);
-  };
+    setSearch(value)
+    setPageIndex(0)
+  }
 
   const onSortingChange = (next: SortingState) => {
-    setSorting(next);
-    setPageIndex(0);
-  };
+    setSorting(next)
+    setPageIndex(0)
+  }
 
-  const onPaginationChange = (next: {
-    pageIndex: number;
-    pageSize: number;
-  }) => {
+  const onPaginationChange = (next: { pageIndex: number; pageSize: number }) => {
     if (next.pageSize !== pageSize) {
-      setPageSize(next.pageSize);
-      setPageIndex(0);
-      return;
+      setPageSize(next.pageSize)
+      setPageIndex(0)
+      return
     }
-    setPageIndex(next.pageIndex);
-  };
+    setPageIndex(next.pageIndex)
+  }
 
   // Jump back to the first page. Call this when an external filter the table
   // does not own (e.g. a URL status/type dropdown) changes, so the user is
   // never stranded on a now-out-of-range page.
-  const resetPage = () => setPageIndex(0);
+  const resetPage = () => setPageIndex(0)
 
   const params = useMemo<TableQueryParams>(() => {
-    const first = sorting[0];
+    const first = sorting[0]
     return {
       limit: pageSize,
       offset: pageIndex * pageSize,
       q: debouncedSearch.trim() || undefined,
       sort: first?.id,
-      order: first ? (first.desc ? "desc" : "asc") : undefined,
-    };
-  }, [pageSize, pageIndex, debouncedSearch, sorting]);
+      order: first ? (first.desc ? 'desc' : 'asc') : undefined,
+    }
+  }, [pageSize, pageIndex, debouncedSearch, sorting])
 
   return {
     params,
@@ -92,5 +85,5 @@ export function useTableQuery(options: UseTableQueryOptions = {}) {
     onSortingChange,
     onPaginationChange,
     resetPage,
-  };
+  }
 }
