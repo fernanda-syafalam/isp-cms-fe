@@ -2,7 +2,6 @@ import {
   ArrowLeftRightIcon,
   BanIcon,
   MapPinIcon,
-  MoreHorizontalIcon,
   PauseIcon,
   PencilIcon,
   PlayIcon,
@@ -19,13 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { Customer } from '@/schemas/customer'
 
@@ -53,54 +47,47 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          {canEdit ? (
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <PencilIcon className="size-4" />
-              Edit
-            </DropdownMenuItem>
-          ) : null}
-          {canEdit ? (
-            <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
-              <ArrowLeftRightIcon className="size-4" />
-              Ganti paket
-            </DropdownMenuItem>
-          ) : null}
-          {canRelocate ? (
-            <DropdownMenuItem onSelect={() => setRelocateOpen(true)}>
-              <MapPinIcon className="size-4" />
-              Mutasi alamat
-            </DropdownMenuItem>
-          ) : null}
-          {canSuspend ? (
-            <DropdownMenuItem onSelect={() => suspend.mutate(customer.id)}>
-              <PauseIcon className="size-4" />
-              Berhenti sementara
-            </DropdownMenuItem>
-          ) : null}
-          {canResume ? (
-            <DropdownMenuItem onSelect={() => resume.mutate(customer.id)}>
-              <PlayIcon className="size-4" />
-              Aktifkan kembali
-            </DropdownMenuItem>
-          ) : null}
-          {canStop ? (
-            <DropdownMenuItem
-              onSelect={() => setStopOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <BanIcon className="size-4" />
-              Berhentikan
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActions contentClassName="w-40">
+        {canEdit ? (
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <PencilIcon className="size-4" />
+            Edit
+          </DropdownMenuItem>
+        ) : null}
+        {canEdit ? (
+          <DropdownMenuItem onSelect={() => setPlanOpen(true)}>
+            <ArrowLeftRightIcon className="size-4" />
+            Ganti paket
+          </DropdownMenuItem>
+        ) : null}
+        {canRelocate ? (
+          <DropdownMenuItem onSelect={() => setRelocateOpen(true)}>
+            <MapPinIcon className="size-4" />
+            Mutasi alamat
+          </DropdownMenuItem>
+        ) : null}
+        {canSuspend ? (
+          <DropdownMenuItem onSelect={() => suspend.mutate(customer.id)}>
+            <PauseIcon className="size-4" />
+            Berhenti sementara
+          </DropdownMenuItem>
+        ) : null}
+        {canResume ? (
+          <DropdownMenuItem onSelect={() => resume.mutate(customer.id)}>
+            <PlayIcon className="size-4" />
+            Aktifkan kembali
+          </DropdownMenuItem>
+        ) : null}
+        {canStop ? (
+          <DropdownMenuItem
+            onSelect={() => setStopOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <BanIcon className="size-4" />
+            Berhentikan
+          </DropdownMenuItem>
+        ) : null}
+      </RowActions>
 
       {canEdit ? (
         <EditCustomerDialog customer={customer} open={editOpen} onOpenChange={setEditOpen} />

@@ -1,4 +1,4 @@
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { PencilIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -11,13 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
 import type { Device } from '@/schemas/device'
 
@@ -35,30 +30,23 @@ export function DeviceRowActions({ device }: { device: Device }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {canManage ? (
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <PencilIcon className="size-4" />
-              Edit
-            </DropdownMenuItem>
-          ) : null}
-          {canDelete ? (
-            <DropdownMenuItem
-              onSelect={() => setDeleteOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2Icon className="size-4" />
-              Hapus
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActions>
+        {canManage ? (
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <PencilIcon className="size-4" />
+            Edit
+          </DropdownMenuItem>
+        ) : null}
+        {canDelete ? (
+          <DropdownMenuItem
+            onSelect={() => setDeleteOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2Icon className="size-4" />
+            Hapus
+          </DropdownMenuItem>
+        ) : null}
+      </RowActions>
 
       {canManage ? (
         <EditDeviceDialog device={device} open={editOpen} onOpenChange={setEditOpen} />

@@ -1,4 +1,4 @@
-import { ArchiveIcon, MoreHorizontalIcon, PencilIcon } from 'lucide-react'
+import { ArchiveIcon, PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -11,13 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { Plan } from '@/schemas/plan'
 
@@ -35,28 +30,21 @@ export function PlanRowActions({ plan }: { plan: Plan }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            <PencilIcon className="size-4" />
-            Edit
+      <RowActions contentClassName="w-40">
+        <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+          <PencilIcon className="size-4" />
+          Edit
+        </DropdownMenuItem>
+        {canArchive ? (
+          <DropdownMenuItem
+            onSelect={() => setArchiveOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <ArchiveIcon className="size-4" />
+            Arsipkan
           </DropdownMenuItem>
-          {canArchive ? (
-            <DropdownMenuItem
-              onSelect={() => setArchiveOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <ArchiveIcon className="size-4" />
-              Arsipkan
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        ) : null}
+      </RowActions>
 
       <EditPlanDialog plan={plan} open={editOpen} onOpenChange={setEditOpen} />
 
