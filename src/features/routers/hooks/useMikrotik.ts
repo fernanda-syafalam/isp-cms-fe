@@ -24,6 +24,7 @@ import {
   updateQueue,
   updateSecret,
 } from '@/api/mikrotik'
+import type { MikrotikListFilter } from '@/api/mikrotik'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   CreateIpPoolInput,
@@ -103,10 +104,10 @@ export function useDeleteProfile(routerId: string) {
 }
 
 // Secrets
-export function useSecrets(routerId: string) {
+export function useSecrets(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'secrets'] as const,
-    queryFn: () => listSecrets(routerId),
+    queryKey: ['routers', routerId, 'secrets', filter] as const,
+    queryFn: () => listSecrets(routerId, filter),
   })
 }
 
@@ -147,10 +148,10 @@ export function useDeleteSecret(routerId: string) {
 }
 
 // Sessions
-export function useSessions(routerId: string) {
+export function useSessions(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'sessions'] as const,
-    queryFn: () => listSessions(routerId),
+    queryKey: ['routers', routerId, 'sessions', filter] as const,
+    queryFn: () => listSessions(routerId, filter),
   })
 }
 
@@ -159,7 +160,10 @@ export function useDisconnectSession(routerId: string) {
   return useMutation({
     mutationFn: (id: string) => disconnectSession(routerId, id),
     onSuccess: () => {
+      // Disconnecting drops a session AND flips the owning secret's connection
+      // state, so both lists must refetch.
       qc.invalidateQueries({ queryKey: ['routers', routerId, 'sessions'] })
+      qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] })
       toast.success('Sesi diputus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

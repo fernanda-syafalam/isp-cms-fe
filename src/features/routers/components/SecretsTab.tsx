@@ -32,156 +32,167 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
-import type { PppSecret, PppSession } from '@/schemas/mikrotik'
+import { useTableQuery } from '@/hooks/useTableQuery'
+import type { PppSecretListItem } from '@/schemas/mikrotik'
 
 import {
   useDeleteSecret,
   useDisconnectSession,
   useProfiles,
   useSecrets,
-  useSessions,
   useUpdateSecret,
 } from '../hooks/useMikrotik'
 import { SecretFormDialog } from './SecretFormDialog'
 
+// Stateless display columns (no component callbacks) — hoisted so they are not
+// rebuilt per render. The live connection state (online/address/uptime) is
+// denormalized onto each list item server-side, so this tab no longer fetches
+// the sessions endpoint. Sortable keys match the backend whitelist
+// (username, profileName, customerName, disabled).
+const DISPLAY_COLUMNS: ColumnDef<PppSecretListItem>[] = [
+  {
+    accessorKey: 'username',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Username" />,
+    meta: { title: 'Username' },
+    cell: ({ row }) => <span className="font-mono text-sm">{row.original.username}</span>,
+  },
+  {
+    accessorKey: 'profileName',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Profil" />,
+    meta: { title: 'Profil' },
+  },
+  {
+    accessorKey: 'customerName',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
+    meta: { title: 'Pelanggan' },
+    cell: ({ row }) =>
+      row.original.customerId ? (
+        <Link
+          to="/customers/$customerId"
+          params={{ customerId: row.original.customerId }}
+          className="font-medium hover:underline"
+        >
+          {row.original.customerName}
+        </Link>
+      ) : (
+        (row.original.customerName ?? '—')
+      ),
+  },
+  {
+    accessorKey: 'disabled',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) =>
+      row.original.disabled ? (
+        <StatusBadge tone="neutral" label="Nonaktif" />
+      ) : (
+        <StatusBadge tone="success" label="Aktif" />
+      ),
+  },
+  {
+    id: 'connection',
+    header: 'Koneksi',
+    meta: { title: 'Koneksi' },
+    enableSorting: false,
+    cell: ({ row }) => {
+      const { online, address, uptime } = row.original
+      if (!online) return <StatusBadge tone="neutral" label="Offline" />
+      return (
+        <div className="flex flex-col gap-0.5">
+          <StatusBadge tone="success" label="Online" />
+          <span className="font-mono text-muted-foreground text-xs">
+            {address} · {uptime}
+          </span>
+        </div>
+      )
+    },
+  },
+]
+
+type ActionHandlers = {
+  onEdit: (secret: PppSecretListItem) => void
+  onToggleDisabled: (secret: PppSecretListItem) => void
+  onDisconnect: (sessionId: string) => void
+  onDelete: (secret: PppSecretListItem) => void
+}
+
+function buildActionsColumn(handlers: ActionHandlers): ColumnDef<PppSecretListItem> {
+  return {
+    id: 'actions',
+    meta: { align: 'right' },
+    enableHiding: false,
+    enableSorting: false,
+    cell: ({ row }) => {
+      const s = row.original
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
+              <MoreHorizontalIcon className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onSelect={() => handlers.onEdit(s)}>
+              <PencilIcon className="size-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handlers.onToggleDisabled(s)}>
+              {s.disabled ? <PlayIcon className="size-4" /> : <BanIcon className="size-4" />}
+              {s.disabled ? 'Aktifkan' : 'Nonaktifkan'}
+            </DropdownMenuItem>
+            {s.sessionId ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  if (s.sessionId) handlers.onDisconnect(s.sessionId)
+                }}
+              >
+                <UnplugIcon className="size-4" />
+                Putus sesi
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => handlers.onDelete(s)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2Icon className="size-4" />
+              Hapus
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  }
+}
+
 export function SecretsTab({ routerId }: { routerId: string }) {
   const canManage = useCan('network.manage')
-  const { data, isLoading, isError } = useSecrets(routerId)
+  const table = useTableQuery({ pageSize: 20 })
+  const { data, isLoading, isError } = useSecrets(routerId, table.params)
   const { data: profilesData } = useProfiles(routerId)
-  const { data: sessionsData } = useSessions(routerId)
   const update = useUpdateSecret(routerId)
   const remove = useDeleteSecret(routerId)
   const disconnect = useDisconnectSession(routerId)
 
-  // Correlate secrets with who is actually online now (Winbox "active") so
-  // operators see connection state + IP/uptime and can force a reconnect.
-  const sessionByUsername = useMemo(() => {
-    const m = new Map<string, PppSession>()
-    for (const s of sessionsData?.items ?? []) m.set(s.username, s)
-    return m
-  }, [sessionsData])
-
   const [addOpen, setAddOpen] = useState(false)
-  const [editSecret, setEditSecret] = useState<PppSecret | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<PppSecret | null>(null)
+  const [editSecret, setEditSecret] = useState<PppSecretListItem | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<PppSecretListItem | null>(null)
 
   const profiles = profilesData?.items ?? []
+  const total = data?.total ?? 0
 
-  const columns = useMemo<ColumnDef<PppSecret>[]>(
-    () => [
-      {
-        accessorKey: 'username',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Username" />,
-        meta: { title: 'Username' },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.username}</span>,
-      },
-      {
-        accessorKey: 'profileName',
-        header: 'Profil',
-        meta: { title: 'Profil' },
-      },
-      {
-        accessorKey: 'customerName',
-        header: 'Pelanggan',
-        meta: { title: 'Pelanggan' },
-        cell: ({ row }) =>
-          row.original.customerId ? (
-            <Link
-              to="/customers/$customerId"
-              params={{ customerId: row.original.customerId }}
-              className="font-medium hover:underline"
-            >
-              {row.original.customerName}
-            </Link>
-          ) : (
-            (row.original.customerName ?? '—')
-          ),
-      },
-      {
-        accessorKey: 'disabled',
-        header: 'Status',
-        meta: { title: 'Status' },
-        cell: ({ row }) =>
-          row.original.disabled ? (
-            <StatusBadge tone="neutral" label="Nonaktif" />
-          ) : (
-            <StatusBadge tone="success" label="Aktif" />
-          ),
-      },
-      {
-        id: 'connection',
-        header: 'Koneksi',
-        meta: { title: 'Koneksi' },
-        cell: ({ row }) => {
-          const sess = sessionByUsername.get(row.original.username)
-          if (!sess) return <StatusBadge tone="neutral" label="Offline" />
-          return (
-            <div className="flex flex-col gap-0.5">
-              <StatusBadge tone="success" label="Online" />
-              <span className="font-mono text-muted-foreground text-xs">
-                {sess.address} · {sess.uptime}
-              </span>
-            </div>
-          )
-        },
-      },
-      {
-        id: 'actions',
-        meta: { align: 'right' },
-        enableHiding: false,
-        cell: ({ row }) => {
-          if (!canManage) return null
-          const s = row.original
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-                  <MoreHorizontalIcon className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem onSelect={() => setEditSecret(s)}>
-                  <PencilIcon className="size-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() =>
-                    update.mutate({
-                      id: s.id,
-                      input: { disabled: !s.disabled },
-                    })
-                  }
-                >
-                  {s.disabled ? <PlayIcon className="size-4" /> : <BanIcon className="size-4" />}
-                  {s.disabled ? 'Aktifkan' : 'Nonaktifkan'}
-                </DropdownMenuItem>
-                {sessionByUsername.has(s.username) ? (
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      const sess = sessionByUsername.get(s.username)
-                      if (sess) disconnect.mutate(sess.id)
-                    }}
-                  >
-                    <UnplugIcon className="size-4" />
-                    Putus sesi
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => setConfirmDelete(s)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2Icon className="size-4" />
-                  Hapus
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        },
-      },
-    ],
-    [canManage, update, sessionByUsername, disconnect],
-  )
+  const columns = useMemo<ColumnDef<PppSecretListItem>[]>(() => {
+    if (!canManage) return DISPLAY_COLUMNS
+    return [
+      ...DISPLAY_COLUMNS,
+      buildActionsColumn({
+        onEdit: setEditSecret,
+        onToggleDisabled: (s) => update.mutate({ id: s.id, input: { disabled: !s.disabled } }),
+        onDisconnect: (sessionId) => disconnect.mutate(sessionId),
+        onDelete: setConfirmDelete,
+      }),
+    ]
+  }, [canManage, update, disconnect])
 
   return (
     <>
@@ -190,8 +201,22 @@ export function SecretsTab({ routerId }: { routerId: string }) {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada PPPoE secret."
+        emptyMessage={
+          table.search
+            ? `Tidak ada secret cocok dengan "${table.search}".`
+            : 'Belum ada PPPoE secret.'
+        }
         searchPlaceholder="Cari username / pelanggan…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         actions={
           canManage ? (
             <Button size="sm" className="h-8" onClick={() => setAddOpen(true)}>

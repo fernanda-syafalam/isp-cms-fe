@@ -711,7 +711,9 @@ const MIKROTIK_SECRET_FIXTURES: PppSecret[] = ROUTER_FIXTURES.flatMap((r, ri) =>
     }
   }),
 )
-// Active sessions: one per enabled secret.
+// Active sessions: one per enabled secret. Customer + profile are denormalized
+// from the owning secret (the real backend reads both sets from the device), so
+// the sessions list renders without joining to the secrets endpoint.
 const MIKROTIK_SESSION_FIXTURES: PppSession[] = MIKROTIK_SECRET_FIXTURES.filter(
   (s) => !s.disabled,
 ).map((s, i) => {
@@ -723,6 +725,9 @@ const MIKROTIK_SESSION_FIXTURES: PppSession[] = MIKROTIK_SECRET_FIXTURES.filter(
     address: `100.64.${i % 200}.${(i % 50) + 2}`,
     uptime: `${(i % 9) + 1}h${(i * 7) % 60}m`,
     callerId: `AA:BB:CC:${hex(i + 1)}:${hex(i + 2)}:${hex(i + 3)}`,
+    customerId: s.customerId,
+    customerName: s.customerName,
+    profileName: s.profileName,
   }
 })
 const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =>
@@ -2798,9 +2803,34 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
   // PPPoE secrets
-  http.get('*/api/routers/:id/secrets', ({ params }) => {
-    const items = MIKROTIK_SECRET_FIXTURES.filter((s) => s.routerId === params.id)
-    return HttpResponse.json({ items, total: items.length })
+  http.get('*/api/routers/:id/secrets', ({ params, request }) => {
+    const url = new URL(request.url)
+    // Derive live connection state on read: a secret is online when it has an
+    // active session fixture. Denormalized onto each list item so the FE never
+    // fetches the sessions endpoint to render the "Koneksi" column.
+    const rows = MIKROTIK_SECRET_FIXTURES.filter((s) => s.routerId === params.id).map((s) => {
+      const sess = MIKROTIK_SESSION_FIXTURES.find(
+        (x) => x.routerId === s.routerId && x.username === s.username,
+      )
+      return {
+        ...s,
+        online: sess != null,
+        address: sess?.address ?? null,
+        uptime: sess?.uptime ?? null,
+        sessionId: sess?.id ?? null,
+      }
+    })
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['username', 'customerName'],
+      sortAccessors: {
+        username: (s) => s.username,
+        profileName: (s) => s.profileName,
+        customerName: (s) => s.customerName ?? '',
+        disabled: (s) => (s.disabled ? 1 : 0),
+      },
+      defaultCompare: (a, b) => a.username.localeCompare(b.username),
+    })
+    return HttpResponse.json(result)
   }),
   http.post('*/api/routers/:id/secrets', async ({ params, request }) => {
     const routerId = String(params.id)
@@ -2863,9 +2893,20 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
   // Active sessions
-  http.get('*/api/routers/:id/sessions', ({ params }) => {
-    const items = MIKROTIK_SESSION_FIXTURES.filter((s) => s.routerId === params.id)
-    return HttpResponse.json({ items, total: items.length })
+  http.get('*/api/routers/:id/sessions', ({ params, request }) => {
+    const url = new URL(request.url)
+    const rows = MIKROTIK_SESSION_FIXTURES.filter((s) => s.routerId === params.id)
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['username', 'address', 'customerName'],
+      sortAccessors: {
+        username: (s) => s.username,
+        address: (s) => s.address,
+        customerName: (s) => s.customerName ?? '',
+        profileName: (s) => s.profileName,
+      },
+      defaultCompare: (a, b) => a.username.localeCompare(b.username),
+    })
+    return HttpResponse.json(result)
   }),
   http.post('*/api/routers/:id/sessions/:sid/disconnect', ({ params }) => {
     const idx = MIKROTIK_SESSION_FIXTURES.findIndex((s) => s.id === params.sid)
