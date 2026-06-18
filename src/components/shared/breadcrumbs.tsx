@@ -9,46 +9,42 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { useEffectiveRole } from '@/features/auth'
-import { ROLE_HOME, NAV_ITEMS, isNavItemActive } from './nav'
+import { ROLE_HOME, resolveBreadcrumb } from './nav'
 
-// Route-aware breadcrumb rendered with shadcn primitives. Matches the deepest
-// nav item that prefixes the path; a remaining segment shows as "Detail".
+// Route-aware breadcrumb rendered with shadcn primitives. The trail is derived
+// by the pure {@link resolveBreadcrumb}; here we only render and keep it from
+// overflowing the sticky header on narrow screens (truncate + no-wrap).
 export function Breadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const home = ROLE_HOME[useEffectiveRole()] ?? '/'
-
-  const match = NAV_ITEMS.filter((i) => i.to !== '/' && isNavItemActive(pathname, i.to)).sort(
-    (a, b) => b.to.length - a.to.length,
-  )[0]
-  const section = pathname === '/' ? 'Dasbor' : (match?.label ?? null)
-  const hasDetail = Boolean(match && pathname.slice(match.to.length).replace(/^\/+/, ''))
+  const { to, label, hasDetail } = resolveBreadcrumb(pathname)
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem className="hidden sm:block">
+      <BreadcrumbList className="flex-nowrap">
+        <BreadcrumbItem className="hidden shrink-0 sm:block">
           <BreadcrumbLink asChild>
             <Link to={home}>ISP CMS</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        {section ? (
+        {label ? (
           <>
-            <BreadcrumbSeparator className="hidden sm:block" />
-            <BreadcrumbItem>
-              {hasDetail && match ? (
-                <BreadcrumbLink asChild>
-                  <Link to={match.to}>{section}</Link>
+            <BreadcrumbSeparator className="hidden shrink-0 sm:block" />
+            <BreadcrumbItem className="min-w-0">
+              {hasDetail && to ? (
+                <BreadcrumbLink asChild className="min-w-0 truncate">
+                  <Link to={to}>{label}</Link>
                 </BreadcrumbLink>
               ) : (
-                <BreadcrumbPage>{section}</BreadcrumbPage>
+                <BreadcrumbPage className="min-w-0 truncate">{label}</BreadcrumbPage>
               )}
             </BreadcrumbItem>
           </>
         ) : null}
         {hasDetail ? (
           <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
+            <BreadcrumbSeparator className="shrink-0" />
+            <BreadcrumbItem className="shrink-0">
               <BreadcrumbPage>Detail</BreadcrumbPage>
             </BreadcrumbItem>
           </>

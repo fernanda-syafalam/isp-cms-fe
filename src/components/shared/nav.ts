@@ -127,6 +127,28 @@ export function isNavItemActive(pathname: string, to: string, exact?: boolean): 
   return pathname === to || pathname.startsWith(`${to}/`)
 }
 
+export type BreadcrumbTrail = {
+  /** The matched nav item's path (the section crumb links here); null on root. */
+  to: string | null
+  /** Section label to display, or null when the path matches no nav item. */
+  label: string | null
+  /** Whether a deeper segment remains, which renders a generic "Detail" leaf. */
+  hasDetail: boolean
+}
+
+// Derive the breadcrumb trail for a path from the nav model — pure so it can be
+// unit-tested without a router. Picks the deepest matching nav item (segment
+// aware), and flags any trailing segment as an unnamed detail leaf.
+export function resolveBreadcrumb(pathname: string): BreadcrumbTrail {
+  if (pathname === '/') return { to: null, label: 'Dasbor', hasDetail: false }
+  const match = NAV_ITEMS.filter((i) => i.to !== '/' && isNavItemActive(pathname, i.to)).sort(
+    (a, b) => b.to.length - a.to.length,
+  )[0]
+  if (!match) return { to: null, label: null, hasDetail: false }
+  const rest = pathname.slice(match.to.length).replace(/^\/+/, '')
+  return { to: match.to, label: match.label, hasDetail: rest.length > 0 }
+}
+
 // Roles with a restricted workspace see only these routes; admin/staff (omitted)
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {

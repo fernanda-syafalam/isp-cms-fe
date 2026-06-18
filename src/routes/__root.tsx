@@ -59,16 +59,22 @@ function RootLayout() {
         <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-border border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 h-4" />
-          <Breadcrumbs />
-          <div className="ml-auto flex items-center gap-2">
+          {/* min-w-0 lets the breadcrumb truncate instead of pushing the action
+              cluster into horizontal overflow on narrow screens. */}
+          <div className="min-w-0 flex-1">
+            <Breadcrumbs />
+          </div>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {canScopeBranch ? <BranchScopeSwitcher /> : null}
             <CommandMenu />
             <ThemeToggle />
             <UserMenu />
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="flex-1 p-4 outline-none md:p-6">
-          <Reveal key={pathname}>
+        <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
+          {/* Content width policy: full-bleed up to 2xl, then centered so
+              ultra-wide monitors don't stretch tables/forms past readability. */}
+          <Reveal key={pathname} className="mx-auto w-full max-w-screen-2xl p-4 md:p-6">
             <Outlet />
           </Reveal>
         </main>
