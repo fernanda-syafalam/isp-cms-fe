@@ -1,4 +1,4 @@
-import { BanIcon, MoreHorizontalIcon, PencilIcon } from 'lucide-react'
+import { BanIcon, PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -11,13 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { Reseller } from '@/schemas/reseller'
 
@@ -36,30 +31,23 @@ export function ResellerRowActions({ reseller }: { reseller: Reseller }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {canManage ? (
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <PencilIcon className="size-4" />
-              Edit
-            </DropdownMenuItem>
-          ) : null}
-          {canDeactivate ? (
-            <DropdownMenuItem
-              onSelect={() => setDeactivateOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <BanIcon className="size-4" />
-              Nonaktifkan
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActions>
+        {canManage ? (
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <PencilIcon className="size-4" />
+            Edit
+          </DropdownMenuItem>
+        ) : null}
+        {canDeactivate ? (
+          <DropdownMenuItem
+            onSelect={() => setDeactivateOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <BanIcon className="size-4" />
+            Nonaktifkan
+          </DropdownMenuItem>
+        ) : null}
+      </RowActions>
 
       {canManage ? (
         <EditResellerDialog reseller={reseller} open={editOpen} onOpenChange={setEditOpen} />

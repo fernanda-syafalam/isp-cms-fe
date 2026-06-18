@@ -1,4 +1,4 @@
-import { CheckCircle2Icon, MoreHorizontalIcon } from 'lucide-react'
+import { CheckCircle2Icon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -11,13 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { WorkOrder } from '@/schemas/workorder'
 
@@ -36,19 +31,12 @@ export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onSelect={() => setOpen(true)}>
-            <CheckCircle2Icon className="size-4" />
-            Selesaikan
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActions>
+        <DropdownMenuItem onSelect={() => setOpen(true)}>
+          <CheckCircle2Icon className="size-4" />
+          Selesaikan
+        </DropdownMenuItem>
+      </RowActions>
 
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>

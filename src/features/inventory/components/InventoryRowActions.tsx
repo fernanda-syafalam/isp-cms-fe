@@ -1,11 +1,4 @@
-import {
-  MoreHorizontalIcon,
-  PackageOpenIcon,
-  PencilIcon,
-  Trash2Icon,
-  TriangleAlertIcon,
-  Undo2Icon,
-} from 'lucide-react'
+import { PackageOpenIcon, PencilIcon, Trash2Icon, TriangleAlertIcon, Undo2Icon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -18,13 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { InventoryItem } from '@/schemas/inventory'
 
@@ -51,48 +39,41 @@ export function InventoryRowActions({ item }: { item: InventoryItem }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-8" aria-label="Aksi baris">
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          {canManage ? (
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              <PencilIcon className="size-4" />
-              Edit
-            </DropdownMenuItem>
-          ) : null}
-          {canAssign ? (
-            <DropdownMenuItem onSelect={() => setAssignOpen(true)}>
-              <PackageOpenIcon className="size-4" />
-              Keluarkan (pasang)
-            </DropdownMenuItem>
-          ) : null}
-          {canReturn ? (
-            <DropdownMenuItem onSelect={() => setReturnOpen(true)}>
-              <Undo2Icon className="size-4" />
-              Kembalikan ke gudang
-            </DropdownMenuItem>
-          ) : null}
-          {canMarkBroken ? (
-            <DropdownMenuItem onSelect={() => setBrokenOpen(true)}>
-              <TriangleAlertIcon className="size-4" />
-              Tandai rusak
-            </DropdownMenuItem>
-          ) : null}
-          {canDelete ? (
-            <DropdownMenuItem
-              onSelect={() => setDeleteOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2Icon className="size-4" />
-              Hapus
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActions contentClassName="w-48">
+        {canManage ? (
+          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+            <PencilIcon className="size-4" />
+            Edit
+          </DropdownMenuItem>
+        ) : null}
+        {canAssign ? (
+          <DropdownMenuItem onSelect={() => setAssignOpen(true)}>
+            <PackageOpenIcon className="size-4" />
+            Keluarkan (pasang)
+          </DropdownMenuItem>
+        ) : null}
+        {canReturn ? (
+          <DropdownMenuItem onSelect={() => setReturnOpen(true)}>
+            <Undo2Icon className="size-4" />
+            Kembalikan ke gudang
+          </DropdownMenuItem>
+        ) : null}
+        {canMarkBroken ? (
+          <DropdownMenuItem onSelect={() => setBrokenOpen(true)}>
+            <TriangleAlertIcon className="size-4" />
+            Tandai rusak
+          </DropdownMenuItem>
+        ) : null}
+        {canDelete ? (
+          <DropdownMenuItem
+            onSelect={() => setDeleteOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2Icon className="size-4" />
+            Hapus
+          </DropdownMenuItem>
+        ) : null}
+      </RowActions>
 
       {canManage ? (
         <EditInventoryDialog item={item} open={editOpen} onOpenChange={setEditOpen} />
