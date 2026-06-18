@@ -5,13 +5,12 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { UsageFilter } from '@/api/usage'
-import { KpiCard } from '@/components/shared/kpi-card'
+import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -141,9 +140,9 @@ export function UsagePage() {
       <div className="grid gap-4 sm:grid-cols-3">
         {!summary ? (
           <>
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
           </>
         ) : (
           <>

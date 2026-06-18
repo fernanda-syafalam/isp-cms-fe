@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { GaugeIcon, HeartPulseIcon, SmilePlusIcon } from 'lucide-react'
 
 import { ErrorState } from '@/components/shared/error-state'
-import { KpiCard } from '@/components/shared/kpi-card'
+import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,9 +31,9 @@ export function SatisfactionPage() {
       <div className="space-y-6">
         <PageHeader title="Kepuasan & Churn" description="CSAT, NPS, dan risiko churn." />
         <div className="grid gap-4 sm:grid-cols-3">
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
+          <KpiCardSkeleton />
+          <KpiCardSkeleton />
+          <KpiCardSkeleton />
         </div>
         <Skeleton className="h-64" />
       </div>
