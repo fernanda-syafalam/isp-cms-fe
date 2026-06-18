@@ -119,7 +119,7 @@ export function PoolsTab({ routerId }: { routerId: string }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => {
                 if (confirmDelete) remove.mutate(confirmDelete.id)
               }}

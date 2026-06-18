@@ -92,10 +92,7 @@ export function BillingActions() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={() => isolir.mutate()}
-            >
+            <AlertDialogAction variant="destructive" onClick={() => isolir.mutate()}>
               Isolir massal
             </AlertDialogAction>
           </AlertDialogFooter>

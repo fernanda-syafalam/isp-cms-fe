@@ -129,7 +129,7 @@ export function InventoryRowActions({ item }: { item: InventoryItem }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => move.mutate({ type: 'broken' })}
             >
               Tandai rusak
@@ -148,10 +148,7 @@ export function InventoryRowActions({ item }: { item: InventoryItem }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={() => remove.mutate(item.id)}
-            >
+            <AlertDialogAction variant="destructive" onClick={() => remove.mutate(item.id)}>
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

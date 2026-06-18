@@ -76,7 +76,7 @@ export function ResellerRowActions({ reseller }: { reseller: Reseller }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => update.mutate({ status: 'inactive' })}
             >
               Nonaktifkan

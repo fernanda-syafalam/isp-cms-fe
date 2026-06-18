@@ -177,10 +177,7 @@ export function NodeDetailPanel({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                    onClick={onDelete}
-                  >
+                  <AlertDialogAction variant="destructive" onClick={onDelete}>
                     Hapus
                   </AlertDialogAction>
                 </AlertDialogFooter>
