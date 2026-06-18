@@ -239,7 +239,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">Buka atau tutup sidebar</span>
     </Button>
   )
 }
@@ -251,10 +251,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
       type="button"
       data-sidebar="rail"
       data-slot="sidebar-rail"
-      aria-label="Toggle Sidebar"
+      aria-label="Buka atau tutup sidebar"
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title="Buka atau tutup sidebar"
       className={cn(
         'group-data-[side=left]:-right-4 group-data-[side=right]:-left-4 absolute inset-y-0 z-20 hidden w-4 in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize transition-all ease-linear hover:after:bg-sidebar-border after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex',
         className,

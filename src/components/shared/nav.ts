@@ -115,6 +115,18 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items)
 
+// Segment-aware active match: a destination is active for its own path and any
+// nested route (`/customers` → `/customers/42`), but never for a sibling that
+// merely shares a string prefix (`/customers` must not match `/customers-archive`).
+// `exact` pins it to an identical path (the dashboard root uses this). Single
+// source of truth for "is this nav target active?" across the sidebar,
+// breadcrumb, and route guard.
+export function isNavItemActive(pathname: string, to: string, exact?: boolean): boolean {
+  if (to === '/') return pathname === '/'
+  if (exact) return pathname === to
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
 // Roles with a restricted workspace see only these routes; admin/staff (omitted)
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
@@ -138,7 +150,7 @@ const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
 export function isRouteAllowed(role: Role, pathname: string): boolean {
   const allow = ROLE_ROUTES[role]
   if (!allow) return true
-  return allow.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  return allow.some((route) => isNavItemActive(pathname, route))
 }
 
 // Where each restricted role lands instead of the ops dashboard. admin/staff
