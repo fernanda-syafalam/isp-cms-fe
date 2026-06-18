@@ -31,6 +31,8 @@ playwright.config.d.ts
 /coverage/
 playwright-report/
 test-results/
+# Screenshot evidence gallery written by `pnpm shots`
+tests/e2e/visual/__shots__/
 .vite/
 .vitest-cache/
 

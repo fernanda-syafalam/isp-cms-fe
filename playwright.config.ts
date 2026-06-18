@@ -10,7 +10,24 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      // Critical-path E2E (login + primary actions). Stays fast — the visual
+      // capture suite lives in its own project below.
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: '**/visual/**',
+    },
+    {
+      // Screenshot evidence gallery — run via `pnpm shots`. Each test drives
+      // many pages × viewports, so it gets a generous timeout and no retries.
+      name: 'visual',
+      testMatch: '**/visual/**/*.spec.ts',
+      retries: 0,
+      timeout: 180_000,
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: {
     command: 'pnpm dev',
     url: 'http://localhost:5173',
