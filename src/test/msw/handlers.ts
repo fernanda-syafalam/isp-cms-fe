@@ -3132,12 +3132,22 @@ export const handlers = [
           status: 404,
         })
   }),
-  // Deposit/commission ledger for a reseller (newest first).
-  http.get('*/api/resellers/:id/ledger', ({ params }) => {
-    const items = RESELLER_LEDGER_FIXTURES.filter((e) => e.resellerId === params.id).sort((a, b) =>
-      a.at < b.at ? 1 : -1,
-    )
-    return HttpResponse.json({ items, total: items.length })
+  // Deposit/commission ledger for a reseller. Server-side: q over note, sort
+  // whitelist at/type/amount/balanceAfter (default at desc), limit/offset paging.
+  http.get('*/api/resellers/:id/ledger', ({ params, request }) => {
+    const url = new URL(request.url)
+    const rows = RESELLER_LEDGER_FIXTURES.filter((e) => e.resellerId === params.id)
+    const { items, total } = applyListQuery(rows, url.searchParams, {
+      searchFields: ['note'],
+      sortAccessors: {
+        at: (e) => e.at,
+        type: (e) => e.type,
+        amount: (e) => e.amount,
+        balanceAfter: (e) => e.balanceAfter,
+      },
+      defaultCompare: (a, b) => (a.at < b.at ? 1 : -1), // at desc
+    })
+    return HttpResponse.json({ items, total })
   }),
   // Append a ledger entry. topup/commission add to the balance; deduction/
   // withdrawal subtract. Rejects a move that would take the balance negative.
