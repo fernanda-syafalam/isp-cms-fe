@@ -12,9 +12,11 @@ import {
   type VisibilityState,
   useReactTable,
 } from '@tanstack/react-table'
-import { InboxIcon, SearchIcon, TriangleAlertIcon } from 'lucide-react'
+import { SearchIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 
+import { EmptyState } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -44,6 +46,11 @@ const SKELETON_ROW_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const
 const alignClass = (align: 'right' | 'center' | undefined) =>
   align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : undefined
 
+// Mirror a column's text alignment onto its fixed-width loading skeleton so the
+// placeholder sits under where the real value will land (right/center columns).
+const skeletonAlign = (align: 'right' | 'center' | undefined) =>
+  align === 'right' ? 'ml-auto' : align === 'center' ? 'mx-auto' : undefined
+
 /**
  * Server-driven table state. When provided, the table delegates paging,
  * sorting, and filtering to the server (manual mode): `data` is the current
@@ -69,6 +76,8 @@ type DataTableProps<T> = {
   isError: boolean
   emptyMessage?: string
   errorMessage?: string
+  /** When provided, the error row shows a "Coba lagi" button wired to this. */
+  onRetry?: () => void
   searchPlaceholder?: string
   /** Seeds the search box (e.g. from a `?q=` deep-link). Client mode only. */
   initialSearch?: string | undefined
@@ -92,6 +101,7 @@ export function DataTable<T>({
   isError,
   emptyMessage = 'Tidak ada data.',
   errorMessage = 'Gagal memuat data. Coba muat ulang halaman.',
+  onRetry,
   searchPlaceholder,
   initialSearch,
   toolbar,
@@ -241,8 +251,10 @@ export function DataTable<T>({
               ? SKELETON_ROW_KEYS.map((key) => (
                   <TableRow key={key} className="hover:bg-transparent">
                     {table.getAllLeafColumns().map((col) => (
-                      <TableCell key={col.id}>
-                        <Skeleton className="h-4 w-24" />
+                      <TableCell key={col.id} className={alignClass(col.columnDef.meta?.align)}>
+                        <Skeleton
+                          className={cn('h-4 w-24', skeletonAlign(col.columnDef.meta?.align))}
+                        />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -250,21 +262,15 @@ export function DataTable<T>({
               : null}
             {!isLoading && isError ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={headerColSpan} className="py-12 text-center" role="alert">
-                  <div className="flex flex-col items-center gap-2 text-destructive">
-                    <TriangleAlertIcon className="size-6" />
-                    <span className="text-sm">{errorMessage}</span>
-                  </div>
+                <TableCell colSpan={headerColSpan} className="p-0">
+                  <ErrorState title={errorMessage} {...(onRetry ? { onRetry } : {})} />
                 </TableCell>
               </TableRow>
             ) : null}
             {!isLoading && !isError && rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={headerColSpan} className="py-12 text-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <InboxIcon className="size-6" />
-                    <span className="text-sm">{emptyMessage}</span>
-                  </div>
+                <TableCell colSpan={headerColSpan} className="p-0">
+                  <EmptyState title={emptyMessage} />
                 </TableCell>
               </TableRow>
             ) : null}
