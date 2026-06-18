@@ -731,12 +731,12 @@ const MIKROTIK_SESSION_FIXTURES: PppSession[] = MIKROTIK_SECRET_FIXTURES.filter(
   }
 })
 const MIKROTIK_QUEUE_FIXTURES: SimpleQueue[] = ROUTER_FIXTURES.flatMap((r, ri) =>
-  Array.from({ length: 3 }, (_, i) => ({
+  Array.from({ length: 4 }, (_, i) => ({
     id: `${r.id}-q-${i + 1}`,
     routerId: r.id,
     name: `queue-${ri + 1}-${i + 1}`,
     target: `100.64.${ri}.${i + 2}`,
-    maxLimit: ['20M/20M', '50M/50M', '100M/100M'][i] ?? '20M/20M',
+    maxLimit: ['20M/20M', '50M/50M', '100M/100M', '200M/200M'][i] ?? '20M/20M',
   })),
 )
 
@@ -2916,9 +2916,19 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
   // Simple queues
-  http.get('*/api/routers/:id/queues', ({ params }) => {
-    const items = MIKROTIK_QUEUE_FIXTURES.filter((q) => q.routerId === params.id)
-    return HttpResponse.json({ items, total: items.length })
+  http.get('*/api/routers/:id/queues', ({ params, request }) => {
+    const url = new URL(request.url)
+    const rows = MIKROTIK_QUEUE_FIXTURES.filter((q) => q.routerId === params.id)
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['name', 'target'],
+      sortAccessors: {
+        name: (q) => q.name,
+        target: (q) => q.target,
+        maxLimit: (q) => q.maxLimit,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json(result)
   }),
   http.post('*/api/routers/:id/queues', async ({ params, request }) => {
     const body = (await request.json()) as {
