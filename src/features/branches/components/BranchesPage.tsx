@@ -90,7 +90,7 @@ export function BranchesPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
-  const summary = data?.summary ?? { branches: 0, customers: 0, mrr: 0 }
+  const summary = data?.summary
 
   const columns = useMemo<ColumnDef<Branch>[]>(
     () => (canManage ? [...BASE_COLUMNS, ACTIONS_COLUMN] : BASE_COLUMNS),
@@ -113,14 +113,29 @@ export function BranchesPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard label="Total cabang" value={summary.branches} icon={Building2Icon} />
+        <KpiCard
+          label="Total cabang"
+          value={summary?.branches ?? 0}
+          icon={Building2Icon}
+          isLoading={isLoading}
+          isError={isError}
+        />
         <KpiCard
           label="Total pelanggan"
-          value={summary.customers}
+          value={summary?.customers ?? 0}
           format={formatNumber}
           icon={UsersIcon}
+          isLoading={isLoading}
+          isError={isError}
         />
-        <KpiCard label="Total MRR" value={summary.mrr} format={formatCurrency} icon={WalletIcon} />
+        <KpiCard
+          label="Total MRR"
+          value={summary?.mrr ?? 0}
+          format={formatCurrency}
+          icon={WalletIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
 
       <DataTable

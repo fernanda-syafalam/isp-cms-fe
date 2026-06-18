@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { UsageFilter } from '@/api/usage'
-import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -138,36 +138,32 @@ export function UsagePage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {!summary ? (
-          <>
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="Total pemakaian"
-              value={summary.totalUsedGb}
-              format={(v) => `${formatNumber(v)} GB`}
-              hint="periode berjalan"
-              icon={ActivityIcon}
-            />
-            <KpiCard
-              label="Kena FUP"
-              value={summary.throttled}
-              hint="pelanggan dibatasi"
-              hintTone="negative"
-              icon={TriangleAlertIcon}
-            />
-            <KpiCard
-              label="Rata-rata / pelanggan"
-              value={summary.avgUsedGb}
-              format={(v) => `${formatNumber(v)} GB`}
-              icon={GaugeIcon}
-            />
-          </>
-        )}
+        <KpiCard
+          label="Total pemakaian"
+          value={summary?.totalUsedGb ?? 0}
+          format={(v) => `${formatNumber(v)} GB`}
+          hint="periode berjalan"
+          icon={ActivityIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Kena FUP"
+          value={summary?.throttled ?? 0}
+          hint="pelanggan dibatasi"
+          hintTone="negative"
+          icon={TriangleAlertIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Rata-rata / pelanggan"
+          value={summary?.avgUsedGb ?? 0}
+          format={(v) => `${formatNumber(v)} GB`}
+          icon={GaugeIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
 
       <DataTable

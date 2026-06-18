@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ActivitySquareIcon, BellIcon, ServerIcon, TicketPlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -52,7 +52,10 @@ export function MonitoringPage() {
   const total = metrics.data?.total ?? 0
   const alertItems = alerts.data?.items
   const activeAlerts = (alertItems ?? []).filter((a) => !a.acknowledged).length
-  const kpiReady = summary !== undefined && alertItems !== undefined
+  // KPI cards span two queries (device metrics + alerts); show loading/error
+  // until both settle so they never flash a fake 0 or skeleton forever.
+  const kpiLoading = metrics.isLoading || alerts.isLoading
+  const kpiError = metrics.isError || alerts.isError
   const overall = !summary
     ? { tone: 'neutral' as StatusTone, label: 'Memuat…' }
     : summary.down > 0
@@ -132,37 +135,33 @@ export function MonitoringPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {!kpiReady || !summary ? (
-          <>
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="Perangkat online"
-              value={summary.up}
-              format={(v) => `${formatNumber(v)} / ${summary.total}`}
-              hint="up saat ini"
-              icon={ServerIcon}
-            />
-            <KpiCard
-              label="Uptime rata-rata"
-              value={summary.avgUptimePct}
-              format={(v) => `${v}%`}
-              hint="30 hari"
-              icon={ActivitySquareIcon}
-            />
-            <KpiCard
-              label="Alert aktif"
-              value={activeAlerts}
-              hint="belum ditangani"
-              hintTone={activeAlerts > 0 ? 'negative' : 'positive'}
-              icon={BellIcon}
-            />
-          </>
-        )}
+        <KpiCard
+          label="Perangkat online"
+          value={summary?.up ?? 0}
+          format={(v) => `${formatNumber(v)} / ${formatNumber(summary?.total ?? 0)}`}
+          hint="up saat ini"
+          icon={ServerIcon}
+          isLoading={kpiLoading}
+          isError={kpiError}
+        />
+        <KpiCard
+          label="Uptime rata-rata"
+          value={summary?.avgUptimePct ?? 0}
+          format={(v) => `${v}%`}
+          hint="30 hari"
+          icon={ActivitySquareIcon}
+          isLoading={kpiLoading}
+          isError={kpiError}
+        />
+        <KpiCard
+          label="Alert aktif"
+          value={activeAlerts}
+          hint="belum ditangani"
+          hintTone={activeAlerts > 0 ? 'negative' : 'positive'}
+          icon={BellIcon}
+          isLoading={kpiLoading}
+          isError={kpiError}
+        />
       </div>
 
       <Card>

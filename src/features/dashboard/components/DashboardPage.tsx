@@ -40,8 +40,6 @@ import { ROLE_HOME } from '@/components/shared/nav'
 import { useRecentPayments, useUpcomingInstalls } from '../hooks/useDashboardLists'
 import { AttentionPanel, type AttentionAlert } from './AttentionPanel'
 
-const KPI_SKELETON_KEYS = ['k1', 'k2', 'k3', 'k4'] as const
-
 export function DashboardPage() {
   const role = useEffectiveRole()
   const { data: user } = useCurrentUser()
@@ -113,50 +111,51 @@ export function DashboardPage() {
       {summary ? <AttentionPanel alerts={alerts} /> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading || !summary
-          ? KPI_SKELETON_KEYS.map((k) => <Skeleton key={k} className="h-28 w-full rounded-xl" />)
-          : null}
-        {summary ? (
-          <>
-            <KpiCard
-              label="Pelanggan aktif"
-              value={summary.activeSubscribers}
-              hint={`+${formatNumber(summary.newThisMonth)} bulan ini`}
-              hintTone={summary.newThisMonth >= 0 ? 'positive' : 'negative'}
-              icon={UsersIcon}
-              series={summary.subscriberTrend}
-              to="/customers"
-            />
-            <KpiCard
-              label="Terisolir"
-              value={summary.isolatedSubscribers}
-              hint="pelanggan diisolir"
-              hintTone="negative"
-              icon={PowerOffIcon}
-              series={summary.isolatedTrend}
-            />
-            <KpiCard
-              label="MRR"
-              value={summary.mrr}
-              format={formatCurrency}
-              hint="Pendapatan bulanan berulang"
-              accent="amber"
-              icon={BanknoteIcon}
-              series={summary.revenueTrend.map((r) => r.revenue)}
-            />
-            <KpiCard
-              label="Piutang (AR)"
-              value={summary.arOutstanding}
-              format={formatCurrency}
-              hint={`${formatNumber(summary.overdueCount)} tagihan telat`}
-              hintTone="negative"
-              icon={TriangleAlertIcon}
-              series={summary.arTrend}
-              to="/invoices"
-              search={{ status: 'overdue' }}
-            />
-          </>
-        ) : null}
+        <KpiCard
+          label="Pelanggan aktif"
+          value={summary?.activeSubscribers ?? 0}
+          hint={`+${formatNumber(summary?.newThisMonth ?? 0)} bulan ini`}
+          hintTone={(summary?.newThisMonth ?? 0) >= 0 ? 'positive' : 'negative'}
+          icon={UsersIcon}
+          series={summary?.subscriberTrend ?? []}
+          to="/customers"
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Terisolir"
+          value={summary?.isolatedSubscribers ?? 0}
+          hint="pelanggan diisolir"
+          hintTone="negative"
+          icon={PowerOffIcon}
+          series={summary?.isolatedTrend ?? []}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="MRR"
+          value={summary?.mrr ?? 0}
+          format={formatCurrency}
+          hint="Pendapatan bulanan berulang"
+          accent="amber"
+          icon={BanknoteIcon}
+          series={summary?.revenueTrend.map((r) => r.revenue) ?? []}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Piutang (AR)"
+          value={summary?.arOutstanding ?? 0}
+          format={formatCurrency}
+          hint={`${formatNumber(summary?.overdueCount ?? 0)} tagihan telat`}
+          hintTone="negative"
+          icon={TriangleAlertIcon}
+          series={summary?.arTrend ?? []}
+          to="/invoices"
+          search={{ status: 'overdue' }}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
 
       {summary ? (
