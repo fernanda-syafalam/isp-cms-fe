@@ -1887,12 +1887,28 @@ export const handlers = [
   }),
 
   // Branches / cabang
-  http.get('*/api/branches', () =>
-    HttpResponse.json({
-      items: BRANCH_FIXTURES,
-      total: BRANCH_FIXTURES.length,
-    }),
-  ),
+  http.get('*/api/branches', ({ request }) => {
+    const url = new URL(request.url)
+    // Overview KPIs span the FULL branch set (ignore search/paging) so the
+    // header cards stay correct under any table filter.
+    const summary = {
+      branches: BRANCH_FIXTURES.length,
+      customers: BRANCH_FIXTURES.reduce((s, b) => s + b.customerCount, 0),
+      mrr: BRANCH_FIXTURES.reduce((s, b) => s + b.mrr, 0),
+    }
+    const { items, total } = applyListQuery(BRANCH_FIXTURES, url.searchParams, {
+      searchFields: ['name', 'city', 'manager'],
+      sortAccessors: {
+        name: (b) => b.name,
+        city: (b) => b.city,
+        customerCount: (b) => b.customerCount,
+        mrr: (b) => b.mrr,
+        status: (b) => b.status,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ items, total, summary })
+  }),
   http.post('*/api/branches', async ({ request }) => {
     const body = (await request.json()) as {
       name: string

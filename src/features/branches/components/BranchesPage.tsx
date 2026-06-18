@@ -9,6 +9,7 @@ import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
+import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatCurrency, formatNumber } from '@/lib/format'
 import type { Branch } from '@/schemas/branch'
 
@@ -16,80 +17,83 @@ import { useBranches } from '../hooks/useBranches'
 import { BranchFormDialog } from './BranchFormDialog'
 import { BranchRowActions } from './BranchRowActions'
 
+// Static column defs (no component state). Sortable keys (name/city/
+// customerCount/mrr/status) match the backend sort whitelist.
+const BASE_COLUMNS: ColumnDef<Branch>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Cabang" />,
+    meta: { title: 'Cabang' },
+    cell: ({ row }) => (
+      <span className="flex items-center gap-2">
+        <span className="font-medium">{row.original.name}</span>
+        {row.original.isHeadOffice ? <StatusBadge tone="info" label="Kantor pusat" /> : null}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'city',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Kota" />,
+    meta: { title: 'Kota' },
+  },
+  {
+    accessorKey: 'manager',
+    header: 'Penanggung jawab',
+    meta: { title: 'Penanggung jawab' },
+  },
+  {
+    accessorKey: 'customerCount',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
+    meta: { title: 'Pelanggan', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{formatNumber(row.original.customerCount)}</span>
+    ),
+  },
+  {
+    accessorKey: 'mrr',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="MRR" />,
+    meta: { title: 'MRR', align: 'right' },
+    cell: ({ row }) => (
+      <span className="font-mono tabular-nums">{formatCurrency(row.original.mrr)}</span>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    meta: { title: 'Status' },
+    cell: ({ row }) => (
+      <StatusBadge
+        tone={row.original.status === 'active' ? 'success' : 'neutral'}
+        label={row.original.status === 'active' ? 'Aktif' : 'Nonaktif'}
+      />
+    ),
+  },
+]
+
+const ACTIONS_COLUMN: ColumnDef<Branch> = {
+  id: 'actions',
+  meta: { title: 'Aksi', align: 'right' },
+  enableHiding: false,
+  cell: ({ row }) => <BranchRowActions branch={row.original} />,
+}
+
 export function BranchesPage() {
-  const { data, isLoading, isError } = useBranches()
   const canManage = useCan('settings.manage')
+  const table = useTableQuery({ pageSize: 20 })
   const [addOpen, setAddOpen] = useState(false)
 
-  const summary = useMemo(() => {
-    const items = data?.items ?? []
-    return {
-      branches: items.length,
-      customers: items.reduce((s, b) => s + b.customerCount, 0),
-      mrr: items.reduce((s, b) => s + b.mrr, 0),
-    }
-  }, [data])
+  const { data, isLoading, isError } = useBranches({
+    q: table.params.q,
+    sort: table.params.sort,
+    order: table.params.order,
+    limit: table.params.limit,
+    offset: table.params.offset,
+  })
+  const total = data?.total ?? 0
+  const summary = data?.summary ?? { branches: 0, customers: 0, mrr: 0 }
 
   const columns = useMemo<ColumnDef<Branch>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Cabang" />,
-        meta: { title: 'Cabang' },
-        cell: ({ row }) => (
-          <span className="flex items-center gap-2">
-            <span className="font-medium">{row.original.name}</span>
-            {row.original.isHeadOffice ? <StatusBadge tone="info" label="Kantor pusat" /> : null}
-          </span>
-        ),
-      },
-      { accessorKey: 'city', header: 'Kota', meta: { title: 'Kota' } },
-      {
-        accessorKey: 'manager',
-        header: 'Penanggung jawab',
-        meta: { title: 'Penanggung jawab' },
-      },
-      {
-        accessorKey: 'customerCount',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
-        meta: { title: 'Pelanggan', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{formatNumber(row.original.customerCount)}</span>
-        ),
-      },
-      {
-        accessorKey: 'mrr',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="MRR" />,
-        meta: { title: 'MRR', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{formatCurrency(row.original.mrr)}</span>
-        ),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={row.original.status === 'active' ? 'success' : 'neutral'}
-            label={row.original.status === 'active' ? 'Aktif' : 'Nonaktif'}
-          />
-        ),
-      },
-      ...(canManage
-        ? [
-            {
-              id: 'actions',
-              meta: { title: 'Aksi' },
-              cell: ({ row }) => (
-                <div className="text-right">
-                  <BranchRowActions branch={row.original} />
-                </div>
-              ),
-            } satisfies ColumnDef<Branch>,
-          ]
-        : []),
-    ],
+    () => (canManage ? [...BASE_COLUMNS, ACTIONS_COLUMN] : BASE_COLUMNS),
     [canManage],
   )
 
@@ -124,8 +128,20 @@ export function BranchesPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
-        emptyMessage="Belum ada cabang."
+        emptyMessage={
+          table.search ? `Tidak ada cabang cocok dengan "${table.search}".` : 'Belum ada cabang.'
+        }
         searchPlaceholder="Cari cabang / kota…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
       />
 
       {canManage ? <BranchFormDialog open={addOpen} onOpenChange={setAddOpen} /> : null}
