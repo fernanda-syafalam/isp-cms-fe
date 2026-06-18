@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,7 +43,7 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>
 
 export function SettingsPage() {
-  const { data, isLoading, isError } = useSettings()
+  const { data, isLoading, isError, refetch } = useSettings()
   const canManage = useCan('settings.manage')
   const update = useUpdateSettings()
 
@@ -59,9 +60,7 @@ export function SettingsPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
         <PageHeader title="Pengaturan" />
-        <p className="text-destructive" role="alert">
-          Gagal memuat pengaturan.
-        </p>
+        <ErrorState title="Gagal memuat pengaturan." onRetry={() => refetch()} />
       </div>
     )
   }

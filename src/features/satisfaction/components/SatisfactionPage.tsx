@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { GaugeIcon, HeartPulseIcon, SmilePlusIcon } from 'lucide-react'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -14,15 +15,13 @@ import { useSatisfaction } from '../hooks/useSatisfaction'
 const stars = (rating: number) => '★★★★★'.slice(0, rating) + '☆☆☆☆☆'.slice(0, 5 - rating)
 
 export function SatisfactionPage() {
-  const { data, isLoading, isError } = useSatisfaction()
+  const { data, isLoading, isError, refetch } = useSatisfaction()
 
   if (isError) {
     return (
       <div className="space-y-6">
         <PageHeader title="Kepuasan & Churn" />
-        <p className="text-destructive text-sm" role="alert">
-          Gagal memuat data kepuasan.
-        </p>
+        <ErrorState title="Gagal memuat data kepuasan." onRetry={() => refetch()} />
       </div>
     )
   }
