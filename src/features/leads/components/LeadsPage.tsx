@@ -62,7 +62,8 @@ export function LeadsPage() {
       <PageHeader
         title="Prospek (Pipeline)"
         description="Calon pelanggan dari lead hingga konversi."
-        actions={
+        stickyOnMobile
+        primaryAction={
           canManage ? (
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <PlusIcon className="size-4" />
