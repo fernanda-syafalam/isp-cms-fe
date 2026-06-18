@@ -15,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatCurrency, formatDate } from '@/lib/format'
@@ -174,35 +173,31 @@ export function SlaCreditsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {!summary ? (
-          <>
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              label="Total kredit aktif"
-              value={summary.activeAmount}
-              format={formatCurrency}
-              icon={WalletIcon}
-            />
-            <KpiCard
-              label="Menunggu"
-              value={summary.pending}
-              hint="belum diterapkan"
-              hintTone="negative"
-              icon={HandCoinsIcon}
-            />
-            <KpiCard
-              label="Diterapkan"
-              value={summary.applied}
-              hintTone="positive"
-              icon={CheckIcon}
-            />
-          </>
-        )}
+        <KpiCard
+          label="Total kredit aktif"
+          value={summary?.activeAmount ?? 0}
+          format={formatCurrency}
+          icon={WalletIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Menunggu"
+          value={summary?.pending ?? 0}
+          hint="belum diterapkan"
+          hintTone="negative"
+          icon={HandCoinsIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Diterapkan"
+          value={summary?.applied ?? 0}
+          hintTone="positive"
+          icon={CheckIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
 
       <DataTable

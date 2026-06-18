@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -176,18 +177,28 @@ export function AccountingPage() {
           value={data?.totals.debit ?? 0}
           format={formatCurrency}
           icon={ScaleIcon}
+          isLoading={isLoading}
+          isError={isError}
         />
         <KpiCard
           label="Total kredit"
           value={data?.totals.credit ?? 0}
           format={formatCurrency}
           icon={ScaleIcon}
+          isLoading={isLoading}
+          isError={isError}
         />
         <div className="flex items-center justify-center rounded-xl border border-border bg-card p-4">
-          <StatusBadge
-            tone={balanced ? 'success' : 'danger'}
-            label={balanced ? 'Seimbang (balanced)' : 'Tidak seimbang'}
-          />
+          {isLoading ? (
+            <Skeleton className="h-6 w-40" />
+          ) : isError || !data ? (
+            <span className="text-destructive text-sm">Gagal memuat</span>
+          ) : (
+            <StatusBadge
+              tone={balanced ? 'success' : 'danger'}
+              label={balanced ? 'Seimbang (balanced)' : 'Tidak seimbang'}
+            />
+          )}
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { OdpFilter, OdpView } from '@/api/odp'
-import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -169,40 +169,41 @@ export function OdpPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {!summary ? (
-          <>
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-            <KpiCardSkeleton />
-          </>
-        ) : (
-          <>
-            <KpiCard label="Total ODP" value={summary.totalOdp} icon={NetworkIcon} />
-            <KpiCard
-              label="Utilisasi port"
-              value={summary.utilization}
-              format={(v) => `${v}%`}
-              hint="terpakai"
-              accent="amber"
-              icon={PlugZapIcon}
-            />
-            <KpiCard
-              label="ODP penuh"
-              value={summary.full}
-              hint="tanpa slot kosong"
-              hintTone="negative"
-              icon={PlugZapIcon}
-            />
-            <KpiCard
-              label="Optik bermasalah"
-              value={summary.optical}
-              hint="redaman tinggi"
-              hintTone="negative"
-              icon={SignalIcon}
-            />
-          </>
-        )}
+        <KpiCard
+          label="Total ODP"
+          value={summary?.totalOdp ?? 0}
+          icon={NetworkIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Utilisasi port"
+          value={summary?.utilization ?? 0}
+          format={(v) => `${v}%`}
+          hint="terpakai"
+          accent="amber"
+          icon={PlugZapIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="ODP penuh"
+          value={summary?.full ?? 0}
+          hint="tanpa slot kosong"
+          hintTone="negative"
+          icon={PlugZapIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Optik bermasalah"
+          value={summary?.optical ?? 0}
+          hint="redaman tinggi"
+          hintTone="negative"
+          icon={SignalIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
 
       <DataTable
