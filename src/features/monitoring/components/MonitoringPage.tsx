@@ -3,14 +3,13 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ActivitySquareIcon, BellIcon, ServerIcon, TicketPlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { KpiCard } from '@/components/shared/kpi-card'
+import { KpiCard, KpiCardSkeleton } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatDateTime, formatNumber } from '@/lib/format'
@@ -135,9 +134,9 @@ export function MonitoringPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         {!kpiReady || !summary ? (
           <>
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
-            <Skeleton className="h-28 rounded-xl" />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
           </>
         ) : (
           <>

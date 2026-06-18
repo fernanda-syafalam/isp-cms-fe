@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
+import { FormSkeleton, PageHeaderSkeleton } from '@/components/shared/skeletons'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -17,7 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 
 import { useSettings, useUpdateSettings } from '../hooks/useSettings'
@@ -49,9 +49,9 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-80 w-full" />
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeaderSkeleton />
+        <FormSkeleton fields={4} />
       </div>
     )
   }

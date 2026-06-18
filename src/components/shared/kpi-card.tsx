@@ -4,6 +4,7 @@ import type { ComponentType } from 'react'
 
 import { Sparkline } from '@/components/shared/sparkline'
 import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCountUp } from '@/hooks/useCountUp'
 import { cn } from '@/lib/cn'
 import { formatNumber } from '@/lib/format'
@@ -109,4 +110,23 @@ export function KpiCard({
     )
   }
   return card
+}
+
+/**
+ * Loading placeholder shaped like {@link KpiCard} (label + icon, big value,
+ * hint) so the grid does not reflow when data arrives. Drop one per card.
+ */
+export function KpiCardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="space-y-3 pt-6">
+        <div className="flex items-start justify-between gap-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="size-9 shrink-0 rounded-xl" />
+        </div>
+        <Skeleton className="h-8 w-28" />
+        <Skeleton className="h-3 w-20" />
+      </CardContent>
+    </Card>
+  )
 }
