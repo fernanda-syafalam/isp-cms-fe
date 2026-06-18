@@ -43,6 +43,8 @@ type Props = {
   refitKey: string
   editMode: boolean
   addMode: boolean
+  /** Customer-install placement mode — a map click sets the drop location. */
+  installMode: boolean
   onSelect: (id: string) => void
   onMove: (id: string, lat: number, lng: number) => void
   onMapClick: (lat: number, lng: number) => void
@@ -96,6 +98,7 @@ export function TopologyMap({
   refitKey,
   editMode,
   addMode,
+  installMode,
   onSelect,
   onMove,
   onMapClick,
@@ -108,7 +111,7 @@ export function TopologyMap({
     <MapContainer center={center} zoom={13} className="h-full w-full" scrollWheelZoom>
       <TileLayer key={base} url={tile.url} attribution={tile.attribution} maxZoom={19} />
       <FitBounds nodes={nodes} refitKey={refitKey} />
-      <MapClick enabled={addMode} onClick={onMapClick} />
+      <MapClick enabled={addMode || installMode} onClick={onMapClick} />
       <FlyTo target={flyToTarget} />
       {layer === 'physical' ? (
         <CableLayer nodes={nodes} byId={byId} activeIds={activeIds} traceColor={traceColor} />
