@@ -28,6 +28,27 @@ import {
   type UpdateSecretInput,
 } from '@/schemas/mikrotik'
 
+// Server-side list params shared by the paginated PPP lists (secrets, sessions).
+// Mirrors the backend contract: `q` search, single `sort`/`order` column,
+// `limit`/`offset` paging. Undefined fields are omitted from the query string.
+export type MikrotikListFilter = {
+  q?: string | undefined
+  sort?: string | undefined
+  order?: 'asc' | 'desc' | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}
+
+function toSearchParams(filter: MikrotikListFilter): URLSearchParams {
+  const searchParams = new URLSearchParams()
+  if (filter.q) searchParams.set('q', filter.q)
+  if (filter.sort) searchParams.set('sort', filter.sort)
+  if (filter.order) searchParams.set('order', filter.order)
+  if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
+  if (filter.offset !== undefined) searchParams.set('offset', String(filter.offset))
+  return searchParams
+}
+
 export async function getRouter(id: string): Promise<Router> {
   const json = await api.get(`routers/${id}`).json()
   return RouterSchema.parse(json)
@@ -77,8 +98,15 @@ export async function deleteProfile(routerId: string, id: string): Promise<void>
 }
 
 // PPPoE secrets
-export async function listSecrets(routerId: string): Promise<PppSecretList> {
-  const json = await api.get(`routers/${routerId}/secrets`).json()
+export async function listSecrets(
+  routerId: string,
+  filter: MikrotikListFilter = {},
+): Promise<PppSecretList> {
+  const json = await api
+    .get(`routers/${routerId}/secrets`, {
+      searchParams: toSearchParams(filter),
+    })
+    .json()
   return PppSecretListSchema.parse(json)
 }
 
@@ -101,8 +129,15 @@ export async function deleteSecret(routerId: string, id: string): Promise<void> 
 }
 
 // Active sessions
-export async function listSessions(routerId: string): Promise<PppSessionList> {
-  const json = await api.get(`routers/${routerId}/sessions`).json()
+export async function listSessions(
+  routerId: string,
+  filter: MikrotikListFilter = {},
+): Promise<PppSessionList> {
+  const json = await api
+    .get(`routers/${routerId}/sessions`, {
+      searchParams: toSearchParams(filter),
+    })
+    .json()
   return PppSessionListSchema.parse(json)
 }
 

@@ -23,13 +23,24 @@ export const PppSecretSchema = z.object({
   comment: z.string().nullable(),
 })
 
+// A secret as returned by the LIST endpoint: the base secret plus its live
+// connection state, denormalized server-side so the list never has to fetch the
+// sessions endpoint to render the "Koneksi" column. POST/PATCH still return the
+// base PppSecret shape (no connection fields).
+export const PppSecretListItemSchema = PppSecretSchema.extend({
+  online: z.boolean(),
+  address: z.string().nullable(), // assigned IP when online, else null
+  uptime: z.string().nullable(), // e.g. "2h13m" when online, else null
+  sessionId: z.string().nullable(), // active session id when online, else null
+})
+
 export const PppProfileListSchema = z.object({
   items: z.array(PppProfileSchema),
   total: z.number().int().nonnegative(),
 })
 
 export const PppSecretListSchema = z.object({
-  items: z.array(PppSecretSchema),
+  items: z.array(PppSecretListItemSchema),
   total: z.number().int().nonnegative(),
 })
 
@@ -60,7 +71,9 @@ export const UpdateSecretSchema = z.object({
   disabled: z.boolean().optional(),
 })
 
-// Active PPPoE session (who is online now)
+// Active PPPoE session (who is online now). Customer + profile are denormalized
+// from the owning secret server-side, so the sessions list renders the customer
+// link and bandwidth profile without fetching the secrets endpoint.
 export const PppSessionSchema = z.object({
   id: z.string(),
   routerId: z.string(),
@@ -68,6 +81,9 @@ export const PppSessionSchema = z.object({
   address: z.string(), // assigned IP
   uptime: z.string(), // e.g. "2h13m"
   callerId: z.string(), // MAC
+  customerId: z.string().nullable(), // resolves to the subscriber, if any
+  customerName: z.string().nullable(),
+  profileName: z.string(), // bandwidth profile from the secret
 })
 
 // Simple queue (bandwidth)
@@ -123,6 +139,7 @@ export const CreateIpPoolSchema = z.object({
 
 export type PppProfile = z.infer<typeof PppProfileSchema>
 export type PppSecret = z.infer<typeof PppSecretSchema>
+export type PppSecretListItem = z.infer<typeof PppSecretListItemSchema>
 export type PppSession = z.infer<typeof PppSessionSchema>
 export type SimpleQueue = z.infer<typeof SimpleQueueSchema>
 export type PppSessionList = z.infer<typeof PppSessionListSchema>
