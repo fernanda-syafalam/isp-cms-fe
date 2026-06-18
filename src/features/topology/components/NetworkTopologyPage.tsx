@@ -36,6 +36,7 @@ import {
 } from '../lib/graph'
 import { LocateControl } from './LocateControl'
 import { InstallCustomerDialog } from './InstallCustomerDialog'
+import { InstallPlacementHint } from './InstallPlacementHint'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyAside } from './TopologyAside'
 import { TopologyControls } from './TopologyControls'
@@ -75,6 +76,14 @@ export function NetworkTopologyPage() {
   const [addMode, setAddMode] = useState(false)
   const [geoEnabled, setGeoEnabled] = useState(false)
   const [installOpen, setInstallOpen] = useState(false)
+  // "Pasang pelanggan" placement: while true, the next map click sets the drop
+  // location; installPoint feeds the dialog so the node lands where the customer
+  // actually is (not at nodes[0]) and the drop-length/nearest-ODP preview is real.
+  const [installMode, setInstallMode] = useState(false)
+  const [installPoint, setInstallPoint] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
   const [myJobsOnly, setMyJobsOnly] = useState(false)
   // The node the map should fly to. Set when selecting from the list/tree (the
   // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
@@ -195,6 +204,20 @@ export function NetworkTopologyPage() {
     setSelectedId(null)
   }
 
+  // Enter/leave the install placement mode (mutually exclusive with edit/add).
+  const toggleInstall = () => {
+    setEditMode(false)
+    setAddMode(false)
+    setInstallMode((v) => !v)
+  }
+
+  // Commit an install point and open the dialog (from a map click or GPS).
+  const openInstallAt = (lat: number, lng: number) => {
+    setInstallPoint({ lat, lng })
+    setInstallMode(false)
+    setInstallOpen(true)
+  }
+
   const controlsProps: TopologyControlsProps = {
     nodes: all,
     filters: { typeFilter, statusFilter, base, layer, query },
@@ -213,8 +236,12 @@ export function NetworkTopologyPage() {
       toggleEdit: () => {
         setEditMode((v) => !v)
         setAddMode(false)
+        setInstallMode(false)
       },
-      toggleAdd: () => setAddMode((v) => !v),
+      toggleAdd: () => {
+        setInstallMode(false)
+        setAddMode((v) => !v)
+      },
     },
     onPick: handlePick,
   }
@@ -269,9 +296,18 @@ export function NetworkTopologyPage() {
             </Button>
           ) : null}
           {canEdit ? (
-            <Button size="sm" className="h-9" onClick={() => setInstallOpen(true)}>
+            <Button
+              variant={installMode ? 'secondary' : 'default'}
+              size="sm"
+              className="h-9"
+              aria-pressed={installMode}
+              onClick={() => {
+                if (!installMode) setView('map')
+                toggleInstall()
+              }}
+            >
               <PlusIcon className="size-4" />
-              Pasang pelanggan
+              {installMode ? 'Klik peta…' : 'Pasang pelanggan'}
             </Button>
           ) : null}
           <Button
@@ -314,6 +350,16 @@ export function NetworkTopologyPage() {
         </div>
       ) : null}
 
+      {installMode ? (
+        <InstallPlacementHint
+          canUseGps={userPosition !== null}
+          onUseGps={() => {
+            if (userPosition) openInstallAt(userPosition.lat, userPosition.lng)
+          }}
+          onCancel={() => setInstallMode(false)}
+        />
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div
           className={cn(
@@ -341,11 +387,16 @@ export function NetworkTopologyPage() {
                 refitKey={refitKey}
                 editMode={editMode}
                 addMode={addMode}
+                installMode={installMode}
                 onSelect={handleMarkerSelect}
                 onMove={handleMarkerMove}
                 onMapClick={(lat, lng) => {
-                  setForm({ latLng: { lat, lng } })
-                  setAddMode(false)
+                  if (installMode) {
+                    openInstallAt(lat, lng)
+                  } else {
+                    setForm({ latLng: { lat, lng } })
+                    setAddMode(false)
+                  }
                 }}
               />
               <LocateControl
@@ -399,8 +450,12 @@ export function NetworkTopologyPage() {
       {installOpen ? (
         <InstallCustomerDialog
           open
-          onOpenChange={setInstallOpen}
+          onOpenChange={(o) => {
+            setInstallOpen(o)
+            if (!o) setInstallPoint(null)
+          }}
           nodes={all}
+          latLng={installPoint ?? undefined}
           onInstalled={handlePick}
         />
       ) : null}

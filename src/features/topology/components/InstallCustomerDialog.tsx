@@ -100,7 +100,15 @@ export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onIns
         </DialogHeader>
 
         <div className="-mr-2 min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
-          <SubscriberPicker customers={available} value={customerId} onChange={setCustomerId} />
+          {customersQ.isLoading ? (
+            <p className="text-muted-foreground text-sm">Memuat pelanggan…</p>
+          ) : customersQ.isError ? (
+            <p className="text-destructive text-sm" role="alert">
+              Gagal memuat daftar pelanggan. Coba lagi.
+            </p>
+          ) : (
+            <SubscriberPicker customers={available} value={customerId} onChange={setCustomerId} />
+          )}
 
           <div className="space-y-1.5">
             <span className="font-medium text-sm">ODP tujuan</span>
