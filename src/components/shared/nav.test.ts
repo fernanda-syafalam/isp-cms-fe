@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isNavItemActive, isRouteAllowed, navGroupsForRole } from './nav'
+import { isNavItemActive, isRouteAllowed, navGroupsForRole, resolveBreadcrumb } from './nav'
 
 describe('isNavItemActive', () => {
   it('matches the destination itself', () => {
@@ -49,5 +49,49 @@ describe('navGroupsForRole', () => {
     const groups = navGroupsForRole('mitra')
     expect(groups).toHaveLength(1)
     expect(groups[0]?.items.map((i) => i.to)).toEqual(['/resellers'])
+  })
+})
+
+describe('resolveBreadcrumb', () => {
+  it('labels the dashboard root', () => {
+    expect(resolveBreadcrumb('/')).toEqual({
+      to: null,
+      label: 'Dasbor',
+      hasDetail: false,
+    })
+  })
+
+  it('matches a list route as a leaf section (no detail)', () => {
+    expect(resolveBreadcrumb('/customers')).toEqual({
+      to: '/customers',
+      label: 'Pelanggan',
+      hasDetail: false,
+    })
+  })
+
+  it('flags a trailing segment as a detail leaf and picks the deepest match', () => {
+    expect(resolveBreadcrumb('/customers/42')).toEqual({
+      to: '/customers',
+      label: 'Pelanggan',
+      hasDetail: true,
+    })
+    expect(resolveBreadcrumb('/network/topology/abc')).toEqual({
+      to: '/network/topology',
+      label: 'Topologi',
+      hasDetail: true,
+    })
+  })
+
+  it('returns no section for an unknown or sibling-prefix path', () => {
+    expect(resolveBreadcrumb('/nope')).toEqual({
+      to: null,
+      label: null,
+      hasDetail: false,
+    })
+    expect(resolveBreadcrumb('/customers-archive')).toEqual({
+      to: null,
+      label: null,
+      hasDetail: false,
+    })
   })
 })
