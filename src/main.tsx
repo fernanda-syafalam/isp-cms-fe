@@ -7,6 +7,9 @@ import { ThemeProvider } from 'next-themes'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/jetbrains-mono'
 
+import { RouteError } from '@/components/shared/route-error'
+import { RouteNotFound } from '@/components/shared/route-not-found'
+import { RoutePending } from '@/components/shared/route-pending'
 import { Toaster } from '@/components/ui/sonner'
 
 import { routeTree } from './routeTree.gen'
@@ -22,6 +25,12 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
+  // App-wide route boundaries: per-route error (renders inside the shell; full
+  // page if the shell itself throws), 404, and a loading skeleton for slow
+  // chunk/loader resolution.
+  defaultErrorComponent: RouteError,
+  defaultNotFoundComponent: RouteNotFound,
+  defaultPendingComponent: RoutePending,
 })
 
 declare module '@tanstack/react-router' {
