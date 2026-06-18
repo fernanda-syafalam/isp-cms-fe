@@ -97,3 +97,58 @@ describe('DataTable (server mode)', () => {
     expect(screen.getByRole('button', { name: 'Halaman berikutnya' })).toBeDisabled()
   })
 })
+
+describe('DataTable (error & empty states)', () => {
+  it('shows an error alert with a retry button wired to onRetry', async () => {
+    const user = userEvent.setup()
+    const onRetry = vi.fn()
+    render(
+      <DataTable
+        columns={columns}
+        data={[]}
+        isLoading={false}
+        isError
+        errorMessage="Gagal memuat data."
+        onRetry={onRetry}
+        server={makeServer({ rowCount: 0 })}
+      />,
+    )
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Gagal memuat data.')
+
+    await user.click(screen.getByRole('button', { name: 'Coba lagi' }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('omits the retry button when onRetry is not provided', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={[]}
+        isLoading={false}
+        isError
+        server={makeServer({ rowCount: 0 })}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Coba lagi' })).not.toBeInTheDocument()
+  })
+
+  it('shows the empty message when there are no rows and no error', () => {
+    render(
+      <DataTable
+        columns={columns}
+        data={[]}
+        isLoading={false}
+        isError={false}
+        emptyMessage="Belum ada data."
+        server={makeServer({ rowCount: 0 })}
+      />,
+    )
+
+    expect(screen.getByText('Belum ada data.')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
