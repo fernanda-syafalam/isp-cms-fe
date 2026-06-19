@@ -205,6 +205,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
         data={ledger.data?.items}
         isLoading={ledger.isLoading}
         isError={ledger.isError}
+        onRetry={() => ledger.refetch()}
         emptyMessage={
           table.search
             ? `Tidak ada transaksi cocok dengan "${table.search}".`

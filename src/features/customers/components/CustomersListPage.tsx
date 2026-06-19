@@ -147,7 +147,7 @@ export function CustomersListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useCustomersList({
+  const { data, isLoading, isError, refetch } = useCustomersList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -181,6 +181,7 @@ export function CustomersListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage={
           table.search
             ? `Tidak ada pelanggan cocok dengan "${table.search}".`

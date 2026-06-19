@@ -101,7 +101,7 @@ export function PlansListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = usePlansList({
+  const { data, isLoading, isError, refetch } = usePlansList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -128,6 +128,7 @@ export function PlansListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="Belum ada paket."
         searchPlaceholder="Cari paket…"
         server={{

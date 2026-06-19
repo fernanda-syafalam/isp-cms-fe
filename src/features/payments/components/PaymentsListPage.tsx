@@ -105,7 +105,7 @@ export function PaymentsListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = usePaymentsList({
+  const { data, isLoading, isError, refetch } = usePaymentsList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -132,6 +132,7 @@ export function PaymentsListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="Belum ada pembayaran."
         searchPlaceholder="Cari pembayaran…"
         server={{
