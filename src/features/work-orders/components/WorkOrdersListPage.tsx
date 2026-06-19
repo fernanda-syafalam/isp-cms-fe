@@ -193,9 +193,9 @@ export function WorkOrdersListPage() {
           onSearchChange: table.onSearchChange,
         }}
         toolbar={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -207,7 +207,7 @@ export function WorkOrdersListPage() {
               </SelectContent>
             </Select>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-8 w-40" aria-label="Filter jenis">
+              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter jenis">
                 <SelectValue placeholder="Jenis" />
               </SelectTrigger>
               <SelectContent>

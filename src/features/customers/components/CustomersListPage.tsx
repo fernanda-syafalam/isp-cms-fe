@@ -201,7 +201,7 @@ export function CustomersListPage() {
         }}
         toolbar={
           <Select value={status} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>

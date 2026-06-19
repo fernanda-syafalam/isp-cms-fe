@@ -146,7 +146,7 @@ export function AccountingPage() {
         actions={
           <div className="flex items-center gap-2">
             <Select value={period} onValueChange={handlePeriodChange}>
-              <SelectTrigger className="h-8 w-44" aria-label="Periode">
+              <SelectTrigger className="h-11 w-44 sm:h-8" aria-label="Periode">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
