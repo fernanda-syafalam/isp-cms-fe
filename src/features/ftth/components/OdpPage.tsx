@@ -227,7 +227,7 @@ export function OdpPage() {
         }}
         toolbar={
           <Select value={filter} onValueChange={setView}>
-            <SelectTrigger className="h-8 w-48" aria-label="Filter ODP">
+            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-48" aria-label="Filter ODP">
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
             <SelectContent>

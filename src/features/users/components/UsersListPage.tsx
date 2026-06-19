@@ -98,7 +98,7 @@ export function UsersListPage() {
         searchPlaceholder="Cari staf…"
         toolbar={
           <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="h-8 w-40" aria-label="Filter peran">
+            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter peran">
               <SelectValue placeholder="Peran" />
             </SelectTrigger>
             <SelectContent>
