@@ -20,7 +20,7 @@ export function DataTableViewOptions<TData>({ table }: { table: Table<TData> }) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
+        <Button variant="outline" size="sm" className="h-11 sm:h-8" aria-label="Tampilkan kolom">
           <Settings2Icon className="size-4" />
           <span className="hidden sm:inline">Kolom</span>
         </Button>
