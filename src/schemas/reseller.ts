@@ -14,9 +14,21 @@ export const ResellerSchema = z.object({
   status: ResellerStatusSchema,
 })
 
+// Full-set rollups over ALL resellers (ignores the status filter) — drives the
+// KPI cards and the status filter tabs.
+export const ResellerSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  totalBalance: z.number().int().nonnegative(),
+  byStatus: z.object({
+    active: z.number().int().nonnegative(),
+    inactive: z.number().int().nonnegative(),
+  }),
+})
+
 export const ResellerListSchema = z.object({
   items: z.array(ResellerSchema),
   total: z.number().int().nonnegative(),
+  summary: ResellerSummarySchema,
 })
 
 export const UpdateResellerSchema = z.object({
@@ -54,6 +66,7 @@ export const AddLedgerEntrySchema = z.object({
 
 export type ResellerStatus = z.infer<typeof ResellerStatusSchema>
 export type Reseller = z.infer<typeof ResellerSchema>
+export type ResellerSummary = z.infer<typeof ResellerSummarySchema>
 export type ResellerList = z.infer<typeof ResellerListSchema>
 export type UpdateResellerInput = z.infer<typeof UpdateResellerSchema>
 export type LedgerEntryType = z.infer<typeof LedgerEntryTypeSchema>

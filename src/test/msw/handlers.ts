@@ -3175,22 +3175,30 @@ export const handlers = [
   // Resellers
   http.get('*/api/resellers', ({ request }) => {
     const url = new URL(request.url)
+    // Full-set rollups (before the status filter) — stable across tabs.
+    const summary = {
+      total: RESELLER_FIXTURES.length,
+      totalBalance: RESELLER_FIXTURES.reduce((s, r) => s + r.balance, 0),
+      byStatus: {
+        active: RESELLER_FIXTURES.filter((r) => r.status === 'active').length,
+        inactive: RESELLER_FIXTURES.filter((r) => r.status === 'inactive').length,
+      },
+    }
     const rows = filterByStatus(RESELLER_FIXTURES, url.searchParams.get('status'))
-    return HttpResponse.json(
-      applyListQuery(rows, url.searchParams, {
-        searchFields: ['name', 'area'],
-        sortAccessors: {
-          name: (r) => r.name,
-          area: (r) => r.area,
-          balance: (r) => r.balance,
-          commissionPct: (r) => r.commissionPct,
-          status: (r) => r.status,
-        },
-        // Preserve the seed order (mirrors the BE default `createdAt desc`); the
-        // fixture has no createdAt, so a stable no-op keeps insertion order.
-        defaultCompare: () => 0,
-      }),
-    )
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['name', 'area'],
+      sortAccessors: {
+        name: (r) => r.name,
+        area: (r) => r.area,
+        balance: (r) => r.balance,
+        commissionPct: (r) => r.commissionPct,
+        status: (r) => r.status,
+      },
+      // Preserve the seed order (mirrors the BE default `createdAt desc`); the
+      // fixture has no createdAt, so a stable no-op keeps insertion order.
+      defaultCompare: () => 0,
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   http.get('*/api/resellers/:id', ({ params }) => {
     const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
