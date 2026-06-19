@@ -34,8 +34,6 @@ export const CreateLeadSchema = z.object({
   note: z.string().max(500).optional(),
 })
 
-export const UpdateLeadStageSchema = z.object({ stage: LeadStageSchema })
-
 export type LeadStage = z.infer<typeof LeadStageSchema>
 export type LeadSource = z.infer<typeof LeadSourceSchema>
 export type Lead = z.infer<typeof LeadSchema>
