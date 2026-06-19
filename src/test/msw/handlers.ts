@@ -323,12 +323,31 @@ const DASHBOARD_SUMMARY = {
   arTrend: [12_400_000, 14_100_000, 13_500_000, 16_800_000, 17_900_000, 18_900_000],
 }
 
+// 12-month series for Reports (the page lets the operator slice 3/6/12 mo). Kept
+// separate from the dashboard's 6-month REVENUE_TREND so the dashboard is unaffected.
+const REPORTS_MONTHS = [
+  'Jul',
+  'Agu',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+]
 const REPORTS_SUMMARY = {
-  revenueTrend: REVENUE_TREND,
-  movement: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, i) => ({
+  revenueTrend: REPORTS_MONTHS.map((month, i) => ({
     month,
-    added: 40 + i * 6,
-    churned: 8 + (i % 3) * 3,
+    revenue: 38_000_000 + i * 2_200_000,
+  })),
+  movement: REPORTS_MONTHS.map((month, i) => ({
+    month,
+    added: 34 + i * 3,
+    churned: 7 + (i % 3) * 3,
   })),
   arpu: 47_900,
   churnRate: 0.021,
@@ -3959,7 +3978,16 @@ export const handlers = [
       arAging,
     })
   }),
-  http.get('*/api/analytics/reports', () => HttpResponse.json(REPORTS_SUMMARY)),
+  http.get('*/api/analytics/reports', ({ request }) => {
+    // Period filter: ?months=3|6|12 slices the trend/movement to the last N.
+    const raw = Number(new URL(request.url).searchParams.get('months'))
+    const n = raw === 3 || raw === 6 || raw === 12 ? raw : 12
+    return HttpResponse.json({
+      ...REPORTS_SUMMARY,
+      revenueTrend: REPORTS_SUMMARY.revenueTrend.slice(-n),
+      movement: REPORTS_SUMMARY.movement.slice(-n),
+    })
+  }),
 
   // Accounting: cash-basis GL journal for a period (derived from settled
   // invoices). Dr Kas, Cr Revenue + Denda + PPN Keluaran.
