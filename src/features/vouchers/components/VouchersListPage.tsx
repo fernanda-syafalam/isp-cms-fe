@@ -5,19 +5,13 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { VoucherFilter } from '@/api/vouchers'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
@@ -36,8 +30,6 @@ const STATUS_TONE: Record<VoucherStatus, StatusTone> = {
   used: 'success',
   expired: 'neutral',
 }
-
-const STATUS_OPTIONS = ['all', 'unused', 'used', 'expired'] as const
 
 const toCsvRow = (v: Voucher) => ({
   Kode: v.code,
@@ -140,6 +132,17 @@ export function VouchersListPage() {
   // cards stay correct under any table filter.
   const summary = data?.summary
 
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'unused', label: statusLabel('unused'), count: summary?.unused },
+    { value: 'used', label: statusLabel('used'), count: summary?.used },
+    {
+      value: 'expired',
+      label: statusLabel('expired'),
+      count: summary?.expired,
+    },
+  ]
+
   const handleExport = async () => {
     setIsExporting(true)
     try {
@@ -157,6 +160,21 @@ export function VouchersListPage() {
       <PageHeader
         title="Voucher"
         description="Voucher prepaid hotspot / PPPoE — buat batch & pantau penukaran."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!total || isExporting}
+              onClick={handleExport}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Ekspor</span>
+            </Button>
+            {canManage ? <GenerateBatchDialog /> : null}
+          </>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -200,6 +218,13 @@ export function VouchersListPage() {
         )}
       </div>
 
+      <FilterTabs
+        ariaLabel="Filter status voucher"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -220,35 +245,6 @@ export function VouchersListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        toolbar={
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'Semua status' : statusLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              disabled={!total || isExporting}
-              onClick={handleExport}
-            >
-              <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Ekspor</span>
-            </Button>
-            {canManage ? <GenerateBatchDialog /> : null}
-          </>
-        }
       />
     </div>
   )
