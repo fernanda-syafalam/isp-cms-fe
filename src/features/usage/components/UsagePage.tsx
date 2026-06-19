@@ -1,10 +1,11 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActivityIcon, DownloadIcon, GaugeIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { UsageFilter } from '@/api/usage'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -30,12 +31,24 @@ const toCsvRow = (u: UsageRecord) => ({
   Status: u.fupThrottled ? 'FUP' : 'Normal',
 })
 
+const routeApi = getRouteApi('/_auth/network/usage')
+
 export function UsagePage() {
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportUsage = useExportUsage()
   const [isExporting, setIsExporting] = useState(false)
 
+  // FUP-state filter (normal / throttled) in the URL; rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
   const baseFilter: UsageFilter = {
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -49,6 +62,16 @@ export function UsagePage() {
   // Full-set server aggregate (ignores q/sort/paging), so the KPI cards stay
   // correct under any table search.
   const summary = data?.summary
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    {
+      value: 'normal',
+      label: 'Normal',
+      count: summary ? summary.total - summary.throttled : undefined,
+    },
+    { value: 'throttled', label: 'FUP', count: summary?.throttled },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -165,6 +188,13 @@ export function UsagePage() {
           isError={isError}
         />
       </div>
+
+      <FilterTabs
+        ariaLabel="Filter status FUP"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
 
       <DataTable
         columns={columns}

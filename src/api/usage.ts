@@ -2,6 +2,7 @@ import { api } from './client'
 import { type UsageList, UsageListSchema } from '@/schemas/usage'
 
 export type UsageFilter = {
+  status?: string | undefined
   q?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
@@ -15,6 +16,7 @@ export const USAGE_EXPORT_LIMIT = 200
 
 export async function listUsage(filter: UsageFilter = {}): Promise<UsageList> {
   const searchParams = new URLSearchParams()
+  if (filter.status) searchParams.set('status', filter.status)
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
