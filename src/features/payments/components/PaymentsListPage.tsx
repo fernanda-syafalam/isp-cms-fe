@@ -18,6 +18,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Payment, PaymentMethod } from '@/schemas/payment'
 
 import { useExportPayments, usePaymentsList } from '../hooks/usePayments'
+import { PaymentDetailSheet } from './PaymentDetailSheet'
 
 const METHOD_TONE: Record<PaymentMethod, StatusTone> = {
   qris: 'info',
@@ -98,6 +99,7 @@ export function PaymentsListPage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportPayments = useExportPayments()
   const [isExporting, setIsExporting] = useState(false)
+  const [openPayment, setOpenPayment] = useState<Payment | null>(null)
 
   // Search/sort/paging come entirely from the table (no equality filter here).
   const baseFilter: PaymentFilter = {
@@ -133,6 +135,7 @@ export function PaymentsListPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
+        onRowClick={(p) => setOpenPayment(p)}
         emptyMessage="Belum ada pembayaran."
         searchPlaceholder="Cari pembayaran…"
         server={{
@@ -157,6 +160,14 @@ export function PaymentsListPage() {
             <span className="hidden sm:inline">Ekspor</span>
           </Button>
         }
+      />
+
+      <PaymentDetailSheet
+        payment={openPayment}
+        open={openPayment !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenPayment(null)
+        }}
       />
     </div>
   )
