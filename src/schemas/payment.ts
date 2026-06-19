@@ -15,10 +15,27 @@ export const PaymentSchema = z.object({
   paidAt: z.iso.datetime(),
 })
 
+// Full-set rollups over ALL payments (ignores the method filter) — drives the
+// KPI cards and the method filter tabs.
+export const PaymentSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  totalAmount: z.number().int().nonnegative(),
+  byMethod: z.object({
+    qris: z.number().int().nonnegative(),
+    va: z.number().int().nonnegative(),
+    ewallet: z.number().int().nonnegative(),
+    transfer: z.number().int().nonnegative(),
+    cash: z.number().int().nonnegative(),
+  }),
+})
+
 export const PaymentListSchema = z.object({
   items: z.array(PaymentSchema),
   total: z.number().int().nonnegative(),
+  summary: PaymentSummarySchema,
 })
+
+export type PaymentSummary = z.infer<typeof PaymentSummarySchema>
 
 // Input when recording a payment against an invoice (offline/loket).
 export const RecordPaymentSchema = z.object({

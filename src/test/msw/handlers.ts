@@ -2526,19 +2526,33 @@ export const handlers = [
   // Payments
   http.get('*/api/payments', ({ request }) => {
     const url = new URL(request.url)
-    return HttpResponse.json(
-      applyListQuery(PAYMENT_FIXTURES, url.searchParams, {
-        searchFields: ['invoiceNo', 'customerName'],
-        sortAccessors: {
-          paidAt: (p) => p.paidAt,
-          invoiceNo: (p) => p.invoiceNo,
-          amount: (p) => p.amount,
-          customerName: (p) => p.customerName,
-        },
-        // Mirrors the BE default ORDER BY `paidAt desc`.
-        defaultCompare: (a, b) => (a.paidAt < b.paidAt ? 1 : a.paidAt > b.paidAt ? -1 : 0),
-      }),
-    )
+    // Full-set rollups (before the method filter) — stable across method tabs.
+    const countMethod = (m: string) => PAYMENT_FIXTURES.filter((p) => p.method === m).length
+    const summary = {
+      total: PAYMENT_FIXTURES.length,
+      totalAmount: PAYMENT_FIXTURES.reduce((sum, p) => sum + p.amount, 0),
+      byMethod: {
+        qris: countMethod('qris'),
+        va: countMethod('va'),
+        ewallet: countMethod('ewallet'),
+        transfer: countMethod('transfer'),
+        cash: countMethod('cash'),
+      },
+    }
+    const method = url.searchParams.get('method')
+    const rows = method ? PAYMENT_FIXTURES.filter((p) => p.method === method) : PAYMENT_FIXTURES
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['invoiceNo', 'customerName'],
+      sortAccessors: {
+        paidAt: (p) => p.paidAt,
+        invoiceNo: (p) => p.invoiceNo,
+        amount: (p) => p.amount,
+        customerName: (p) => p.customerName,
+      },
+      // Mirrors the BE default ORDER BY `paidAt desc`.
+      defaultCompare: (a, b) => (a.paidAt < b.paidAt ? 1 : a.paidAt > b.paidAt ? -1 : 0),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   // Payment gateway: create a charge (QRIS/VA/e-wallet) for an invoice.
   http.post('*/api/payments/intent', async ({ request }) => {

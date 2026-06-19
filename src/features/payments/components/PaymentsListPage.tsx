@@ -1,10 +1,12 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { DownloadIcon, LandmarkIcon, QrCodeIcon, ReceiptTextIcon, WalletIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { PaymentFilter } from '@/api/payments'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -95,14 +97,25 @@ const COLUMNS: ColumnDef<Payment>[] = [
   },
 ]
 
+const routeApi = getRouteApi('/_auth/payments')
+
 export function PaymentsListPage() {
+  const { method: methodParam } = routeApi.useSearch()
+  const method = methodParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportPayments = useExportPayments()
   const [isExporting, setIsExporting] = useState(false)
   const [openPayment, setOpenPayment] = useState<Payment | null>(null)
 
-  // Search/sort/paging come entirely from the table (no equality filter here).
+  // Method is a URL filter (deep-linkable); changing it rewinds to page 1.
+  const setMethod = (value: string) => {
+    table.resetPage()
+    navigate({ search: value === 'all' ? {} : { method: value } })
+  }
+
   const baseFilter: PaymentFilter = {
+    ...(method === 'all' ? {} : { method }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -113,6 +126,17 @@ export function PaymentsListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byMethod
+
+  const methodTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'qris', label: statusLabel('qris'), count: by?.qris },
+    { value: 'va', label: statusLabel('va'), count: by?.va },
+    { value: 'ewallet', label: statusLabel('ewallet'), count: by?.ewallet },
+    { value: 'transfer', label: statusLabel('transfer'), count: by?.transfer },
+    { value: 'cash', label: statusLabel('cash'), count: by?.cash },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -128,7 +152,65 @@ export function PaymentsListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Pembayaran" description="Riwayat pembayaran tagihan pelanggan." />
+      <PageHeader
+        title="Pembayaran"
+        description="Riwayat pembayaran tagihan pelanggan."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total diterima"
+          value={formatCurrency(summary?.totalAmount ?? 0)}
+          hint="seluruh pembayaran"
+          icon={WalletIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Transaksi"
+          value={summary?.total ?? 0}
+          hint="jumlah pembayaran"
+          icon={ReceiptTextIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="QRIS"
+          value={by?.qris ?? 0}
+          hint="via QRIS"
+          icon={QrCodeIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Virtual Account"
+          value={by?.va ?? 0}
+          hint="via VA"
+          icon={LandmarkIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter metode pembayaran"
+        value={method}
+        onValueChange={setMethod}
+        items={methodTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -148,18 +230,6 @@ export function PaymentsListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
-        }
       />
 
       <PaymentDetailSheet
