@@ -3020,23 +3020,33 @@ export const handlers = [
   // Work orders
   http.get('*/api/work-orders', ({ request }) => {
     const url = new URL(request.url)
+    // Full-set status counts (before status/type filters) — stable per tab.
+    const countWo = (s: string) => WORKORDER_FIXTURES.filter((w) => w.status === s).length
+    const summary = {
+      total: WORKORDER_FIXTURES.length,
+      byStatus: {
+        scheduled: countWo('scheduled'),
+        in_progress: countWo('in_progress'),
+        done: countWo('done'),
+        cancelled: countWo('cancelled'),
+      },
+    }
     // Equality filters first (status, type), then the shared search/sort/page
     // engine mirrors the backend list contract.
     let rows = filterByStatus(WORKORDER_FIXTURES, url.searchParams.get('status'))
     const type = url.searchParams.get('type')
     if (type) rows = rows.filter((w) => w.type === type)
-    return HttpResponse.json(
-      applyListQuery(rows, url.searchParams, {
-        searchFields: ['code', 'customerName', 'technician'],
-        sortAccessors: {
-          code: (w) => w.code,
-          scheduledAt: (w) => w.scheduledAt,
-          status: (w) => w.status,
-          createdAt: (w) => w.createdAt,
-        },
-        defaultCompare: (a, b) => b.createdAt.localeCompare(a.createdAt),
-      }),
-    )
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['code', 'customerName', 'technician'],
+      sortAccessors: {
+        code: (w) => w.code,
+        scheduledAt: (w) => w.scheduledAt,
+        status: (w) => w.status,
+        createdAt: (w) => w.createdAt,
+      },
+      defaultCompare: (a, b) => b.createdAt.localeCompare(a.createdAt),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   // Complete a WO; an install also activates + provisions + invoices the customer.
   http.post('*/api/work-orders/:id/complete', ({ params }) => {
