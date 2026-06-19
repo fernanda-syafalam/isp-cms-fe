@@ -13,6 +13,9 @@ import { type NetworkNode, NetworkNodeSchema } from '@/schemas/topology'
 import {
   type ClosureList,
   ClosureListSchema,
+  type CreateSpliceInput,
+  type Splice,
+  SpliceSchema,
   type SpliceList,
   SpliceListSchema,
 } from '@/schemas/closure'
@@ -56,4 +59,14 @@ export async function installCustomerDrop(input: CustomerDropInput): Promise<Net
 // Replace a cable's surveyed route; the server recomputes lengthM.
 export async function updateCableRoute(id: string, input: UpdateCableRouteInput): Promise<Cable> {
   return CableSchema.parse(await api.patch(`cables/${id}`, { json: input }).json())
+}
+
+// Record a new fusion/mechanical splice inside a closure (a feeder→drop joint).
+export async function createSplice(input: CreateSpliceInput): Promise<Splice> {
+  return SpliceSchema.parse(await api.post('splices', { json: input }).json())
+}
+
+// Remove a splice from its closure.
+export async function deleteSplice(id: string): Promise<void> {
+  await api.delete(`splices/${id}`)
 }

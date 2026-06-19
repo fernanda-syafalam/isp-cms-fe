@@ -6,6 +6,7 @@ import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
 import { UpdateBranchSchema } from '@/schemas/branch'
 import { CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
+import { CreateSpliceSchema } from '@/schemas/closure'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
@@ -4450,6 +4451,25 @@ export const handlers = [
       total: SPLICE_FIXTURES.length,
     }),
   ),
+  // Record a splice inside a closure (a feeder→drop fusion joint).
+  http.post('*/api/splices', async ({ request }) => {
+    const body = CreateSpliceSchema.parse(await request.json())
+    const splice = { ...body, id: `splice-${crypto.randomUUID()}` }
+    SPLICE_FIXTURES.push(splice)
+    persistDb()
+    return HttpResponse.json(splice, { status: 201 })
+  }),
+  http.delete('*/api/splices/:id', ({ params }) => {
+    const i = SPLICE_FIXTURES.findIndex((s) => s.id === params.id)
+    if (i === -1) {
+      return new HttpResponse(JSON.stringify({ message: 'Sambungan tidak ditemukan' }), {
+        status: 404,
+      })
+    }
+    SPLICE_FIXTURES.splice(i, 1)
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.get('*/api/splitters', () =>
     HttpResponse.json({
       items: SPLITTER_FIXTURES,
