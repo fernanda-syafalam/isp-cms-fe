@@ -1851,14 +1851,17 @@ export const handlers = [
     // Full-set aggregate for the KPI cards — computed over every credit before
     // any search/sort/paging, so the cards stay correct under any table filter.
     const summary = {
+      total: SLA_CREDIT_FIXTURES.length,
       activeAmount: SLA_CREDIT_FIXTURES.filter((c) => c.status !== 'void').reduce(
         (s, c) => s + c.amount,
         0,
       ),
       pending: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'pending').length,
       applied: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'applied').length,
+      void: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'void').length,
     }
-    const { items, total } = applyListQuery(SLA_CREDIT_FIXTURES, url.searchParams, {
+    const filtered = filterByStatus(SLA_CREDIT_FIXTURES, url.searchParams.get('status'))
+    const { items, total } = applyListQuery(filtered, url.searchParams, {
       searchFields: ['customerName', 'reason'],
       sortAccessors: {
         customerName: (c) => c.customerName,
