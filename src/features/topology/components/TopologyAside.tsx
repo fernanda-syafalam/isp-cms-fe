@@ -77,7 +77,7 @@ export function TopologyAside({
   // The co-located closure (tray/fiber capacity + its fusion splices).
   const closureCard =
     selected && (selected.type === 'odc' || selected.type === 'odp') ? (
-      <ClosureDetail nodeId={selected.id} />
+      <ClosureDetail nodeId={selected.id} canManage={canManage} />
     ) : null
   // Drop-route editor for a selected customer in edit mode (drag handles live on
   // the map; add-bend/straighten here).

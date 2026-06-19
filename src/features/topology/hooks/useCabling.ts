@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  createSplice,
+  deleteSplice,
   installCustomerDrop,
   listCables,
   listCircuits,
@@ -13,6 +15,7 @@ import {
 } from '@/api/cabling'
 import { getErrorMessage } from '@/lib/errors'
 import type { CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
+import type { CreateSpliceInput } from '@/schemas/closure'
 import type { NetworkNode } from '@/schemas/topology'
 
 // Read hooks for the OSP cabling layer (cables/strands/splitters/closures/
@@ -89,6 +92,33 @@ export function useUpdateCableRoute() {
       updateCableRoute(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cabling'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Record a fusion/mechanical splice inside a closure. Invalidates cabling so the
+// closure's splice list refreshes.
+export function useCreateSplice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateSpliceInput) => createSplice(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      toast.success('Sambungan ditambahkan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Remove a splice from a closure.
+export function useDeleteSplice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deleteSplice(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      toast.success('Sambungan dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
