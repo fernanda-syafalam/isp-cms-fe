@@ -31,6 +31,7 @@ import {
 } from './customer-actions'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
+import { OnuActions } from './OnuActions'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   prospek: 'neutral',
@@ -123,18 +124,21 @@ function CustomerBody({ customer }: { customer: Customer }) {
 
       <DetailSection title="Koneksi">
         {conn ? (
-          <DetailMetaGrid>
-            <DetailMeta label="Tipe">{conn.type.toUpperCase()}</DetailMeta>
-            <DetailMeta label="PPPoE">{conn.pppoeUsername}</DetailMeta>
-            <DetailMeta label="IP">{conn.ipAddress}</DetailMeta>
-            <DetailMeta label="ONU">{conn.onuSerial ?? '—'}</DetailMeta>
-            <DetailMeta label="OLT / PON">
-              {conn.olt ? `${conn.olt}${conn.ponPort ? ` · ${conn.ponPort}` : ''}` : '—'}
-            </DetailMeta>
-            <DetailMeta label="Redaman">
-              {conn.rxPower != null ? `${formatNumber(conn.rxPower)} dBm` : '—'}
-            </DetailMeta>
-          </DetailMetaGrid>
+          <>
+            <DetailMetaGrid>
+              <DetailMeta label="Tipe">{conn.type.toUpperCase()}</DetailMeta>
+              <DetailMeta label="PPPoE">{conn.pppoeUsername}</DetailMeta>
+              <DetailMeta label="IP">{conn.ipAddress}</DetailMeta>
+              <DetailMeta label="ONU">{conn.onuSerial ?? '—'}</DetailMeta>
+              <DetailMeta label="OLT / PON">
+                {conn.olt ? `${conn.olt}${conn.ponPort ? ` · ${conn.ponPort}` : ''}` : '—'}
+              </DetailMeta>
+              <DetailMeta label="Redaman">
+                {conn.rxPower != null ? `${formatNumber(conn.rxPower)} dBm` : '—'}
+              </DetailMeta>
+            </DetailMetaGrid>
+            <OnuActions customerId={customer.id} ssid={`WiFi-${conn.pppoeUsername}`} />
+          </>
         ) : (
           <p className="flex items-center gap-2 text-muted-foreground text-sm">
             <PlugZapIcon className="size-4" />
