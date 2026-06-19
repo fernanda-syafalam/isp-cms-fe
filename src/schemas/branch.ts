@@ -22,6 +22,10 @@ export const BranchSummarySchema = z.object({
   branches: z.number().int().nonnegative(),
   customers: z.number().int().nonnegative(),
   mrr: z.number().int().nonnegative(),
+  byStatus: z.object({
+    active: z.number().int().nonnegative(),
+    inactive: z.number().int().nonnegative(),
+  }),
 })
 
 export const BranchListSchema = z.object({

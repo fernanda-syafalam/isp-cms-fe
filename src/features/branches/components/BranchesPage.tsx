@@ -1,7 +1,9 @@
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Building2Icon, PlusIcon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
@@ -77,12 +79,24 @@ const ACTIONS_COLUMN: ColumnDef<Branch> = {
   cell: ({ row }) => <BranchRowActions branch={row.original} />,
 }
 
+const routeApi = getRouteApi('/_auth/branches')
+
 export function BranchesPage() {
   const canManage = useCan('settings.manage')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const [addOpen, setAddOpen] = useState(false)
 
+  // Status is a URL filter; changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
   const { data, isLoading, isError } = useBranches({
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -91,6 +105,13 @@ export function BranchesPage() {
   })
   const total = data?.total ?? 0
   const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.branches },
+    { value: 'active', label: 'Aktif', count: by?.active },
+    { value: 'inactive', label: 'Nonaktif', count: by?.inactive },
+  ]
 
   const columns = useMemo<ColumnDef<Branch>[]>(
     () => (canManage ? [...BASE_COLUMNS, ACTIONS_COLUMN] : BASE_COLUMNS),
@@ -137,6 +158,13 @@ export function BranchesPage() {
           isError={isError}
         />
       </div>
+
+      <FilterTabs
+        ariaLabel="Filter status cabang"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
 
       <DataTable
         columns={columns}

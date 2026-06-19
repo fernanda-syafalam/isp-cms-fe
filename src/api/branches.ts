@@ -9,6 +9,7 @@ import {
 } from '@/schemas/branch'
 
 export type BranchFilter = {
+  status?: string | undefined
   q?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
@@ -18,6 +19,7 @@ export type BranchFilter = {
 
 export async function listBranches(filter: BranchFilter = {}): Promise<BranchList> {
   const searchParams = new URLSearchParams()
+  if (filter.status) searchParams.set('status', filter.status)
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
