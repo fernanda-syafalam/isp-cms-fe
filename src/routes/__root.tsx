@@ -1,15 +1,16 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
+import { Link, Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
+import { BellIcon } from 'lucide-react'
 import { useEffect } from 'react'
 
 import { AppSidebar } from '@/components/shared/app-sidebar'
-import { Breadcrumbs } from '@/components/shared/breadcrumbs'
 import { CommandMenu } from '@/components/shared/command-menu'
+import { isRouteAllowed } from '@/components/shared/nav'
 import { Reveal } from '@/components/shared/reveal'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { useIsAuthenticated } from '@/features/auth'
+import { useEffectiveRole, useIsAuthenticated } from '@/features/auth'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -21,7 +22,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   const isAuthed = useIsAuthenticated()
+  const role = useEffectiveRole()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // The bell only shows where the notifications route is reachable (admin/staff).
+  const canNotify = isRouteAllowed(role, '/notifications')
 
   // Move focus to the main region on route change so screen-reader + keyboard
   // users land on the new page's content. #main-content only exists when authed,
@@ -54,14 +58,19 @@ function RootLayout() {
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-border border-b bg-background/80 px-4 backdrop-blur">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-1 h-4" />
-          {/* min-w-0 lets the breadcrumb truncate instead of pushing the action
-              cluster into horizontal overflow on narrow screens. */}
-          <div className="min-w-0 flex-1">
-            <Breadcrumbs />
-          </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {/* Leading global search (⌘K) mirrors the reference shell; page
+              context comes from the PageHeader title + sidebar active state. */}
+          <div className="min-w-0 flex-1 sm:max-w-md">
             <CommandMenu />
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+            {canNotify ? (
+              <Button asChild variant="ghost" size="icon" aria-label="Notifikasi">
+                <Link to="/notifications">
+                  <BellIcon className="size-4" />
+                </Link>
+              </Button>
+            ) : null}
             <ThemeToggle />
           </div>
         </header>

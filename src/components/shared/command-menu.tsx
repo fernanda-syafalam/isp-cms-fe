@@ -46,11 +46,11 @@ export function CommandMenu() {
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="text-muted-foreground sm:w-56 sm:justify-start sm:pr-2"
+        className="h-9 w-full justify-start gap-2 text-muted-foreground"
         aria-label="Buka pencarian perintah"
       >
-        <SearchIcon className="size-4" />
-        <span className="hidden sm:inline">Cari…</span>
+        <SearchIcon className="size-4 shrink-0" />
+        <span className="truncate">Cari menu atau aksi…</span>
         <kbd className="ml-auto hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] sm:inline">
           ⌘K
         </kbd>
