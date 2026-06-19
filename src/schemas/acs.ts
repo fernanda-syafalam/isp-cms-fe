@@ -14,9 +14,20 @@ export const AcsDeviceSchema = z.object({
   lastInform: z.iso.datetime(),
 })
 
+// Full-set counts over ALL CPE (ignores the status filter) — drives the KPI
+// cards and the status filter tabs.
+export const AcsSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  byStatus: z.object({
+    online: z.number().int().nonnegative(),
+    offline: z.number().int().nonnegative(),
+  }),
+})
+
 export const AcsDeviceListSchema = z.object({
   items: z.array(AcsDeviceSchema),
   total: z.number().int().nonnegative(),
+  summary: AcsSummarySchema,
 })
 
 export const AcsActionSchema = z.enum(['reboot', 'firmware', 'wifi'])
@@ -36,6 +47,7 @@ export const BulkAcsResultSchema = z.object({
 })
 
 export type AcsStatus = z.infer<typeof AcsStatusSchema>
+export type AcsSummary = z.infer<typeof AcsSummarySchema>
 export type AcsDevice = z.infer<typeof AcsDeviceSchema>
 export type AcsDeviceList = z.infer<typeof AcsDeviceListSchema>
 export type AcsAction = z.infer<typeof AcsActionSchema>

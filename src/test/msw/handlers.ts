@@ -3819,21 +3819,28 @@ export const handlers = [
   // TR-069 / GenieACS
   http.get('*/api/acs/devices', ({ request }) => {
     const url = new URL(request.url)
-    return HttpResponse.json(
-      applyListQuery(ACS_DEVICE_FIXTURES, url.searchParams, {
-        searchFields: ['serial', 'customerName'],
-        sortAccessors: {
-          serial: (d) => d.serial,
-          customerName: (d) => d.customerName,
-          model: (d) => d.model,
-          firmware: (d) => d.firmware,
-          rxPowerDbm: (d) => d.rxPowerDbm,
-          status: (d) => d.status,
-          lastInform: (d) => d.lastInform,
-        },
-        defaultCompare: (a, b) => a.serial.localeCompare(b.serial),
-      }),
-    )
+    const summary = {
+      total: ACS_DEVICE_FIXTURES.length,
+      byStatus: {
+        online: ACS_DEVICE_FIXTURES.filter((d) => d.status === 'online').length,
+        offline: ACS_DEVICE_FIXTURES.filter((d) => d.status === 'offline').length,
+      },
+    }
+    const rows = filterByStatus(ACS_DEVICE_FIXTURES, url.searchParams.get('status'))
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['serial', 'customerName'],
+      sortAccessors: {
+        serial: (d) => d.serial,
+        customerName: (d) => d.customerName,
+        model: (d) => d.model,
+        firmware: (d) => d.firmware,
+        rxPowerDbm: (d) => d.rxPowerDbm,
+        status: (d) => d.status,
+        lastInform: (d) => d.lastInform,
+      },
+      defaultCompare: (a, b) => a.serial.localeCompare(b.serial),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   // Bulk task: firmware upgrades flip the firmware version; reboot/wifi just ack.
   http.post('*/api/acs/bulk', async ({ request }) => {
