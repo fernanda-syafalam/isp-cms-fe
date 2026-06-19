@@ -363,7 +363,7 @@ export function NetworkTopologyPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div
           className={cn(
-            'relative h-[70dvh] rounded-lg border bg-card',
+            'relative h-[78dvh] min-h-[440px] rounded-lg border bg-card sm:h-[70dvh]',
             view === 'map' ? 'overflow-hidden' : 'overflow-y-auto',
           )}
         >
