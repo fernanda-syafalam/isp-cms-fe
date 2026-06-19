@@ -1,18 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { DownloadIcon, ShieldCheckIcon, UserCogIcon, UserIcon, UsersIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useCan } from '@/features/auth'
 import { downloadCsv } from '@/lib/csv'
 import { formatDate } from '@/lib/format'
@@ -24,8 +19,6 @@ import { UserRoleBadge } from './UserRoleBadge'
 import { UserRowActions } from './UserRowActions'
 import { useUsersList } from '../hooks/useUsers'
 
-const ROLE_OPTIONS = ['all', 'admin', 'staff', 'customer'] as const
-
 const toCsvRow = (u: AppUser) => ({
   Nama: u.fullName,
   Email: u.email,
@@ -36,12 +29,35 @@ const toCsvRow = (u: AppUser) => ({
 export function UsersListPage() {
   const [role, setRole] = useState('all')
   const canManage = useCan('staff.manage')
+  // Staff is a small set (real /v1/users); we load it whole and filter by role
+  // in-memory, so the KPI cards + role tabs are full-set counts.
   const { data, isLoading, isError } = useUsersList({ limit: 100 })
 
+  const allUsers = data?.items ?? []
   const items = useMemo(
-    () => (data?.items ?? []).filter((u) => role === 'all' || u.role === role),
-    [data, role],
+    () => allUsers.filter((u) => role === 'all' || u.role === role),
+    [allUsers, role],
   )
+  const countByRole = (r: string) => allUsers.filter((u) => u.role === r).length
+
+  const roleTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: data ? allUsers.length : undefined },
+    {
+      value: 'admin',
+      label: statusLabel('admin'),
+      count: data ? countByRole('admin') : undefined,
+    },
+    {
+      value: 'staff',
+      label: statusLabel('staff'),
+      count: data ? countByRole('staff') : undefined,
+    },
+    {
+      value: 'customer',
+      label: statusLabel('customer'),
+      count: data ? countByRole('customer') : undefined,
+    },
+  ]
 
   const columns = useMemo<ColumnDef<AppUser>[]>(
     () => [
@@ -88,28 +104,9 @@ export function UsersListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Staf" description="Akun staf dan admin internal." />
-      <DataTable
-        columns={columns}
-        data={items}
-        isLoading={isLoading}
-        isError={isError}
-        emptyMessage="Belum ada staf."
-        searchPlaceholder="Cari staf…"
-        toolbar={
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter peran">
-              <SelectValue placeholder="Peran" />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLE_OPTIONS.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r === 'all' ? 'Semua peran' : statusLabel(r)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
+      <PageHeader
+        title="Staf"
+        description="Akun staf dan admin internal."
         actions={
           <>
             <Button
@@ -125,6 +122,49 @@ export function UsersListPage() {
             {canManage ? <CreateUserDialog /> : null}
           </>
         }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total staf"
+          value={allUsers.length}
+          hint="akun internal"
+          icon={UsersIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label={statusLabel('admin')}
+          value={countByRole('admin')}
+          icon={ShieldCheckIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label={statusLabel('staff')}
+          value={countByRole('staff')}
+          icon={UserCogIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label={statusLabel('customer')}
+          value={countByRole('customer')}
+          icon={UserIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs ariaLabel="Filter peran" value={role} onValueChange={setRole} items={roleTabs} />
+
+      <DataTable
+        columns={columns}
+        data={items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage="Belum ada staf."
+        searchPlaceholder="Cari staf…"
       />
     </div>
   )
