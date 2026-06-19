@@ -1,28 +1,31 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, PlugZapIcon, PowerOffIcon, UserPlusIcon } from 'lucide-react'
+import {
+  DownloadIcon,
+  PlugZapIcon,
+  PowerOffIcon,
+  UserPlusIcon,
+  UsersIcon,
+  WalletIcon,
+  WifiIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CustomerFilter } from '@/api/customers'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useCan } from '@/features/auth'
 import { scopeAreas, useBranchScope } from '@/features/branches'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDate } from '@/lib/format'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
@@ -46,8 +49,6 @@ const STATUS_LABEL: Record<CustomerStatus, string> = {
   isolir: 'Isolir',
   berhenti: 'Berhenti',
 }
-
-const STATUS_OPTIONS = ['all', 'aktif', 'isolir', 'instalasi', 'prospek', 'berhenti'] as const
 
 const toCsvRow = (c: Customer) => ({
   No: c.customerNo,
@@ -155,6 +156,19 @@ export function CustomersListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  // Full-set counts for the scope (stable across status tabs) — drives the KPIs
+  // and the per-status tab pills.
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'aktif', label: STATUS_LABEL.aktif, count: by?.aktif },
+    { value: 'isolir', label: STATUS_LABEL.isolir, count: by?.isolir },
+    { value: 'instalasi', label: STATUS_LABEL.instalasi, count: by?.instalasi },
+    { value: 'prospek', label: STATUS_LABEL.prospek, count: by?.prospek },
+    { value: 'berhenti', label: STATUS_LABEL.berhenti, count: by?.berhenti },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -176,45 +190,6 @@ export function CustomersListPage() {
           scope
             ? `Pelanggan & paket aktif — cabang ${scope.name}.`
             : 'Pelanggan dan paket aktif mereka.'
-        }
-      />
-      <DataTable
-        columns={COLUMNS}
-        data={data?.items}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={() => refetch()}
-        onRowClick={(c) => setOpenCustomerId(c.id)}
-        emptyMessage={
-          table.search
-            ? `Tidak ada pelanggan cocok dengan "${table.search}".`
-            : 'Belum ada pelanggan.'
-        }
-        searchPlaceholder="Cari pelanggan…"
-        enableSelection
-        server={{
-          pageIndex: table.pageIndex,
-          pageSize: table.pageSize,
-          rowCount: total,
-          sorting: table.sorting,
-          search: table.search,
-          onPaginationChange: table.onPaginationChange,
-          onSortingChange: table.onSortingChange,
-          onSearchChange: table.onSearchChange,
-        }}
-        toolbar={
-          <Select value={status} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'Semua status' : STATUS_LABEL[s]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         }
         actions={
           <>
@@ -239,6 +214,78 @@ export function CustomersListPage() {
             {canManage ? <CreateCustomerDialog /> : null}
           </>
         }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total pelanggan"
+          value={summary?.total ?? 0}
+          hint="dalam cakupan"
+          icon={UsersIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Aktif"
+          value={by?.aktif ?? 0}
+          hint="berlangganan"
+          hintTone="positive"
+          icon={WifiIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Terisolir"
+          value={by?.isolir ?? 0}
+          hint="diisolir karena menunggak"
+          hintTone="negative"
+          icon={PowerOffIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Piutang (AR)"
+          value={summary?.outstanding ?? 0}
+          format={formatCurrency}
+          hint="total tunggakan"
+          accent="amber"
+          icon={WalletIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status pelanggan"
+        value={status}
+        onValueChange={setStatusFilter}
+        items={statusTabs}
+      />
+
+      <DataTable
+        columns={COLUMNS}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => refetch()}
+        onRowClick={(c) => setOpenCustomerId(c.id)}
+        emptyMessage={
+          table.search
+            ? `Tidak ada pelanggan cocok dengan "${table.search}".`
+            : 'Belum ada pelanggan.'
+        }
+        searchPlaceholder="Cari pelanggan…"
+        enableSelection
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
         bulkActions={(selected) => {
           const toIsolate = selected.filter((c) => c.status === 'aktif')
           const toActivate = selected.filter((c) => c.status === 'isolir')
