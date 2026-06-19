@@ -1927,8 +1927,13 @@ export const handlers = [
       branches: BRANCH_FIXTURES.length,
       customers: BRANCH_FIXTURES.reduce((s, b) => s + b.customerCount, 0),
       mrr: BRANCH_FIXTURES.reduce((s, b) => s + b.mrr, 0),
+      byStatus: {
+        active: BRANCH_FIXTURES.filter((b) => b.status === 'active').length,
+        inactive: BRANCH_FIXTURES.filter((b) => b.status === 'inactive').length,
+      },
     }
-    const { items, total } = applyListQuery(BRANCH_FIXTURES, url.searchParams, {
+    const rows = filterByStatus(BRANCH_FIXTURES, url.searchParams.get('status'))
+    const { items, total } = applyListQuery(rows, url.searchParams, {
       searchFields: ['name', 'city', 'manager'],
       sortAccessors: {
         name: (b) => b.name,
