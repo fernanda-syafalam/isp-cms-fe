@@ -1,17 +1,9 @@
 import { Link } from '@tanstack/react-router'
-import {
-  ArrowLeftIcon,
-  MapPinIcon,
-  MessageCircleIcon,
-  NavigationIcon,
-  PlugZapIcon,
-  PowerOffIcon,
-} from 'lucide-react'
+import { ArrowLeftIcon } from 'lucide-react'
 
 import { CopyButton } from '@/components/shared/copy-button'
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
-import { useCan } from '@/features/auth'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,14 +16,15 @@ import type { Connection, Customer, CustomerStatus } from '@/schemas/customer'
 import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 import type { Ticket, TicketStatus } from '@/schemas/ticket'
 
-import {
-  useActivateCustomer,
-  useCustomer,
-  useIsolateCustomer,
-  useNotifyWhatsapp,
-} from '../hooks/useCustomers'
+import { useCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
+import {
+  CustomerMapButton,
+  CustomerNavigateButton,
+  CustomerStatusAction,
+  CustomerWhatsappButton,
+} from './customer-actions'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { ContractTab } from '@/features/contracts'
@@ -110,30 +103,10 @@ export function CustomerDetailPage({ customerId }: Props) {
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
-            {customer.status !== 'prospek' ? (
-              <Button asChild variant="outline" size="sm" className="h-8">
-                <Link to="/network/topology" search={{ focus: `${customer.id}-node` }}>
-                  <MapPinIcon className="size-4" />
-                  <span className="hidden sm:inline">Lihat di peta</span>
-                </Link>
-              </Button>
-            ) : null}
-            <Button asChild variant="outline" size="sm" className="h-8">
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  [customer.address, customer.areaName, 'Jepara', 'Jawa Tengah']
-                    .filter(Boolean)
-                    .join(', '),
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <NavigationIcon className="size-4" />
-                <span className="hidden sm:inline">Navigasi</span>
-              </a>
-            </Button>
-            <WhatsappButton customerId={customer.id} />
-            <CustomerActions customer={customer} />
+            <CustomerMapButton customer={customer} />
+            <CustomerNavigateButton customer={customer} />
+            <CustomerWhatsappButton customerId={customer.id} />
+            <CustomerStatusAction customer={customer} />
             <CustomerRowActions customer={customer} />
           </div>
         }
@@ -209,50 +182,6 @@ function TicketsCard({ tickets }: { tickets: Ticket[] | undefined }) {
         )}
       </CardContent>
     </Card>
-  )
-}
-
-function CustomerActions({ customer }: { customer: Customer }) {
-  const canNetwork = useCan('network.manage')
-  const isolate = useIsolateCustomer()
-  const activate = useActivateCustomer()
-  const busy = isolate.isPending || activate.isPending
-
-  // Isolir/aktivasi is a network enforcement action — gated like the bulk
-  // action on the list (network.manage).
-  if (!canNetwork) return null
-
-  if (customer.status === 'aktif') {
-    return (
-      <Button
-        variant="destructive"
-        size="sm"
-        disabled={busy}
-        onClick={() => isolate.mutate(customer.id)}
-      >
-        <PowerOffIcon className="size-4" />
-        Isolir
-      </Button>
-    )
-  }
-  if (customer.status === 'isolir') {
-    return (
-      <Button size="sm" disabled={busy} onClick={() => activate.mutate(customer.id)}>
-        <PlugZapIcon className="size-4" />
-        Aktifkan
-      </Button>
-    )
-  }
-  return null
-}
-
-function WhatsappButton({ customerId }: { customerId: string }) {
-  const notify = useNotifyWhatsapp(customerId)
-  return (
-    <Button variant="outline" size="sm" disabled={notify.isPending} onClick={() => notify.mutate()}>
-      <MessageCircleIcon className="size-4" />
-      Ingatkan (WA)
-    </Button>
   )
 }
 

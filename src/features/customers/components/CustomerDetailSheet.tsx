@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ExternalLinkIcon, MapPinIcon, PlugZapIcon } from 'lucide-react'
+import { ExternalLinkIcon, PlugZapIcon } from 'lucide-react'
 
 import {
   DETAIL_LINKED_ROW_CLASS,
@@ -12,13 +12,18 @@ import {
 } from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
+import {
+  CustomerMapButton,
+  CustomerNavigateButton,
+  CustomerStatusAction,
+  CustomerWhatsappButton,
+} from './customer-actions'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 
@@ -86,25 +91,15 @@ function SheetBody({ customerId }: { customerId: string }) {
 }
 
 function CustomerBody({ customer }: { customer: Customer }) {
-  const onMap = customer.status !== 'prospek'
   const conn = customer.connection
 
   return (
     <div className="divide-y divide-sidebar-border">
       <DetailActionBar>
-        <Button asChild size="sm">
-          <Link to="/customers/$customerId" params={{ customerId: customer.id }}>
-            Detail lengkap
-          </Link>
-        </Button>
-        {onMap ? (
-          <Button asChild variant="outline" size="sm">
-            <Link to="/network/topology" search={{ focus: `${customer.id}-node` }}>
-              <MapPinIcon className="size-4" />
-              Lihat di peta
-            </Link>
-          </Button>
-        ) : null}
+        <CustomerStatusAction customer={customer} />
+        <CustomerWhatsappButton customerId={customer.id} />
+        <CustomerMapButton customer={customer} />
+        <CustomerNavigateButton customer={customer} />
         <CustomerRowActions customer={customer} />
       </DetailActionBar>
 
