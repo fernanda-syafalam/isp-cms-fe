@@ -5,7 +5,7 @@ import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
 import { UpdateBranchSchema } from '@/schemas/branch'
-import { CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
+import { CreateCableSchema, CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
 import { CreateSpliceSchema } from '@/schemas/closure'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
@@ -4419,6 +4419,19 @@ export const handlers = [
   http.get('*/api/cables', () =>
     HttpResponse.json({ items: CABLE_FIXTURES, total: CABLE_FIXTURES.length }),
   ),
+  // Record a new cable run. A surveyed route recomputes lengthM; an empty route
+  // (straight from→to) keeps the client's straight-line estimate.
+  http.post('*/api/cables', async ({ request }) => {
+    const body = CreateCableSchema.parse(await request.json())
+    const cable = {
+      ...body,
+      id: `cable-${crypto.randomUUID()}`,
+      lengthM: body.route.length >= 2 ? routeLength(body.route) : body.lengthM,
+    }
+    CABLE_FIXTURES.push(cable)
+    persistDb()
+    return HttpResponse.json(cable, { status: 201 })
+  }),
   // Replace a cable's surveyed route; recompute lengthM from the polyline.
   http.patch('*/api/cables/:id', async ({ params, request }) => {
     const cable = CABLE_FIXTURES.find((c) => c.id === params.id)

@@ -3,6 +3,7 @@ import {
   type CableList,
   CableListSchema,
   CableSchema,
+  type CreateCableInput,
   type CustomerDropInput,
   type StrandList,
   StrandListSchema,
@@ -59,6 +60,12 @@ export async function installCustomerDrop(input: CustomerDropInput): Promise<Net
 // Replace a cable's surveyed route; the server recomputes lengthM.
 export async function updateCableRoute(id: string, input: UpdateCableRouteInput): Promise<Cable> {
   return CableSchema.parse(await api.patch(`cables/${id}`, { json: input }).json())
+}
+
+// Record a new physical cable run between two nodes. An empty route means a
+// straight line from→to; the server recomputes lengthM when a route is given.
+export async function createCable(input: CreateCableInput): Promise<Cable> {
+  return CableSchema.parse(await api.post('cables', { json: input }).json())
 }
 
 // Record a new fusion/mechanical splice inside a closure (a feeder→drop joint).

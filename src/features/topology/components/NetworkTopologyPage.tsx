@@ -1,5 +1,6 @@
 import {
   BriefcaseIcon,
+  CableIcon,
   DownloadIcon,
   FlameIcon,
   ListTreeIcon,
@@ -39,6 +40,7 @@ import {
 import { LocateControl } from './LocateControl'
 import { InstallCustomerDialog } from './InstallCustomerDialog'
 import { InstallPlacementHint } from './InstallPlacementHint'
+import { CableFormDialog } from './CableFormDialog'
 import { NodeFormDialog } from './NodeFormDialog'
 import { TopologyAside } from './TopologyAside'
 import { TopologyControls } from './TopologyControls'
@@ -81,6 +83,7 @@ export function NetworkTopologyPage() {
   const [showHeat, setShowHeat] = useState(true)
   const [geoEnabled, setGeoEnabled] = useState(false)
   const [installOpen, setInstallOpen] = useState(false)
+  const [cableOpen, setCableOpen] = useState(false)
   // "Pasang pelanggan" placement: while true, the next map click sets the drop
   // location; installPoint feeds the dialog so the node lands where the customer
   // actually is (not at nodes[0]) and the drop-length/nearest-ODP preview is real.
@@ -329,6 +332,18 @@ export function NetworkTopologyPage() {
               {installMode ? 'Klik peta…' : 'Pasang pelanggan'}
             </Button>
           ) : null}
+          {canEdit ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              disabled={all.length === 0}
+              onClick={() => setCableOpen(true)}
+            >
+              <CableIcon className="size-4" />
+              Tambah kabel
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             size="sm"
@@ -480,6 +495,8 @@ export function NetworkTopologyPage() {
           onInstalled={handlePick}
         />
       ) : null}
+
+      {cableOpen ? <CableFormDialog nodes={all} open onOpenChange={setCableOpen} /> : null}
     </div>
   )
 }
