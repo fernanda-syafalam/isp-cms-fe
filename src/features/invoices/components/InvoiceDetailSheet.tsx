@@ -4,7 +4,6 @@ import {
   CalendarClockIcon,
   CheckCircle2Icon,
   CreditCardIcon,
-  ExternalLinkIcon,
   PrinterIcon,
   ReceiptTextIcon,
   UserIcon,
@@ -12,6 +11,16 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
+import {
+  DETAIL_LINKED_ROW_CLASS,
+  DetailActionBar,
+  DetailLinkedRow,
+  DetailMeta,
+  DetailMetaGrid,
+  DetailSection,
+  DetailSheet,
+  DetailSheetHeader,
+} from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -22,13 +31,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
@@ -59,11 +61,9 @@ type Props = {
 // body only mounts (and fetches) while an invoice is selected.
 export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 sm:max-w-md">
-        {invoiceId ? <SheetBody invoiceId={invoiceId} /> : null}
-      </SheetContent>
-    </Sheet>
+    <DetailSheet open={open} onOpenChange={onOpenChange}>
+      {invoiceId ? <SheetBody invoiceId={invoiceId} /> : null}
+    </DetailSheet>
   )
 }
 
@@ -72,24 +72,20 @@ function SheetBody({ invoiceId }: { invoiceId: string }) {
 
   return (
     <>
-      <SheetHeader className="gap-1 border-sidebar-border border-b px-5 py-4">
-        <span className="font-medium text-[0.7rem] text-muted-foreground uppercase tracking-wider">
-          Tagihan
-        </span>
-        <div className="flex items-center gap-2.5">
-          <SheetTitle className="font-mono text-xl tracking-tight">
-            {invoice?.invoiceNo ?? 'Tagihan'}
-          </SheetTitle>
-          {invoice ? (
+      <DetailSheetHeader
+        eyebrow="Tagihan"
+        title={<span className="font-mono">{invoice?.invoiceNo ?? 'Tagihan'}</span>}
+        status={
+          invoice ? (
             <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
-          ) : null}
-        </div>
-        <SheetDescription className="text-xs">
-          {invoice
+          ) : null
+        }
+        description={
+          invoice
             ? `${invoice.customerName} · jatuh tempo ${formatDate(invoice.dueDate)}`
-            : 'Memuat detail tagihan…'}
-        </SheetDescription>
-      </SheetHeader>
+            : 'Memuat detail tagihan…'
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-4 p-5">
@@ -114,27 +110,30 @@ function InvoiceBody({ invoice }: { invoice: Invoice }) {
     <div className="divide-y divide-sidebar-border">
       <Actions invoice={invoice} />
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 px-5 py-4 sm:grid-cols-3">
-        <Meta label="Pelanggan">
-          <Link
-            to="/customers/$customerId"
-            params={{ customerId: invoice.customerId }}
-            className="hover:underline"
-          >
-            {invoice.customerName}
-          </Link>
-        </Meta>
-        <Meta label="Periode">
-          {formatDate(invoice.periodStart)} – {formatDate(invoice.periodEnd)}
-        </Meta>
-        <Meta label="Jatuh tempo">{formatDate(invoice.dueDate)}</Meta>
-        <Meta label="No. Faktur Pajak">{invoice.taxInvoiceNo ?? '—'}</Meta>
-        <Meta label="Dibayar">{invoice.paidAt ? formatDateTime(invoice.paidAt) : '—'}</Meta>
-        <Meta label="Status">{statusLabel(invoice.status)}</Meta>
-      </dl>
+      <DetailSection>
+        <DetailMetaGrid>
+          <DetailMeta label="Pelanggan">
+            <Link
+              to="/customers/$customerId"
+              params={{ customerId: invoice.customerId }}
+              className="hover:underline"
+            >
+              {invoice.customerName}
+            </Link>
+          </DetailMeta>
+          <DetailMeta label="Periode">
+            {formatDate(invoice.periodStart)} – {formatDate(invoice.periodEnd)}
+          </DetailMeta>
+          <DetailMeta label="Jatuh tempo">{formatDate(invoice.dueDate)}</DetailMeta>
+          <DetailMeta label="No. Faktur Pajak">{invoice.taxInvoiceNo ?? '—'}</DetailMeta>
+          <DetailMeta label="Dibayar">
+            {invoice.paidAt ? formatDateTime(invoice.paidAt) : '—'}
+          </DetailMeta>
+          <DetailMeta label="Status">{statusLabel(invoice.status)}</DetailMeta>
+        </DetailMetaGrid>
+      </DetailSection>
 
-      <section className="space-y-3 px-5 py-4">
-        <SectionLabel>Rincian</SectionLabel>
+      <DetailSection title="Rincian">
         <div className="space-y-2 rounded-lg border border-sidebar-border p-4 text-sm">
           <TotalRow label="DPP (langganan)" value={formatCurrency(invoice.amount)} />
           {invoice.taxAmount > 0 ? (
@@ -160,31 +159,30 @@ function InvoiceBody({ invoice }: { invoice: Invoice }) {
             </span>
           </div>
         </div>
-      </section>
+      </DetailSection>
 
       <Timeline invoice={invoice} />
 
-      <section className="space-y-2 px-5 py-4">
-        <SectionLabel>Tertaut</SectionLabel>
+      <DetailSection title="Tertaut">
         <Link
           to="/customers/$customerId"
           params={{ customerId: invoice.customerId }}
-          className={LINKED_ROW_CLASS}
+          className={DETAIL_LINKED_ROW_CLASS}
         >
-          <LinkedRowInner icon={UserIcon} label="Pelanggan" value={invoice.customerName} />
+          <DetailLinkedRow icon={UserIcon} label="Pelanggan" value={invoice.customerName} />
         </Link>
         <Link
           to="/invoices/$invoiceId"
           params={{ invoiceId: invoice.id }}
-          className={LINKED_ROW_CLASS}
+          className={DETAIL_LINKED_ROW_CLASS}
         >
-          <LinkedRowInner
+          <DetailLinkedRow
             icon={ReceiptTextIcon}
             label="Halaman tagihan"
             value="Buka detail lengkap"
           />
         </Link>
-      </section>
+      </DetailSection>
     </div>
   )
 }
@@ -197,7 +195,7 @@ function Actions({ invoice }: { invoice: Invoice }) {
   const unpaid = invoice.status !== 'paid'
 
   return (
-    <div className="flex flex-wrap gap-2 px-5 py-3">
+    <DetailActionBar>
       {unpaid ? (
         <>
           <Button size="sm" onClick={() => setCheckoutOpen(true)}>
@@ -240,7 +238,7 @@ function Actions({ invoice }: { invoice: Invoice }) {
           {invoice.status === 'paid' ? 'Kwitansi' : 'Cetak'}
         </Link>
       </Button>
-    </div>
+    </DetailActionBar>
   )
 }
 
@@ -281,8 +279,7 @@ function Timeline({ invoice }: { invoice: Invoice }) {
     .sort((a, b) => a.at.localeCompare(b.at))
 
   return (
-    <section className="space-y-3 px-5 py-4">
-      <SectionLabel>Lini masa</SectionLabel>
+    <DetailSection title="Lini masa">
       <ul className="space-y-3">
         {events.map((e) => {
           const Icon = e.icon
@@ -307,24 +304,7 @@ function Timeline({ invoice }: { invoice: Invoice }) {
           )
         })}
       </ul>
-    </section>
-  )
-}
-
-function Meta({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-[0.7rem] text-muted-foreground uppercase tracking-wider">{label}</dt>
-      <dd className="mt-0.5 truncate text-sm">{children}</dd>
-    </div>
-  )
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="font-medium text-[0.7rem] text-muted-foreground uppercase tracking-wider">
-      {children}
-    </p>
+    </DetailSection>
   )
 }
 
@@ -350,35 +330,5 @@ function TotalRow({
         {value}
       </span>
     </div>
-  )
-}
-
-// Shared chrome for a "linked document" row; the typed <Link> wraps it at each
-// call site so TanStack Router keeps its route/param checking (no `as` casts).
-const LINKED_ROW_CLASS =
-  'flex items-center gap-3 rounded-lg border border-sidebar-border px-3 py-2.5 transition-colors hover:bg-sidebar-accent'
-
-function LinkedRowInner({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-}) {
-  return (
-    <>
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-        <Icon className="size-4" />
-      </span>
-      <span className="grid min-w-0 flex-1">
-        <span className="text-[0.7rem] text-muted-foreground uppercase tracking-wider">
-          {label}
-        </span>
-        <span className="truncate text-sm">{value}</span>
-      </span>
-      <ExternalLinkIcon className="size-4 shrink-0 text-muted-foreground" />
-    </>
   )
 }
