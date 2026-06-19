@@ -3,6 +3,7 @@ import {
   BarChart3Icon,
   BookTextIcon,
   BoxesIcon,
+  BriefcaseBusinessIcon,
   Building2Icon,
   CpuIcon,
   GaugeIcon,
@@ -44,6 +45,8 @@ export type NavItem = {
 
 export type NavGroup = {
   label: string
+  /** Leading glyph for the group's collapsible parent row in the sidebar. */
+  icon: ComponentType<{ className?: string }>
   items: NavItem[]
 }
 
@@ -52,6 +55,7 @@ export type NavGroup = {
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Ringkasan',
+    icon: LayoutDashboardIcon,
     items: [
       { to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true },
       { to: '/setup', label: 'Panduan Setup', icon: RouteIcon },
@@ -59,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Operasional',
+    icon: BriefcaseBusinessIcon,
     items: [
       { to: '/leads', label: 'Prospek', icon: TargetIcon },
       { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
@@ -74,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Lapangan',
+    icon: WrenchIcon,
     items: [
       { to: '/work-orders', label: 'Work Order', icon: WrenchIcon },
       { to: '/inventory', label: 'Inventaris', icon: BoxesIcon },
@@ -81,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Jaringan',
+    icon: NetworkIcon,
     items: [
       { to: '/network/topology', label: 'Topologi', icon: NetworkIcon },
       { to: '/network/devices', label: 'Perangkat', icon: RouterIcon },
@@ -94,6 +101,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Analitik',
+    icon: BarChart3Icon,
     items: [
       { to: '/reports', label: 'Laporan', icon: BarChart3Icon },
       { to: '/satisfaction', label: 'Kepuasan & Churn', icon: SmilePlusIcon },
@@ -102,6 +110,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: 'Admin',
+    icon: SettingsIcon,
     items: [
       { to: '/staff', label: 'Staf', icon: ShieldCheckIcon },
       { to: '/branches', label: 'Cabang', icon: Building2Icon },
