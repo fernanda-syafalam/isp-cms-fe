@@ -32,6 +32,13 @@ export const InvoiceSummarySchema = z.object({
   overdue: z.number().int().nonnegative(), // sum over overdue only
   unpaidCount: z.number().int().nonnegative(), // count of pending + overdue
   total: z.number().int().nonnegative(), // count of ALL invoices
+  // Per-status counts (over ALL invoices) — drives the status filter tabs.
+  byStatus: z.object({
+    paid: z.number().int().nonnegative(),
+    pending: z.number().int().nonnegative(),
+    overdue: z.number().int().nonnegative(),
+    draft: z.number().int().nonnegative(),
+  }),
 })
 
 export const InvoiceListSchema = z.object({

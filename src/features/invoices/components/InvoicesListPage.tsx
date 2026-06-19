@@ -11,19 +11,13 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { InvoiceFilter } from '@/api/invoices'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
@@ -45,8 +39,6 @@ const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
   overdue: 'danger',
   draft: 'neutral',
 }
-
-const STATUS_OPTIONS = ['all', 'paid', 'pending', 'overdue', 'draft'] as const
 
 const toCsvRow = (inv: Invoice) => ({
   'No. Tagihan': inv.invoiceNo,
@@ -163,8 +155,17 @@ export function InvoicesListPage() {
   })
   const total = data?.total ?? 0
   // AR summary is a full-set server aggregate (ignores status/q/paging), so the
-  // KPI cards stay correct under any table filter.
+  // KPI cards + status tabs stay correct under any table filter.
   const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'paid', label: statusLabel('paid'), count: by?.paid },
+    { value: 'pending', label: statusLabel('pending'), count: by?.pending },
+    { value: 'overdue', label: statusLabel('overdue'), count: by?.overdue },
+    { value: 'draft', label: statusLabel('draft'), count: by?.draft },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -180,7 +181,25 @@ export function InvoicesListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tagihan" description="Penagihan bulanan & piutang (AR)." />
+      <PageHeader
+        title="Tagihan"
+        description="Penagihan bulanan & piutang (AR)."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!total || isExporting}
+              onClick={handleExport}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Ekspor</span>
+            </Button>
+            <BillingActions />
+          </>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         {!summary ? (
@@ -216,6 +235,13 @@ export function InvoicesListPage() {
           </>
         )}
       </div>
+
+      <FilterTabs
+        ariaLabel="Filter status tagihan"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
 
       <DataTable
         columns={COLUMNS}
@@ -256,35 +282,6 @@ export function InvoicesListPage() {
             </Button>
           )
         }}
-        toolbar={
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'Semua status' : statusLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              disabled={!total || isExporting}
-              onClick={handleExport}
-            >
-              <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Ekspor</span>
-            </Button>
-            <BillingActions />
-          </>
-        }
       />
 
       <InvoiceDetailSheet
