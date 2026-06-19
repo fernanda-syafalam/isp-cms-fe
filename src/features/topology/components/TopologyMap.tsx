@@ -7,8 +7,10 @@ import type { NetworkNode } from '@/schemas/topology'
 
 import type { GeoPosition } from '../hooks/useGeolocation'
 import type { TopologyLayer } from '../hooks/useTopologySearch'
+import type { FaultHotspot } from '../lib/faultHeat'
 import { CableLayer } from './CableLayer'
 import { DropRouteLayer } from './DropRouteLayer'
+import { FaultHeatLayer } from './FaultHeatLayer'
 import { FlyTo } from './FlyTo'
 import { TopologyEdges } from './TopologyEdges'
 import { TopologyMarkers } from './TopologyMarkers'
@@ -38,6 +40,9 @@ type Props = {
   traceColor: string | null
   highlightIds: Set<string>
   jobNodeIds: Set<string>
+  /** Outage hot zones (impact halos); rendered only when `showFaultHeat`. */
+  faultHotspots: FaultHotspot[]
+  showFaultHeat: boolean
   flyToTarget: NetworkNode | null
   userPosition: GeoPosition | null
   refitKey: string
@@ -93,6 +98,8 @@ export function TopologyMap({
   traceColor,
   highlightIds,
   jobNodeIds,
+  faultHotspots,
+  showFaultHeat,
   flyToTarget,
   userPosition,
   refitKey,
@@ -113,6 +120,7 @@ export function TopologyMap({
       <FitBounds nodes={nodes} refitKey={refitKey} />
       <MapClick enabled={addMode || installMode} onClick={onMapClick} />
       <FlyTo target={flyToTarget} />
+      {showFaultHeat ? <FaultHeatLayer hotspots={faultHotspots} /> : null}
       {layer === 'physical' ? (
         <CableLayer nodes={nodes} byId={byId} activeIds={activeIds} traceColor={traceColor} />
       ) : (
