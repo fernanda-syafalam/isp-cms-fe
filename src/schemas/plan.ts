@@ -10,6 +10,12 @@ export const PlanSchema = z.object({
   speedMbps: z.number().int().positive(),
   priceMonthly: z.number().int().nonnegative(),
   status: PlanStatusSchema,
+  // Network params the plan provisions (per FEATURES.md §4 — a plan carries
+  // rate-limit/FUP, not just price). `fupGb` is the monthly fair-use quota in GB
+  // (absent = unlimited); `rateLimitProfile` is the Mikrotik rate-limit string
+  // (e.g. "20M/20M") the queue/PPP profile applies.
+  fupGb: z.number().int().nonnegative().optional(),
+  rateLimitProfile: z.string().max(40).optional(),
   // Live subscriber count on this plan (computed server-side at list time).
   subscriberCount: z.number().int().nonnegative().optional(),
 })
@@ -35,6 +41,8 @@ export const CreatePlanSchema = z.object({
   name: z.string().min(1, 'Name is required').max(80),
   speedMbps: z.number().int().positive('Speed must be > 0'),
   priceMonthly: z.number().int().nonnegative('Price must be >= 0'),
+  fupGb: z.number().int().nonnegative('FUP must be >= 0').optional(),
+  rateLimitProfile: z.string().max(40).optional(),
 })
 
 export type PlanStatus = z.infer<typeof PlanStatusSchema>
