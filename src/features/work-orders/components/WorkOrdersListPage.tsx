@@ -25,6 +25,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { WorkOrder, WorkOrderStatus } from '@/schemas/workorder'
 
 import { useExportWorkOrders, useWorkOrdersList } from '../hooks/useWorkOrders'
+import { WorkOrderDetailSheet } from './WorkOrderDetailSheet'
 import { WorkOrderRowActions } from './WorkOrderRowActions'
 
 const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
@@ -120,6 +121,7 @@ export function WorkOrdersListPage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportWorkOrders = useExportWorkOrders()
   const [isExporting, setIsExporting] = useState(false)
+  const [openWo, setOpenWo] = useState<WorkOrder | null>(null)
 
   // Build a search object with only the keys that are set (omit when "all") so
   // it satisfies validateSearch under exactOptionalPropertyTypes. Changing a
@@ -149,7 +151,7 @@ export function WorkOrdersListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useWorkOrdersList({
+  const { data, isLoading, isError, refetch } = useWorkOrdersList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -180,6 +182,8 @@ export function WorkOrdersListPage() {
         data={items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
+        onRowClick={(wo) => setOpenWo(wo)}
         emptyMessage="Belum ada work order."
         searchPlaceholder="Cari work order…"
         server={{
@@ -232,6 +236,14 @@ export function WorkOrdersListPage() {
             <span className="hidden sm:inline">Ekspor</span>
           </Button>
         }
+      />
+
+      <WorkOrderDetailSheet
+        workOrder={openWo}
+        open={openWo !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenWo(null)
+        }}
       />
     </div>
   )
