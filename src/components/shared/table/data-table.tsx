@@ -208,7 +208,7 @@ export function DataTable<T>({
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="h-8 pl-9"
+              className="h-11 pl-9 sm:h-8"
             />
           </div>
         ) : null}
