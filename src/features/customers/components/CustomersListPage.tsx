@@ -27,6 +27,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CreateCustomerDialog } from './CreateCustomerDialog'
+import { CustomerDetailSheet } from './CustomerDetailSheet'
 import { CustomerRowActions } from './CustomerRowActions'
 import { useBulkCustomerStatus, useCustomersList, useExportCustomers } from '../hooks/useCustomers'
 
@@ -123,6 +124,7 @@ export function CustomersListPage() {
   const exportCustomers = useExportCustomers()
   const [status, setStatus] = useState<string>('all')
   const [isExporting, setIsExporting] = useState(false)
+  const [openCustomerId, setOpenCustomerId] = useState<string | null>(null)
 
   // Status is a local filter the table does not own — rewind to page 1 on change
   // so the user is never stranded on an out-of-range page.
@@ -182,6 +184,7 @@ export function CustomersListPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
+        onRowClick={(c) => setOpenCustomerId(c.id)}
         emptyMessage={
           table.search
             ? `Tidak ada pelanggan cocok dengan "${table.search}".`
@@ -286,6 +289,14 @@ export function CustomersListPage() {
               </Button>
             </>
           )
+        }}
+      />
+
+      <CustomerDetailSheet
+        customerId={openCustomerId}
+        open={openCustomerId !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenCustomerId(null)
         }}
       />
     </div>
