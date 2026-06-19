@@ -1430,18 +1430,27 @@ export const handlers = [
       ...p,
       subscriberCount: CUSTOMER_FIXTURES.filter((c) => c.planName === p.name).length,
     }))
-    return HttpResponse.json(
-      applyListQuery(rows, url.searchParams, {
-        searchFields: ['name'],
-        sortAccessors: {
-          name: (r) => r.name,
-          speedMbps: (r) => r.speedMbps,
-          priceMonthly: (r) => r.priceMonthly,
-          status: (r) => r.status,
-        },
-        defaultCompare: (a, b) => a.name.localeCompare(b.name),
-      }),
-    )
+    // Full-set rollups (before the status filter) — stable across tabs.
+    const summary = {
+      total: rows.length,
+      totalSubscribers: rows.reduce((sum, p) => sum + p.subscriberCount, 0),
+      byStatus: {
+        active: rows.filter((p) => p.status === 'active').length,
+        archived: rows.filter((p) => p.status === 'archived').length,
+      },
+    }
+    const filtered = filterByStatus(rows, url.searchParams.get('status'))
+    const result = applyListQuery(filtered, url.searchParams, {
+      searchFields: ['name'],
+      sortAccessors: {
+        name: (r) => r.name,
+        speedMbps: (r) => r.speedMbps,
+        priceMonthly: (r) => r.priceMonthly,
+        status: (r) => r.status,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   http.post('*/api/plans', async ({ request }) => {
     const body = (await request.json()) as {
