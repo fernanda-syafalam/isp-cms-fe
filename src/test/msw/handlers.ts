@@ -3719,7 +3719,8 @@ export const handlers = [
         ? Math.round((all.reduce((s, m) => s + m.uptimePct, 0) / all.length) * 10) / 10
         : 0,
     }
-    const { items, total } = applyListQuery(all, url.searchParams, {
+    const filtered = filterByStatus(all, url.searchParams.get('status'))
+    const { items, total } = applyListQuery(filtered, url.searchParams, {
       searchFields: ['name', 'areaName'],
       sortAccessors: {
         name: (m) => m.name,
