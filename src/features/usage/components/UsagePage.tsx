@@ -19,6 +19,7 @@ import { formatNumber } from '@/lib/format'
 import type { UsageRecord } from '@/schemas/usage'
 
 import { useExportUsage, useUsageList } from '../hooks/useUsage'
+import { UsageDetailSheet } from './UsageDetailSheet'
 
 const pct = (used: number, quota: number) =>
   quota <= 0 ? 0 : Math.min(100, Math.round((used / quota) * 100))
@@ -40,6 +41,7 @@ export function UsagePage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportUsage = useExportUsage()
   const [isExporting, setIsExporting] = useState(false)
+  const [openUsage, setOpenUsage] = useState<UsageRecord | null>(null)
 
   // FUP-state filter (normal / throttled) in the URL; rewinds to page 1.
   const setStatus = (value: string) => {
@@ -201,6 +203,7 @@ export function UsagePage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRowClick={(u) => setOpenUsage(u)}
         emptyMessage={
           table.search
             ? `Tidak ada data pemakaian cocok dengan "${table.search}".`
@@ -229,6 +232,14 @@ export function UsagePage() {
             <span className="hidden sm:inline">Ekspor</span>
           </Button>
         }
+      />
+
+      <UsageDetailSheet
+        record={openUsage}
+        open={openUsage !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenUsage(null)
+        }}
       />
     </div>
   )
