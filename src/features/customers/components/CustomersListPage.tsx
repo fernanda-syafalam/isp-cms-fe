@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   DownloadIcon,
@@ -116,6 +116,8 @@ const COLUMNS: ColumnDef<Customer>[] = [
   },
 ]
 
+const routeApi = getRouteApi('/_auth/customers/')
+
 export function CustomersListPage() {
   const canManage = useCan('customers.manage')
   const canNetwork = useCan('network.manage')
@@ -123,14 +125,16 @@ export function CustomersListPage() {
   const scope = useBranchScope((s) => s.scope)
   const table = useTableQuery({ pageSize: 20 })
   const exportCustomers = useExportCustomers()
-  const [status, setStatus] = useState<string>('all')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const [isExporting, setIsExporting] = useState(false)
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null)
 
-  // Status is a local filter the table does not own — rewind to page 1 on change
-  // so the user is never stranded on an out-of-range page.
+  // Status is a URL filter (deep-linkable/bookmarkable); changing it rewinds to
+  // page 1 so the user is never stranded on an out-of-range page.
   const setStatusFilter = (value: string) => {
-    setStatus(value)
+    navigate({ search: value === 'all' ? {} : { status: value } })
     table.resetPage()
   }
 
