@@ -9,6 +9,7 @@ import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useTableQuery } from '@/hooks/useTableQuery'
+import { cn } from '@/lib/cn'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/format'
@@ -24,6 +25,32 @@ const toCsvRow = (e: AuditEntry) => ({
   Keterangan: e.summary,
 })
 
+// Action verbs are namespaced ("billing.run", "customer.isolate"); colour the
+// row by that category prefix so the operator can scan "who did what" fast.
+const ACTION_DOT: Record<string, string> = {
+  billing: 'bg-amber-500',
+  payment: 'bg-emerald-500',
+  customer: 'bg-blue-500',
+  network: 'bg-violet-500',
+  device: 'bg-violet-500',
+  ticket: 'bg-sky-500',
+  workorder: 'bg-orange-500',
+  voucher: 'bg-pink-500',
+  sla: 'bg-red-500',
+  reseller: 'bg-teal-500',
+  user: 'bg-indigo-500',
+  auth: 'bg-indigo-500',
+}
+const actionDot = (action: string) =>
+  ACTION_DOT[action.split('.')[0] ?? ''] ?? 'bg-muted-foreground'
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .toUpperCase()
+
 // Static column defs (no component state): sortable keys (at/actor/action/
 // entity) match the backend sort whitelist; the table delegates sorting.
 const COLUMNS: ColumnDef<AuditEntry>[] = [
@@ -37,13 +64,24 @@ const COLUMNS: ColumnDef<AuditEntry>[] = [
     accessorKey: 'actor',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Aktor" />,
     meta: { title: 'Aktor' },
+    cell: ({ row }) => (
+      <span className="inline-flex items-center gap-2">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-[0.65rem] text-muted-foreground">
+          {initials(row.original.actor)}
+        </span>
+        <span className="text-sm">{row.original.actor}</span>
+      </span>
+    ),
   },
   {
     accessorKey: 'action',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Aksi" />,
     meta: { title: 'Aksi' },
     cell: ({ row }) => (
-      <span className="font-mono text-muted-foreground text-xs">{row.original.action}</span>
+      <span className="inline-flex items-center gap-2">
+        <span className={cn('size-1.5 shrink-0 rounded-full', actionDot(row.original.action))} />
+        <span className="font-mono text-muted-foreground text-xs">{row.original.action}</span>
+      </span>
     ),
   },
   {
@@ -93,6 +131,18 @@ export function AuditLogPage() {
       <PageHeader
         title="Log audit"
         description="Jejak tindakan yang mengubah data: billing, isolir, pembayaran, dan lainnya."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
       />
       <DataTable
         columns={COLUMNS}
@@ -112,18 +162,6 @@ export function AuditLogPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
-        }
       />
     </div>
   )
