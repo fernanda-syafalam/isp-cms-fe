@@ -27,7 +27,7 @@ export function DetailSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 sm:max-w-md">
+      <SheetContent side="right" className="w-full gap-0 overflow-y-auto p-0 sm:max-w-[40rem]">
         {children}
       </SheetContent>
     </Sheet>

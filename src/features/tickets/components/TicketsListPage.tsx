@@ -29,6 +29,7 @@ import type { Ticket, TicketPriority, TicketStatus } from '@/schemas/ticket'
 import { CreateTicketDialog } from './CreateTicketDialog'
 import { TicketRowActions } from './TicketRowActions'
 import { useBulkResolveTickets, useExportTickets, useTicketsList } from '../hooks/useTickets'
+import { TicketDetailSheet } from './TicketDetailSheet'
 
 const STATUS_TONE: Record<TicketStatus, StatusTone> = {
   open: 'info',
@@ -153,6 +154,7 @@ export function TicketsListPage() {
   const bulkResolve = useBulkResolveTickets()
   const exportTickets = useExportTickets()
   const [isExporting, setIsExporting] = useState(false)
+  const [openTicketId, setOpenTicketId] = useState<string | null>(null)
 
   // Status lives in the URL (deep-link); changing it rewinds to page 1.
   const setStatus = (value: string) => {
@@ -195,6 +197,7 @@ export function TicketsListPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
+        onRowClick={(t) => setOpenTicketId(t.id)}
         emptyMessage="Belum ada tiket."
         searchPlaceholder="Cari tiket…"
         server={{
@@ -264,6 +267,14 @@ export function TicketsListPage() {
               </Button>
             </>
           )
+        }}
+      />
+
+      <TicketDetailSheet
+        ticketId={openTicketId}
+        open={openTicketId !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenTicketId(null)
         }}
       />
     </div>
