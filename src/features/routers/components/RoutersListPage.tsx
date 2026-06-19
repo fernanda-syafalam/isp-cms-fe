@@ -1,10 +1,12 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, PlusIcon } from 'lucide-react'
+import { DownloadIcon, PlusIcon, RouterIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { RouterFilter } from '@/api/routers'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -87,15 +89,26 @@ const COLUMNS: ColumnDef<Router>[] = [
   },
 ]
 
+const routeApi = getRouteApi('/_auth/network/routers/')
+
 export function RoutersListPage() {
   const canManage = useCan('network.manage')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportRouters = useExportRouters()
   const [connectOpen, setConnectOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
-  // Search/sort/paging come entirely from the table (no equality filter here).
+  // Status is a URL filter; changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
   const baseFilter: RouterFilter = {
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -106,6 +119,14 @@ export function RoutersListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'online', label: 'Online', count: by?.online },
+    { value: 'offline', label: 'Offline', count: by?.offline },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -124,26 +145,6 @@ export function RoutersListPage() {
       <PageHeader
         title="Router (Mikrotik)"
         description="RADIUS terpusat untuk banyak Mikrotik — satu aplikasi, banyak router."
-      />
-      <DataTable
-        columns={COLUMNS}
-        data={data?.items}
-        isLoading={isLoading}
-        isError={isError}
-        emptyMessage={
-          table.search ? `Tidak ada router cocok dengan "${table.search}".` : 'Belum ada router.'
-        }
-        searchPlaceholder="Cari router…"
-        server={{
-          pageIndex: table.pageIndex,
-          pageSize: table.pageSize,
-          rowCount: total,
-          sorting: table.sorting,
-          search: table.search,
-          onPaginationChange: table.onPaginationChange,
-          onSortingChange: table.onSortingChange,
-          onSearchChange: table.onSearchChange,
-        }}
         actions={
           <>
             {canManage ? (
@@ -164,6 +165,62 @@ export function RoutersListPage() {
             </Button>
           </>
         }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Total router"
+          value={summary?.total ?? 0}
+          hint="Mikrotik terhubung"
+          icon={RouterIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Online"
+          value={by?.online ?? 0}
+          hint="aktif"
+          icon={WifiIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Offline"
+          value={by?.offline ?? 0}
+          hint="tidak tersinkron"
+          hintTone="negative"
+          icon={WifiOffIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status router"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
+      <DataTable
+        columns={COLUMNS}
+        data={data?.items}
+        isLoading={isLoading}
+        isError={isError}
+        emptyMessage={
+          table.search ? `Tidak ada router cocok dengan "${table.search}".` : 'Belum ada router.'
+        }
+        searchPlaceholder="Cari router…"
+        server={{
+          pageIndex: table.pageIndex,
+          pageSize: table.pageSize,
+          rowCount: total,
+          sorting: table.sorting,
+          search: table.search,
+          onPaginationChange: table.onPaginationChange,
+          onSortingChange: table.onSortingChange,
+          onSearchChange: table.onSearchChange,
+        }}
       />
 
       {canManage ? <ConnectRouterDialog open={connectOpen} onOpenChange={setConnectOpen} /> : null}

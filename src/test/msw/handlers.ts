@@ -2737,22 +2737,29 @@ export const handlers = [
   // Routers (Mikrotik / RADIUS)
   http.get('*/api/routers', ({ request }) => {
     const url = new URL(request.url)
-    return HttpResponse.json(
-      applyListQuery(ROUTER_FIXTURES, url.searchParams, {
-        searchFields: ['name', 'address', 'model'],
-        sortAccessors: {
-          name: (r) => r.name,
-          address: (r) => r.address,
-          model: (r) => r.model,
-          secretCount: (r) => r.secretCount,
-          lastSyncAt: (r) => r.lastSyncAt,
-          status: (r) => r.status,
-        },
-        // No createdAt on the fixture; preserve insertion order (newest first
-        // via unshift on create), mirroring the backend default desc(createdAt).
-        defaultCompare: () => 0,
-      }),
-    )
+    const summary = {
+      total: ROUTER_FIXTURES.length,
+      byStatus: {
+        online: ROUTER_FIXTURES.filter((r) => r.status === 'online').length,
+        offline: ROUTER_FIXTURES.filter((r) => r.status === 'offline').length,
+      },
+    }
+    const rows = filterByStatus(ROUTER_FIXTURES, url.searchParams.get('status'))
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['name', 'address', 'model'],
+      sortAccessors: {
+        name: (r) => r.name,
+        address: (r) => r.address,
+        model: (r) => r.model,
+        secretCount: (r) => r.secretCount,
+        lastSyncAt: (r) => r.lastSyncAt,
+        status: (r) => r.status,
+      },
+      // No createdAt on the fixture; preserve insertion order (newest first
+      // via unshift on create), mirroring the backend default desc(createdAt).
+      defaultCompare: () => 0,
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   // Probe a RouterOS device (API) → identity / board-name / version. Fails
   // auth when the password is empty (to exercise the error path).
