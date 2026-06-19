@@ -14,9 +14,21 @@ export const PlanSchema = z.object({
   subscriberCount: z.number().int().nonnegative().optional(),
 })
 
+// Full-set rollups over ALL plans (ignores the status filter) — drives the
+// KPI cards and the status filter tabs.
+export const PlanSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  totalSubscribers: z.number().int().nonnegative(),
+  byStatus: z.object({
+    active: z.number().int().nonnegative(),
+    archived: z.number().int().nonnegative(),
+  }),
+})
+
 export const PlanListSchema = z.object({
   items: z.array(PlanSchema),
   total: z.number().int().nonnegative(),
+  summary: PlanSummarySchema,
 })
 
 export const CreatePlanSchema = z.object({
@@ -26,6 +38,7 @@ export const CreatePlanSchema = z.object({
 })
 
 export type PlanStatus = z.infer<typeof PlanStatusSchema>
+export type PlanSummary = z.infer<typeof PlanSummarySchema>
 export type Plan = z.infer<typeof PlanSchema>
 export type PlanList = z.infer<typeof PlanListSchema>
 export type CreatePlanInput = z.infer<typeof CreatePlanSchema>

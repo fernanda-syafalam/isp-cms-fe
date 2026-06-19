@@ -1,9 +1,12 @@
+import { getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { ArchiveIcon, CheckCircle2Icon, DownloadIcon, PackageIcon, UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { PlanFilter } from '@/api/plans'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -89,14 +92,25 @@ const COLUMNS: ColumnDef<Plan>[] = [
   },
 ]
 
+const routeApi = getRouteApi('/_auth/plans')
+
 export function PlansListPage() {
   const canManage = useCan('plans.manage')
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportPlans = useExportPlans()
   const [isExporting, setIsExporting] = useState(false)
 
-  // Search/sort/paging come entirely from the table (no equality filter here).
+  // Status is a URL filter (deep-linkable); changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    table.resetPage()
+    navigate({ search: value === 'all' ? {} : { status: value } })
+  }
+
   const baseFilter: PlanFilter = {
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -107,6 +121,14 @@ export function PlansListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'active', label: statusLabel('active'), count: by?.active },
+    { value: 'archived', label: statusLabel('archived'), count: by?.archived },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -122,7 +144,68 @@ export function PlansListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Paket Layanan" description="Paket internet untuk pelanggan." />
+      <PageHeader
+        title="Paket Layanan"
+        description="Paket internet untuk pelanggan."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!total || isExporting}
+              onClick={handleExport}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Ekspor</span>
+            </Button>
+            {canManage ? <CreatePlanDialog /> : null}
+          </>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total paket"
+          value={summary?.total ?? 0}
+          hint="paket layanan"
+          icon={PackageIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Aktif"
+          value={by?.active ?? 0}
+          hint="dijual"
+          icon={CheckCircle2Icon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Arsip"
+          value={by?.archived ?? 0}
+          hint="tidak dijual"
+          icon={ArchiveIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Total pelanggan"
+          value={summary?.totalSubscribers ?? 0}
+          hint="berlangganan paket"
+          icon={UsersIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status paket"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -141,21 +224,6 @@ export function PlansListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              disabled={!total || isExporting}
-              onClick={handleExport}
-            >
-              <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Ekspor</span>
-            </Button>
-            {canManage ? <CreatePlanDialog /> : null}
-          </>
-        }
       />
     </div>
   )
