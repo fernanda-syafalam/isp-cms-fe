@@ -6,6 +6,7 @@ import { z } from 'zod'
 // _auth.network.acs.lazy.tsx.
 const searchSchema = z.object({
   q: z.string().optional(),
+  status: z.string().optional(),
 })
 
 export const Route = createFileRoute('/_auth/network/acs')({

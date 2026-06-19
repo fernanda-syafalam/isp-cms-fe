@@ -1,8 +1,10 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { RotateCwIcon, UploadCloudIcon, WifiIcon } from 'lucide-react'
+import { RotateCwIcon, RouterIcon, UploadCloudIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
 import { useState } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -81,7 +83,9 @@ const COLUMNS: ColumnDef<AcsDevice>[] = [
 ]
 
 export function AcsPage() {
-  const { q } = routeApi.useSearch()
+  const { q, status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const canManage = useCan('network.manage')
   const bulk = useBulkAcs()
   const [fwIds, setFwIds] = useState<string[] | null>(null)
@@ -89,7 +93,20 @@ export function AcsPage() {
 
   // ?q= deep-link (e.g. from a customer's connection tab) seeds the search box.
   const table = useTableQuery({ pageSize: 20, initialSearch: q })
+
+  // Status is a URL filter; changing it rewinds to page 1 (preserves ?q=).
+  const setStatus = (value: string) => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        status: value === 'all' ? undefined : value,
+      }),
+    })
+    table.resetPage()
+  }
+
   const { data, isLoading, isError } = useAcsDevices({
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -97,12 +114,55 @@ export function AcsPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'online', label: 'Online', count: by?.online },
+    { value: 'offline', label: 'Offline', count: by?.offline },
+  ]
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="ONU / TR-069 (GenieACS)"
         description="Kelola CPE pelanggan massal: reboot, firmware, WiFi."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Total CPE"
+          value={summary?.total ?? 0}
+          hint="perangkat terdaftar"
+          icon={RouterIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Online"
+          value={by?.online ?? 0}
+          hint="terhubung"
+          icon={WifiIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Offline"
+          value={by?.offline ?? 0}
+          hint="tidak inform"
+          hintTone="negative"
+          icon={WifiOffIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status CPE"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
       />
 
       <DataTable
