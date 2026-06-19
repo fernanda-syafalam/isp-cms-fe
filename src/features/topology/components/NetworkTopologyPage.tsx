@@ -1,6 +1,7 @@
 import {
   BriefcaseIcon,
   DownloadIcon,
+  FlameIcon,
   ListTreeIcon,
   MapIcon,
   PlusIcon,
@@ -22,6 +23,7 @@ import { useTopologyJobs } from '../hooks/useTopologyJobs'
 import { useTopologySearch } from '../hooks/useTopologySearch'
 import { nodesToCsvRows } from '../lib/export'
 import { localizeFaults } from '../lib/faults'
+import { toFaultHotspots } from '../lib/faultHeat'
 import {
   buildForest,
   downstreamIds,
@@ -74,6 +76,9 @@ export function NetworkTopologyPage() {
   const [query, setQuery] = useState('')
   const [editMode, setEditMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
+  // Outage hot-zone overlay; on by default so a NOC sees the blast zones the
+  // moment there's a fault (the toggle only appears when faults exist).
+  const [showHeat, setShowHeat] = useState(true)
   const [geoEnabled, setGeoEnabled] = useState(false)
   const [installOpen, setInstallOpen] = useState(false)
   // "Pasang pelanggan" placement: while true, the next map click sets the drop
@@ -140,6 +145,8 @@ export function NetworkTopologyPage() {
   // Probable outage roots correlated from the dark customers (the NOC's first
   // question: where's the fault, not which ONUs are red).
   const faults = useMemo(() => localizeFaults(all), [all])
+  // Project the correlated faults onto map hot zones (impact halos).
+  const faultHotspots = useMemo(() => toFaultHotspots(faults), [faults])
   // ODPs running low on free ports — capacity planning before installs fail.
   const capacity = useMemo(() => nearFullOdps(all), [all])
   // Refit the map when the visible set changes (filters/base/my-jobs) — not on selection.
@@ -295,6 +302,18 @@ export function NetworkTopologyPage() {
               {myJobsOnly ? 'Tampilkan semua' : `Pekerjaan saya (${jobs.myCount})`}
             </Button>
           ) : null}
+          {faults.length > 0 ? (
+            <Button
+              variant={showHeat ? 'secondary' : 'outline'}
+              size="sm"
+              className="h-9"
+              aria-pressed={showHeat}
+              onClick={() => setShowHeat((v) => !v)}
+            >
+              <FlameIcon className="size-4" />
+              Sebaran gangguan
+            </Button>
+          ) : null}
           {canEdit ? (
             <Button
               variant={installMode ? 'secondary' : 'default'}
@@ -382,6 +401,8 @@ export function NetworkTopologyPage() {
                 traceColor={traceColor}
                 highlightIds={highlightIds}
                 jobNodeIds={jobNodeIds}
+                faultHotspots={faultHotspots}
+                showFaultHeat={showHeat && faults.length > 0}
                 flyToTarget={flyToTarget}
                 userPosition={userPosition}
                 refitKey={refitKey}

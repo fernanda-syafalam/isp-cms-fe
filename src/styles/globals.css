@@ -212,3 +212,20 @@
     animation: none;
   }
 }
+
+/* Numeric readout at the center of a fault impact-halo (dark-customer count).
+   A small dark pill — legible over any halo color, and a non-color signal that
+   satisfies the "don't rely on color alone" rule. */
+.topology-heat-label.leaflet-tooltip {
+  background: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 1px 7px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: none;
+}
+.topology-heat-label.leaflet-tooltip::before {
+  display: none;
+}
