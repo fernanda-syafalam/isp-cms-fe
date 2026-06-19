@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, PlugZapIcon, RefreshCwIcon, RotateCwIcon } from 'lucide-react'
 
 import { CopyButton } from '@/components/shared/copy-button'
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,7 @@ import { SecretsTab } from './SecretsTab'
 import { SessionsTab } from './SessionsTab'
 
 export function RouterDetailPage({ routerId }: { routerId: string }) {
-  const { data: router, isLoading, isError } = useRouter(routerId)
+  const { data: router, isLoading, isError, refetch } = useRouter(routerId)
 
   if (isLoading) {
     return (
@@ -41,9 +42,7 @@ export function RouterDetailPage({ routerId }: { routerId: string }) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Router tidak ditemukan.
-        </p>
+        <ErrorState title="Router tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }

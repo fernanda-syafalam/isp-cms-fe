@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, NetworkIcon, RotateCwIcon } from 'lucide-react'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -31,7 +32,7 @@ type Props = {
 }
 
 export function DeviceDetailPage({ deviceId }: Props) {
-  const { data: device, isLoading, isError } = useDevice(deviceId)
+  const { data: device, isLoading, isError, refetch } = useDevice(deviceId)
 
   if (isLoading) {
     return (
@@ -46,9 +47,7 @@ export function DeviceDetailPage({ deviceId }: Props) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Perangkat tidak ditemukan.
-        </p>
+        <ErrorState title="Perangkat tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }

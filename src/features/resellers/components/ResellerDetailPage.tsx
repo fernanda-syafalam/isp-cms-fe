@@ -11,6 +11,7 @@ import {
 import { useState } from 'react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -103,7 +104,7 @@ type Props = {
 }
 
 export function ResellerDetailPage({ resellerId }: Props) {
-  const { data: reseller, isLoading, isError } = useReseller(resellerId)
+  const { data: reseller, isLoading, isError, refetch } = useReseller(resellerId)
   const table = useTableQuery({ pageSize: 20 })
   const ledger = useResellerLedger(resellerId, table.params)
   const canManage = useCan('resellers.manage')
@@ -127,9 +128,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Reseller tidak ditemukan.
-        </p>
+        <ErrorState title="Reseller tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }
