@@ -78,6 +78,11 @@ type DataTableProps<T> = {
   errorMessage?: string
   /** When provided, the error row shows a "Coba lagi" button wired to this. */
   onRetry?: () => void
+  /**
+   * When provided, clicking a data row (outside its own links/buttons/checkbox)
+   * calls this — e.g. to open a detail drawer. Rows get a pointer cursor.
+   */
+  onRowClick?: (row: T) => void
   searchPlaceholder?: string
   /** Seeds the search box (e.g. from a `?q=` deep-link). Client mode only. */
   initialSearch?: string | undefined
@@ -102,6 +107,7 @@ export function DataTable<T>({
   emptyMessage = 'Tidak ada data.',
   errorMessage = 'Gagal memuat data. Coba muat ulang halaman.',
   onRetry,
+  onRowClick,
   searchPlaceholder,
   initialSearch,
   toolbar,
@@ -279,7 +285,24 @@ export function DataTable<T>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() ? 'selected' : undefined}
-                    className="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                    onClick={
+                      onRowClick
+                        ? (e) => {
+                            // Leave the row's own links/buttons/checkbox/menu to
+                            // their handlers; only a "blank" row click opens.
+                            if (
+                              e.target instanceof HTMLElement &&
+                              e.target.closest('a,button,input,[role="menuitem"],[role="checkbox"]')
+                            )
+                              return
+                            onRowClick(row.original)
+                          }
+                        : undefined
+                    }
+                    className={cn(
+                      'transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+                      onRowClick && 'cursor-pointer',
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

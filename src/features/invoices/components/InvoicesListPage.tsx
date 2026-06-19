@@ -37,6 +37,7 @@ import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
 import { useRemindOverdue } from '../hooks/useBilling'
 import { useExportInvoices, useInvoicesList } from '../hooks/useInvoices'
 import { BillingActions } from './BillingActions'
+import { InvoiceDetailSheet } from './InvoiceDetailSheet'
 
 const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
   paid: 'success',
@@ -141,6 +142,7 @@ export function InvoicesListPage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportInvoices = useExportInvoices()
   const [isExporting, setIsExporting] = useState(false)
+  const [openInvoiceId, setOpenInvoiceId] = useState<string | null>(null)
 
   // Status is a URL filter the table does not own — rewind to page 1 on change.
   const setStatus = (value: string) => {
@@ -154,7 +156,7 @@ export function InvoicesListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useInvoicesList({
+  const { data, isLoading, isError, refetch } = useInvoicesList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -220,6 +222,8 @@ export function InvoicesListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
+        onRowClick={(inv) => setOpenInvoiceId(inv.id)}
         emptyMessage={
           table.search ? `Tidak ada tagihan cocok dengan "${table.search}".` : 'Belum ada tagihan.'
         }
@@ -281,6 +285,14 @@ export function InvoicesListPage() {
             <BillingActions />
           </>
         }
+      />
+
+      <InvoiceDetailSheet
+        invoiceId={openInvoiceId}
+        open={openInvoiceId !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenInvoiceId(null)
+        }}
       />
     </div>
   )
