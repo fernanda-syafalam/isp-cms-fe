@@ -19,6 +19,7 @@ export const OdpRecordSchema = z.object({
 export const OdpSummarySchema = z.object({
   totalOdp: z.number().int().nonnegative(), // count of all ODP
   utilization: z.number().int().nonnegative(), // used/total ports across the fleet, %
+  available: z.number().int().nonnegative(), // count of ODP with >=1 free port
   full: z.number().int().nonnegative(), // count of ODP with no free port
   optical: z.number().int().nonnegative(), // count of ODP with status != healthy
 })

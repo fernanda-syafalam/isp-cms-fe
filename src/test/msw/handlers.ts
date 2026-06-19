@@ -3772,6 +3772,7 @@ export const handlers = [
     const summary = {
       totalOdp: all.length,
       utilization: totalPorts ? Math.round((usedPorts / totalPorts) * 100) : 0,
+      available: all.filter((o) => free(o) > 0).length,
       full: all.filter((o) => free(o) === 0).length,
       optical: all.filter((o) => o.status !== 'healthy').length,
     }

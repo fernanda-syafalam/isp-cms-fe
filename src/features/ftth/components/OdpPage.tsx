@@ -4,19 +4,13 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { OdpFilter, OdpView } from '@/api/odp'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -149,6 +143,17 @@ export function OdpPage() {
   // cards stay correct under any table filter.
   const summary = data?.summary
 
+  const viewTabs: FilterTabItem[] = [
+    { value: 'all', label: FILTER_LABEL.all, count: summary?.totalOdp },
+    {
+      value: 'available',
+      label: FILTER_LABEL.available,
+      count: summary?.available,
+    },
+    { value: 'full', label: FILTER_LABEL.full, count: summary?.full },
+    { value: 'optical', label: FILTER_LABEL.optical, count: summary?.optical },
+  ]
+
   const handleExport = async () => {
     setIsExporting(true)
     try {
@@ -166,6 +171,18 @@ export function OdpPage() {
       <PageHeader
         title="FTTH / ODP"
         description="Kapasitas port ODP & kesehatan optik (redaman) untuk perencanaan instalasi."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -206,6 +223,13 @@ export function OdpPage() {
         />
       </div>
 
+      <FilterTabs
+        ariaLabel="Filter kapasitas / kesehatan ODP"
+        value={filter}
+        onValueChange={setView}
+        items={viewTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -225,32 +249,6 @@ export function OdpPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        toolbar={
-          <Select value={filter} onValueChange={setView}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-48" aria-label="Filter ODP">
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              {FILTERS.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {FILTER_LABEL[f]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
-        }
       />
     </div>
   )
