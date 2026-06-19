@@ -3675,21 +3675,29 @@ export const handlers = [
   // Coverage
   http.get('*/api/coverage', ({ request }) => {
     const url = new URL(request.url)
-    return HttpResponse.json(
-      applyListQuery(COVERAGE_FIXTURES, url.searchParams, {
-        searchFields: ['name', 'region'],
-        sortAccessors: {
-          name: (c) => c.name,
-          region: (c) => c.region,
-          status: (c) => c.status,
-          capacity: (c) => c.capacity,
-          activeConnections: (c) => c.activeConnections,
-          type: (c) => c.type,
-        },
-        // Default mirrors the backend ORDER BY name ASC.
-        defaultCompare: (a, b) => a.name.localeCompare(b.name),
-      }),
-    )
+    const summary = {
+      total: COVERAGE_FIXTURES.length,
+      byStatus: {
+        operational: COVERAGE_FIXTURES.filter((c) => c.status === 'operational').length,
+        maintenance: COVERAGE_FIXTURES.filter((c) => c.status === 'maintenance').length,
+        down: COVERAGE_FIXTURES.filter((c) => c.status === 'down').length,
+      },
+    }
+    const rows = filterByStatus(COVERAGE_FIXTURES, url.searchParams.get('status'))
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['name', 'region'],
+      sortAccessors: {
+        name: (c) => c.name,
+        region: (c) => c.region,
+        status: (c) => c.status,
+        capacity: (c) => c.capacity,
+        activeConnections: (c) => c.activeConnections,
+        type: (c) => c.type,
+      },
+      // Default mirrors the backend ORDER BY name ASC.
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
 
   // Usage / quota / FUP
