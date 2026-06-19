@@ -1,10 +1,18 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import {
+  CalendarClockIcon,
+  CheckCircle2Icon,
+  ClipboardListIcon,
+  ClockIcon,
+  DownloadIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { WorkOrderFilter } from '@/api/workorders'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -34,8 +42,6 @@ const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
   done: 'success',
   cancelled: 'neutral',
 }
-
-const STATUS_OPTIONS = ['all', 'scheduled', 'in_progress', 'done', 'cancelled'] as const
 
 const TYPE_OPTIONS = ['all', 'install', 'repair', 'dismantle'] as const
 
@@ -158,6 +164,28 @@ export function WorkOrdersListPage() {
   })
   const items = data?.items ?? []
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    {
+      value: 'scheduled',
+      label: statusLabel('scheduled'),
+      count: by?.scheduled,
+    },
+    {
+      value: 'in_progress',
+      label: statusLabel('in_progress'),
+      count: by?.in_progress,
+    },
+    { value: 'done', label: statusLabel('done'), count: by?.done },
+    {
+      value: 'cancelled',
+      label: statusLabel('cancelled'),
+      count: by?.cancelled,
+    },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -176,7 +204,63 @@ export function WorkOrdersListPage() {
       <PageHeader
         title="Work Order"
         description="Instalasi, gangguan, dan pencabutan oleh tim teknisi."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total work order"
+          value={summary?.total ?? 0}
+          hint="seluruh WO"
+          icon={ClipboardListIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Terjadwal"
+          value={by?.scheduled ?? 0}
+          hint="menunggu kunjungan"
+          icon={CalendarClockIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Dalam proses"
+          value={by?.in_progress ?? 0}
+          hint="sedang dikerjakan"
+          accent="amber"
+          icon={ClockIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Selesai"
+          value={by?.done ?? 0}
+          hint="WO tuntas"
+          icon={CheckCircle2Icon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status work order"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={items}
@@ -197,44 +281,18 @@ export function WorkOrdersListPage() {
           onSearchChange: table.onSearchChange,
         }}
         toolbar={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s === 'all' ? 'Semua status' : statusLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter jenis">
-                <SelectValue placeholder="Jenis" />
-              </SelectTrigger>
-              <SelectContent>
-                {TYPE_OPTIONS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t === 'all' ? 'Semua jenis' : statusLabel(t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter jenis">
+              <SelectValue placeholder="Jenis" />
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t === 'all' ? 'Semua jenis' : statusLabel(t)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         }
       />
 
