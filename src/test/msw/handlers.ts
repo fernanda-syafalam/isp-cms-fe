@@ -3687,11 +3687,20 @@ export const handlers = [
     // Full-set aggregate for the KPI cards: ignores q/sort/paging so the cards
     // stay correct under any table search.
     const summary = {
+      total: all.length,
       totalUsedGb,
       throttled: all.filter((u) => u.fupThrottled).length,
       avgUsedGb: all.length ? Math.round(totalUsedGb / all.length) : 0,
     }
-    const { items, total } = applyListQuery(all, url.searchParams, {
+    // FUP state filter: status=throttled|normal (maps to the fupThrottled flag).
+    const usageState = url.searchParams.get('status')
+    const stated =
+      usageState === 'throttled'
+        ? all.filter((u) => u.fupThrottled)
+        : usageState === 'normal'
+          ? all.filter((u) => !u.fupThrottled)
+          : all
+    const { items, total } = applyListQuery(stated, url.searchParams, {
       searchFields: ['customerName', 'planName'],
       sortAccessors: {
         customerName: (u) => u.customerName,

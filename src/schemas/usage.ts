@@ -17,6 +17,7 @@ export const UsageRecordSchema = z.object({
 // Full-set aggregate for the KPI cards. Computed server-side over every record
 // (ignores q/sort/paging) so the cards stay correct under any table search.
 export const UsageSummarySchema = z.object({
+  total: z.number().int().nonnegative(), // count of all subscribers in the period
   totalUsedGb: z.number().int().nonnegative(), // sum of usedGb over all records
   throttled: z.number().int().nonnegative(), // count of FUP-throttled subscribers
   avgUsedGb: z.number().int().nonnegative(), // mean usedGb per subscriber, rounded
