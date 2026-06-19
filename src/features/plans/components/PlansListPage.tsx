@@ -29,9 +29,13 @@ const STATUS_TONE: Record<PlanStatus, StatusTone> = {
   archived: 'neutral',
 }
 
+const fupLabel = (fupGb: number | undefined) => (fupGb ? `${formatNumber(fupGb)} GB` : 'Unlimited')
+
 const toCsvRow = (p: Plan) => ({
   Paket: p.name,
   Kecepatan: `${p.speedMbps} Mbps`,
+  Profil: p.rateLimitProfile ?? '',
+  FUP: fupLabel(p.fupGb),
   Harga: formatCurrency(p.priceMonthly),
   Status: statusLabel(p.status),
 })
@@ -52,8 +56,26 @@ const COLUMNS: ColumnDef<Plan>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Kecepatan" />,
     meta: { title: 'Kecepatan', align: 'right' },
     cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatNumber(row.original.speedMbps)} Mbps</span>
+      <div className="text-right">
+        <span className="font-mono tabular-nums">{formatNumber(row.original.speedMbps)} Mbps</span>
+        {row.original.rateLimitProfile ? (
+          <span className="block font-mono text-muted-foreground text-xs">
+            {row.original.rateLimitProfile}
+          </span>
+        ) : null}
+      </div>
     ),
+  },
+  {
+    accessorKey: 'fupGb',
+    header: 'FUP',
+    meta: { title: 'FUP', align: 'right' },
+    cell: ({ row }) =>
+      row.original.fupGb ? (
+        <span className="font-mono tabular-nums">{formatNumber(row.original.fupGb)} GB</span>
+      ) : (
+        <span className="text-muted-foreground">Unlimited</span>
+      ),
   },
   {
     accessorKey: 'priceMonthly',

@@ -38,6 +38,8 @@ export function EditPlanDialog({ plan, open, onOpenChange }: Props) {
       name: plan.name,
       speedMbps: plan.speedMbps,
       priceMonthly: plan.priceMonthly,
+      fupGb: plan.fupGb,
+      rateLimitProfile: plan.rateLimitProfile ?? '',
     },
   })
 
@@ -105,6 +107,52 @@ export function EditPlanDialog({ plan, open, onOpenChange }: Props) {
                       min={0}
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="fupGb"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kuota FUP (GB)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Kosongkan = unlimited"
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        const v = e.target.valueAsNumber
+                        field.onChange(Number.isNaN(v) ? undefined : v)
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="rateLimitProfile"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Profil rate-limit</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="mis. 20M/20M"
+                      autoComplete="off"
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
                       onBlur={field.onBlur}
                       name={field.name}
                       ref={field.ref}

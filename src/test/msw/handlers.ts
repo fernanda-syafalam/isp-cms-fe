@@ -58,13 +58,24 @@ const APP_USER_FIXTURES = Array.from({ length: 12 }, (_, i) => ({
 // ---------------------------------------------------------------------------
 // ISP module fixtures
 // ---------------------------------------------------------------------------
-const PLAN_FIXTURES = [
+type PlanFixture = {
+  id: string
+  name: string
+  speedMbps: number
+  priceMonthly: number
+  status: string
+  fupGb?: number
+  rateLimitProfile?: string
+}
+const PLAN_FIXTURES: PlanFixture[] = [
   {
     id: oid('bbbbbbbb', 1),
     name: 'Home 20',
     speedMbps: 20,
     priceMonthly: 200_000,
     status: 'active',
+    fupGb: 300,
+    rateLimitProfile: '20M/20M',
   },
   {
     id: oid('bbbbbbbb', 2),
@@ -72,6 +83,8 @@ const PLAN_FIXTURES = [
     speedMbps: 50,
     priceMonthly: 350_000,
     status: 'active',
+    fupGb: 750,
+    rateLimitProfile: '50M/50M',
   },
   {
     id: oid('bbbbbbbb', 3),
@@ -79,6 +92,8 @@ const PLAN_FIXTURES = [
     speedMbps: 100,
     priceMonthly: 600_000,
     status: 'active',
+    // No fupGb → unlimited fair-use.
+    rateLimitProfile: '100M/100M',
   },
   {
     id: oid('bbbbbbbb', 4),
@@ -86,6 +101,8 @@ const PLAN_FIXTURES = [
     speedMbps: 10,
     priceMonthly: 150_000,
     status: 'archived',
+    fupGb: 100,
+    rateLimitProfile: '10M/10M',
   },
 ]
 
@@ -1476,6 +1493,8 @@ export const handlers = [
       name: string
       speedMbps: number
       priceMonthly: number
+      fupGb?: number
+      rateLimitProfile?: string
     }
     const plan = { id: crypto.randomUUID(), ...body, status: 'active' }
     PLAN_FIXTURES.unshift(plan)
@@ -1493,10 +1512,14 @@ export const handlers = [
       name?: string
       speedMbps?: number
       priceMonthly?: number
+      fupGb?: number
+      rateLimitProfile?: string
     }
     if (body.name !== undefined) found.name = body.name
     if (body.speedMbps !== undefined) found.speedMbps = body.speedMbps
     if (body.priceMonthly !== undefined) found.priceMonthly = body.priceMonthly
+    if (body.fupGb !== undefined) found.fupGb = body.fupGb
+    if (body.rateLimitProfile !== undefined) found.rateLimitProfile = body.rateLimitProfile
     persistDb()
     return HttpResponse.json(found)
   }),
