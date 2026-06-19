@@ -1,10 +1,12 @@
-import { Link, Navigate } from '@tanstack/react-router'
+import { Link, Navigate, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import { CheckCircle2Icon, DownloadIcon, PowerOffIcon, StoreIcon, WalletIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { ResellerFilter } from '@/api/resellers'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -98,14 +100,25 @@ const COLUMNS: ColumnDef<Reseller>[] = [
   },
 ]
 
+const routeApi = getRouteApi('/_auth/resellers/')
+
 export function ResellersListPage() {
   const role = useEffectiveRole()
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportResellers = useExportResellers()
   const [isExporting, setIsExporting] = useState(false)
 
-  // Search/sort/paging come entirely from the table (no equality filter here).
+  // Status is a URL filter; changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
   const baseFilter: ResellerFilter = {
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -116,6 +129,14 @@ export function ResellersListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'active', label: statusLabel('active'), count: by?.active },
+    { value: 'inactive', label: statusLabel('inactive'), count: by?.inactive },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -141,7 +162,66 @@ export function ResellersListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reseller" description="Mitra loket/agen dan saldo komisinya." />
+      <PageHeader
+        title="Reseller"
+        description="Mitra loket/agen dan saldo komisinya."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total reseller"
+          value={summary?.total ?? 0}
+          hint="mitra terdaftar"
+          icon={StoreIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Aktif"
+          value={by?.active ?? 0}
+          hint="berjualan"
+          icon={CheckCircle2Icon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Nonaktif"
+          value={by?.inactive ?? 0}
+          hint="dinonaktifkan"
+          icon={PowerOffIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Total saldo"
+          value={summary?.totalBalance ?? 0}
+          format={formatCurrency}
+          hint="deposit komisi"
+          icon={WalletIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status reseller"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -160,18 +240,6 @@ export function ResellersListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
-        }
       />
     </div>
   )
