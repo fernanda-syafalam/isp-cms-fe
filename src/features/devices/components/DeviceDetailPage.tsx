@@ -3,10 +3,12 @@ import { ArrowLeftIcon, NetworkIcon, RotateCwIcon } from 'lucide-react'
 
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
+import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/cn'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { DeviceStatus } from '@/schemas/device'
@@ -25,6 +27,14 @@ function rxTone(dbm: number | null): StatusTone {
   if (dbm >= -25) return 'success'
   if (dbm >= -27) return 'warning'
   return 'danger'
+}
+
+const RX_TEXT_TONE: Record<StatusTone, string> = {
+  success: 'text-emerald-500',
+  warning: 'text-amber-500',
+  danger: 'text-red-500',
+  info: 'text-primary',
+  neutral: 'text-muted-foreground',
 }
 
 type Props = {
@@ -105,6 +115,35 @@ export function DeviceDetailPage({ deviceId }: Props) {
           </dl>
         </CardContent>
       </Card>
+
+      {device.signalTrend && device.signalTrend.length > 1 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tren redaman optik</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p
+                  className={cn(
+                    'font-bold font-mono text-2xl tabular-nums',
+                    RX_TEXT_TONE[rxTone(device.rxPower)],
+                  )}
+                >
+                  {device.rxPower} dBm
+                </p>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  12 pembacaan terakhir · sehat di atas −25 dBm, buruk di bawah −27 dBm
+                </p>
+              </div>
+              <Sparkline
+                data={device.signalTrend}
+                className={cn('h-12 w-40', RX_TEXT_TONE[rxTone(device.rxPower)])}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   )
 }

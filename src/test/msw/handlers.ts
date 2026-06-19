@@ -2690,11 +2690,21 @@ export const handlers = [
   }),
   http.get('*/api/devices/:id', ({ params }) => {
     const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
-    return found
-      ? HttpResponse.json(found)
-      : new HttpResponse(JSON.stringify({ message: 'Not found' }), {
-          status: 404,
-        })
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    // Synthesize 12 recent RX-power readings around the current value (last
+    // point = current) so the detail page can show an optical-health trend.
+    const base = found.rxPower
+    const signalTrend =
+      base == null
+        ? undefined
+        : Array.from({ length: 12 }, (_, i) =>
+            i === 11 ? base : Math.round((base + (Math.random() - 0.5) * 2) * 10) / 10,
+          )
+    return HttpResponse.json({ ...found, signalTrend })
   }),
   http.post('*/api/devices/:id/reboot', ({ params }) => {
     const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
