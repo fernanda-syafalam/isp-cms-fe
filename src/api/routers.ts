@@ -10,6 +10,7 @@ import {
 } from '@/schemas/router'
 
 export type RouterFilter = {
+  status?: string | undefined
   q?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
@@ -23,6 +24,7 @@ export const ROUTER_EXPORT_LIMIT = 200
 
 export async function listRouters(filter: RouterFilter = {}): Promise<RouterList> {
   const searchParams = new URLSearchParams()
+  if (filter.status) searchParams.set('status', filter.status)
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)

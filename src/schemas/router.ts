@@ -18,9 +18,20 @@ export const RouterSchema = z.object({
   lastSyncAt: z.iso.datetime(),
 })
 
+// Full-set counts over ALL routers (ignores the status filter) — drives the
+// KPI cards and the status filter tabs.
+export const RouterSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  byStatus: z.object({
+    online: z.number().int().nonnegative(),
+    offline: z.number().int().nonnegative(),
+  }),
+})
+
 export const RouterListSchema = z.object({
   items: z.array(RouterSchema),
   total: z.number().int().nonnegative(),
+  summary: RouterSummarySchema,
 })
 
 // Connect a new RouterOS device: API host/port + credentials.
