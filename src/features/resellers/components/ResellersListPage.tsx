@@ -22,6 +22,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Reseller, ResellerStatus } from '@/schemas/reseller'
 
 import { useExportResellers, useResellersList } from '../hooks/useResellers'
+import { ResellerDetailSheet } from './ResellerDetailSheet'
 import { ResellerRowActions } from './ResellerRowActions'
 
 const STATUS_TONE: Record<ResellerStatus, StatusTone> = {
@@ -110,6 +111,7 @@ export function ResellersListPage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportResellers = useExportResellers()
   const [isExporting, setIsExporting] = useState(false)
+  const [openReseller, setOpenReseller] = useState<Reseller | null>(null)
 
   // Status is a URL filter; changing it rewinds to page 1.
   const setStatus = (value: string) => {
@@ -228,6 +230,7 @@ export function ResellersListPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={() => refetch()}
+        onRowClick={(r) => setOpenReseller(r)}
         emptyMessage="Belum ada reseller."
         searchPlaceholder="Cari reseller…"
         server={{
@@ -239,6 +242,14 @@ export function ResellersListPage() {
           onPaginationChange: table.onPaginationChange,
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
+        }}
+      />
+
+      <ResellerDetailSheet
+        reseller={openReseller}
+        open={openReseller !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenReseller(null)
         }}
       />
     </div>
