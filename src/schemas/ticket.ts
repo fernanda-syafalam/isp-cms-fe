@@ -18,9 +18,22 @@ export const TicketSchema = z.object({
   createdAt: z.iso.datetime(),
 })
 
+// Full-set counts over ALL tickets (ignores the status filter) — drives the
+// KPI cards and the status filter tabs.
+export const TicketSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  byStatus: z.object({
+    open: z.number().int().nonnegative(),
+    in_progress: z.number().int().nonnegative(),
+    resolved: z.number().int().nonnegative(),
+    breached: z.number().int().nonnegative(),
+  }),
+})
+
 export const TicketListSchema = z.object({
   items: z.array(TicketSchema),
   total: z.number().int().nonnegative(),
+  summary: TicketSummarySchema,
 })
 
 export const CreateTicketSchema = z.object({
@@ -62,6 +75,7 @@ export type TicketEvent = z.infer<typeof TicketEventSchema>
 export type TicketEventList = z.infer<typeof TicketEventListSchema>
 export type AddCommentInput = z.infer<typeof AddCommentSchema>
 export type Ticket = z.infer<typeof TicketSchema>
+export type TicketSummary = z.infer<typeof TicketSummarySchema>
 export type TicketList = z.infer<typeof TicketListSchema>
 export type CreateTicketInput = z.infer<typeof CreateTicketSchema>
 export type UpdateTicketInput = z.infer<typeof UpdateTicketSchema>
