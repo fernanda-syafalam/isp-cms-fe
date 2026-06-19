@@ -53,6 +53,8 @@ export function CustomerPortalPage() {
   const { customer, invoices, payments, tickets } = data
   const unpaid = invoices.filter((i) => i.status === 'pending' || i.status === 'overdue')
   const outstanding = unpaid.reduce((sum, i) => sum + invoiceTotal(i), 0)
+  // Oldest unpaid invoice → the one to settle first (drives the prominent CTA).
+  const oldestUnpaid = [...unpaid].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
 
   return (
     <div className="space-y-6">
@@ -84,6 +86,10 @@ export function CustomerPortalPage() {
           icon={WalletIcon}
         />
       </div>
+
+      {oldestUnpaid ? (
+        <PayNowCard invoice={oldestUnpaid} outstanding={outstanding} count={unpaid.length} />
+      ) : null}
 
       {customer.status === 'isolir' ? (
         <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm">
@@ -162,6 +168,38 @@ export function CustomerPortalPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// Prominent "pay now" card — the primary action when there is a balance. Pays
+// the oldest unpaid invoice via the shared checkout dialog.
+function PayNowCard({
+  invoice,
+  outstanding,
+  count,
+}: {
+  invoice: Invoice
+  outstanding: number
+  count: number
+}) {
+  const [payOpen, setPayOpen] = useState(false)
+  return (
+    <Card className="border-primary/30 bg-primary/5">
+      <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
+        <div>
+          <p className="text-muted-foreground text-sm">Total tagihan belum dibayar</p>
+          <p className="font-bold font-mono text-2xl tabular-nums">{formatCurrency(outstanding)}</p>
+          <p className="mt-0.5 text-muted-foreground text-xs">
+            {count} tagihan · jatuh tempo paling awal {formatDate(invoice.dueDate)}
+          </p>
+        </div>
+        <Button onClick={() => setPayOpen(true)}>
+          <CreditCardIcon className="size-4" />
+          Bayar sekarang
+        </Button>
+        <CheckoutDialog invoice={invoice} open={payOpen} onOpenChange={setPayOpen} />
+      </CardContent>
+    </Card>
   )
 }
 
