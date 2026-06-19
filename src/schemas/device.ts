@@ -16,6 +16,9 @@ export const DeviceSchema = z.object({
   areaName: z.string(),
   lastSeenAt: z.iso.datetime(),
   topologyNodeId: z.string().nullable(), // matching topology node (OLT), if any
+  // Recent RX-power readings (dBm), newest last — populated on the detail
+  // endpoint to power the optical-health trend sparkline. Omitted on the list.
+  signalTrend: z.array(z.number()).optional(),
 })
 
 // Full-set counts over ALL devices (ignores type/status filters) — drives the

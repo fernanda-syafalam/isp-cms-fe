@@ -33,6 +33,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Device, DeviceStatus } from '@/schemas/device'
 
 import { useDevicesList, useExportDevices } from '../hooks/useDevices'
+import { DeviceDetailSheet } from './DeviceDetailSheet'
 import { DeviceRowActions } from './DeviceRowActions'
 
 const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
@@ -151,6 +152,7 @@ export function DevicesListPage() {
   const table = useTableQuery({ pageSize: 20 })
   const exportDevices = useExportDevices()
   const [isExporting, setIsExporting] = useState(false)
+  const [openDeviceId, setOpenDeviceId] = useState<string | null>(null)
 
   // Changing a filter resets the page so the user is never on an out-of-range
   // page. Status lives in the URL (deep-link); type is a local control.
@@ -268,6 +270,7 @@ export function DevicesListPage() {
         data={items}
         isLoading={isLoading}
         isError={isError}
+        onRowClick={(d) => setOpenDeviceId(d.id)}
         emptyMessage="Belum ada perangkat."
         searchPlaceholder="Cari perangkat / IP…"
         server={{
@@ -294,6 +297,14 @@ export function DevicesListPage() {
             </SelectContent>
           </Select>
         }
+      />
+
+      <DeviceDetailSheet
+        deviceId={openDeviceId}
+        open={openDeviceId !== null}
+        onOpenChange={(open) => {
+          if (!open) setOpenDeviceId(null)
+        }}
       />
     </div>
   )
