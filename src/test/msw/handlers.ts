@@ -3278,6 +3278,7 @@ export const handlers = [
       total: VOUCHER_FIXTURES.length,
       unused: VOUCHER_FIXTURES.filter((v) => v.status === 'unused').length,
       used: used.length,
+      expired: VOUCHER_FIXTURES.filter((v) => v.status === 'expired').length,
       revenue: used.reduce((sum, v) => sum + v.priceIdr, 0),
     }
     const filtered = filterByStatus(VOUCHER_FIXTURES, url.searchParams.get('status'))
