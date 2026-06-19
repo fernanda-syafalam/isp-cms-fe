@@ -44,9 +44,25 @@ export const CustomerSchema = z.object({
   joinedAt: z.iso.datetime(),
 })
 
+// Full-set counts for the active branch scope (ignores the status filter) so
+// the KPI cards and status tabs stay stable as the user switches tabs.
+export const CustomerSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  outstanding: z.number().int().nonnegative(), // sum of piutang across the scope
+  byStatus: z.object({
+    prospek: z.number().int().nonnegative(),
+    instalasi: z.number().int().nonnegative(),
+    aktif: z.number().int().nonnegative(),
+    isolir: z.number().int().nonnegative(),
+    berhenti: z.number().int().nonnegative(),
+  }),
+})
+
 export const CustomerListSchema = z.object({
   items: z.array(CustomerSchema),
+  // Count AFTER status+area filtering, BEFORE paging — drives the page count.
   total: z.number().int().nonnegative(),
+  summary: CustomerSummarySchema,
 })
 
 // GenieACS WiFi change (TR-069 SetParameterValues) for a subscriber's ONU.
@@ -83,6 +99,7 @@ export type CustomerStatus = z.infer<typeof CustomerStatusSchema>
 export type ConnectionType = z.infer<typeof ConnectionTypeSchema>
 export type Connection = z.infer<typeof ConnectionSchema>
 export type Customer = z.infer<typeof CustomerSchema>
+export type CustomerSummary = z.infer<typeof CustomerSummarySchema>
 export type CustomerList = z.infer<typeof CustomerListSchema>
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>
 export type SetWifiInput = z.infer<typeof SetWifiSchema>

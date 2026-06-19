@@ -1487,14 +1487,29 @@ export const handlers = [
   // Customers
   http.get('*/api/customers', ({ request }) => {
     const url = new URL(request.url)
-    let items = filterByStatus(CUSTOMER_FIXTURES, url.searchParams.get('status'))
-    // Branch scope: the client resolves its active branch to the service areas it
-    // covers and sends them as repeated `area` params. Unassigned customers
-    // (areaName null) stay visible in every scope so ops never lose track of them.
+    // Branch scope first: the client resolves its active branch to the service
+    // areas it covers and sends them as repeated `area` params. Unassigned
+    // customers (areaName null) stay visible in every scope so ops never lose
+    // track of them. The summary + status tabs are computed over this scope but
+    // BEFORE the status filter, so their counts stay stable across tab switches.
     const areas = url.searchParams.getAll('area')
-    if (areas.length > 0) {
-      items = items.filter((c) => c.areaName === null || areas.includes(c.areaName))
+    const scoped =
+      areas.length > 0
+        ? CUSTOMER_FIXTURES.filter((c) => c.areaName === null || areas.includes(c.areaName))
+        : CUSTOMER_FIXTURES
+    const countBy = (s: string) => scoped.filter((c) => c.status === s).length
+    const summary = {
+      total: scoped.length,
+      outstanding: scoped.reduce((sum, c) => sum + c.outstanding, 0),
+      byStatus: {
+        prospek: countBy('prospek'),
+        instalasi: countBy('instalasi'),
+        aktif: countBy('aktif'),
+        isolir: countBy('isolir'),
+        berhenti: countBy('berhenti'),
+      },
     }
+    const items = filterByStatus(scoped, url.searchParams.get('status'))
     const result = applyListQuery(items, url.searchParams, {
       searchFields: ['fullName', 'customerNo', 'phone'],
       sortAccessors: {
@@ -1507,7 +1522,7 @@ export const handlers = [
       // No sort param ⇒ preserve fixture order (mirrors the BE default ORDER BY).
       defaultCompare: () => 0,
     })
-    return HttpResponse.json(result)
+    return HttpResponse.json({ ...result, summary })
   }),
   http.get('*/api/customers/:id', ({ params }) => {
     const found = CUSTOMER_FIXTURES.find((c) => c.id === params.id)
