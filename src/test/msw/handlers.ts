@@ -3449,22 +3449,32 @@ export const handlers = [
   // Tickets
   http.get('*/api/tickets', ({ request }) => {
     const url = new URL(request.url)
+    // Full-set status counts (before the status filter) — stable per tab.
+    const countTicket = (s: string) => TICKET_FIXTURES.filter((t) => t.status === s).length
+    const summary = {
+      total: TICKET_FIXTURES.length,
+      byStatus: {
+        open: countTicket('open'),
+        in_progress: countTicket('in_progress'),
+        resolved: countTicket('resolved'),
+        breached: countTicket('breached'),
+      },
+    }
     // Equality filter first (status), then the shared search/sort/page engine
     // mirrors the backend list contract.
     const rows = filterByStatus(TICKET_FIXTURES, url.searchParams.get('status'))
-    return HttpResponse.json(
-      applyListQuery(rows, url.searchParams, {
-        searchFields: ['code', 'subject', 'customerName'],
-        sortAccessors: {
-          code: (t) => t.code,
-          status: (t) => t.status,
-          priority: (t) => t.priority,
-          slaDueAt: (t) => t.slaDueAt,
-          createdAt: (t) => t.createdAt,
-        },
-        defaultCompare: (a, b) => b.createdAt.localeCompare(a.createdAt),
-      }),
-    )
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['code', 'subject', 'customerName'],
+      sortAccessors: {
+        code: (t) => t.code,
+        status: (t) => t.status,
+        priority: (t) => t.priority,
+        slaDueAt: (t) => t.slaDueAt,
+        createdAt: (t) => t.createdAt,
+      },
+      defaultCompare: (a, b) => b.createdAt.localeCompare(a.createdAt),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   http.post('*/api/tickets', async ({ request }) => {
     const body = (await request.json()) as {

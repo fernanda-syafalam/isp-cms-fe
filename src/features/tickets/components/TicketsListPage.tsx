@@ -1,22 +1,24 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CheckCircle2Icon, DownloadIcon } from 'lucide-react'
+import {
+  CheckCircle2Icon,
+  ClockIcon,
+  DownloadIcon,
+  InboxIcon,
+  LifeBuoyIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { TicketFilter } from '@/api/tickets'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
@@ -44,8 +46,6 @@ const PRIORITY_TONE: Record<TicketPriority, StatusTone> = {
   high: 'warning',
   urgent: 'danger',
 }
-
-const STATUS_OPTIONS = ['all', 'open', 'in_progress', 'resolved', 'breached'] as const
 
 const toCsvRow = (t: Ticket) => ({
   Kode: t.code,
@@ -175,6 +175,20 @@ export function TicketsListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'open', label: statusLabel('open'), count: by?.open },
+    {
+      value: 'in_progress',
+      label: statusLabel('in_progress'),
+      count: by?.in_progress,
+    },
+    { value: 'resolved', label: statusLabel('resolved'), count: by?.resolved },
+    { value: 'breached', label: statusLabel('breached'), count: by?.breached },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -190,7 +204,70 @@ export function TicketsListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tiket Dukungan" description="Keluhan pelanggan dan pelacakan SLA." />
+      <PageHeader
+        title="Tiket Dukungan"
+        description="Keluhan pelanggan dan pelacakan SLA."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!total || isExporting}
+              onClick={handleExport}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Ekspor</span>
+            </Button>
+            <CreateTicketDialog />
+          </>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total tiket"
+          value={summary?.total ?? 0}
+          hint="seluruh tiket"
+          icon={LifeBuoyIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Terbuka"
+          value={by?.open ?? 0}
+          hint="menunggu penanganan"
+          icon={InboxIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Dalam proses"
+          value={by?.in_progress ?? 0}
+          hint="sedang dikerjakan"
+          accent="amber"
+          icon={ClockIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="SLA terlampaui"
+          value={by?.breached ?? 0}
+          hint="lewat batas SLA"
+          hintTone="negative"
+          icon={TriangleAlertIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status tiket"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={data?.items}
@@ -210,35 +287,6 @@ export function TicketsListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        toolbar={
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'all' ? 'Semua status' : statusLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-        actions={
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
-              disabled={!total || isExporting}
-              onClick={handleExport}
-            >
-              <DownloadIcon className="size-4" />
-              <span className="hidden sm:inline">Ekspor</span>
-            </Button>
-            <CreateTicketDialog />
-          </>
-        }
         enableSelection
         bulkActions={(selected) => {
           const open = selected.filter((t) => t.status === 'open' || t.status === 'in_progress')
