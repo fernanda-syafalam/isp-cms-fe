@@ -1,8 +1,9 @@
-import { Link } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ActivitySquareIcon, BellIcon, ServerIcon, TicketPlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -34,9 +35,15 @@ const METRIC_LABEL: Record<MetricStatus, string> = {
   down: 'Down',
 }
 
+const routeApi = getRouteApi('/_auth/network/monitoring')
+
 export function MonitoringPage() {
+  const { status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const metrics = useDeviceMetrics({
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -45,6 +52,12 @@ export function MonitoringPage() {
   })
   const alerts = useAlerts()
   const canManage = useCan('network.manage')
+
+  // Status is a URL filter on the device table; changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
 
   // Fleet-health aggregate is a full-set server value (ignores q/sort/paging),
   // so the KPI cards + overall badge stay correct under any table filter.
@@ -63,6 +76,17 @@ export function MonitoringPage() {
       : summary.degraded > 0
         ? { tone: 'warning' as StatusTone, label: 'Menurun' }
         : { tone: 'success' as StatusTone, label: 'Operasional' }
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'up', label: METRIC_LABEL.up, count: summary?.up },
+    {
+      value: 'degraded',
+      label: METRIC_LABEL.degraded,
+      count: summary?.degraded,
+    },
+    { value: 'down', label: METRIC_LABEL.down, count: summary?.down },
+  ]
 
   const columns = useMemo<ColumnDef<DeviceMetric>[]>(
     () => [
@@ -172,6 +196,13 @@ export function MonitoringPage() {
           <AlertsList alerts={alerts.data?.items} canManage={canManage} />
         </CardContent>
       </Card>
+
+      <FilterTabs
+        ariaLabel="Filter status perangkat"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
 
       <DataTable
         columns={columns}
