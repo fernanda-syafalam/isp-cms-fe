@@ -8,6 +8,7 @@ import {
 } from '@/schemas/payment'
 
 export type PaymentFilter = {
+  method?: string | undefined
   q?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
@@ -21,6 +22,7 @@ export const PAYMENT_EXPORT_LIMIT = 200
 
 export async function listPayments(filter: PaymentFilter = {}): Promise<PaymentList> {
   const searchParams = new URLSearchParams()
+  if (filter.method) searchParams.set('method', filter.method)
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
