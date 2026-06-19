@@ -8,6 +8,7 @@ import {
 } from '@/schemas/slaCredit'
 
 export type SlaCreditFilter = {
+  status?: string | undefined
   q?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
@@ -17,6 +18,7 @@ export type SlaCreditFilter = {
 
 export async function listSlaCredits(filter: SlaCreditFilter = {}): Promise<SlaCreditList> {
   const searchParams = new URLSearchParams()
+  if (filter.status) searchParams.set('status', filter.status)
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)

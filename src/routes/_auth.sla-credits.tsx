@@ -5,10 +5,12 @@ import { createFileRoute } from '@tanstack/react-router'
 function prefillSearch(search: Record<string, unknown>): {
   customer?: string
   ticket?: string
+  status?: string
 } {
-  const out: { customer?: string; ticket?: string } = {}
+  const out: { customer?: string; ticket?: string; status?: string } = {}
   if (typeof search.customer === 'string') out.customer = search.customer
   if (typeof search.ticket === 'string') out.ticket = search.ticket
+  if (typeof search.status === 'string') out.status = search.status
   return out
 }
 

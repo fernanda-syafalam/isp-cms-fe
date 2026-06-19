@@ -20,9 +20,11 @@ export const SlaCreditSchema = z.object({
 // Full-set aggregate for the KPI cards. Computed server-side over every credit
 // (ignores q/sort/paging) so the cards stay correct under any table filter.
 export const SlaCreditSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
   activeAmount: z.number().int().nonnegative(), // sum of amount over non-void credits
   pending: z.number().int().nonnegative(), // count of pending credits
   applied: z.number().int().nonnegative(), // count of applied credits
+  void: z.number().int().nonnegative(), // count of voided credits
 })
 
 export const SlaCreditListSchema = z.object({

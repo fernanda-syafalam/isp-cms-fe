@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CheckIcon, HandCoinsIcon, PlusIcon, WalletIcon, XIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -37,11 +38,20 @@ export function SlaCreditsPage() {
   const apply = useApplySlaCredit()
   const voidCredit = useVoidSlaCredit()
   // Deep-link prefill from a breached ticket: open the issue dialog pre-filled.
-  const { customer, ticket } = routeApi.useSearch()
+  const { customer, ticket, status: statusParam } = routeApi.useSearch()
+  const status = statusParam ?? 'all'
+  const navigate = routeApi.useNavigate()
   const [addOpen, setAddOpen] = useState(Boolean(customer))
   const table = useTableQuery({ pageSize: 20 })
 
+  // Status is a URL filter; changing it rewinds to page 1.
+  const setStatus = (value: string) => {
+    navigate({ search: value === 'all' ? {} : { status: value } })
+    table.resetPage()
+  }
+
   const { data, isLoading, isError, refetch } = useSlaCredits({
+    ...(status === 'all' ? {} : { status }),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -52,6 +62,21 @@ export function SlaCreditsPage() {
   // Full-set server aggregate (ignores q/sort/paging), so the KPI cards stay
   // correct under any table search.
   const summary = data?.summary
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    {
+      value: 'pending',
+      label: statusLabel('pending'),
+      count: summary?.pending,
+    },
+    {
+      value: 'applied',
+      label: statusLabel('applied'),
+      count: summary?.applied,
+    },
+    { value: 'void', label: statusLabel('void'), count: summary?.void },
+  ]
 
   const columns = useMemo<ColumnDef<SlaCredit>[]>(
     () => [
@@ -199,6 +224,13 @@ export function SlaCreditsPage() {
           isError={isError}
         />
       </div>
+
+      <FilterTabs
+        ariaLabel="Filter status kredit SLA"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
 
       <DataTable
         columns={columns}
