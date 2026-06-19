@@ -9,9 +9,9 @@ export function useDashboardSummary() {
   })
 }
 
-export function useReportsSummary() {
+export function useReportsSummary(months?: number) {
   return useQuery({
-    queryKey: ['analytics', 'reports'] as const,
-    queryFn: getReportsSummary,
+    queryKey: ['analytics', 'reports', months ?? 'all'] as const,
+    queryFn: () => getReportsSummary(months),
   })
 }

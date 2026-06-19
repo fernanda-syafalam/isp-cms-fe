@@ -9,7 +9,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useState } from 'react'
 
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { RevenueChart } from '@/components/shared/revenue-chart'
@@ -20,8 +22,15 @@ import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 
 import { useCustomerComposition } from '../hooks/useCustomerComposition'
 
+const PERIOD_TABS: FilterTabItem[] = [
+  { value: '3', label: '3 bulan' },
+  { value: '6', label: '6 bulan' },
+  { value: '12', label: '12 bulan' },
+]
+
 export function ReportsPage() {
-  const { data: reports, isError, isLoading: reportsLoading } = useReportsSummary()
+  const [months, setMonths] = useState('6')
+  const { data: reports, isError, isLoading: reportsLoading } = useReportsSummary(Number(months))
   const { data: dashboard, isLoading: dashboardLoading } = useDashboardSummary()
   const { data: composition } = useCustomerComposition()
 
@@ -31,7 +40,18 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Laporan" description="Analitik pendapatan, pertumbuhan, dan pelanggan." />
+      <PageHeader
+        title="Laporan"
+        description="Analitik pendapatan, pertumbuhan, dan pelanggan."
+        actions={
+          <FilterTabs
+            ariaLabel="Rentang periode laporan"
+            value={months}
+            onValueChange={setMonths}
+            items={PERIOD_TABS}
+          />
+        }
+      />
 
       {isError ? (
         <p className="text-destructive" role="alert">

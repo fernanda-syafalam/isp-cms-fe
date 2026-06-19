@@ -11,7 +11,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   return DashboardSummarySchema.parse(json)
 }
 
-export async function getReportsSummary(): Promise<ReportsSummary> {
-  const json = await api.get('analytics/reports').json()
+// `months` slices the revenue/movement trend to the last N months (3/6/12).
+export async function getReportsSummary(months?: number): Promise<ReportsSummary> {
+  const searchParams = months ? { months: String(months) } : undefined
+  const json = await api.get('analytics/reports', { searchParams }).json()
   return ReportsSummarySchema.parse(json)
 }
