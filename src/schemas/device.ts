@@ -18,9 +18,21 @@ export const DeviceSchema = z.object({
   topologyNodeId: z.string().nullable(), // matching topology node (OLT), if any
 })
 
+// Full-set counts over ALL devices (ignores type/status filters) — drives the
+// KPI cards and the status filter tabs.
+export const DeviceSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  byStatus: z.object({
+    online: z.number().int().nonnegative(),
+    degraded: z.number().int().nonnegative(),
+    offline: z.number().int().nonnegative(),
+  }),
+})
+
 export const DeviceListSchema = z.object({
   items: z.array(DeviceSchema),
   total: z.number().int().nonnegative(),
+  summary: DeviceSummarySchema,
 })
 
 export const UpdateDeviceSchema = z.object({
@@ -29,6 +41,7 @@ export const UpdateDeviceSchema = z.object({
   areaName: z.string().min(1, 'Area wajib diisi').max(120).optional(),
 })
 
+export type DeviceSummary = z.infer<typeof DeviceSummarySchema>
 export type DeviceType = z.infer<typeof DeviceTypeSchema>
 export type DeviceStatus = z.infer<typeof DeviceStatusSchema>
 export type Device = z.infer<typeof DeviceSchema>

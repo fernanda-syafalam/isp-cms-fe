@@ -2660,25 +2660,33 @@ export const handlers = [
   // Devices
   http.get('*/api/devices', ({ request }) => {
     const url = new URL(request.url)
+    // Full-set status counts (before type/status filters) — stable per tab.
+    const summary = {
+      total: DEVICE_FIXTURES.length,
+      byStatus: {
+        online: DEVICE_FIXTURES.filter((d) => d.status === 'online').length,
+        degraded: DEVICE_FIXTURES.filter((d) => d.status === 'degraded').length,
+        offline: DEVICE_FIXTURES.filter((d) => d.status === 'offline').length,
+      },
+    }
     // Equality filters first (type, status), then the shared search/sort/page
     // engine mirrors the backend list contract.
     let rows = DEVICE_FIXTURES
     const type = url.searchParams.get('type')
     if (type) rows = rows.filter((d) => d.type === type)
     rows = filterByStatus(rows, url.searchParams.get('status'))
-    return HttpResponse.json(
-      applyListQuery(rows, url.searchParams, {
-        searchFields: ['name', 'ipAddress', 'areaName'],
-        sortAccessors: {
-          name: (d) => d.name,
-          status: (d) => d.status,
-          rxPower: (d) => d.rxPower,
-          uptimeHours: (d) => d.uptimeHours,
-          lastSeenAt: (d) => d.lastSeenAt,
-        },
-        defaultCompare: (a, b) => a.name.localeCompare(b.name),
-      }),
-    )
+    const result = applyListQuery(rows, url.searchParams, {
+      searchFields: ['name', 'ipAddress', 'areaName'],
+      sortAccessors: {
+        name: (d) => d.name,
+        status: (d) => d.status,
+        rxPower: (d) => d.rxPower,
+        uptimeHours: (d) => d.uptimeHours,
+        lastSeenAt: (d) => d.lastSeenAt,
+      },
+      defaultCompare: (a, b) => a.name.localeCompare(b.name),
+    })
+    return HttpResponse.json({ ...result, summary })
   }),
   http.get('*/api/devices/:id', ({ params }) => {
     const found = DEVICE_FIXTURES.find((d) => d.id === params.id)
