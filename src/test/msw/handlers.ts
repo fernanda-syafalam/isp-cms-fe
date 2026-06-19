@@ -2196,11 +2196,18 @@ export const handlers = [
     const grandTotal = (i: (typeof INVOICE_FIXTURES)[number]) => i.amount + i.lateFee + i.taxAmount
     const unpaid = INVOICE_FIXTURES.filter((i) => i.status === 'pending' || i.status === 'overdue')
     const overdueList = INVOICE_FIXTURES.filter((i) => i.status === 'overdue')
+    const countStatus = (s: string) => INVOICE_FIXTURES.filter((i) => i.status === s).length
     const summary = {
       outstanding: unpaid.reduce((sum, i) => sum + grandTotal(i), 0),
       overdue: overdueList.reduce((sum, i) => sum + grandTotal(i), 0),
       unpaidCount: unpaid.length,
       total: INVOICE_FIXTURES.length,
+      byStatus: {
+        paid: countStatus('paid'),
+        pending: countStatus('pending'),
+        overdue: countStatus('overdue'),
+        draft: countStatus('draft'),
+      },
     }
     const filtered = filterByStatus(INVOICE_FIXTURES, url.searchParams.get('status'))
     const { items, total } = applyListQuery(filtered, url.searchParams, {
