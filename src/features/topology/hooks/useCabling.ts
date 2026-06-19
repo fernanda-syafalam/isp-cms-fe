@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  createCable,
   createSplice,
   deleteSplice,
   installCustomerDrop,
@@ -14,7 +15,7 @@ import {
   updateCableRoute,
 } from '@/api/cabling'
 import { getErrorMessage } from '@/lib/errors'
-import type { CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
+import type { CreateCableInput, CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
 import type { CreateSpliceInput } from '@/schemas/closure'
 import type { NetworkNode } from '@/schemas/topology'
 
@@ -92,6 +93,20 @@ export function useUpdateCableRoute() {
       updateCableRoute(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cabling'] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Record a new physical cable run. Invalidates cabling so the map's physical
+// layer (CableLayer) and the cable list refresh.
+export function useCreateCable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateCableInput) => createCable(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      toast.success('Kabel ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

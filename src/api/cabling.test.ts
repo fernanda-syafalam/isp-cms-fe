@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { installCustomerDrop, listCables, listSplitters, updateCableRoute } from './cabling'
+import {
+  createCable,
+  installCustomerDrop,
+  listCables,
+  listSplitters,
+  updateCableRoute,
+} from './cabling'
 import { listCustomers } from './customers'
 import { createNode, deleteNode, listTopology, updateNode } from './topology'
 
@@ -183,5 +189,47 @@ describe('cable route update', () => {
 
     const persisted = (await listCables()).items.find((c) => c.id === cable.id)
     expect(persisted?.route).toHaveLength(3)
+  })
+})
+
+describe('cable create', () => {
+  it('records a new cable and keeps the straight-line length for an empty route', async () => {
+    const before = (await listCables()).items.length
+    const cable = await createCable({
+      kind: 'distribution',
+      spec: 'TEST 12F loose-tube',
+      fiberCount: 12,
+      tubeCount: 1,
+      fromNodeId: 'node-a',
+      toNodeId: 'node-b',
+      route: [],
+      lengthM: 250,
+      status: 'planned',
+      installedAt: null,
+    })
+
+    expect(cable.id).toBeTruthy()
+    expect(cable.kind).toBe('distribution')
+    expect(cable.lengthM).toBe(250)
+    expect((await listCables()).items.length).toBe(before + 1)
+  })
+
+  it('recomputes lengthM from a surveyed route polyline', async () => {
+    const cable = await createCable({
+      kind: 'drop',
+      spec: 'TEST 2F drop',
+      fiberCount: 2,
+      tubeCount: 1,
+      fromNodeId: 'node-a',
+      toNodeId: 'node-c',
+      route: [
+        { lat: -6.55, lng: 110.68 },
+        { lat: -6.56, lng: 110.69 },
+      ],
+      lengthM: 0,
+      status: 'planned',
+      installedAt: null,
+    })
+    expect(cable.lengthM).toBeGreaterThan(0)
   })
 })
