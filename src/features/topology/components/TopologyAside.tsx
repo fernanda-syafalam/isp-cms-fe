@@ -12,6 +12,7 @@ import type { OdpCapacity } from '../lib/graph'
 import type { ProbableFault } from '../lib/faults'
 import { useSplitters } from '../hooks/useCabling'
 import { CapacityPanel } from './CapacityPanel'
+import { CircuitPanel } from './CircuitPanel'
 import { ClosureDetail } from './ClosureDetail'
 import { DropRouteControls } from './DropRouteControls'
 import { FaultDiagnosis } from './FaultDiagnosis'
@@ -79,6 +80,9 @@ export function TopologyAside({
     selected && (selected.type === 'odc' || selected.type === 'odp') ? (
       <ClosureDetail nodeId={selected.id} canManage={canManage} />
     ) : null
+  // A selected subscriber's optical circuit (OLT port + ONU + drop strand).
+  const circuitCard =
+    selected && selected.type === 'customer' ? <CircuitPanel node={selected} /> : null
   // Drop-route editor for a selected customer in edit mode (drag handles live on
   // the map; add-bend/straighten here).
   const routeControls =
@@ -122,6 +126,7 @@ export function TopologyAside({
                 {routeControls ? <div className="px-4">{routeControls}</div> : null}
                 {splitterCard}
                 {closureCard}
+                {circuitCard}
                 <NodeHistory nodeId={selected.id} />
               </div>
             ) : null}
@@ -155,6 +160,7 @@ export function TopologyAside({
       {routeControls}
       {selected ? splitterCard : null}
       {selected ? closureCard : null}
+      {selected ? circuitCard : null}
       {selected ? <NodeHistory nodeId={selected.id} /> : null}
       <FiberReference />
     </>
