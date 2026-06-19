@@ -110,7 +110,7 @@ export function ResellersListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useResellersList({
+  const { data, isLoading, isError, refetch } = useResellersList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -147,6 +147,7 @@ export function ResellersListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="Belum ada reseller."
         searchPlaceholder="Cari reseller…"
         server={{

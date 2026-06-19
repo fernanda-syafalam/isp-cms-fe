@@ -167,7 +167,7 @@ export function TicketsListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useTicketsList({
+  const { data, isLoading, isError, refetch } = useTicketsList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -194,6 +194,7 @@ export function TicketsListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage="Belum ada tiket."
         searchPlaceholder="Cari tiket…"
         server={{

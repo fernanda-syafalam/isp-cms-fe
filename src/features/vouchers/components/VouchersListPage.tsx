@@ -130,7 +130,7 @@ export function VouchersListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError } = useVouchersList({
+  const { data, isLoading, isError, refetch } = useVouchersList({
     ...baseFilter,
     limit: table.params.limit,
     offset: table.params.offset,
@@ -205,6 +205,7 @@ export function VouchersListPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage={
           table.search ? `Tidak ada voucher cocok dengan "${table.search}".` : 'Belum ada voucher.'
         }

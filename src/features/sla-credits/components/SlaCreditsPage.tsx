@@ -41,7 +41,7 @@ export function SlaCreditsPage() {
   const [addOpen, setAddOpen] = useState(Boolean(customer))
   const table = useTableQuery({ pageSize: 20 })
 
-  const { data, isLoading, isError } = useSlaCredits({
+  const { data, isLoading, isError, refetch } = useSlaCredits({
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -205,6 +205,7 @@ export function SlaCreditsPage() {
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
+        onRetry={() => refetch()}
         emptyMessage={
           table.search
             ? `Tidak ada kredit SLA cocok dengan "${table.search}".`
