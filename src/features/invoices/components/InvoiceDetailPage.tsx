@@ -3,6 +3,7 @@ import { ArrowLeftIcon, BellRingIcon, CreditCardIcon, PrinterIcon, WalletIcon } 
 import { useState } from 'react'
 
 import { CopyButton } from '@/components/shared/copy-button'
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,7 @@ type Props = {
 }
 
 export function InvoiceDetailPage({ invoiceId }: Props) {
-  const { data: invoice, isLoading, isError } = useInvoice(invoiceId)
+  const { data: invoice, isLoading, isError, refetch } = useInvoice(invoiceId)
 
   if (isLoading) {
     return (
@@ -53,9 +54,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Tagihan tidak ditemukan.
-        </p>
+        <ErrorState title="Tagihan tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }

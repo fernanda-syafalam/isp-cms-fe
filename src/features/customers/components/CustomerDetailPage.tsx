@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 
 import { CopyButton } from '@/components/shared/copy-button'
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { useCan } from '@/features/auth'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
@@ -75,7 +76,7 @@ type Props = {
 }
 
 export function CustomerDetailPage({ customerId }: Props) {
-  const { data: customer, isLoading, isError } = useCustomer(customerId)
+  const { data: customer, isLoading, isError, refetch } = useCustomer(customerId)
   const { data: invoices } = useCustomerInvoices(customerId)
   const { data: tickets } = useCustomerTickets(customer?.fullName)
 
@@ -95,9 +96,7 @@ export function CustomerDetailPage({ customerId }: Props) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Pelanggan tidak ditemukan.
-        </p>
+        <ErrorState title="Pelanggan tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }

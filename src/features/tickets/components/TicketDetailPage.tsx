@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,7 @@ const STATUS_TONE: Record<TicketStatus, StatusTone> = {
 }
 
 export function TicketDetailPage({ ticketId }: { ticketId: string }) {
-  const { data: ticket, isLoading, isError } = useTicket(ticketId)
+  const { data: ticket, isLoading, isError, refetch } = useTicket(ticketId)
   const { data: events } = useTicketEvents(ticketId)
   const canManage = useCan('tickets.manage')
   const canBill = useCan('billing.run')
@@ -60,9 +61,7 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
     return (
       <div className="space-y-4">
         <BackLink />
-        <p className="text-destructive" role="alert">
-          Tiket tidak ditemukan.
-        </p>
+        <ErrorState title="Tiket tidak ditemukan." onRetry={() => refetch()} />
       </div>
     )
   }
