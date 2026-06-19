@@ -1,10 +1,18 @@
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon } from 'lucide-react'
+import {
+  CheckCircle2Icon,
+  DownloadIcon,
+  ServerIcon,
+  TriangleAlertIcon,
+  WifiOffIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { DeviceFilter } from '@/api/devices'
+import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
@@ -34,7 +42,6 @@ const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
 }
 
 const TYPE_OPTIONS = ['all', 'olt', 'onu', 'mikrotik'] as const
-const STATUS_OPTIONS = ['all', 'online', 'degraded', 'offline'] as const
 
 const routeApi = getRouteApi('/_auth/network/devices/')
 
@@ -171,6 +178,15 @@ export function DevicesListPage() {
   })
   const items = data?.items ?? []
   const total = data?.total ?? 0
+  const summary = data?.summary
+  const by = summary?.byStatus
+
+  const statusTabs: FilterTabItem[] = [
+    { value: 'all', label: 'Semua', count: summary?.total },
+    { value: 'online', label: statusLabel('online'), count: by?.online },
+    { value: 'degraded', label: statusLabel('degraded'), count: by?.degraded },
+    { value: 'offline', label: statusLabel('offline'), count: by?.offline },
+  ]
 
   const handleExport = async () => {
     setIsExporting(true)
@@ -186,7 +202,67 @@ export function DevicesListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Perangkat Jaringan" description="Perangkat OLT, ONU, dan Mikrotik." />
+      <PageHeader
+        title="Perangkat Jaringan"
+        description="Perangkat OLT, ONU, dan Mikrotik."
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={!total || isExporting}
+            onClick={handleExport}
+          >
+            <DownloadIcon className="size-4" />
+            <span className="hidden sm:inline">Ekspor</span>
+          </Button>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Total perangkat"
+          value={summary?.total ?? 0}
+          hint="OLT / ONU / Mikrotik"
+          icon={ServerIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Online"
+          value={by?.online ?? 0}
+          hint="sehat"
+          icon={CheckCircle2Icon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Menurun"
+          value={by?.degraded ?? 0}
+          hint="perlu perhatian"
+          accent="amber"
+          icon={TriangleAlertIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+        <KpiCard
+          label="Offline"
+          value={by?.offline ?? 0}
+          hint="tidak terjangkau"
+          hintTone="negative"
+          icon={WifiOffIcon}
+          isLoading={isLoading}
+          isError={isError}
+        />
+      </div>
+
+      <FilterTabs
+        ariaLabel="Filter status perangkat"
+        value={status}
+        onValueChange={setStatus}
+        items={statusTabs}
+      />
+
       <DataTable
         columns={COLUMNS}
         data={items}
@@ -205,44 +281,18 @@ export function DevicesListPage() {
           onSearchChange: table.onSearchChange,
         }}
         toolbar={
-          <>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter tipe">
-                <SelectValue placeholder="Tipe" />
-              </SelectTrigger>
-              <SelectContent>
-                {TYPE_OPTIONS.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t === 'all' ? 'Semua tipe' : t.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s === 'all' ? 'Semua status' : statusLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>
-        }
-        actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter tipe">
+              <SelectValue placeholder="Tipe" />
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t === 'all' ? 'Semua tipe' : t.toUpperCase()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         }
       />
     </div>
