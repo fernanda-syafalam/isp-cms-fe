@@ -27,6 +27,7 @@ import {
 } from './customer-actions'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
+import { CustomerTimeline } from './CustomerTimeline'
 import { ContractTab } from '@/features/contracts'
 import { OnuActions } from './OnuActions'
 import { PrivacyTab } from './PrivacyTab'
@@ -117,6 +118,7 @@ export function CustomerDetailPage({ customerId }: Props) {
       <Tabs defaultValue="ringkasan">
         <TabsList>
           <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+          <TabsTrigger value="aktivitas">Aktivitas</TabsTrigger>
           <TabsTrigger value="koneksi">Koneksi</TabsTrigger>
           <TabsTrigger value="tagihan">Tagihan</TabsTrigger>
           <TabsTrigger value="tiket">Tiket</TabsTrigger>
@@ -128,6 +130,9 @@ export function CustomerDetailPage({ customerId }: Props) {
             <ProfileCard customer={customer} />
             <SubscriptionCard customer={customer} />
           </div>
+        </TabsContent>
+        <TabsContent value="aktivitas">
+          <CustomerTimeline customer={customer} invoices={invoices} tickets={tickets} />
         </TabsContent>
         <TabsContent value="koneksi">
           <ConnectionCard customerId={customer.id} connection={customer.connection} />
