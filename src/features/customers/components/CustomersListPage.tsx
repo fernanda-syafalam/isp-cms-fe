@@ -31,6 +31,7 @@ import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CreateCustomerDialog } from './CreateCustomerDialog'
 import { CustomerDetailSheet } from './CustomerDetailSheet'
+import { SavedViews } from './SavedViews'
 import { CustomerRowActions } from './CustomerRowActions'
 import { useBulkCustomerStatus, useCustomersList, useExportCustomers } from '../hooks/useCustomers'
 
@@ -259,12 +260,25 @@ export function CustomersListPage() {
         />
       </div>
 
-      <FilterTabs
-        ariaLabel="Filter status pelanggan"
-        value={status}
-        onValueChange={setStatusFilter}
-        items={statusTabs}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <FilterTabs
+          ariaLabel="Filter status pelanggan"
+          value={status}
+          onValueChange={setStatusFilter}
+          items={statusTabs}
+        />
+        <SavedViews
+          status={status}
+          q={table.search}
+          onApply={(view) => {
+            navigate({
+              search: view.status === 'all' ? {} : { status: view.status },
+            })
+            table.onSearchChange(view.q)
+            table.resetPage()
+          }}
+        />
+      </div>
 
       <DataTable
         columns={COLUMNS}
