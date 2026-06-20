@@ -1,47 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowLeftIcon, CheckIcon } from 'lucide-react'
-import { Suspense, lazy, useState } from 'react'
+import { useState } from 'react'
 import { type FieldPath, useForm } from 'react-hook-form'
 
-import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+import { Form } from '@/components/ui/form'
 import { usePlanOptions } from '@/hooks/usePlanOptions'
-import { SERVICE_AREAS } from '@/lib/areas'
 import { cn } from '@/lib/cn'
 import { OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
 
 import { useOnboardCustomer } from '../hooks/useOnboarding'
-
-// Code-split the Leaflet map picker so it (and Leaflet) stays out of the main
-// bundle — loaded only when the onboarding wizard renders.
-const LocationPicker = lazy(() =>
-  import('@/components/shared/location-picker').then((m) => ({
-    default: m.LocationPicker,
-  })),
-)
-
-const AREAS = SERVICE_AREAS
-const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko']
+import { CustomerStep, PlanStep, ScheduleStep, SummaryStep } from './OnboardingSteps'
 
 const STEPS = ['Data pelanggan', 'Paket', 'Jadwal instalasi', 'Ringkasan']
 const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
@@ -50,12 +22,14 @@ const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
   ['technician', 'scheduledAt', 'note'],
 ]
 
+// Guided 4-step flow (data → paket → jadwal → ringkasan) that provisions a new
+// subscriber. Step bodies live in OnboardingSteps; field helpers in
+// OnboardingFields — this shell owns form state, navigation, and layout.
 export function OnboardingWizard() {
   const [step, setStep] = useState(0)
   const navigate = useNavigate()
   const onboard = useOnboardCustomer()
   const planQuery = usePlanOptions()
-  const planOptions = planQuery.data
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(OnboardingSchema),
@@ -91,9 +65,7 @@ export function OnboardingWizard() {
   })
 
   const values = form.getValues()
-  const planLabel = planOptions?.find((p) => p.value === values.planId)?.label ?? '—'
-  const latValue = form.watch('lat')
-  const lngValue = form.watch('lng')
+  const planLabel = planQuery.data?.find((p) => p.value === values.planId)?.label ?? '—'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -132,126 +104,10 @@ export function OnboardingWizard() {
         <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={submit} noValidate className="space-y-4">
-              {step === 0 ? (
-                <>
-                  <TextField form={form} name="fullName" label="Nama" placeholder="Budi Santoso" />
-                  <TextField form={form} name="phone" label="Telepon" placeholder="0812xxxxxxx" />
-                  <TextField
-                    form={form}
-                    name="email"
-                    label="Email (opsional)"
-                    placeholder="budi@example.com"
-                  />
-                  <TextField
-                    form={form}
-                    name="address"
-                    label="Alamat"
-                    placeholder="Jl. Pemuda No. 12, Jepara"
-                  />
-                  <SelectField
-                    form={form}
-                    name="areaName"
-                    label="Area"
-                    placeholder="Pilih area"
-                    options={AREAS.map((a) => ({ value: a, label: a }))}
-                  />
-                  <FormItem>
-                    <FormLabel>Titik lokasi instalasi</FormLabel>
-                    <Suspense fallback={<div className="h-56 animate-pulse rounded-lg bg-muted" />}>
-                      <LocationPicker
-                        value={
-                          latValue != null && lngValue != null
-                            ? { lat: latValue, lng: lngValue }
-                            : null
-                        }
-                        onChange={(lat, lng) => {
-                          form.setValue('lat', lat)
-                          form.setValue('lng', lng)
-                        }}
-                      />
-                    </Suspense>
-                    <p className="text-muted-foreground text-xs">
-                      Tandai titik di peta (seperti memilih lokasi di Shopee) — akan muncul di
-                      topologi.
-                    </p>
-                  </FormItem>
-                </>
-              ) : null}
-
-              {step === 1 ? (
-                planQuery.isError ? (
-                  <ErrorState
-                    title="Gagal memuat paket"
-                    description="Daftar paket tidak bisa diambil. Coba lagi."
-                    onRetry={() => planQuery.refetch()}
-                  />
-                ) : (
-                  <SelectField
-                    form={form}
-                    name="planId"
-                    label="Paket"
-                    placeholder={planQuery.isLoading ? 'Memuat paket…' : 'Pilih paket'}
-                    options={planOptions ?? []}
-                    disabled={planQuery.isLoading}
-                    hint={
-                      !planQuery.isLoading && (planOptions?.length ?? 0) === 0
-                        ? 'Belum ada paket aktif. Buat paket dulu di menu Paket.'
-                        : undefined
-                    }
-                  />
-                )
-              ) : null}
-
-              {step === 2 ? (
-                <>
-                  <SelectField
-                    form={form}
-                    name="technician"
-                    label="Teknisi"
-                    placeholder="Pilih teknisi"
-                    options={TECHNICIANS.map((t) => ({ value: t, label: t }))}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="scheduledAt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jadwal instalasi</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="note"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Catatan survey (opsional)</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Hasil survey, titik tarikan, dll." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              ) : null}
-
-              {step === 3 ? (
-                <dl className="grid gap-3 sm:grid-cols-2">
-                  <Summary label="Nama" value={values.fullName} />
-                  <Summary label="Telepon" value={values.phone} />
-                  <Summary label="Email" value={values.email || '—'} />
-                  <Summary label="Alamat" value={values.address} />
-                  <Summary label="Area" value={values.areaName} />
-                  <Summary label="Paket" value={planLabel} />
-                  <Summary label="Teknisi" value={values.technician} />
-                  <Summary label="Jadwal instalasi" value={values.scheduledAt} />
-                </dl>
-              ) : null}
+              {step === 0 ? <CustomerStep form={form} /> : null}
+              {step === 1 ? <PlanStep form={form} planQuery={planQuery} /> : null}
+              {step === 2 ? <ScheduleStep form={form} /> : null}
+              {step === 3 ? <SummaryStep values={values} planLabel={planLabel} /> : null}
 
               <div className="flex items-center justify-between border-border border-t pt-4">
                 <Button
@@ -278,86 +134,6 @@ export function OnboardingWizard() {
           </Form>
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-type FieldProps = {
-  form: ReturnType<typeof useForm<OnboardingInput>>
-  name: FieldPath<OnboardingInput>
-  label: string
-  placeholder?: string
-}
-
-function TextField({ form, name, label, placeholder }: FieldProps) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <Input placeholder={placeholder} autoComplete="off" {...field} />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function SelectField({
-  form,
-  name,
-  label,
-  placeholder,
-  options,
-  disabled = false,
-  hint,
-}: FieldProps & {
-  options: Array<{ value: string; label: string }>
-  disabled?: boolean
-  hint?: string | undefined
-}) {
-  return (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <Select
-            value={String(field.value ?? '')}
-            onValueChange={field.onChange}
-            disabled={disabled}
-          >
-            <FormControl>
-              <SelectTrigger className="w-full" aria-label={label}>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="mt-0.5 text-sm">{value}</dd>
     </div>
   )
 }
