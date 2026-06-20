@@ -19,17 +19,10 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { usePlanOptions } from '@/hooks/usePlanOptions'
 import { CreateCustomerSchema, type CreateCustomerInput, type Customer } from '@/schemas/customer'
 
 import { useUpdateCustomer } from '../hooks/useCustomers'
+import { PlanSelectField } from './PlanSelectField'
 
 type Props = {
   customer: Customer
@@ -39,7 +32,6 @@ type Props = {
 
 export function EditCustomerDialog({ customer, open, onOpenChange }: Props) {
   const updateMutation = useUpdateCustomer(customer.id)
-  const { data: planOptions } = usePlanOptions()
 
   const form = useForm<CreateCustomerInput>({
     resolver: zodResolver(CreateCustomerSchema),
@@ -122,30 +114,7 @@ export function EditCustomerDialog({ customer, open, onOpenChange }: Props) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="planId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paket</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full" aria-label="Paket">
-                        <SelectValue placeholder="Pilih paket" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {(planOptions ?? []).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <PlanSelectField control={form.control} name="planId" />
             <DialogFooter>
               <Button
                 type="button"
