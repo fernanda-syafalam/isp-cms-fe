@@ -25,7 +25,8 @@ type Props = {
 // Control for the active branch scope. Persists the choice; modules filter by
 // it as they become branch-aware.
 export function BranchScopeSwitcher({ variant = 'button' }: Props) {
-  const { data } = useBranches()
+  const branchesQuery = useBranches()
+  const data = branchesQuery.data
   const { scope, setScope } = useBranchScope()
   const label = scope?.name ?? 'Semua Cabang'
   const count = data?.items.length ?? 0
@@ -67,13 +68,29 @@ export function BranchScopeSwitcher({ variant = 'button' }: Props) {
           {scope ? <span className="size-4" /> : <CheckIcon className="size-4" />}
           Semua cabang
         </DropdownMenuItem>
-        {data && data.items.length > 0 ? <DropdownMenuSeparator /> : null}
-        {data?.items.map((b) => (
-          <DropdownMenuItem key={b.id} onSelect={() => setScope({ id: b.id, name: b.name })}>
-            {scope?.id === b.id ? <CheckIcon className="size-4" /> : <span className="size-4" />}
-            <span className="truncate">{b.name}</span>
+        <DropdownMenuSeparator />
+        {branchesQuery.isLoading ? (
+          <DropdownMenuItem disabled>Memuat cabang…</DropdownMenuItem>
+        ) : branchesQuery.isError ? (
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={(e) => {
+              e.preventDefault()
+              branchesQuery.refetch()
+            }}
+          >
+            Gagal memuat cabang. Coba lagi.
           </DropdownMenuItem>
-        ))}
+        ) : data && data.items.length > 0 ? (
+          data.items.map((b) => (
+            <DropdownMenuItem key={b.id} onSelect={() => setScope({ id: b.id, name: b.name })}>
+              {scope?.id === b.id ? <CheckIcon className="size-4" /> : <span className="size-4" />}
+              <span className="truncate">{b.name}</span>
+            </DropdownMenuItem>
+          ))
+        ) : (
+          <DropdownMenuItem disabled>Belum ada cabang</DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
