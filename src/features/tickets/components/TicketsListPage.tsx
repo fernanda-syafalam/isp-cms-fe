@@ -1,149 +1,26 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import {
-  CheckCircle2Icon,
-  ClockIcon,
-  DownloadIcon,
-  InboxIcon,
-  LifeBuoyIcon,
-  TriangleAlertIcon,
-} from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { CheckCircle2Icon, DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { TicketFilter } from '@/api/tickets'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDateTime } from '@/lib/format'
-import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
-import type { Ticket, TicketPriority, TicketStatus } from '@/schemas/ticket'
 
-import { CreateTicketDialog } from './CreateTicketDialog'
-import { TicketRowActions } from './TicketRowActions'
 import { useBulkResolveTickets, useExportTickets, useTicketsList } from '../hooks/useTickets'
+import { CreateTicketDialog } from './CreateTicketDialog'
+import { ticketColumns, toCsvRow } from './ticketsColumns'
 import { TicketDetailSheet } from './TicketDetailSheet'
-
-const STATUS_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'info',
-  in_progress: 'warning',
-  resolved: 'success',
-  breached: 'danger',
-}
-
-const PRIORITY_TONE: Record<TicketPriority, StatusTone> = {
-  low: 'neutral',
-  medium: 'info',
-  high: 'warning',
-  urgent: 'danger',
-}
-
-const toCsvRow = (t: Ticket) => ({
-  Kode: t.code,
-  Subjek: t.subject,
-  Pelanggan: t.customerName,
-  Prioritas: statusLabel(t.priority),
-  Status: statusLabel(t.status),
-  'Batas SLA': formatDateTime(t.slaDueAt),
-})
+import { TicketsKpis } from './TicketsKpis'
 
 const routeApi = getRouteApi('/_auth/tickets/')
-
-// Static column defs (no component state): sortable keys (code/status) match
-// the backend sort whitelist; the table delegates sorting to the server.
-const COLUMNS: ColumnDef<Ticket>[] = [
-  {
-    accessorKey: 'code',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
-    meta: { title: 'Kode' },
-    cell: ({ row }) => (
-      <Link
-        to="/tickets/$ticketId"
-        params={{ ticketId: row.original.id }}
-        className="font-medium font-mono text-sm hover:underline"
-      >
-        {row.original.code}
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'subject',
-    header: 'Subjek',
-    meta: { title: 'Subjek' },
-    cell: ({ row }) => <span className="font-medium">{row.original.subject}</span>,
-  },
-  {
-    accessorKey: 'customerName',
-    header: 'Pelanggan',
-    meta: { title: 'Pelanggan' },
-    cell: ({ row }) =>
-      row.original.customerId ? (
-        <Link
-          to="/customers/$customerId"
-          params={{ customerId: row.original.customerId }}
-          className="font-medium hover:underline"
-        >
-          {row.original.customerName}
-        </Link>
-      ) : (
-        row.original.customerName
-      ),
-  },
-  {
-    accessorKey: 'priority',
-    header: 'Prioritas',
-    meta: { title: 'Prioritas' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={PRIORITY_TONE[row.original.priority]}
-        label={statusLabel(row.original.priority)}
-        dot={false}
-      />
-    ),
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={statusLabel(row.original.status)}
-      />
-    ),
-  },
-  {
-    id: 'sla',
-    header: 'SLA',
-    meta: { title: 'SLA' },
-    cell: ({ row }) => {
-      const sla = slaState(row.original.status, row.original.slaDueAt, Date.now())
-      return (
-        <div className="flex flex-col gap-0.5">
-          <StatusBadge tone={sla.tone} label={sla.label} dot={!sla.breached} />
-          <span className="text-muted-foreground text-xs">
-            {formatDateTime(row.original.slaDueAt)}
-          </span>
-        </div>
-      )
-    },
-  },
-  {
-    id: 'actions',
-    meta: { align: 'right' },
-    enableHiding: false,
-    cell: ({ row }) => <TicketRowActions ticket={row.original} />,
-  },
-]
 
 export function TicketsListPage() {
   const { status: statusParam } = routeApi.useSearch()
@@ -224,42 +101,7 @@ export function TicketsListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total tiket"
-          value={summary?.total ?? 0}
-          hint="seluruh tiket"
-          icon={LifeBuoyIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Terbuka"
-          value={by?.open ?? 0}
-          hint="menunggu penanganan"
-          icon={InboxIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Dalam proses"
-          value={by?.in_progress ?? 0}
-          hint="sedang dikerjakan"
-          accent="amber"
-          icon={ClockIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="SLA terlampaui"
-          value={by?.breached ?? 0}
-          hint="lewat batas SLA"
-          hintTone="negative"
-          icon={TriangleAlertIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <TicketsKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status tiket"
@@ -269,7 +111,7 @@ export function TicketsListPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={ticketColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
