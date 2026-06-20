@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,6 +19,7 @@ import { useRoutersList } from '@/features/routers'
 import { useWorkOrdersList } from '@/features/work-orders'
 import { cn } from '@/lib/cn'
 import { formatNumber } from '@/lib/format'
+import { SetupGuideSkeleton } from './SetupGuideSkeleton'
 
 type Step = {
   icon: ComponentType<{ className?: string }>
@@ -31,9 +33,39 @@ type Step = {
 // Guided launchpad for the full "set up Mikrotik → win a customer" flow, with
 // live status from the data so a demo can run it end-to-end in order.
 export function SetupGuidePage() {
-  const { data: routers } = useRoutersList()
-  const { data: customers } = useCustomersList()
-  const { data: workOrders } = useWorkOrdersList()
+  const routersQuery = useRoutersList()
+  const customersQuery = useCustomersList()
+  const workOrdersQuery = useWorkOrdersList()
+
+  const isLoading = routersQuery.isLoading || customersQuery.isLoading || workOrdersQuery.isLoading
+  const isError = routersQuery.isError || customersQuery.isError || workOrdersQuery.isError
+
+  // Retry every underlying query in one tap from the error state.
+  const handleRetry = () => {
+    routersQuery.refetch()
+    customersQuery.refetch()
+    workOrdersQuery.refetch()
+  }
+
+  if (isLoading) return <SetupGuideSkeleton />
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeader
+          title="Panduan Setup"
+          description="Dari nol: hubungkan Mikrotik hingga pelanggan aktif & tertagih — ikuti urutannya."
+        />
+        <ErrorState
+          description="Tidak bisa memuat status setup. Periksa koneksi lalu coba lagi."
+          onRetry={handleRetry}
+        />
+      </div>
+    )
+  }
+
+  const routers = routersQuery.data
+  const customers = customersQuery.data
+  const workOrders = workOrdersQuery.data
 
   const routerCount = routers?.items.length ?? 0
   const items = customers?.items ?? []
