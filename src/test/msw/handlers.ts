@@ -6,7 +6,7 @@ import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
 import { UpdateBranchSchema } from '@/schemas/branch'
 import { CreateCableSchema, CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
-import { CreateSpliceSchema } from '@/schemas/closure'
+import { CreateClosureSchema, CreateSpliceSchema } from '@/schemas/closure'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
@@ -4458,6 +4458,16 @@ export const handlers = [
       total: CLOSURE_FIXTURES.length,
     }),
   ),
+  // Add a closure to a node that doesn't have one yet.
+  http.post('*/api/closures', async ({ request }) => {
+    const body = CreateClosureSchema.parse(await request.json())
+    const closure = { ...body, id: `${body.nodeId}-closure` }
+    if (!CLOSURE_FIXTURES.some((c) => c.id === closure.id)) {
+      CLOSURE_FIXTURES.push(closure)
+      persistDb()
+    }
+    return HttpResponse.json(closure, { status: 201 })
+  }),
   http.get('*/api/splices', () =>
     HttpResponse.json({
       items: SPLICE_FIXTURES,

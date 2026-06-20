@@ -78,7 +78,7 @@ export function TopologyAside({
   // The co-located closure (tray/fiber capacity + its fusion splices).
   const closureCard =
     selected && (selected.type === 'odc' || selected.type === 'odp') ? (
-      <ClosureDetail nodeId={selected.id} canManage={canManage} />
+      <ClosureDetail nodeId={selected.id} nodeType={selected.type} canManage={canManage} />
     ) : null
   // A selected subscriber's optical circuit (OLT port + ONU + drop strand).
   const circuitCard =

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createCable,
+  createClosure,
   installCustomerDrop,
   listCables,
+  listClosures,
   listSplitters,
   updateCableRoute,
 } from './cabling'
@@ -231,5 +233,21 @@ describe('cable create', () => {
       installedAt: null,
     })
     expect(cable.lengthM).toBeGreaterThan(0)
+  })
+})
+
+describe('closure create', () => {
+  it('adds a closure to a node that has none and lists it', async () => {
+    const nodeId = 'test-odp-no-closure'
+    expect((await listClosures()).items.some((c) => c.nodeId === nodeId)).toBe(false)
+
+    const closure = await createClosure({
+      type: 'odp',
+      nodeId,
+      trayCapacity: 24,
+      fiberCapacity: 24,
+    })
+    expect(closure.id).toBe(`${nodeId}-closure`)
+    expect((await listClosures()).items.some((c) => c.nodeId === nodeId)).toBe(true)
   })
 })
