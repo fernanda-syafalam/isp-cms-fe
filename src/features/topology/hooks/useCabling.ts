@@ -13,10 +13,16 @@ import {
   listSplices,
   listSplitters,
   listStrands,
+  updateCable,
   updateCableRoute,
 } from '@/api/cabling'
 import { getErrorMessage } from '@/lib/errors'
-import type { CreateCableInput, CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
+import type {
+  CreateCableInput,
+  CustomerDropInput,
+  UpdateCableInput,
+  UpdateCableRouteInput,
+} from '@/schemas/cable'
 import type { CreateClosureInput, CreateSpliceInput } from '@/schemas/closure'
 import type { NetworkNode } from '@/schemas/topology'
 
@@ -108,6 +114,20 @@ export function useCreateCable() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cabling'] })
       toast.success('Kabel ditambahkan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Update a cable's metadata (kind/spec/fiber/tube/status). Invalidates cabling
+// so the cable list + map physical layer refresh.
+export function useUpdateCable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateCableInput }) => updateCable(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      toast.success('Kabel diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
