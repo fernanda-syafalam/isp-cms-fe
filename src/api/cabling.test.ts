@@ -7,6 +7,7 @@ import {
   listCables,
   listClosures,
   listSplitters,
+  updateCable,
   updateCableRoute,
 } from './cabling'
 import { listCustomers } from './customers'
@@ -233,6 +234,26 @@ describe('cable create', () => {
       installedAt: null,
     })
     expect(cable.lengthM).toBeGreaterThan(0)
+  })
+})
+
+describe('cable metadata update', () => {
+  it("updates a cable's metadata and leaves the route untouched", async () => {
+    const cable = (await listCables()).items[0]
+    if (!cable) throw new Error('seed has no cables')
+    const routeLenBefore = cable.route.length
+
+    const updated = await updateCable(cable.id, {
+      spec: 'EDITED 24F loose-tube',
+      status: 'installed',
+    })
+    expect(updated.spec).toBe('EDITED 24F loose-tube')
+    expect(updated.status).toBe('installed')
+    expect(updated.route).toHaveLength(routeLenBefore)
+
+    const persisted = (await listCables()).items.find((c) => c.id === cable.id)
+    expect(persisted?.spec).toBe('EDITED 24F loose-tube')
+    expect(persisted?.status).toBe('installed')
   })
 })
 

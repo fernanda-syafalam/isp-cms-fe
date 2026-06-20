@@ -5,7 +5,7 @@ import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
 import { UpdateBranchSchema } from '@/schemas/branch'
-import { CreateCableSchema, CustomerDropSchema, UpdateCableRouteSchema } from '@/schemas/cable'
+import { CreateCableSchema, CustomerDropSchema, UpdateCableSchema } from '@/schemas/cable'
 import { CreateClosureSchema, CreateSpliceSchema } from '@/schemas/closure'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
 import type { SplitterRatio } from '@/schemas/splitter'
@@ -4432,7 +4432,8 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(cable, { status: 201 })
   }),
-  // Replace a cable's surveyed route; recompute lengthM from the polyline.
+  // Patch a cable: metadata (kind/spec/fiber/tube/status) and/or its surveyed
+  // route. A route ≥2 points recomputes lengthM; whatever is sent is applied.
   http.patch('*/api/cables/:id', async ({ params, request }) => {
     const cable = CABLE_FIXTURES.find((c) => c.id === params.id)
     if (!cable) {
@@ -4440,9 +4441,19 @@ export const handlers = [
         status: 404,
       })
     }
-    const body = UpdateCableRouteSchema.parse(await request.json())
-    cable.route = body.route
-    cable.lengthM = routeLength(body.route)
+    const body = UpdateCableSchema.parse(await request.json())
+    if (body.kind !== undefined) cable.kind = body.kind
+    if (body.spec !== undefined) cable.spec = body.spec
+    if (body.fiberCount !== undefined) cable.fiberCount = body.fiberCount
+    if (body.tubeCount !== undefined) cable.tubeCount = body.tubeCount
+    if (body.fromNodeId !== undefined) cable.fromNodeId = body.fromNodeId
+    if (body.toNodeId !== undefined) cable.toNodeId = body.toNodeId
+    if (body.status !== undefined) cable.status = body.status
+    if (body.installedAt !== undefined) cable.installedAt = body.installedAt
+    if (body.route !== undefined) {
+      cable.route = body.route
+      if (body.route.length >= 2) cable.lengthM = routeLength(body.route)
+    }
     persistDb()
     return HttpResponse.json(cable)
   }),

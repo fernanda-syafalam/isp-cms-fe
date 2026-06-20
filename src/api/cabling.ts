@@ -7,6 +7,7 @@ import {
   type CustomerDropInput,
   type StrandList,
   StrandListSchema,
+  type UpdateCableInput,
   type UpdateCableRouteInput,
 } from '@/schemas/cable'
 import { type CircuitList, CircuitListSchema } from '@/schemas/circuit'
@@ -69,6 +70,12 @@ export async function updateCableRoute(id: string, input: UpdateCableRouteInput)
 // straight line from→to; the server recomputes lengthM when a route is given.
 export async function createCable(input: CreateCableInput): Promise<Cable> {
   return CableSchema.parse(await api.post('cables', { json: input }).json())
+}
+
+// Update a cable's metadata (kind/spec/fiber/tube/status). Shares the cable
+// PATCH endpoint with the route editor; the server applies whatever is sent.
+export async function updateCable(id: string, input: UpdateCableInput): Promise<Cable> {
+  return CableSchema.parse(await api.patch(`cables/${id}`, { json: input }).json())
 }
 
 // Add a splice closure (joint enclosure) co-located with an ODC/ODP node.
