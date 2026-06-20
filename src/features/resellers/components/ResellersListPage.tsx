@@ -1,105 +1,25 @@
-import { Link, Navigate, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import { CheckCircle2Icon, DownloadIcon, PowerOffIcon, StoreIcon, WalletIcon } from 'lucide-react'
+import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { ResellerFilter } from '@/api/resellers'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEffectiveRole } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Reseller, ResellerStatus } from '@/schemas/reseller'
+import type { Reseller } from '@/schemas/reseller'
 
 import { useExportResellers, useResellersList } from '../hooks/useResellers'
+import { resellerColumns, toCsvRow } from './resellersColumns'
 import { ResellerDetailSheet } from './ResellerDetailSheet'
-import { ResellerRowActions } from './ResellerRowActions'
-
-const STATUS_TONE: Record<ResellerStatus, StatusTone> = {
-  active: 'success',
-  inactive: 'neutral',
-}
-
-const toCsvRow = (r: Reseller) => ({
-  Reseller: r.name,
-  Area: r.area,
-  Pelanggan: r.customerCount,
-  Komisi: formatPercent(r.commissionPct),
-  Saldo: formatCurrency(r.balance),
-  Status: statusLabel(r.status),
-})
-
-// Static column defs (no component state): sortable keys (name/commissionPct/
-// balance/status) match the backend sort whitelist. customerCount is derived
-// server-side (counted by name), not a sortable column, so it stays unsorted.
-const COLUMNS: ColumnDef<Reseller>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Reseller" />,
-    meta: { title: 'Reseller' },
-    cell: ({ row }) => (
-      <Link
-        to="/resellers/$resellerId"
-        params={{ resellerId: row.original.id }}
-        className="font-medium hover:underline"
-      >
-        {row.original.name}
-      </Link>
-    ),
-  },
-  { accessorKey: 'area', header: 'Area', meta: { title: 'Area' } },
-  {
-    accessorKey: 'customerCount',
-    header: 'Pelanggan',
-    meta: { title: 'Pelanggan', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatNumber(row.original.customerCount)}</span>
-    ),
-  },
-  {
-    accessorKey: 'commissionPct',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Komisi" />,
-    meta: { title: 'Komisi', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatPercent(row.original.commissionPct)}</span>
-    ),
-  },
-  {
-    accessorKey: 'balance',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
-    meta: { title: 'Saldo', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatCurrency(row.original.balance)}</span>
-    ),
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={statusLabel(row.original.status)}
-      />
-    ),
-  },
-  {
-    id: 'actions',
-    meta: { align: 'right' },
-    enableHiding: false,
-    cell: ({ row }) => <ResellerRowActions reseller={row.original} />,
-  },
-]
+import { ResellersKpis } from './ResellersKpis'
 
 const routeApi = getRouteApi('/_auth/resellers/')
 
@@ -181,41 +101,7 @@ export function ResellersListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total reseller"
-          value={summary?.total ?? 0}
-          hint="mitra terdaftar"
-          icon={StoreIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Aktif"
-          value={by?.active ?? 0}
-          hint="berjualan"
-          icon={CheckCircle2Icon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Nonaktif"
-          value={by?.inactive ?? 0}
-          hint="dinonaktifkan"
-          icon={PowerOffIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Total saldo"
-          value={summary?.totalBalance ?? 0}
-          format={formatCurrency}
-          hint="deposit komisi"
-          icon={WalletIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <ResellersKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status reseller"
@@ -225,7 +111,7 @@ export function ResellersListPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={resellerColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
