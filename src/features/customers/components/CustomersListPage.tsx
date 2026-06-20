@@ -1,121 +1,26 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import {
-  DownloadIcon,
-  PlugZapIcon,
-  PowerOffIcon,
-  UserPlusIcon,
-  UsersIcon,
-  WalletIcon,
-  WifiIcon,
-} from 'lucide-react'
+import { getRouteApi, Link } from '@tanstack/react-router'
+import { DownloadIcon, UserPlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CustomerFilter } from '@/api/customers'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { scopeAreas, useBranchScope } from '@/features/branches'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatCurrency, formatDate } from '@/lib/format'
-import { statusLabel } from '@/lib/status-label'
-import type { Customer, CustomerStatus } from '@/schemas/customer'
 
+import { useBulkCustomerStatus, useCustomersList, useExportCustomers } from '../hooks/useCustomers'
 import { CreateCustomerDialog } from './CreateCustomerDialog'
 import { CustomerDetailSheet } from './CustomerDetailSheet'
+import { customerColumns, STATUS_LABEL, toCsvRow } from './customersColumns'
+import { CustomersBulkActions } from './CustomersBulkActions'
+import { CustomersKpis } from './CustomersKpis'
 import { SavedViews } from './SavedViews'
-import { CustomerRowActions } from './CustomerRowActions'
-import { useBulkCustomerStatus, useCustomersList, useExportCustomers } from '../hooks/useCustomers'
-
-const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
-
-const STATUS_LABEL: Record<CustomerStatus, string> = {
-  prospek: 'Prospek',
-  instalasi: 'Instalasi',
-  aktif: 'Aktif',
-  isolir: 'Isolir',
-  berhenti: 'Berhenti',
-}
-
-const toCsvRow = (c: Customer) => ({
-  No: c.customerNo,
-  Nama: c.fullName,
-  Telepon: c.phone,
-  Area: c.areaName ?? '',
-  Paket: c.planName,
-  Status: statusLabel(c.status),
-  Bergabung: formatDate(c.joinedAt),
-})
-
-// Static column defs (no component state). Sortable keys (customerNo/fullName/
-// areaName/status/joinedAt) match the backend sort whitelist; phone is plain.
-const COLUMNS: ColumnDef<Customer>[] = [
-  {
-    accessorKey: 'customerNo',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="No." />,
-    meta: { title: 'No.' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.customerNo}</span>,
-  },
-  {
-    accessorKey: 'fullName',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
-    meta: { title: 'Nama' },
-    cell: ({ row }) => (
-      <Link
-        to="/customers/$customerId"
-        params={{ customerId: row.original.id }}
-        className="font-medium hover:underline"
-      >
-        {row.original.fullName}
-      </Link>
-    ),
-  },
-  { accessorKey: 'phone', header: 'Telepon', meta: { title: 'Telepon' } },
-  {
-    accessorKey: 'areaName',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Area" />,
-    meta: { title: 'Area' },
-    cell: ({ row }) => row.original.areaName ?? <span className="text-muted-foreground">—</span>,
-  },
-  { accessorKey: 'planName', header: 'Paket', meta: { title: 'Paket' } },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={STATUS_LABEL[row.original.status]}
-      />
-    ),
-  },
-  {
-    accessorKey: 'joinedAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Bergabung" />,
-    meta: { title: 'Bergabung' },
-    cell: ({ row }) => formatDate(row.original.joinedAt),
-  },
-  {
-    id: 'actions',
-    meta: { align: 'right' },
-    enableHiding: false,
-    cell: ({ row }) => <CustomerRowActions customer={row.original} />,
-  },
-]
 
 const routeApi = getRouteApi('/_auth/customers/')
 
@@ -161,8 +66,6 @@ export function CustomersListPage() {
     offset: table.params.offset,
   })
   const total = data?.total ?? 0
-  // Full-set counts for the scope (stable across status tabs) — drives the KPIs
-  // and the per-status tab pills.
   const summary = data?.summary
   const by = summary?.byStatus
 
@@ -221,44 +124,7 @@ export function CustomersListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total pelanggan"
-          value={summary?.total ?? 0}
-          hint="dalam cakupan"
-          icon={UsersIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Aktif"
-          value={by?.aktif ?? 0}
-          hint="berlangganan"
-          hintTone="positive"
-          icon={WifiIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Terisolir"
-          value={by?.isolir ?? 0}
-          hint="diisolir karena menunggak"
-          hintTone="negative"
-          icon={PowerOffIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Piutang (AR)"
-          value={summary?.outstanding ?? 0}
-          format={formatCurrency}
-          hint="total tunggakan"
-          accent="amber"
-          icon={WalletIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <CustomersKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <div className="flex items-center justify-between gap-3">
         <FilterTabs
@@ -281,7 +147,7 @@ export function CustomersListPage() {
       </div>
 
       <DataTable
-        columns={COLUMNS}
+        columns={customerColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
@@ -304,57 +170,13 @@ export function CustomersListPage() {
           onSortingChange: table.onSortingChange,
           onSearchChange: table.onSearchChange,
         }}
-        bulkActions={(selected) => {
-          const toIsolate = selected.filter((c) => c.status === 'aktif')
-          const toActivate = selected.filter((c) => c.status === 'isolir')
-          return (
-            <>
-              {canNetwork && toIsolate.length > 0 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-destructive"
-                  disabled={bulkStatus.isPending}
-                  onClick={() =>
-                    bulkStatus.mutate({
-                      ids: toIsolate.map((c) => c.id),
-                      action: 'isolate',
-                    })
-                  }
-                >
-                  <PowerOffIcon className="size-4" />
-                  Isolir ({toIsolate.length})
-                </Button>
-              ) : null}
-              {canNetwork && toActivate.length > 0 ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  disabled={bulkStatus.isPending}
-                  onClick={() =>
-                    bulkStatus.mutate({
-                      ids: toActivate.map((c) => c.id),
-                      action: 'activate',
-                    })
-                  }
-                >
-                  <PlugZapIcon className="size-4" />
-                  Aktifkan ({toActivate.length})
-                </Button>
-              ) : null}
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={() => downloadCsv('pelanggan-terpilih', selected.map(toCsvRow))}
-              >
-                <DownloadIcon className="size-4" />
-                Export terpilih
-              </Button>
-            </>
-          )
-        }}
+        bulkActions={(selected) => (
+          <CustomersBulkActions
+            selected={selected}
+            canNetwork={canNetwork}
+            bulkStatus={bulkStatus}
+          />
+        )}
       />
 
       <CustomerDetailSheet
