@@ -4,6 +4,7 @@ import { ArrowLeftIcon, CheckIcon } from 'lucide-react'
 import { Suspense, lazy, useState } from 'react'
 import { type FieldPath, useForm } from 'react-hook-form'
 
+import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -53,7 +54,8 @@ export function OnboardingWizard() {
   const [step, setStep] = useState(0)
   const navigate = useNavigate()
   const onboard = useOnboardCustomer()
-  const { data: planOptions } = usePlanOptions()
+  const planQuery = usePlanOptions()
+  const planOptions = planQuery.data
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(OnboardingSchema),
@@ -177,13 +179,27 @@ export function OnboardingWizard() {
               ) : null}
 
               {step === 1 ? (
-                <SelectField
-                  form={form}
-                  name="planId"
-                  label="Paket"
-                  placeholder="Pilih paket"
-                  options={planOptions ?? []}
-                />
+                planQuery.isError ? (
+                  <ErrorState
+                    title="Gagal memuat paket"
+                    description="Daftar paket tidak bisa diambil. Coba lagi."
+                    onRetry={() => planQuery.refetch()}
+                  />
+                ) : (
+                  <SelectField
+                    form={form}
+                    name="planId"
+                    label="Paket"
+                    placeholder={planQuery.isLoading ? 'Memuat paket…' : 'Pilih paket'}
+                    options={planOptions ?? []}
+                    disabled={planQuery.isLoading}
+                    hint={
+                      !planQuery.isLoading && (planOptions?.length ?? 0) === 0
+                        ? 'Belum ada paket aktif. Buat paket dulu di menu Paket.'
+                        : undefined
+                    }
+                  />
+                )
               ) : null}
 
               {step === 2 ? (
@@ -297,7 +313,13 @@ function SelectField({
   label,
   placeholder,
   options,
-}: FieldProps & { options: Array<{ value: string; label: string }> }) {
+  disabled = false,
+  hint,
+}: FieldProps & {
+  options: Array<{ value: string; label: string }>
+  disabled?: boolean
+  hint?: string | undefined
+}) {
   return (
     <FormField
       control={form.control}
@@ -305,7 +327,11 @@ function SelectField({
       render={({ field }) => (
         <FormItem>
           <FormLabel>{label}</FormLabel>
-          <Select value={String(field.value ?? '')} onValueChange={field.onChange}>
+          <Select
+            value={String(field.value ?? '')}
+            onValueChange={field.onChange}
+            disabled={disabled}
+          >
             <FormControl>
               <SelectTrigger className="w-full" aria-label={label}>
                 <SelectValue placeholder={placeholder} />
@@ -319,6 +345,7 @@ function SelectField({
               ))}
             </SelectContent>
           </Select>
+          {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
           <FormMessage />
         </FormItem>
       )}
