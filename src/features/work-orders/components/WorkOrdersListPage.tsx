@@ -1,22 +1,12 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import {
-  CalendarClockIcon,
-  CheckCircle2Icon,
-  ClipboardListIcon,
-  ClockIcon,
-  DownloadIcon,
-} from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { WorkOrderFilter } from '@/api/workorders'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -28,94 +18,15 @@ import {
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { WorkOrder, WorkOrderStatus } from '@/schemas/workorder'
+import type { WorkOrder } from '@/schemas/workorder'
 
 import { useExportWorkOrders, useWorkOrdersList } from '../hooks/useWorkOrders'
 import { WorkOrderDetailSheet } from './WorkOrderDetailSheet'
-import { WorkOrderRowActions } from './WorkOrderRowActions'
-
-const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
-  scheduled: 'info',
-  in_progress: 'warning',
-  done: 'success',
-  cancelled: 'neutral',
-}
+import { workOrderColumns, toCsvRow } from './workOrdersColumns'
+import { WorkOrdersKpis } from './WorkOrdersKpis'
 
 const TYPE_OPTIONS = ['all', 'install', 'repair', 'dismantle'] as const
-
-const toCsvRow = (w: WorkOrder) => ({
-  Kode: w.code,
-  Jenis: statusLabel(w.type),
-  Pelanggan: w.customerName,
-  Teknisi: w.technician ?? '—',
-  Jadwal: formatDateTime(w.scheduledAt),
-  Status: statusLabel(w.status),
-})
-
-// Static column defs (no component state): sortable keys (code/scheduledAt/
-// status) match the backend sort whitelist.
-const COLUMNS: ColumnDef<WorkOrder>[] = [
-  {
-    accessorKey: 'code',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Kode" />,
-    meta: { title: 'Kode' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.code}</span>,
-  },
-  {
-    accessorKey: 'type',
-    header: 'Jenis',
-    meta: { title: 'Jenis' },
-    cell: ({ row }) => statusLabel(row.original.type),
-  },
-  {
-    accessorKey: 'customerName',
-    header: 'Pelanggan',
-    meta: { title: 'Pelanggan' },
-    cell: ({ row }) =>
-      row.original.customerId ? (
-        <Link
-          to="/customers/$customerId"
-          params={{ customerId: row.original.customerId }}
-          className="font-medium hover:underline"
-        >
-          {row.original.customerName}
-        </Link>
-      ) : (
-        row.original.customerName
-      ),
-  },
-  {
-    accessorKey: 'technician',
-    header: 'Teknisi',
-    meta: { title: 'Teknisi' },
-    cell: ({ row }) => row.original.technician ?? '—',
-  },
-  {
-    accessorKey: 'scheduledAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Jadwal" />,
-    meta: { title: 'Jadwal' },
-    cell: ({ row }) => formatDateTime(row.original.scheduledAt),
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={statusLabel(row.original.status)}
-      />
-    ),
-  },
-  {
-    id: 'actions',
-    meta: { align: 'right' },
-    enableHiding: false,
-    cell: ({ row }) => <WorkOrderRowActions workOrder={row.original} />,
-  },
-]
 
 const routeApi = getRouteApi('/_auth/work-orders')
 
@@ -218,41 +129,7 @@ export function WorkOrdersListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total work order"
-          value={summary?.total ?? 0}
-          hint="seluruh WO"
-          icon={ClipboardListIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Terjadwal"
-          value={by?.scheduled ?? 0}
-          hint="menunggu kunjungan"
-          icon={CalendarClockIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Dalam proses"
-          value={by?.in_progress ?? 0}
-          hint="sedang dikerjakan"
-          accent="amber"
-          icon={ClockIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Selesai"
-          value={by?.done ?? 0}
-          hint="WO tuntas"
-          icon={CheckCircle2Icon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <WorkOrdersKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status work order"
@@ -262,7 +139,7 @@ export function WorkOrdersListPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={workOrderColumns}
         data={items}
         isLoading={isLoading}
         isError={isError}
