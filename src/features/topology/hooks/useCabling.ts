@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import {
   createCable,
+  createClosure,
   createSplice,
   deleteSplice,
   installCustomerDrop,
@@ -16,7 +17,7 @@ import {
 } from '@/api/cabling'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreateCableInput, CustomerDropInput, UpdateCableRouteInput } from '@/schemas/cable'
-import type { CreateSpliceInput } from '@/schemas/closure'
+import type { CreateClosureInput, CreateSpliceInput } from '@/schemas/closure'
 import type { NetworkNode } from '@/schemas/topology'
 
 // Read hooks for the OSP cabling layer (cables/strands/splitters/closures/
@@ -107,6 +108,20 @@ export function useCreateCable() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['cabling'] })
       toast.success('Kabel ditambahkan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Add a splice closure to an ODC/ODP node. Invalidates cabling so the node's
+// closure detail appears.
+export function useCreateClosure() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateClosureInput) => createClosure(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cabling'] })
+      toast.success('Closure ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

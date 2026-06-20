@@ -15,7 +15,9 @@ async function nodeWithSplice(): Promise<string> {
 
 describe('ClosureDetail', () => {
   it('shows the closure capacity + splices for a selected ODP', async () => {
-    renderWithProviders(<ClosureDetail nodeId={await nodeWithSplice()} canManage={false} />)
+    renderWithProviders(
+      <ClosureDetail nodeId={await nodeWithSplice()} nodeType="odp" canManage={false} />,
+    )
 
     expect(await screen.findByText(/Closure/)).toBeInTheDocument()
     expect(screen.getByText('Kapasitas fiber')).toBeInTheDocument()
@@ -23,22 +25,30 @@ describe('ClosureDetail', () => {
     expect((await screen.findAllByText(/Feeder →/)).length).toBeGreaterThan(0)
   })
 
-  it('renders nothing for a node without a closure (e.g. a customer)', () => {
+  it('renders nothing for a node without a closure when read-only', () => {
     const { container } = renderWithProviders(
-      <ClosureDetail nodeId="no-closure-node" canManage={false} />,
+      <ClosureDetail nodeId="no-closure-node" nodeType="odp" canManage={false} />,
     )
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('offers to add a closure for a node without one (manage rights)', () => {
+    renderWithProviders(<ClosureDetail nodeId="no-closure-node" nodeType="odp" canManage />)
+    expect(screen.getByText('Node ini belum punya closure.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tambah closure' })).toBeInTheDocument()
+  })
+
   it('hides the splice add/remove controls without manage rights', async () => {
-    renderWithProviders(<ClosureDetail nodeId={await nodeWithSplice()} canManage={false} />)
+    renderWithProviders(
+      <ClosureDetail nodeId={await nodeWithSplice()} nodeType="odp" canManage={false} />,
+    )
     await screen.findByText(/Closure/)
     expect(screen.queryByRole('button', { name: 'Tambah' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Hapus sambungan' })).not.toBeInTheDocument()
   })
 
   it('exposes the add + per-splice remove controls with manage rights', async () => {
-    renderWithProviders(<ClosureDetail nodeId={await nodeWithSplice()} canManage />)
+    renderWithProviders(<ClosureDetail nodeId={await nodeWithSplice()} nodeType="odp" canManage />)
     expect(await screen.findByRole('button', { name: 'Tambah' })).toBeInTheDocument()
     expect(
       (await screen.findAllByRole('button', { name: 'Hapus sambungan' })).length,

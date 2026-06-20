@@ -12,8 +12,11 @@ import {
 import { type CircuitList, CircuitListSchema } from '@/schemas/circuit'
 import { type NetworkNode, NetworkNodeSchema } from '@/schemas/topology'
 import {
+  type Closure,
   type ClosureList,
   ClosureListSchema,
+  ClosureSchema,
+  type CreateClosureInput,
   type CreateSpliceInput,
   type Splice,
   SpliceSchema,
@@ -66,6 +69,11 @@ export async function updateCableRoute(id: string, input: UpdateCableRouteInput)
 // straight line from→to; the server recomputes lengthM when a route is given.
 export async function createCable(input: CreateCableInput): Promise<Cable> {
   return CableSchema.parse(await api.post('cables', { json: input }).json())
+}
+
+// Add a splice closure (joint enclosure) co-located with an ODC/ODP node.
+export async function createClosure(input: CreateClosureInput): Promise<Closure> {
+  return ClosureSchema.parse(await api.post('closures', { json: input }).json())
 }
 
 // Record a new fusion/mechanical splice inside a closure (a feeder→drop joint).

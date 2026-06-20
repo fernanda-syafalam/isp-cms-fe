@@ -7,6 +7,7 @@ import type { ClosureType } from '@/schemas/closure'
 
 import { useClosures, useDeleteSplice, useSplices } from '../hooks/useCabling'
 import { fiberCore } from '../lib/graph'
+import { ClosureFormDialog } from './ClosureFormDialog'
 import { SpliceFormDialog } from './SpliceFormDialog'
 
 const CLOSURE_TYPE_LABEL: Record<ClosureType, string> = {
@@ -18,22 +19,50 @@ const CLOSURE_TYPE_LABEL: Record<ClosureType, string> = {
 
 type Props = {
   nodeId: string
-  /** Gates the add/delete splice controls (network.manage). */
+  /** Host node type — seeds the closure type when adding one. */
+  nodeType: 'odc' | 'odp'
+  /** Gates the add/delete controls (network.manage). */
   canManage: boolean
 }
 
 // Closure detail for a selected ODC/ODP: tray + fiber capacity and the fusion
-// splices inside it (the feeder→drop joints). Renders nothing if the node has no
-// closure. Self-fetches from the shared cabling cache. With manage rights, the
-// splices can be added/removed in place.
-export function ClosureDetail({ nodeId, canManage }: Props) {
+// splices inside it (the feeder→drop joints). Self-fetches from the shared
+// cabling cache. With manage rights, the closure can be added when missing and
+// its splices added/removed in place.
+export function ClosureDetail({ nodeId, nodeType, canManage }: Props) {
   const closures = useClosures().data?.items
   const allSplices = useSplices().data?.items ?? []
   const deleteSplice = useDeleteSplice()
   const [addOpen, setAddOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const closure = closures?.find((c) => c.nodeId === nodeId)
-  if (!closure) return null
+
+  // No closure yet: offer to add one (manage only); otherwise show nothing.
+  if (!closure) {
+    if (!canManage) return null
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Closure</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-xs">
+          <p className="text-muted-foreground">Node ini belum punya closure.</p>
+          <Button variant="outline" size="sm" className="h-7" onClick={() => setCreateOpen(true)}>
+            <PlusIcon className="size-3.5" />
+            Tambah closure
+          </Button>
+        </CardContent>
+        <ClosureFormDialog
+          nodeId={nodeId}
+          defaultType={nodeType}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+        />
+      </Card>
+    )
+  }
+
   const splices = allSplices.filter((s) => s.closureId === closure.id)
   const full = splices.length >= closure.fiberCapacity
 
