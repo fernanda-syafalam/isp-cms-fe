@@ -1,20 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 
-import { CopyButton } from '@/components/shared/copy-button'
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatCurrency, formatDate } from '@/lib/format'
-import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
-import type { Connection, Customer, CustomerStatus } from '@/schemas/customer'
-import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
-import type { Ticket, TicketStatus } from '@/schemas/ticket'
+import type { CustomerStatus } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
@@ -25,11 +19,13 @@ import {
   CustomerStatusAction,
   CustomerWhatsappButton,
 } from './customer-actions'
+import { ConnectionCard } from './CustomerConnectionCard'
+import { InvoicesCard, TicketsCard } from './CustomerHistoryCards'
+import { ProfileCard, SubscriptionCard } from './CustomerProfileCards'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { CustomerTimeline } from './CustomerTimeline'
 import { ContractTab } from '@/features/contracts'
-import { OnuActions } from './OnuActions'
 import { PrivacyTab } from './PrivacyTab'
 
 const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
@@ -38,31 +34,6 @@ const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
   aktif: 'success',
   isolir: 'danger',
   berhenti: 'neutral',
-}
-
-const INVOICE_TONE: Record<InvoiceStatus, StatusTone> = {
-  paid: 'success',
-  pending: 'warning',
-  overdue: 'danger',
-  draft: 'neutral',
-}
-
-// GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
-function rxTone(dbm: number | null): StatusTone {
-  if (dbm == null) return 'neutral'
-  if (dbm >= -25) return 'success'
-  if (dbm >= -27) return 'warning'
-  return 'danger'
-}
-
-// Field-tech diagnosis for an ONT's RX power: what to check at the premises.
-function rxDiagnosis(dbm: number): string {
-  if (dbm >= -25) return 'Sinyal sehat — dalam rentang normal GPON (≥ −25 dBm).'
-  if (dbm >= -27)
-    return 'Redaman agak tinggi — pantau; cek konektor kotor atau tekukan kabel (bend).'
-  if (dbm >= -30)
-    return 'Redaman tinggi — kemungkinan konektor kotor, splice buruk, atau jarak/splitter berlebih.'
-  return 'Sinyal kritis / mendekati LOS — cek drop cable putus, konektor, atau core di ODP.'
 }
 
 type Props = {
@@ -150,234 +121,6 @@ export function CustomerDetailPage({ customerId }: Props) {
           <PrivacyTab customer={customer} invoices={invoices} tickets={tickets} />
         </TabsContent>
       </Tabs>
-    </div>
-  )
-}
-
-const TICKET_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  breached: 'danger',
-}
-
-function TicketsCard({ tickets }: { tickets: Ticket[] | undefined }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Tiket terkait</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!tickets ? (
-          <Skeleton className="h-20 w-full" />
-        ) : tickets.length === 0 ? (
-          <p className="py-6 text-center text-muted-foreground text-sm">Belum ada tiket.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {tickets.map((ticket) => (
-              <li key={ticket.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm">{ticket.subject}</p>
-                  <p className="font-mono text-muted-foreground text-xs">{ticket.code}</p>
-                </div>
-                <StatusBadge tone={TICKET_TONE[ticket.status]} label={statusLabel(ticket.status)} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function ProfileCard({ customer }: { customer: Customer }) {
-  const fields: Array<{ label: string; value: string; copy?: boolean }> = [
-    { label: 'Telepon', value: customer.phone, copy: true },
-    { label: 'Email', value: customer.email ?? '—', copy: true },
-    { label: 'Alamat', value: customer.address },
-    { label: 'Area', value: customer.areaName ?? '—' },
-    { label: 'NPWP', value: customer.npwp ?? '—', copy: true },
-    { label: 'Reseller', value: customer.resellerName ?? '—' },
-    { label: 'Bergabung', value: formatDate(customer.joinedAt) },
-  ]
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Data pelanggan</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <dl className="space-y-3">
-          {fields.map((f) => (
-            <div key={f.label} className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground text-xs">{f.label}</dt>
-              <dd className="flex items-center gap-1 text-right text-sm">
-                {f.value}
-                {f.copy && f.value !== '—' ? (
-                  <CopyButton value={f.value} label={`${f.label} disalin`} />
-                ) : null}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </CardContent>
-    </Card>
-  )
-}
-
-function SubscriptionCard({ customer }: { customer: Customer }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Langganan</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground text-xs">Paket</span>
-          <span className="text-sm">{customer.planName}</span>
-        </div>
-        <div className="flex items-center justify-between gap-4 border-border border-t pt-3">
-          <span className="text-muted-foreground text-xs">Piutang</span>
-          <span
-            className={`font-mono font-semibold text-sm tabular-nums ${
-              customer.outstanding > 0 ? 'text-red-600 dark:text-red-400' : ''
-            }`}
-          >
-            {formatCurrency(customer.outstanding)}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ConnectionCard({
-  customerId,
-  connection,
-}: {
-  customerId: string
-  connection: Connection | null
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Koneksi & Jaringan</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {connection ? (
-          <>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tipe" value={statusLabel(connection.type)} />
-              <Field label="PPPoE" value={connection.pppoeUsername} mono />
-              <Field label="Profil" value={connection.profile} />
-              <Field label="IP" value={connection.ipAddress} mono />
-              <div>
-                <dt className="text-muted-foreground text-xs">ONU Serial</dt>
-                <dd className="mt-1 flex items-center gap-2 text-sm">
-                  <span className="font-mono">{connection.onuSerial ?? '—'}</span>
-                  {connection.onuSerial ? (
-                    <Link
-                      to="/network/acs"
-                      search={{ q: connection.onuSerial }}
-                      className="text-primary text-xs hover:underline"
-                    >
-                      Kelola ONU
-                    </Link>
-                  ) : null}
-                </dd>
-              </div>
-              <Field label="OLT" value={connection.olt ?? '—'} />
-              <Field label="PON Port" value={connection.ponPort ?? '—'} mono />
-              <div>
-                <dt className="text-muted-foreground text-xs">Redaman (RX)</dt>
-                <dd className="mt-1">
-                  {connection.rxPower == null ? (
-                    <span className="text-sm">—</span>
-                  ) : (
-                    <StatusBadge
-                      tone={rxTone(connection.rxPower)}
-                      label={`${connection.rxPower} dBm`}
-                      dot={false}
-                    />
-                  )}
-                </dd>
-              </div>
-            </dl>
-            {connection.rxPower != null ? (
-              <div
-                className={`mt-4 rounded-md border px-3 py-2 text-xs ${
-                  rxTone(connection.rxPower) === 'danger'
-                    ? 'border-destructive/30 bg-destructive/10 text-destructive'
-                    : rxTone(connection.rxPower) === 'warning'
-                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                      : 'border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-400'
-                }`}
-              >
-                {rxDiagnosis(connection.rxPower)}
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <p className="py-6 text-center text-muted-foreground text-sm">
-            Belum ada koneksi — pelanggan masih tahap prospek/instalasi.
-          </p>
-        )}
-        {connection?.onuSerial ? (
-          <div className="border-border border-t pt-4">
-            <OnuActions customerId={customerId} ssid={`WiFi-${connection.pppoeUsername}`} />
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
-  )
-}
-
-function InvoicesCard({ invoices }: { invoices: Invoice[] | undefined }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Tagihan terakhir</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!invoices ? (
-          <Skeleton className="h-20 w-full" />
-        ) : invoices.length === 0 ? (
-          <p className="py-6 text-center text-muted-foreground text-sm">Belum ada tagihan.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {invoices.map((inv) => (
-              <li key={inv.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <Link
-                    to="/invoices/$invoiceId"
-                    params={{ invoiceId: inv.id }}
-                    className="font-medium font-mono text-sm hover:underline"
-                  >
-                    {inv.invoiceNo}
-                  </Link>
-                  <p className="text-muted-foreground text-xs">
-                    Jatuh tempo {formatDate(inv.dueDate)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm tabular-nums">
-                    {formatCurrency(invoiceTotal(inv))}
-                  </span>
-                  <StatusBadge tone={INVOICE_TONE[inv.status]} label={statusLabel(inv.status)} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div>
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className={`mt-0.5 text-sm ${mono ? 'font-mono' : ''}`}>{value}</dd>
     </div>
   )
 }
