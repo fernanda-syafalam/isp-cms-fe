@@ -1,17 +1,9 @@
-import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  CheckCircle2Icon,
-  HandCoinsIcon,
-  MessageSquareIcon,
-  PlayIcon,
-  PlusIcon,
-  UserIcon,
-} from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { UserIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
   DETAIL_LINKED_ROW_CLASS,
-  DetailActionBar,
   DetailLinkedRow,
   DetailMeta,
   DetailMetaGrid,
@@ -28,29 +20,17 @@ import { useCan } from '@/features/auth'
 import { formatDateTime } from '@/lib/format'
 import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
-import type { Ticket, TicketEvent, TicketStatus } from '@/schemas/ticket'
+import type { Ticket, TicketStatus } from '@/schemas/ticket'
 
-import {
-  useAddComment,
-  useCreateWorkOrderFromTicket,
-  useTicket,
-  useTicketEvents,
-  useUpdateTicket,
-} from '../hooks/useTickets'
+import { useAddComment, useTicket, useTicketEvents } from '../hooks/useTickets'
+import { TicketSheetActions } from './TicketSheetActions'
+import { TicketTimelineItem } from './TicketTimelineItem'
 
 const STATUS_TONE: Record<TicketStatus, StatusTone> = {
   open: 'info',
   in_progress: 'warning',
   resolved: 'success',
   breached: 'danger',
-}
-
-const KIND_LABEL: Record<TicketEvent['kind'], string> = {
-  created: 'dibuat',
-  comment: 'komentar',
-  status: 'status',
-  assign: 'assign',
-  workorder: 'work order',
 }
 
 type Props = {
@@ -107,15 +87,8 @@ function SheetBody({ ticketId }: { ticketId: string }) {
 function TicketBody({ ticket }: { ticket: Ticket }) {
   const { data: events } = useTicketEvents(ticket.id)
   const canManage = useCan('tickets.manage')
-  const canBill = useCan('billing.run')
-  const navigate = useNavigate()
-  const update = useUpdateTicket(ticket.id)
   const addComment = useAddComment(ticket.id)
-  const createWo = useCreateWorkOrderFromTicket(ticket.id)
   const [comment, setComment] = useState('')
-
-  const canStart = ticket.status === 'open'
-  const canResolve = ticket.status === 'open' || ticket.status === 'in_progress'
 
   const submitComment = () => {
     const body = comment.trim()
@@ -125,61 +98,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
 
   return (
     <div className="divide-y divide-sidebar-border">
-      {canManage || canBill ? (
-        <DetailActionBar>
-          {canManage ? (
-            <>
-              {canStart ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => update.mutate({ status: 'in_progress' })}
-                >
-                  <PlayIcon className="size-4" />
-                  Mulai
-                </Button>
-              ) : null}
-              {canResolve ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => update.mutate({ status: 'resolved' })}
-                >
-                  <CheckCircle2Icon className="size-4" />
-                  Selesai
-                </Button>
-              ) : null}
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={createWo.isPending}
-                onClick={() => createWo.mutate()}
-              >
-                <PlusIcon className="size-4" />
-                Work Order
-              </Button>
-            </>
-          ) : null}
-          {canBill ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                navigate({
-                  to: '/sla-credits',
-                  search: {
-                    customer: ticket.customerName,
-                    ticket: ticket.code,
-                  },
-                })
-              }
-            >
-              <HandCoinsIcon className="size-4" />
-              Kredit SLA
-            </Button>
-          ) : null}
-        </DetailActionBar>
-      ) : null}
+      <TicketSheetActions ticket={ticket} />
 
       <DetailSection>
         <DetailMetaGrid>
@@ -206,7 +125,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
       <DetailSection title="Riwayat">
         <ul className="space-y-4">
           {(events?.items ?? []).map((ev) => (
-            <TimelineItem key={ev.id} event={ev} />
+            <TicketTimelineItem key={ev.id} event={ev} />
           ))}
         </ul>
         {canManage ? (
@@ -242,24 +161,5 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         </DetailSection>
       ) : null}
     </div>
-  )
-}
-
-function TimelineItem({ event }: { event: TicketEvent }) {
-  const Icon = event.kind === 'comment' ? MessageSquareIcon : UserIcon
-  return (
-    <li className="flex gap-3">
-      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Icon className="size-3.5 text-muted-foreground" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm">
-          <span className="font-medium">{event.author}</span>{' '}
-          <span className="text-muted-foreground text-xs">· {KIND_LABEL[event.kind]}</span>
-        </p>
-        <p className="text-sm">{event.body}</p>
-        <p className="mt-0.5 text-muted-foreground text-xs">{formatDateTime(event.at)}</p>
-      </div>
-    </li>
   )
 }
