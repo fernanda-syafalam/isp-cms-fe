@@ -1,37 +1,21 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import { CheckIcon, HandCoinsIcon, PlusIcon, WalletIcon, XIcon } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { PlusIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
-import { formatCurrency, formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { SlaCredit, SlaCreditStatus } from '@/schemas/slaCredit'
 
 import { useApplySlaCredit, useSlaCredits, useVoidSlaCredit } from '../hooks/useSlaCredits'
 import { SlaCreditFormDialog } from './SlaCreditFormDialog'
+import { slaCreditColumns } from './slaCreditsColumns'
+import { SlaCreditsKpis } from './SlaCreditsKpis'
 
 const routeApi = getRouteApi('/_auth/sla-credits')
-
-const STATUS_TONE: Record<SlaCreditStatus, StatusTone> = {
-  pending: 'warning',
-  applied: 'success',
-  void: 'neutral',
-}
 
 export function SlaCreditsPage() {
   const canManage = useCan('billing.run')
@@ -78,107 +62,8 @@ export function SlaCreditsPage() {
     { value: 'void', label: statusLabel('void'), count: summary?.void },
   ]
 
-  const columns = useMemo<ColumnDef<SlaCredit>[]>(
-    () => [
-      {
-        accessorKey: 'customerName',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Pelanggan" />,
-        meta: { title: 'Pelanggan' },
-        cell: ({ row }) =>
-          row.original.customerId ? (
-            <Link
-              to="/customers/$customerId"
-              params={{ customerId: row.original.customerId }}
-              className="font-medium hover:underline"
-            >
-              {row.original.customerName}
-            </Link>
-          ) : (
-            <span className="font-medium">{row.original.customerName}</span>
-          ),
-      },
-      {
-        accessorKey: 'amount',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Nominal" />,
-        meta: { title: 'Nominal', align: 'right' },
-        cell: ({ row }) => (
-          <span className="font-mono tabular-nums">{formatCurrency(row.original.amount)}</span>
-        ),
-      },
-      {
-        accessorKey: 'reason',
-        header: 'Alasan',
-        meta: { title: 'Alasan' },
-        cell: ({ row }) => <span className="text-sm">{row.original.reason}</span>,
-      },
-      {
-        accessorKey: 'ticketCode',
-        header: 'Tiket',
-        meta: { title: 'Tiket' },
-        cell: ({ row }) =>
-          row.original.ticketCode && row.original.ticketId ? (
-            <Link
-              to="/tickets/$ticketId"
-              params={{ ticketId: row.original.ticketId }}
-              className="font-mono text-xs hover:underline"
-            >
-              {row.original.ticketCode}
-            </Link>
-          ) : row.original.ticketCode ? (
-            <span className="font-mono text-xs">{row.original.ticketCode}</span>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal" />,
-        meta: { title: 'Tanggal' },
-        cell: ({ row }) => formatDate(row.original.createdAt),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        meta: { title: 'Status' },
-        cell: ({ row }) => (
-          <StatusBadge
-            tone={STATUS_TONE[row.original.status]}
-            label={statusLabel(row.original.status)}
-          />
-        ),
-      },
-      {
-        id: 'actions',
-        meta: { align: 'right' },
-        enableHiding: false,
-        cell: ({ row }) => {
-          const c = row.original
-          if (!canManage || c.status !== 'pending') return null
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8">
-                  Aksi
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem onSelect={() => apply.mutate(c.id)}>
-                  <CheckIcon className="size-4" />
-                  Terapkan ke tagihan
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => voidCredit.mutate(c.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <XIcon className="size-4" />
-                  Batalkan
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        },
-      },
-    ],
+  const columns = useMemo(
+    () => slaCreditColumns({ canManage, apply, voidCredit }),
     [canManage, apply, voidCredit],
   )
 
@@ -197,33 +82,7 @@ export function SlaCreditsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Total kredit aktif"
-          value={summary?.activeAmount ?? 0}
-          format={formatCurrency}
-          icon={WalletIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Menunggu"
-          value={summary?.pending ?? 0}
-          hint="belum diterapkan"
-          hintTone="negative"
-          icon={HandCoinsIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Diterapkan"
-          value={summary?.applied ?? 0}
-          hintTone="positive"
-          icon={CheckIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <SlaCreditsKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status kredit SLA"
