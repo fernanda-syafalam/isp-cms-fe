@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
 import {
   ArrowLeftIcon,
   BanknoteIcon,
@@ -10,94 +9,27 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { KpiCard } from '@/components/shared/kpi-card'
 import { ErrorState } from '@/components/shared/error-state'
+import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { isRouteAllowed } from '@/components/shared/nav'
-import { useCan, useEffectiveRole } from '@/features/auth'
+import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
-import { formatCurrency, formatDateTime, formatNumber, formatPercent } from '@/lib/format'
+import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Customer, CustomerStatus } from '@/schemas/customer'
-import type { LedgerEntry, LedgerEntryType } from '@/schemas/reseller'
+import type { LedgerEntryType } from '@/schemas/reseller'
 
-import { useReseller, useResellerCustomers, useResellerLedger } from '../hooks/useResellers'
+import { useReseller, useResellerLedger } from '../hooks/useResellers'
 import { LedgerEntryDialog } from './LedgerEntryDialog'
-
-const CUSTOMER_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
+import { ledgerColumns } from './resellerLedgerColumns'
+import { ResellerCustomersCard } from './ResellerCustomersCard'
 
 // Representative ARPU used to estimate a reseller's monthly commission from
 // their customer count and commission rate (mock — real systems sum invoices).
 const ARPU = 250_000
-
-const LEDGER_TONE: Record<LedgerEntryType, StatusTone> = {
-  topup: 'info',
-  commission: 'success',
-  deduction: 'warning',
-  withdrawal: 'neutral',
-}
-
-// Stateless ledger columns (no component callbacks) — hoisted so they are not
-// rebuilt per render. Sortable keys match the backend whitelist
-// (at, type, amount, balanceAfter); "note" is free-text searched, not sorted.
-const LEDGER_COLUMNS: ColumnDef<LedgerEntry>[] = [
-  {
-    accessorKey: 'at',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal" />,
-    meta: { title: 'Tanggal' },
-    cell: ({ row }) => formatDateTime(row.original.at),
-  },
-  {
-    accessorKey: 'type',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Tipe" />,
-    meta: { title: 'Tipe' },
-    cell: ({ row }) => (
-      <StatusBadge tone={LEDGER_TONE[row.original.type]} label={statusLabel(row.original.type)} />
-    ),
-  },
-  {
-    accessorKey: 'note',
-    header: 'Catatan',
-    meta: { title: 'Catatan' },
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'amount',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Jumlah" />,
-    meta: { title: 'Jumlah', align: 'right' },
-    cell: ({ row }) => {
-      const positive = row.original.amount >= 0
-      return (
-        <span
-          className={`font-mono tabular-nums ${positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-        >
-          {positive ? '+' : '−'}
-          {formatCurrency(Math.abs(row.original.amount))}
-        </span>
-      )
-    },
-  },
-  {
-    accessorKey: 'balanceAfter',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
-    meta: { title: 'Saldo', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatCurrency(row.original.balanceAfter)}</span>
-    ),
-  },
-]
 
 type Props = {
   resellerId: string
@@ -200,7 +132,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
       <ResellerCustomersCard resellerName={reseller.name} />
 
       <DataTable
-        columns={LEDGER_COLUMNS}
+        columns={ledgerColumns}
         data={ledger.data?.items}
         isLoading={ledger.isLoading}
         isError={ledger.isError}
@@ -233,61 +165,6 @@ export function ResellerDetailPage({ resellerId }: Props) {
         />
       ) : null}
     </div>
-  )
-}
-
-function ResellerCustomersCard({ resellerName }: { resellerName: string }) {
-  const { data: customers, isLoading } = useResellerCustomers(resellerName)
-  // A partner (mitra) can't open the customer detail page (not in their
-  // allowlist) — show names as plain text so they don't bounce off the guard.
-  const canOpenCustomer = isRouteAllowed(useEffectiveRole(), '/customers')
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          Pelanggan reseller
-          {customers ? ` (${formatNumber(customers.length)})` : ''}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-20 w-full" />
-        ) : !customers || customers.length === 0 ? (
-          <p className="py-6 text-center text-muted-foreground text-sm">
-            Belum ada pelanggan dari reseller ini.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {customers.map((c: Customer) => {
-              const info = (
-                <>
-                  <span className="block truncate font-medium text-sm">{c.fullName}</span>
-                  <span className="font-mono text-muted-foreground text-xs">
-                    {c.customerNo} · {c.areaName ?? '—'}
-                  </span>
-                </>
-              )
-              return (
-                <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
-                  {canOpenCustomer ? (
-                    <Link
-                      to="/customers/$customerId"
-                      params={{ customerId: c.id }}
-                      className="min-w-0 hover:underline"
-                    >
-                      {info}
-                    </Link>
-                  ) : (
-                    <div className="min-w-0">{info}</div>
-                  )}
-                  <StatusBadge tone={CUSTOMER_TONE[c.status]} label={statusLabel(c.status)} />
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
   )
 }
 
