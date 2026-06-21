@@ -1,14 +1,4 @@
 import { BanknoteIcon, CoinsIcon, TrendingDownIcon, UsersIcon, WalletIcon } from 'lucide-react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { useState } from 'react'
 
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
@@ -21,6 +11,8 @@ import { useDashboardSummary, useReportsSummary } from '@/hooks/useAnalytics'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 
 import { useCustomerComposition } from '../hooks/useCustomerComposition'
+import { CustomerCompositionChart } from './CustomerCompositionChart'
+import { MovementChart } from './MovementChart'
 
 const PERIOD_TABS: FilterTabItem[] = [
   { value: '3', label: '3 bulan' },
@@ -135,59 +127,7 @@ export function ReportsPage() {
             <CardTitle className="text-base">Komposisi pelanggan</CardTitle>
           </CardHeader>
           <CardContent>
-            {composition ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={composition}
-                  layout="vertical"
-                  margin={{ top: 4, right: 16, bottom: 4, left: 8 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    horizontal={false}
-                  />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tick={{
-                      fill: 'var(--color-muted-foreground)',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="label"
-                    width={80}
-                    tick={{
-                      fill: 'var(--color-muted-foreground)',
-                      fontSize: 12,
-                    }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'var(--color-muted)' }}
-                    contentStyle={{
-                      background: 'var(--color-popover)',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 8,
-                      color: 'var(--color-popover-foreground)',
-                    }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    name="Pelanggan"
-                    fill="var(--color-chart-1)"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Skeleton className="h-[280px] w-full" />
-            )}
+            <CustomerCompositionChart data={composition} />
           </CardContent>
         </Card>
       </div>
@@ -197,52 +137,7 @@ export function ReportsPage() {
           <CardTitle className="text-base">Pelanggan baru vs churn</CardTitle>
         </CardHeader>
         <CardContent>
-          {reports ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={reports.movement} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--color-border)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fill: 'var(--color-muted-foreground)', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={40}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: 'var(--color-popover)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 8,
-                    color: 'var(--color-popover-foreground)',
-                  }}
-                />
-                <Legend />
-                <Bar
-                  dataKey="added"
-                  name="Baru"
-                  fill="var(--color-chart-2)"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="churned"
-                  name="Churn"
-                  fill="var(--color-chart-5)"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <Skeleton className="h-[280px] w-full" />
-          )}
+          <MovementChart data={reports?.movement} />
         </CardContent>
       </Card>
     </div>
