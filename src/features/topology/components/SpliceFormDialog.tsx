@@ -4,47 +4,17 @@ import { useForm } from 'react-hook-form'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { FormSkeleton } from '@/components/shared/skeletons'
-import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { type CreateSpliceInput, CreateSpliceSchema, type SpliceType } from '@/schemas/closure'
+import { type CreateSpliceInput, CreateSpliceSchema } from '@/schemas/closure'
 
-import { useCreateSplice } from '../hooks/useCabling'
-import { useCables } from '../hooks/useCabling'
-
-const SPLICE_TYPE_LABEL: Record<SpliceType, string> = {
-  fusion: 'Fusion',
-  mechanical: 'Mekanis',
-  passthrough: 'Pass-through',
-}
-
-const CABLE_KIND_LABEL: Record<string, string> = {
-  feeder: 'Feeder',
-  distribution: 'Distribusi',
-  drop: 'Drop',
-}
+import { useCables, useCreateSplice } from '../hooks/useCabling'
+import { SpliceForm } from './SpliceForm'
 
 type Props = {
   closureId: string
@@ -114,181 +84,14 @@ export function SpliceFormDialog({ closureId, nodeId, open, onOpenChange }: Prop
             description="Tambahkan kabel yang melewati closure ini sebelum mencatat sambungan."
           />
         ) : (
-          <Form {...form}>
-            <form onSubmit={handleSubmit} noValidate className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="inCableId"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Kabel masuk</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger aria-label="Kabel masuk">
-                            <SelectValue placeholder="Pilih kabel" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cables.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {CABLE_KIND_LABEL[c.kind] ?? c.kind} · {c.spec}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <NumberField control={form.control} name="inTubeNo" label="Tube masuk" min={1} />
-                <NumberField
-                  control={form.control}
-                  name="inCoreNo"
-                  label="Core masuk"
-                  min={1}
-                  max={12}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="outCableId"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Kabel keluar</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger aria-label="Kabel keluar">
-                            <SelectValue placeholder="Pilih kabel" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {cables.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {CABLE_KIND_LABEL[c.kind] ?? c.kind} · {c.spec}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <NumberField control={form.control} name="outTubeNo" label="Tube keluar" min={1} />
-                <NumberField
-                  control={form.control}
-                  name="outCoreNo"
-                  label="Core keluar"
-                  min={1}
-                  max={12}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Jenis</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger aria-label="Jenis sambungan">
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {(Object.keys(SPLICE_TYPE_LABEL) as SpliceType[]).map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {SPLICE_TYPE_LABEL[t]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lossDb"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Loss (dB)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onOpenChange(false)}
-                  disabled={form.formState.isSubmitting}
-                >
-                  Batal
-                </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Menyimpan…' : 'Tambah'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <SpliceForm
+            form={form}
+            cables={cables}
+            onSubmit={handleSubmit}
+            onCancel={() => onOpenChange(false)}
+          />
         )}
       </DialogContent>
     </Dialog>
-  )
-}
-
-// Small reusable number field for the tube/core integer inputs.
-function NumberField({
-  control,
-  name,
-  label,
-  min,
-  max,
-}: {
-  control: ReturnType<typeof useForm<CreateSpliceInput>>['control']
-  name: 'inTubeNo' | 'inCoreNo' | 'outTubeNo' | 'outCoreNo'
-  label: string
-  min: number
-  max?: number
-}) {
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <Input
-              type="number"
-              min={min}
-              {...(max ? { max } : {})}
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.valueAsNumber)}
-              onBlur={field.onBlur}
-              name={field.name}
-              ref={field.ref}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
   )
 }
