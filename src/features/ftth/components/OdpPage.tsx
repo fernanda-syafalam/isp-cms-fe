@@ -1,34 +1,19 @@
-import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, NetworkIcon, PlugZapIcon, SignalIcon } from 'lucide-react'
+import { DownloadIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { OdpFilter, OdpView } from '@/api/odp'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import type { OdpRecord, OdpStatus } from '@/schemas/odp'
 
 import { useExportOdp, useOdpList } from '../hooks/useOdp'
-
-const STATUS_TONE: Record<OdpStatus, StatusTone> = {
-  healthy: 'success',
-  warning: 'warning',
-  critical: 'danger',
-}
-
-const STATUS_LABEL: Record<OdpStatus, string> = {
-  healthy: 'Sehat',
-  warning: 'Perhatian',
-  critical: 'Kritis',
-}
+import { odpColumns, toCsvRow } from './odpColumns'
+import { OdpKpis } from './OdpKpis'
 
 // 'all' has no server view param; the rest map straight to the `view` query.
 const FILTERS = ['all', 'available', 'full', 'optical'] as const
@@ -39,80 +24,6 @@ const FILTER_LABEL: Record<Filter, string> = {
   full: 'Penuh',
   optical: 'Optik bermasalah',
 }
-
-const free = (o: OdpRecord) => o.totalPorts - o.usedPorts
-
-const toCsvRow = (o: OdpRecord) => ({
-  ODP: o.name,
-  Area: o.area,
-  Splitter: o.splitter,
-  Port: `${o.usedPorts}/${o.totalPorts}`,
-  'Slot kosong': free(o),
-  'Redaman (dBm)': o.avgRxPowerDbm,
-  Status: STATUS_LABEL[o.status],
-})
-
-// Static column defs (no component state). Sortable keys (name/usedPorts/
-// avgRxPowerDbm) match the backend sort whitelist; the rest are plain.
-const COLUMNS: ColumnDef<OdpRecord>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="ODP" />,
-    meta: { title: 'ODP' },
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-  },
-  { accessorKey: 'area', header: 'Area', meta: { title: 'Area' } },
-  {
-    accessorKey: 'splitter',
-    header: 'Splitter',
-    meta: { title: 'Splitter' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.splitter}</span>,
-  },
-  {
-    accessorKey: 'usedPorts',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Kapasitas port" />,
-    meta: { title: 'Kapasitas port' },
-    cell: ({ row }) => {
-      const { usedPorts, totalPorts } = row.original
-      const p = Math.round((usedPorts / totalPorts) * 100)
-      return (
-        <div className="w-36">
-          <div className="flex justify-between text-xs">
-            <span className="font-mono tabular-nums">
-              {usedPorts}/{totalPorts}
-            </span>
-            <span className="text-muted-foreground">{p}%</span>
-          </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className={`h-full rounded-full ${p >= 100 ? 'bg-red-500' : p >= 80 ? 'bg-amber-500' : 'bg-primary'}`}
-              style={{ width: `${Math.max(2, p)}%` }}
-            />
-          </div>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: 'avgRxPowerDbm',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
-    meta: { title: 'Redaman', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{row.original.avgRxPowerDbm} dBm</span>
-    ),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Optik',
-    meta: { title: 'Optik' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={STATUS_LABEL[row.original.status]}
-      />
-    ),
-  },
-]
 
 export function OdpPage() {
   const table = useTableQuery({ pageSize: 20 })
@@ -185,43 +96,7 @@ export function OdpPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total ODP"
-          value={summary?.totalOdp ?? 0}
-          icon={NetworkIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Utilisasi port"
-          value={summary?.utilization ?? 0}
-          format={(v) => `${v}%`}
-          hint="terpakai"
-          accent="amber"
-          icon={PlugZapIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="ODP penuh"
-          value={summary?.full ?? 0}
-          hint="tanpa slot kosong"
-          hintTone="negative"
-          icon={PlugZapIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Optik bermasalah"
-          value={summary?.optical ?? 0}
-          hint="redaman tinggi"
-          hintTone="negative"
-          icon={SignalIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <OdpKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter kapasitas / kesehatan ODP"
@@ -231,7 +106,7 @@ export function OdpPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={odpColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
