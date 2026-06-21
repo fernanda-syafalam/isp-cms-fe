@@ -1,93 +1,22 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import { DownloadIcon, PlusIcon, RouterIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { DownloadIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { RouterFilter } from '@/api/routers'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDateTime, formatNumber } from '@/lib/format'
-import { statusLabel } from '@/lib/status-label'
-import type { Router, RouterStatus } from '@/schemas/router'
 
 import { useExportRouters, useRoutersList } from '../hooks/useRouters'
 import { ConnectRouterDialog } from './ConnectRouterDialog'
-
-const STATUS_TONE: Record<RouterStatus, StatusTone> = {
-  online: 'success',
-  offline: 'danger',
-}
-
-const toCsvRow = (r: Router) => ({
-  Router: r.name,
-  Alamat: r.address,
-  Model: r.model,
-  'Secret PPPoE': r.secretCount,
-  'Sinkron terakhir': formatDateTime(r.lastSyncAt),
-  Status: statusLabel(r.status),
-})
-
-// Static column defs (no component state). Sortable keys (name/secretCount/
-// lastSyncAt/status) match the backend sort whitelist; secretCount is a real
-// cached column server-side so it is sortable. Alamat/Model are plain headers.
-const COLUMNS: ColumnDef<Router>[] = [
-  {
-    accessorKey: 'name',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Router" />,
-    meta: { title: 'Router' },
-    cell: ({ row }) => (
-      <Link
-        to="/network/routers/$routerId"
-        params={{ routerId: row.original.id }}
-        className="font-medium hover:underline"
-      >
-        {row.original.name}
-      </Link>
-    ),
-  },
-  {
-    accessorKey: 'address',
-    header: 'Alamat',
-    meta: { title: 'Alamat' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.address}</span>,
-  },
-  { accessorKey: 'model', header: 'Model', meta: { title: 'Model' } },
-  {
-    accessorKey: 'secretCount',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Secret PPPoE" />,
-    meta: { title: 'Secret PPPoE', align: 'right' },
-    cell: ({ row }) => (
-      <span className="font-mono tabular-nums">{formatNumber(row.original.secretCount)}</span>
-    ),
-  },
-  {
-    accessorKey: 'lastSyncAt',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Sinkron terakhir" />,
-    meta: { title: 'Sinkron terakhir' },
-    cell: ({ row }) => formatDateTime(row.original.lastSyncAt),
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={statusLabel(row.original.status)}
-      />
-    ),
-  },
-]
+import { routerColumns, toCsvRow } from './routersColumns'
+import { RoutersKpis } from './RoutersKpis'
 
 const routeApi = getRouteApi('/_auth/network/routers/')
 
@@ -167,33 +96,7 @@ export function RoutersListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Total router"
-          value={summary?.total ?? 0}
-          hint="Mikrotik terhubung"
-          icon={RouterIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Online"
-          value={by?.online ?? 0}
-          hint="aktif"
-          icon={WifiIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Offline"
-          value={by?.offline ?? 0}
-          hint="tidak tersinkron"
-          hintTone="negative"
-          icon={WifiOffIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <RoutersKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status router"
@@ -203,7 +106,7 @@ export function RoutersListPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={routerColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
