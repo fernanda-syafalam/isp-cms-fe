@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import type { NodeType } from '@/schemas/topology'
 
-import type { NodeFormValues } from './NodeFormDialog'
+import type { NodeFormValues } from './nodeFormSchema'
 
 const RATIOS = ['1:4', '1:8', '1:16', '1:32'] as const
 
