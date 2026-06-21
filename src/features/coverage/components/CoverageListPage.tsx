@@ -1,12 +1,5 @@
 import { getRouteApi } from "@tanstack/react-router";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
-  CheckCircle2Icon,
-  DownloadIcon,
-  RadioTowerIcon,
-  TriangleAlertIcon,
-  WrenchIcon,
-} from "lucide-react";
+import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -15,83 +8,17 @@ import {
   FilterTabs,
   type FilterTabItem,
 } from "@/components/shared/filter-tabs";
-import { KpiCard } from "@/components/shared/kpi-card";
 import { PageHeader } from "@/components/shared/page-header";
-import { StatusBadge, type StatusTone } from "@/components/shared/status-badge";
 import { DataTable } from "@/components/shared/table/data-table";
-import { DataTableColumnHeader } from "@/components/shared/table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { useTableQuery } from "@/hooks/useTableQuery";
 import { downloadCsv } from "@/lib/csv";
 import { getErrorMessage } from "@/lib/errors";
-import { formatNumber, formatPercent } from "@/lib/format";
 import { statusLabel } from "@/lib/status-label";
-import type { Coverage, CoverageStatus } from "@/schemas/coverage";
 
 import { useCoverageList, useExportCoverage } from "../hooks/useCoverage";
-
-const STATUS_TONE: Record<CoverageStatus, StatusTone> = {
-  operational: "success",
-  maintenance: "warning",
-  down: "danger",
-};
-
-const toCsvRow = (c: Coverage) => ({
-  Nama: c.name,
-  Tipe: c.type.toUpperCase(),
-  Wilayah: c.region,
-  Aktif: c.activeConnections,
-  Kapasitas: c.capacity,
-  Status: statusLabel(c.status),
-});
-
-// Static column defs (no component state): sortable keys (name/status) match the
-// backend sort whitelist; utilisation is a computed ratio, so it stays unsorted.
-const COLUMNS: ColumnDef<Coverage>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Nama" />
-    ),
-    meta: { title: "Nama" },
-    cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-  },
-  {
-    accessorKey: "type",
-    header: "Tipe",
-    meta: { title: "Tipe" },
-    cell: ({ row }) => <span className="uppercase">{row.original.type}</span>,
-  },
-  { accessorKey: "region", header: "Wilayah", meta: { title: "Wilayah" } },
-  {
-    id: "utilisation",
-    header: "Utilisasi",
-    meta: { align: "right" },
-    cell: ({ row }) => {
-      const { activeConnections, capacity } = row.original;
-      const ratio = capacity > 0 ? activeConnections / capacity : 0;
-      return (
-        <span className="font-mono tabular-nums">
-          {formatNumber(activeConnections)} / {formatNumber(capacity)} (
-          {formatPercent(ratio)})
-        </span>
-      );
-    },
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-    meta: { title: "Status" },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={STATUS_TONE[row.original.status]}
-        label={statusLabel(row.original.status)}
-      />
-    ),
-  },
-];
+import { coverageColumns, toCsvRow } from "./coverageColumns";
+import { CoverageKpis } from "./CoverageKpis";
 
 const routeApi = getRouteApi("/_auth/coverage");
 
@@ -170,42 +97,7 @@ export function CoverageListPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Total area"
-          value={summary?.total ?? 0}
-          hint="POP & cakupan"
-          icon={RadioTowerIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Operasional"
-          value={by?.operational ?? 0}
-          hint="normal"
-          icon={CheckCircle2Icon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Pemeliharaan"
-          value={by?.maintenance ?? 0}
-          hint="maintenance"
-          accent="amber"
-          icon={WrenchIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Down"
-          value={by?.down ?? 0}
-          hint="gangguan"
-          hintTone="negative"
-          icon={TriangleAlertIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <CoverageKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status cakupan"
@@ -215,7 +107,7 @@ export function CoverageListPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={coverageColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
