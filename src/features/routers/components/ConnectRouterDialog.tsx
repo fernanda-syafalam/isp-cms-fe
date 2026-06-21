@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CheckCircle2Icon, PlugZapIcon, TriangleAlertIcon } from 'lucide-react'
+import { PlugZapIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -29,6 +29,7 @@ import {
 } from '@/schemas/router'
 
 import { useConnectRouter, useTestRouterConnection } from '../hooks/useRouters'
+import { ConnectionTestResult } from './ConnectionTestResult'
 
 type Props = {
   open: boolean
@@ -176,29 +177,7 @@ export function ConnectRouterDialog({ open, onOpenChange }: Props) {
               )}
             />
 
-            {result ? (
-              result.ok ? (
-                <div className="space-y-1 rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm">
-                  <p className="flex items-center gap-2 font-medium text-green-700 dark:text-green-400">
-                    <CheckCircle2Icon className="size-4" />
-                    Koneksi berhasil
-                  </p>
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-muted-foreground text-xs">
-                    <dt>Identity</dt>
-                    <dd className="font-mono text-foreground">{result.identity}</dd>
-                    <dt>Model</dt>
-                    <dd className="font-mono text-foreground">{result.model}</dd>
-                    <dt>Versi</dt>
-                    <dd className="font-mono text-foreground">{result.version}</dd>
-                  </dl>
-                </div>
-              ) : (
-                <p className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
-                  <TriangleAlertIcon className="size-4 shrink-0" />
-                  {result.message ?? 'Koneksi gagal'}
-                </p>
-              )
-            ) : null}
+            {result ? <ConnectionTestResult result={result} /> : null}
 
             <DialogFooter className="gap-2 sm:justify-between">
               <Button type="button" variant="outline" disabled={test.isPending} onClick={runTest}>
