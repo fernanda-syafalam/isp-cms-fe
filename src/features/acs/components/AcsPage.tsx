@@ -1,86 +1,21 @@
-import { Link, getRouteApi } from '@tanstack/react-router'
-import type { ColumnDef } from '@tanstack/react-table'
-import { RotateCwIcon, RouterIcon, UploadCloudIcon, WifiIcon, WifiOffIcon } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { RotateCwIcon, UploadCloudIcon, WifiIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
-import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
-import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
-import { formatDateTime } from '@/lib/format'
-import type { AcsDevice } from '@/schemas/acs'
 
 import { useAcsDevices, useBulkAcs } from '../hooks/useAcs'
+import { acsColumns } from './acsColumns'
+import { AcsKpis } from './AcsKpis'
 import { BulkFirmwareDialog } from './BulkFirmwareDialog'
 import { BulkWifiDialog } from './BulkWifiDialog'
 
 const routeApi = getRouteApi('/_auth/network/acs')
-
-// Static column defs (no component state). Sortable keys (serial/rxPowerDbm)
-// match the backend sort whitelist; the rest are plain headers.
-const COLUMNS: ColumnDef<AcsDevice>[] = [
-  {
-    accessorKey: 'serial',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Serial ONU" />,
-    meta: { title: 'Serial ONU' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.serial}</span>,
-  },
-  {
-    accessorKey: 'customerName',
-    header: 'Pelanggan',
-    meta: { title: 'Pelanggan' },
-    // An ACS device's id is the subscriber id (built from CUSTOMER_FIXTURES).
-    cell: ({ row }) => (
-      <Link
-        to="/customers/$customerId"
-        params={{ customerId: row.original.id }}
-        className="font-medium hover:underline"
-      >
-        {row.original.customerName}
-      </Link>
-    ),
-  },
-  { accessorKey: 'model', header: 'Model', meta: { title: 'Model' } },
-  {
-    accessorKey: 'firmware',
-    header: 'Firmware',
-    meta: { title: 'Firmware' },
-    cell: ({ row }) => <span className="font-mono text-sm">{row.original.firmware}</span>,
-  },
-  {
-    accessorKey: 'rxPowerDbm',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Redaman" />,
-    meta: { title: 'Redaman', align: 'right' },
-    cell: ({ row }) =>
-      row.original.rxPowerDbm == null ? (
-        <span className="text-muted-foreground">—</span>
-      ) : (
-        <span className="font-mono tabular-nums">{row.original.rxPowerDbm} dBm</span>
-      ),
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    meta: { title: 'Status' },
-    cell: ({ row }) => (
-      <StatusBadge
-        tone={row.original.status === 'online' ? 'success' : 'danger'}
-        label={row.original.status === 'online' ? 'Online' : 'Offline'}
-      />
-    ),
-  },
-  {
-    accessorKey: 'lastInform',
-    header: 'Inform terakhir',
-    meta: { title: 'Inform terakhir' },
-    cell: ({ row }) => formatDateTime(row.original.lastInform),
-  },
-]
 
 export function AcsPage() {
   const { q, status: statusParam } = routeApi.useSearch()
@@ -130,33 +65,7 @@ export function AcsPage() {
         description="Kelola CPE pelanggan massal: reboot, firmware, WiFi."
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Total CPE"
-          value={summary?.total ?? 0}
-          hint="perangkat terdaftar"
-          icon={RouterIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Online"
-          value={by?.online ?? 0}
-          hint="terhubung"
-          icon={WifiIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-        <KpiCard
-          label="Offline"
-          value={by?.offline ?? 0}
-          hint="tidak inform"
-          hintTone="negative"
-          icon={WifiOffIcon}
-          isLoading={isLoading}
-          isError={isError}
-        />
-      </div>
+      <AcsKpis summary={summary} isLoading={isLoading} isError={isError} />
 
       <FilterTabs
         ariaLabel="Filter status CPE"
@@ -166,7 +75,7 @@ export function AcsPage() {
       />
 
       <DataTable
-        columns={COLUMNS}
+        columns={acsColumns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
