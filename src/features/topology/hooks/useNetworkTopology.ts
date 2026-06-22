@@ -1,0 +1,361 @@
+import { useCallback, useMemo, useRef, useState } from 'react'
+
+import { useCan, useCurrentUser } from '@/features/auth'
+import { downloadCsv } from '@/lib/csv'
+import type { NetworkNode, NodeStatus } from '@/schemas/topology'
+
+import { useGeolocation } from './useGeolocation'
+import { useDeleteNode, useTopology, useUpdateNode } from './useTopology'
+import { useTopologyJobs } from './useTopologyJobs'
+import { useTopologySearch } from './useTopologySearch'
+import { nodesToCsvRows } from '../lib/export'
+import { localizeFaults } from '../lib/faults'
+import { toFaultHotspots } from '../lib/faultHeat'
+import {
+  buildForest,
+  downstreamIds,
+  impactedCustomerIds,
+  indexById,
+  nearFullOdps,
+  nearestFreeOdp,
+  nodeSearchText,
+  segmentMeters,
+  traceCircuit,
+  uplinkPath,
+} from '../lib/graph'
+import type { TopologyControlsProps } from '../components/TopologyControlsBody'
+
+export type NetworkTopology = ReturnType<typeof useNetworkTopology>
+
+// All state, derived data, and handlers for the network topology screen. The
+// page is a thin shell over this; the heavy child prop-bundles (controls, map,
+// aside, toolbar) are assembled here so the wiring lives in one place.
+export function useNetworkTopology() {
+  const { data, isLoading, isError } = useTopology()
+  const canEdit = useCan('network.manage')
+  const currentUser = useCurrentUser()
+  const jobs = useTopologyJobs(currentUser.data?.fullName ?? null)
+  const updateNode = useUpdateNode()
+  const deleteNode = useDeleteNode()
+
+  // Deep-linkable view state (view/base/filters/selection) lives in the URL.
+  const {
+    view,
+    base,
+    layer,
+    typeFilter,
+    statusFilter,
+    selectedId,
+    setView,
+    setBase,
+    setLayer,
+    setTypeFilter,
+    setStatusFilter,
+    setSelectedId,
+  } = useTopologySearch()
+
+  // Transient UI state — not worth sharing or persisting in the URL.
+  const [query, setQuery] = useState('')
+  const [editMode, setEditMode] = useState(false)
+  const [addMode, setAddMode] = useState(false)
+  // Outage hot-zone overlay; on by default so a NOC sees the blast zones the
+  // moment there's a fault (the toggle only appears when faults exist).
+  const [showHeat, setShowHeat] = useState(true)
+  const [geoEnabled, setGeoEnabled] = useState(false)
+  const [installOpen, setInstallOpen] = useState(false)
+  const [cableOpen, setCableOpen] = useState(false)
+  // "Pasang pelanggan" placement: while true, the next map click sets the drop
+  // location; installPoint feeds the dialog so the node lands where the customer
+  // actually is (not at nodes[0]) and the drop-length/nearest-ODP preview is real.
+  const [installMode, setInstallMode] = useState(false)
+  const [installPoint, setInstallPoint] = useState<{
+    lat: number
+    lng: number
+  } | null>(null)
+  const [myJobsOnly, setMyJobsOnly] = useState(false)
+  // The node the map should fly to. Set when selecting from the list/tree (the
+  // map may be framed elsewhere); a marker click does NOT fly (it's on screen).
+  const [flyToTarget, setFlyToTarget] = useState<NetworkNode | null>(null)
+  // Node form: { node } for edit, { latLng } for add, null when closed.
+  const [form, setForm] = useState<
+    { node: NetworkNode } | { latLng: { lat: number; lng: number } } | null
+  >(null)
+
+  const { position: userPosition, isLocating } = useGeolocation(geoEnabled)
+
+  const all = useMemo(() => data?.items ?? [], [data])
+  const byId = useMemo(() => indexById(all), [all])
+
+  const counts = useMemo(() => {
+    const c: Record<NodeStatus, number> = { up: 0, down: 0, unknown: 0 }
+    for (const n of all) c[n.status]++
+    return c
+  }, [all])
+
+  // Customer nodes whose subscriber has an open work order / ticket (badged on
+  // the map); the technician's own jobs (+ their uplink path) scope the filter.
+  const jobNodeIds = useMemo(
+    () =>
+      new Set(
+        all
+          .filter((n) => n.meta?.customerId && jobs.jobCustomerIds.has(n.meta.customerId))
+          .map((n) => n.id),
+      ),
+    [all, jobs.jobCustomerIds],
+  )
+  const myJobScopeIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const n of all) {
+      if (!n.meta?.customerId || !jobs.myJobCustomerIds.has(n.meta.customerId)) continue
+      for (const p of uplinkPath(n, byId)) ids.add(p.id)
+    }
+    return ids
+  }, [all, byId, jobs.myJobCustomerIds])
+
+  const visible = useMemo(
+    () =>
+      all.filter(
+        (n) =>
+          (typeFilter === 'all' || n.type === typeFilter) &&
+          (statusFilter === 'all' || n.status === statusFilter) &&
+          (!myJobsOnly || myJobScopeIds.has(n.id)),
+      ),
+    [all, typeFilter, statusFilter, myJobsOnly, myJobScopeIds],
+  )
+  const visibleById = useMemo(() => indexById(visible), [visible])
+  const forest = useMemo(() => buildForest(visible), [visible])
+  const impactedCount = useMemo(() => impactedCustomerIds(all).size, [all])
+  // Probable outage roots correlated from the dark customers (the NOC's first
+  // question: where's the fault, not which ONUs are red).
+  const faults = useMemo(() => localizeFaults(all), [all])
+  // Project the correlated faults onto map hot zones (impact halos).
+  const faultHotspots = useMemo(() => toFaultHotspots(faults), [faults])
+  // ODPs running low on free ports — capacity planning before installs fail.
+  const capacity = useMemo(() => nearFullOdps(all), [all])
+  // Refit the map when the visible set changes (filters/base/my-jobs) — not on selection.
+  const refitKey = `${typeFilter}:${statusFilter}:${base}:${myJobsOnly}`
+
+  const highlightIds = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return new Set<string>()
+    return new Set(all.filter((n) => nodeSearchText(n).includes(q)).map((n) => n.id))
+  }, [all, query])
+
+  const selected = selectedId ? (byId.get(selectedId) ?? null) : null
+  const activeIds = useMemo(() => {
+    if (!selected) return null
+    const ids = new Set<string>([selected.id])
+    for (const n of uplinkPath(selected, byId)) ids.add(n.id)
+    for (const id of downstreamIds(selected.id, all)) ids.add(id)
+    return ids
+  }, [selected, byId, all])
+
+  // Trace the selected customer's circuit: its uplink path lights up in the
+  // fiber-core colour (null for infra → plain accent).
+  const traceColor = useMemo(
+    () => (selected ? traceCircuit(selected, byId).coreHex : null),
+    [selected, byId],
+  )
+
+  // Distance from the technician to the selected node (straight line).
+  const distanceMeters =
+    userPosition && selected ? segmentMeters(userPosition, selected) : undefined
+  // When located with nothing selected, suggest the nearest ODP that has a free
+  // port — the "where can I hook up from here?" shortcut.
+  const nearestOdp = userPosition && !selected ? nearestFreeOdp(userPosition, all) : null
+
+  // Stable callbacks so the memoized markers don't rebuild on every GPS fix.
+  const setSelectedIdRef = useRef(setSelectedId)
+  setSelectedIdRef.current = setSelectedId
+  const updateNodeRef = useRef(updateNode)
+  updateNodeRef.current = updateNode
+  const handleMarkerSelect = useCallback((id: string) => setSelectedIdRef.current(id), [])
+  const handleMarkerMove = useCallback(
+    (id: string, lat: number, lng: number) =>
+      updateNodeRef.current.mutate({ id, input: { lat, lng } }),
+    [],
+  )
+
+  // Select + fly: used by the list/tree where the picked node may be off-screen.
+  const selectAndFly = (id: string) => {
+    setSelectedId(id)
+    setFlyToTarget(byId.get(id) ?? null)
+  }
+
+  // Search/affordance pick: select it, fly the map to it, and collapse the query.
+  const handlePick = (node: NetworkNode) => {
+    setSelectedId(node.id)
+    setFlyToTarget(node)
+    setQuery('')
+  }
+
+  const handleDelete = () => {
+    if (selected) deleteNode.mutate(selected.id)
+    setSelectedId(null)
+  }
+
+  // Enter/leave the install placement mode (mutually exclusive with edit/add).
+  const toggleInstall = () => {
+    setEditMode(false)
+    setAddMode(false)
+    setInstallMode((v) => !v)
+  }
+
+  // Commit an install point and open the dialog (from a map click or GPS).
+  const openInstallAt = (lat: number, lng: number) => {
+    setInstallPoint({ lat, lng })
+    setInstallMode(false)
+    setInstallOpen(true)
+  }
+
+  const controlsProps: TopologyControlsProps = {
+    nodes: all,
+    filters: { typeFilter, statusFilter, base, layer, query },
+    set: {
+      type: setTypeFilter,
+      status: setStatusFilter,
+      base: setBase,
+      layer: setLayer,
+      query: setQuery,
+    },
+    counts,
+    edit: {
+      canEdit,
+      editMode,
+      addMode,
+      toggleEdit: () => {
+        setEditMode((v) => !v)
+        setAddMode(false)
+        setInstallMode(false)
+      },
+      toggleAdd: () => {
+        setInstallMode(false)
+        setAddMode((v) => !v)
+      },
+    },
+    onPick: handlePick,
+  }
+
+  const toolbar = {
+    jobs: {
+      count: jobs.myCount,
+      only: myJobsOnly,
+      onToggle: () => setMyJobsOnly((v) => !v),
+    },
+    heat: {
+      count: faults.length,
+      show: showHeat,
+      onToggle: () => setShowHeat((v) => !v),
+    },
+    install: {
+      canEdit,
+      mode: installMode,
+      onToggle: () => {
+        if (!installMode) setView('map')
+        toggleInstall()
+      },
+    },
+    onAddCable: () => setCableOpen(true),
+    onExport: () => downloadCsv('topologi', nodesToCsvRows(visible, visibleById)),
+    exportDisabled: visible.length === 0,
+    nodeCount: all.length,
+  }
+
+  const mapProps = {
+    nodes: visible,
+    byId: visibleById,
+    base,
+    layer,
+    selectedId,
+    selectedNode: selected,
+    activeIds,
+    traceColor,
+    highlightIds,
+    jobNodeIds,
+    faultHotspots,
+    showFaultHeat: showHeat && faults.length > 0,
+    flyToTarget,
+    userPosition,
+    refitKey,
+    editMode,
+    addMode,
+    installMode,
+    onSelect: handleMarkerSelect,
+    onMove: handleMarkerMove,
+    onMapClick: (lat: number, lng: number) => {
+      if (installMode) {
+        openInstallAt(lat, lng)
+      } else {
+        setForm({ latLng: { lat, lng } })
+        setAddMode(false)
+      }
+    },
+  }
+
+  const geoProps = {
+    active: geoEnabled,
+    isLocating,
+    onToggle: () => setGeoEnabled((v) => !v),
+  }
+
+  const treeProps = {
+    forest,
+    selectedId,
+    highlightIds,
+    onSelect: selectAndFly,
+  }
+
+  const asideProps = {
+    selected,
+    byId,
+    nodes: all,
+    editMode,
+    canManage: canEdit,
+    distanceMeters,
+    nearestOdp,
+    faults,
+    capacity,
+    onClear: () => setSelectedId(null),
+    onEdit: () => {
+      if (selected) setForm({ node: selected })
+    },
+    onDelete: handleDelete,
+    onPickNearest: handlePick,
+    onSelectFault: selectAndFly,
+  }
+
+  return {
+    isLoading,
+    isError,
+    hasData: !!data,
+    view,
+    setView,
+    all,
+    counts,
+    openJobsCount: jobs.openCount,
+    controlsProps,
+    toolbar,
+    impactedCount,
+    statusFilter,
+    onToggleDownFilter: () => setStatusFilter(statusFilter === 'down' ? 'all' : 'down'),
+    installMode,
+    canUseGps: userPosition !== null,
+    onUseGps: () => {
+      if (userPosition) openInstallAt(userPosition.lat, userPosition.lng)
+    },
+    onCancelInstall: () => setInstallMode(false),
+    mapProps,
+    geoProps,
+    treeProps,
+    asideProps,
+    form,
+    setForm,
+    installOpen,
+    setInstallOpen,
+    installPoint,
+    setInstallPoint,
+    cableOpen,
+    setCableOpen,
+    handlePick,
+  }
+}
