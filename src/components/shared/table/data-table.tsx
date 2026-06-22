@@ -1,6 +1,5 @@
 import {
   type ColumnDef,
-  flexRender,
   functionalUpdate,
   getCoreRowModel,
   getFilteredRowModel,
@@ -19,37 +18,13 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { cn } from '@/lib/cn'
 
+import { DataTableCardList } from './DataTableCardList'
+import { DataTableGrid } from './DataTableGrid'
 import { DataTablePagination } from './data-table-pagination'
+// data-table-shared also carries the @tanstack/react-table ColumnMeta augmentation.
+import './data-table-shared'
 import { DataTableViewOptions } from './data-table-view-options'
-
-declare module '@tanstack/react-table' {
-  // Per-column display hints consumed by DataTable.
-  interface ColumnMeta<TData, TValue> {
-    align?: 'right' | 'center'
-    title?: string
-  }
-}
-
-const SKELETON_ROW_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const
-
-const alignClass = (align: 'right' | 'center' | undefined) =>
-  align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : undefined
-
-// Mirror a column's text alignment onto its fixed-width loading skeleton so the
-// placeholder sits under where the real value will land (right/center columns).
-const skeletonAlign = (align: 'right' | 'center' | undefined) =>
-  align === 'right' ? 'ml-auto' : align === 'center' ? 'mx-auto' : undefined
 
 /**
  * Server-driven table state. When provided, the table delegates paging,
@@ -244,112 +219,13 @@ export function DataTable<T>({
         </div>
       ) : (
         <>
-          {/* Mobile: card list — the table is md+ only so phones never horizontal-scroll. */}
-          <div className="space-y-2 md:hidden">
-            {isLoading
-              ? SKELETON_ROW_KEYS.map((key) => (
-                  <Skeleton key={key} className="h-24 w-full rounded-lg" />
-                ))
-              : rows.map((row) => (
-                  <div
-                    key={row.id}
-                    data-state={row.getIsSelected() ? 'selected' : undefined}
-                    className="rounded-lg border border-border bg-card p-3 data-[state=selected]:bg-muted"
-                  >
-                    <dl className="space-y-1.5">
-                      {row.getVisibleCells().map((cell) => {
-                        const title = cell.column.columnDef.meta?.title
-                        return (
-                          <div key={cell.id} className="flex items-start justify-between gap-3">
-                            <dt
-                              className={cn(
-                                'shrink-0 text-muted-foreground text-xs',
-                                !title && 'sr-only',
-                              )}
-                            >
-                              {title ?? 'Aksi'}
-                            </dt>
-                            <dd className="min-w-0 text-right text-sm">
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </dd>
-                          </div>
-                        )
-                      })}
-                    </dl>
-                  </div>
-                ))}
-          </div>
-
-          {/* Desktop: full table (md+). */}
-          <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((group) => (
-                  <TableRow key={group.id} className="hover:bg-transparent">
-                    {group.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className={alignClass(header.column.columnDef.meta?.align)}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {isLoading
-                  ? SKELETON_ROW_KEYS.map((key) => (
-                      <TableRow key={key} className="hover:bg-transparent">
-                        {table.getAllLeafColumns().map((col) => (
-                          <TableCell key={col.id} className={alignClass(col.columnDef.meta?.align)}>
-                            <Skeleton
-                              className={cn('h-4 w-24', skeletonAlign(col.columnDef.meta?.align))}
-                            />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  : rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() ? 'selected' : undefined}
-                        onClick={
-                          onRowClick
-                            ? (e) => {
-                                // Leave the row's own links/buttons/checkbox/menu to
-                                // their handlers; only a "blank" row click opens.
-                                if (
-                                  e.target instanceof HTMLElement &&
-                                  e.target.closest(
-                                    'a,button,input,[role="menuitem"],[role="checkbox"]',
-                                  )
-                                )
-                                  return
-                                onRowClick(row.original)
-                              }
-                            : undefined
-                        }
-                        className={cn(
-                          'transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
-                          onRowClick && 'cursor-pointer',
-                        )}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className={cn(alignClass(cell.column.columnDef.meta?.align))}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTableCardList rows={rows} isLoading={isLoading} />
+          <DataTableGrid
+            table={table}
+            rows={rows}
+            isLoading={isLoading}
+            {...(onRowClick ? { onRowClick } : {})}
+          />
         </>
       )}
 
