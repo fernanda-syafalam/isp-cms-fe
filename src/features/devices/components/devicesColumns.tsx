@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { rxTone } from '@/components/shared/optical-health'
+import { StatusBadge } from '@/components/shared/status-badge'
 import { deviceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDateTime, formatNumber } from '@/lib/format'
@@ -9,13 +10,6 @@ import { statusLabel } from '@/lib/status-label'
 import type { Device } from '@/schemas/device'
 
 import { DeviceRowActions } from './DeviceRowActions'
-
-// GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
-function rxTone(dbm: number): StatusTone {
-  if (dbm >= -25) return 'success'
-  if (dbm >= -27) return 'warning'
-  return 'danger'
-}
 
 export const toCsvRow = (d: Device) => ({
   Perangkat: d.name,

@@ -1,29 +1,12 @@
 import { Link } from '@tanstack/react-router'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { rxDiagnosis, rxTone } from '@/components/shared/optical-health'
+import { StatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { statusLabel } from '@/lib/status-label'
 import type { Connection } from '@/schemas/customer'
 
 import { OnuActions } from './OnuActions'
-
-// GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
-function rxTone(dbm: number | null): StatusTone {
-  if (dbm == null) return 'neutral'
-  if (dbm >= -25) return 'success'
-  if (dbm >= -27) return 'warning'
-  return 'danger'
-}
-
-// Field-tech diagnosis for an ONT's RX power: what to check at the premises.
-function rxDiagnosis(dbm: number): string {
-  if (dbm >= -25) return 'Sinyal sehat — dalam rentang normal GPON (≥ −25 dBm).'
-  if (dbm >= -27)
-    return 'Redaman agak tinggi — pantau; cek konektor kotor atau tekukan kabel (bend).'
-  if (dbm >= -30)
-    return 'Redaman tinggi — kemungkinan konektor kotor, splice buruk, atau jarak/splitter berlebih.'
-  return 'Sinyal kritis / mendekati LOS — cek drop cable putus, konektor, atau core di ODP.'
-}
 
 export function ConnectionCard({
   customerId,

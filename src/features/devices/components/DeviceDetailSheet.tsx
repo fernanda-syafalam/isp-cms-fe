@@ -11,6 +11,7 @@ import {
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
+import { rxTone } from '@/components/shared/optical-health'
 import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { deviceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
@@ -22,14 +23,6 @@ import { statusLabel } from '@/lib/status-label'
 import type { Device } from '@/schemas/device'
 
 import { useDevice, useRebootDevice } from '../hooks/useDevices'
-
-// GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
-function rxTone(dbm: number | null): StatusTone {
-  if (dbm == null) return 'neutral'
-  if (dbm >= -25) return 'success'
-  if (dbm >= -27) return 'warning'
-  return 'danger'
-}
 
 const RX_TEXT_TONE: Record<StatusTone, string> = {
   success: 'text-emerald-500',
