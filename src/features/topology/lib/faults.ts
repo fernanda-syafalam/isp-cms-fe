@@ -18,21 +18,10 @@ export type ProbableFault = {
 const MIN_LIKELY_DOWN = 3
 const LIKELY_RATIO = 0.6
 
-// Correlate dark customers to the probable upstream root, the diagnosis a NOC
-// does by hand. Two confidence levels:
-//   - confirmed: an infra node (OLT/ODC/ODP) that is itself down — its whole
-//     subtree is dark by definition.
-//   - likely: an ODP that still reports up but where most of its customers are
-//     dark — points to its feeder / the ODP itself despite the green status.
-// Results roll up: a node explained by a confirmed outage upstream is dropped,
-// so a down OLT yields one entry, not one per ODP beneath it. A lone dead ONU
-// is intentionally NOT reported (no upstream root) — that is a CPE matter.
-export function localizeFaults(nodes: NetworkNode[]): ProbableFault[] {
-  const byId = indexById(nodes)
-
-  // Customers under planned maintenance are dark on purpose — drop them from the
-  // signal so a maintenance window never raises an outage alarm (and never makes
-  // a sibling look "likely" by inflating dark counts upstream).
+// Customers dark for real (impacted) minus those under planned maintenance —
+// a maintenance window must never raise an outage alarm, nor inflate an
+// upstream node's dark count and make a sibling look "likely".
+function darkCustomerIds(nodes: NetworkNode[], byId: ReturnType<typeof indexById>): Set<string> {
   const maintained = new Set<string>()
   for (const n of nodes) {
     if (!n.meta?.maintenance) continue
@@ -41,9 +30,16 @@ export function localizeFaults(nodes: NetworkNode[]): ProbableFault[] {
       if (byId.get(id)?.type === 'customer') maintained.add(id)
     }
   }
-  const dark = new Set([...impactedCustomerIds(nodes)].filter((id) => !maintained.has(id)))
-  if (dark.size === 0) return []
+  return new Set([...impactedCustomerIds(nodes)].filter((id) => !maintained.has(id)))
+}
 
+// Scan infra nodes (OLT/ODC/ODP) for a fault signature: a confirmed-down node,
+// or an up ODP where dark customers dominate its served base.
+function collectFaultCandidates(
+  nodes: NetworkNode[],
+  byId: ReturnType<typeof indexById>,
+  dark: Set<string>,
+): ProbableFault[] {
   const candidates: ProbableFault[] = []
   for (const n of nodes) {
     if (n.type !== 'olt' && n.type !== 'odc' && n.type !== 'odp') continue
@@ -68,6 +64,24 @@ export function localizeFaults(nodes: NetworkNode[]): ProbableFault[] {
       })
     }
   }
+  return candidates
+}
+
+// Correlate dark customers to the probable upstream root, the diagnosis a NOC
+// does by hand. Two confidence levels:
+//   - confirmed: an infra node (OLT/ODC/ODP) that is itself down — its whole
+//     subtree is dark by definition.
+//   - likely: an ODP that still reports up but where most of its customers are
+//     dark — points to its feeder / the ODP itself despite the green status.
+// Results roll up: a node explained by a confirmed outage upstream is dropped,
+// so a down OLT yields one entry, not one per ODP beneath it. A lone dead ONU
+// is intentionally NOT reported (no upstream root) — that is a CPE matter.
+export function localizeFaults(nodes: NetworkNode[]): ProbableFault[] {
+  const byId = indexById(nodes)
+  const dark = darkCustomerIds(nodes, byId)
+  if (dark.size === 0) return []
+
+  const candidates = collectFaultCandidates(nodes, byId, dark)
 
   // Drop any candidate already explained by a confirmed outage upstream.
   const confirmedIds = new Set(
