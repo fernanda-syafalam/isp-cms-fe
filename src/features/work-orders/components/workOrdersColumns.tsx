@@ -1,20 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { workOrderStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { WorkOrder, WorkOrderStatus } from '@/schemas/workorder'
+import type { WorkOrder } from '@/schemas/workorder'
 
 import { WorkOrderRowActions } from './WorkOrderRowActions'
-
-export const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
-  scheduled: 'info',
-  in_progress: 'warning',
-  done: 'success',
-  cancelled: 'neutral',
-}
 
 export const toCsvRow = (w: WorkOrder) => ({
   Kode: w.code,

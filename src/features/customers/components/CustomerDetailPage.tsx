@@ -3,12 +3,12 @@ import { ArrowLeftIcon } from 'lucide-react'
 
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { statusLabel } from '@/lib/status-label'
-import type { CustomerStatus } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
@@ -27,14 +27,6 @@ import { CustomerSummary } from './CustomerSummary'
 import { CustomerTimeline } from './CustomerTimeline'
 import { ContractTab } from '@/features/contracts'
 import { PrivacyTab } from './PrivacyTab'
-
-const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
 
 type Props = {
   customerId: string

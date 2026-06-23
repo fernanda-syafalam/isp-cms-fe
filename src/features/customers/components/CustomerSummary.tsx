@@ -1,19 +1,12 @@
 import { TriangleAlertIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { cn } from '@/lib/cn'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
-
-const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
 
 const LIFECYCLE: CustomerStatus[] = ['prospek', 'instalasi', 'aktif', 'isolir', 'berhenti']
 

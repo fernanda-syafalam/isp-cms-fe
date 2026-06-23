@@ -1,18 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { resellerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Reseller, ResellerStatus } from '@/schemas/reseller'
+import type { Reseller } from '@/schemas/reseller'
 
 import { ResellerRowActions } from './ResellerRowActions'
-
-export const STATUS_TONE: Record<ResellerStatus, StatusTone> = {
-  active: 'success',
-  inactive: 'neutral',
-}
 
 export const toCsvRow = (r: Reseller) => ({
   Reseller: r.name,
