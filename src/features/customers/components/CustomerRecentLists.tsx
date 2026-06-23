@@ -1,23 +1,18 @@
 import { Link } from '@tanstack/react-router'
 
 import { DetailSection } from '@/components/shared/detail-sheet'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
-import { invoiceStatusTone as INVOICE_TONE } from '@/components/shared/status-tone'
+import { StatusBadge } from '@/components/shared/status-badge'
+import {
+  invoiceStatusTone as INVOICE_TONE,
+  ticketStatusToneCustomer as TICKET_TONE,
+} from '@/components/shared/status-tone'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
-import type { TicketStatus } from '@/schemas/ticket'
 
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
-
-const TICKET_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  breached: 'danger',
-}
 
 // Recent invoices for this subscriber (top 5) — in-context lookup without
 // leaving for the 360° page; rows link to the full invoice.

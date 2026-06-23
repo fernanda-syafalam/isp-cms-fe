@@ -2,20 +2,14 @@ import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { ticketStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDateTime } from '@/lib/format'
 import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
-import type { Ticket, TicketPriority, TicketStatus } from '@/schemas/ticket'
+import type { Ticket, TicketPriority } from '@/schemas/ticket'
 
 import { TicketRowActions } from './TicketRowActions'
-
-export const STATUS_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'info',
-  in_progress: 'warning',
-  resolved: 'success',
-  breached: 'danger',
-}
 
 export const PRIORITY_TONE: Record<TicketPriority, StatusTone> = {
   low: 'neutral',
