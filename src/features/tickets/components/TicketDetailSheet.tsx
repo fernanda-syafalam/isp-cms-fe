@@ -12,7 +12,8 @@ import {
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { ticketStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,18 +21,11 @@ import { useCan } from '@/features/auth'
 import { formatDateTime } from '@/lib/format'
 import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
-import type { Ticket, TicketStatus } from '@/schemas/ticket'
+import type { Ticket } from '@/schemas/ticket'
 
 import { useAddComment, useTicket, useTicketEvents } from '../hooks/useTickets'
 import { TicketSheetActions } from './TicketSheetActions'
 import { TicketTimelineItem } from './TicketTimelineItem'
-
-const STATUS_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'info',
-  in_progress: 'warning',
-  resolved: 'success',
-  breached: 'danger',
-}
 
 type Props = {
   ticketId: string | null

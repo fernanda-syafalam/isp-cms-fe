@@ -2,25 +2,19 @@ import { PackageIcon, WalletIcon, WifiIcon } from 'lucide-react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { ticketStatusToneCustomer as TICKET_TONE } from '@/components/shared/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Payment } from '@/schemas/payment'
-import type { Ticket, TicketStatus } from '@/schemas/ticket'
+import type { Ticket } from '@/schemas/ticket'
 
 import { usePortalMe } from '../hooks/usePortal'
 import { PayNowCard, PortalInvoiceRow } from './PortalInvoiceList'
 import { ReportIssueDialog } from './ReportIssueDialog'
-
-const TICKET_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  breached: 'danger',
-}
 
 export function CustomerPortalPage() {
   const { data, isLoading, isError } = usePortalMe()

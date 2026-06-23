@@ -1,21 +1,15 @@
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCircle2Icon, HandCoinsIcon, PlayIcon, PlusIcon } from 'lucide-react'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { ticketStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { slaState } from '@/lib/sla'
 import { statusLabel } from '@/lib/status-label'
-import type { Ticket, TicketStatus } from '@/schemas/ticket'
+import type { Ticket } from '@/schemas/ticket'
 
 import { useCreateWorkOrderFromTicket, useUpdateTicket } from '../hooks/useTickets'
-
-const STATUS_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'info',
-  in_progress: 'warning',
-  resolved: 'success',
-  breached: 'danger',
-}
 
 // SLA + status badges and the ticket workflow actions (start, resolve, create
 // work order, SLA credit) for the detail page header.

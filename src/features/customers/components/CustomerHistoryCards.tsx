@@ -1,21 +1,17 @@
 import { Link } from '@tanstack/react-router'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
-import { invoiceStatusTone as INVOICE_TONE } from '@/components/shared/status-tone'
+import { StatusBadge } from '@/components/shared/status-badge'
+import {
+  invoiceStatusTone as INVOICE_TONE,
+  ticketStatusToneCustomer as TICKET_TONE,
+} from '@/components/shared/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice } from '@/schemas/invoice'
-import type { Ticket, TicketStatus } from '@/schemas/ticket'
-
-const TICKET_TONE: Record<TicketStatus, StatusTone> = {
-  open: 'warning',
-  in_progress: 'info',
-  resolved: 'success',
-  breached: 'danger',
-}
+import type { Ticket } from '@/schemas/ticket'
 
 export function InvoicesCard({ invoices }: { invoices: Invoice[] | undefined }) {
   return (
