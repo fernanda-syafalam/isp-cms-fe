@@ -2,22 +2,15 @@ import { Link } from '@tanstack/react-router'
 
 import { DetailSection } from '@/components/shared/detail-sheet'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { invoiceStatusTone as INVOICE_TONE } from '@/components/shared/status-tone'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
-import type { InvoiceStatus } from '@/schemas/invoice'
 import type { TicketStatus } from '@/schemas/ticket'
 
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
-
-const INVOICE_TONE: Record<InvoiceStatus, StatusTone> = {
-  paid: 'success',
-  pending: 'warning',
-  overdue: 'danger',
-  draft: 'neutral',
-}
 
 const TICKET_TONE: Record<TicketStatus, StatusTone> = {
   open: 'warning',

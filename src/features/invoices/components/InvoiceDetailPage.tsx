@@ -4,24 +4,17 @@ import { ArrowLeftIcon, PrinterIcon } from 'lucide-react'
 import { CopyButton } from '@/components/shared/copy-button'
 import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { invoiceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
-import type { InvoiceStatus } from '@/schemas/invoice'
 
 import { useInvoice } from '../hooks/useInvoices'
 import { OnlinePayButton, PayMenu, RemindButton } from './InvoicePageActions'
-
-const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
-  paid: 'success',
-  pending: 'warning',
-  overdue: 'danger',
-  draft: 'neutral',
-}
 
 type Props = {
   invoiceId: string

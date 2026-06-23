@@ -13,20 +13,15 @@ import {
 import { ErrorState } from '@/components/shared/error-state'
 import { Sparkline } from '@/components/shared/sparkline'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { deviceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/cn'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Device, DeviceStatus } from '@/schemas/device'
+import type { Device } from '@/schemas/device'
 
 import { useDevice, useRebootDevice } from '../hooks/useDevices'
-
-const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
-  online: 'success',
-  degraded: 'warning',
-  offline: 'danger',
-}
 
 // GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
 function rxTone(dbm: number | null): StatusTone {

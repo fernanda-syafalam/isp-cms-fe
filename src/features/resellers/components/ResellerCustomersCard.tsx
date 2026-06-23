@@ -1,23 +1,16 @@
 import { Link } from '@tanstack/react-router'
 
 import { isRouteAllowed } from '@/components/shared/nav'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { customerStatusTone as CUSTOMER_TONE } from '@/components/shared/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEffectiveRole } from '@/features/auth'
 import { formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Customer, CustomerStatus } from '@/schemas/customer'
+import type { Customer } from '@/schemas/customer'
 
 import { useResellerCustomers } from '../hooks/useResellers'
-
-const CUSTOMER_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
 
 export function ResellerCustomersCard({ resellerName }: { resellerName: string }) {
   const { data: customers, isLoading } = useResellerCustomers(resellerName)

@@ -11,23 +11,17 @@ import {
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { invoiceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
+import type { Invoice } from '@/schemas/invoice'
 
 import { useInvoice } from '../hooks/useInvoices'
 import { InvoiceBreakdown } from './InvoiceBreakdown'
 import { InvoiceSheetActions } from './InvoiceSheetActions'
 import { InvoiceTimeline } from './InvoiceTimeline'
-
-const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
-  paid: 'success',
-  pending: 'warning',
-  overdue: 'danger',
-  draft: 'neutral',
-}
 
 type Props = {
   /** The invoice to show; the sheet is closed when null. */

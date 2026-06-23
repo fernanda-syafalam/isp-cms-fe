@@ -10,17 +10,13 @@ import {
   DetailSheet,
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { resellerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Reseller, ResellerStatus } from '@/schemas/reseller'
+import type { Reseller } from '@/schemas/reseller'
 
 import { ResellerRowActions } from './ResellerRowActions'
-
-const STATUS_TONE: Record<ResellerStatus, StatusTone> = {
-  active: 'success',
-  inactive: 'neutral',
-}
 
 type Props = {
   reseller: Reseller | null

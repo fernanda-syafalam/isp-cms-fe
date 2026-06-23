@@ -2,18 +2,13 @@ import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { deviceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Device, DeviceStatus } from '@/schemas/device'
+import type { Device } from '@/schemas/device'
 
 import { DeviceRowActions } from './DeviceRowActions'
-
-export const STATUS_TONE: Record<DeviceStatus, StatusTone> = {
-  online: 'success',
-  degraded: 'warning',
-  offline: 'danger',
-}
 
 // GPON optical health: healthy ≳ −25 dBm, marginal −25…−27, bad < −27.
 function rxTone(dbm: number): StatusTone {

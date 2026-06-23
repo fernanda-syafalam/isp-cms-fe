@@ -1,21 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDate } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CustomerRowActions } from './CustomerRowActions'
-
-export const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
 
 export const STATUS_LABEL: Record<CustomerStatus, string> = {
   prospek: 'Prospek',

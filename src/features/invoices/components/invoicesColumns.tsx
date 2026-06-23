@@ -1,19 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { invoiceStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
-import type { Invoice, InvoiceStatus } from '@/schemas/invoice'
-
-export const STATUS_TONE: Record<InvoiceStatus, StatusTone> = {
-  paid: 'success',
-  pending: 'warning',
-  overdue: 'danger',
-  draft: 'neutral',
-}
+import type { Invoice } from '@/schemas/invoice'
 
 export const toCsvRow = (inv: Invoice) => ({
   'No. Tagihan': inv.invoiceNo,

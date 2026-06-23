@@ -11,11 +11,12 @@ import {
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
 import { ErrorState } from '@/components/shared/error-state'
-import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Customer, CustomerStatus } from '@/schemas/customer'
+import type { Customer } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
 import {
@@ -29,14 +30,6 @@ import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { RecentInvoices, RecentTickets } from './CustomerRecentLists'
 import { OnuActions } from './OnuActions'
-
-const STATUS_TONE: Record<CustomerStatus, StatusTone> = {
-  prospek: 'neutral',
-  instalasi: 'info',
-  aktif: 'success',
-  isolir: 'danger',
-  berhenti: 'neutral',
-}
 
 type Props = {
   customerId: string | null

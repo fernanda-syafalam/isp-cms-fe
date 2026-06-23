@@ -12,19 +12,13 @@ import {
   DetailSheetHeader,
 } from '@/components/shared/detail-sheet'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
+import { workOrderStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { useCan } from '@/features/auth'
 import { formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { WorkOrder, WorkOrderStatus, WorkOrderType } from '@/schemas/workorder'
+import type { WorkOrder, WorkOrderType } from '@/schemas/workorder'
 
 import { WorkOrderRowActions } from './WorkOrderRowActions'
-
-const STATUS_TONE: Record<WorkOrderStatus, StatusTone> = {
-  scheduled: 'info',
-  in_progress: 'warning',
-  done: 'success',
-  cancelled: 'neutral',
-}
 
 const TYPE_TONE: Record<WorkOrderType, StatusTone> = {
   install: 'info',
