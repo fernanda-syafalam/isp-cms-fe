@@ -24,3 +24,10 @@ export async function getCurrentUser(): Promise<User> {
   const json = await api.get('auth/me').json()
   return UserSchema.parse(json)
 }
+
+export async function changePassword(input: {
+  currentPassword: string
+  newPassword: string
+}): Promise<void> {
+  await api.post('auth/change-password', { json: input })
+}

@@ -6,6 +6,8 @@ import {
   type CreateUserInput,
   type UpdateUserInput,
   type UserList,
+  ResetPasswordResultSchema,
+  type ResetPasswordResult,
 } from '@/schemas/user'
 
 export type ListUsersParams = {
@@ -32,4 +34,13 @@ export async function createUser(input: CreateUserInput): Promise<AppUser> {
 export async function updateUser(id: string, input: UpdateUserInput): Promise<AppUser> {
   const json = await api.patch(`users/${id}`, { json: input }).json()
   return AppUserSchema.parse(json)
+}
+
+export async function resetUserPassword(id: string): Promise<ResetPasswordResult> {
+  const json = await api.post(`users/${id}/reset-password`).json()
+  return ResetPasswordResultSchema.parse(json)
+}
+
+export async function deactivateUser(id: string): Promise<void> {
+  await api.delete(`users/${id}`)
 }

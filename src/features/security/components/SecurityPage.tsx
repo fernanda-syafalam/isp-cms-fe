@@ -25,6 +25,7 @@ import {
   useRevokeSession,
   useSecurity,
 } from '../hooks/useSecurity'
+import { ChangePasswordDialog } from './ChangePasswordDialog'
 import { SecurityRbacCard } from './SecurityRbacCard'
 import { SecuritySessionsCard } from './SecuritySessionsCard'
 import { TwoFactorDialog } from './TwoFactorDialog'
@@ -70,20 +71,23 @@ export function SecurityPage() {
                 <p className="text-muted-foreground text-xs">
                   Tambahkan lapisan keamanan dengan kode dari aplikasi authenticator.
                 </p>
-                {data.twoFactorEnabled ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={disable.isPending}
-                    onClick={() => disable.mutate()}
-                  >
-                    Nonaktifkan 2FA
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={() => setTwoFaOpen(true)}>
-                    Aktifkan 2FA
-                  </Button>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {data.twoFactorEnabled ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={disable.isPending}
+                      onClick={() => disable.mutate()}
+                    >
+                      Nonaktifkan 2FA
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => setTwoFaOpen(true)}>
+                      Aktifkan 2FA
+                    </Button>
+                  )}
+                  <ChangePasswordDialog />
+                </div>
               </>
             )}
           </CardContent>
