@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { userId } from '@/types/ids'
 
-export const UserRoleSchema = z.enum(['admin', 'staff', 'customer'])
+export const UserRoleSchema = z.enum(['admin', 'staff', 'customer', 'teknisi', 'mitra'])
 
 // Named AppUser to avoid colliding with the auth `User` (the authenticated
 // principal). This is the user record managed via the /users admin surface.
