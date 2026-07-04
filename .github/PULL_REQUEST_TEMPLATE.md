@@ -40,6 +40,7 @@
 - [ ] API responses validated with Zod at boundary
 - [ ] URL search params validated with Zod (if applicable)
 - [ ] Forms use single Zod schema as source of truth (if applicable)
+- [ ] **MSW parity**: any change to a mocked endpoint's behaviour updates `src/test/msw/handlers.ts` in the same change-set (and a BE change to a mocked endpoint updates the mock too) — keep dev/prod behaviour aligned (ADR-0011)
 
 ### UX
 - [ ] Loading state present (skeleton, not spinner)
