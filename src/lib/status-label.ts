@@ -41,6 +41,8 @@ const STATUS_LABELS: Record<string, string> = {
   admin: 'Admin',
   staff: 'Staf',
   customer: 'Pelanggan',
+  teknisi: 'Teknisi',
+  mitra: 'Mitra',
   // payment method
   qris: 'QRIS',
   va: 'Virtual Account',

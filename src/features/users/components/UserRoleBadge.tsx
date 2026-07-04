@@ -5,6 +5,8 @@ import type { UserRole } from '@/schemas/user'
 const variantByRole: Record<UserRole, 'default' | 'secondary' | 'outline'> = {
   admin: 'default',
   staff: 'secondary',
+  teknisi: 'secondary',
+  mitra: 'outline',
   customer: 'outline',
 }
 

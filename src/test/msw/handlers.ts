@@ -47,7 +47,7 @@ const SESSION_FIXTURE = {
   user: USER_FIXTURE,
 }
 
-const USER_ROLE_CYCLE = ['admin', 'staff', 'customer'] as const
+const USER_ROLE_CYCLE = ['admin', 'staff', 'customer', 'teknisi', 'mitra'] as const
 const APP_USER_FIXTURES = Array.from({ length: 12 }, (_, i) => ({
   id: `33333333-3333-4333-8333-${String(i).padStart(12, '0')}`,
   email: `user${i}@example.com`,
@@ -1431,7 +1431,7 @@ export const handlers = [
     const body = (await request.json()) as {
       email: string
       fullName: string
-      role?: 'admin' | 'staff' | 'customer'
+      role?: 'admin' | 'staff' | 'customer' | 'teknisi' | 'mitra'
     }
     const user = {
       id: crypto.randomUUID(),
