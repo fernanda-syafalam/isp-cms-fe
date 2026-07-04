@@ -4670,8 +4670,18 @@ export const handlers = [
 
   // Customer self-service portal — "me" resolves to a representative subscriber
   // (a real backend resolves it from the customer's auth token).
-  http.get('*/api/portal/me', () => {
-    const me = CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
+  http.get('*/api/portal/me', ({ request }) => {
+    // Parity note (ADR-0011): the real BE resolves the portal customer from
+    // the auth identity (P1.3) and its true status flows through, so the
+    // isolir banner shows for an isolir subscriber. The mock has no per-user
+    // identity plumbing yet, so it defaults to an active subscriber but
+    // accepts `?preview=<status>` to reach the isolir UX in dev — otherwise
+    // that state was unreachable (drift: portal/me always picked `aktif`).
+    const preview = new URL(request.url).searchParams.get('preview')
+    const me =
+      (preview ? CUSTOMER_FIXTURES.find((c) => c.status === preview) : undefined) ??
+      CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ??
+      CUSTOMER_FIXTURES[0]
     if (!me) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
         status: 404,
