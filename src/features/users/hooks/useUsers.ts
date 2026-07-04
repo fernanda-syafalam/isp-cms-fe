@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { createUser, listUsers, updateUser, type ListUsersParams } from '@/api/users'
+import {
+  createUser,
+  deactivateUser,
+  listUsers,
+  resetUserPassword,
+  updateUser,
+  type ListUsersParams,
+} from '@/api/users'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreateUserInput, UpdateUserInput } from '@/schemas/user'
 
@@ -33,6 +40,33 @@ export function useUpdateUser() {
     onSuccess: (user) => {
       qc.invalidateQueries({ queryKey: ['users'] })
       toast.success(`Staf "${user.fullName}" diperbarui`)
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+    },
+  })
+}
+
+export function useResetUserPassword() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => resetUserPassword(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+    },
+  })
+}
+
+export function useDeactivateUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => deactivateUser(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success('Akun dinonaktifkan')
     },
     onError: (err) => {
       toast.error(getErrorMessage(err))

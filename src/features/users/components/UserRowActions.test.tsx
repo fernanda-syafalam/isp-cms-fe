@@ -21,10 +21,31 @@ describe('UserRowActions', () => {
     renderWithProviders(<UserRowActions user={user} />)
 
     expect(screen.queryByText('Edit staf')).not.toBeInTheDocument()
-    await u.click(screen.getByRole('button', { name: 'Edit Jane Doe' }))
+    await u.click(screen.getByRole('button', { name: 'Aksi untuk Jane Doe' }))
+    await u.click(await screen.findByRole('menuitem', { name: 'Edit' }))
 
     expect(await screen.findByText('Edit staf')).toBeInTheDocument()
     expect(screen.getByText('jane@example.com')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Jane Doe')).toBeInTheDocument()
+  })
+
+  it('exposes reset-password and deactivate actions in the menu', async () => {
+    const u = userEvent.setup()
+    renderWithProviders(<UserRowActions user={user} />)
+
+    await u.click(screen.getByRole('button', { name: 'Aksi untuk Jane Doe' }))
+
+    expect(await screen.findByRole('menuitem', { name: 'Reset kata sandi' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Nonaktifkan' })).toBeInTheDocument()
+  })
+
+  it('asks for confirmation before deactivating', async () => {
+    const u = userEvent.setup()
+    renderWithProviders(<UserRowActions user={user} />)
+
+    await u.click(screen.getByRole('button', { name: 'Aksi untuk Jane Doe' }))
+    await u.click(await screen.findByRole('menuitem', { name: 'Nonaktifkan' }))
+
+    expect(await screen.findByText('Nonaktifkan akun?')).toBeInTheDocument()
   })
 })

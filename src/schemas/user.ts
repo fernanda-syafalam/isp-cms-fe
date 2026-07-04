@@ -41,3 +41,26 @@ export type AppUser = z.infer<typeof AppUserSchema>
 export type UserList = z.infer<typeof UserListSchema>
 export type CreateUserInput = z.infer<typeof CreateUserSchema>
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
+
+// Self-service credential rotation (POST /v1/auth/change-password). The
+// backend re-verifies the current password; the confirm field is a UI-only
+// guard against typos and is not sent.
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Password saat ini wajib diisi'),
+    newPassword: z.string().min(12, 'Min 12 karakter').max(128, 'Maks 128 karakter'),
+    confirmPassword: z.string().min(1, 'Konfirmasi kata sandi'),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Konfirmasi tidak cocok',
+    path: ['confirmPassword'],
+  })
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>
+
+// Response of an admin password reset — the one-time password shown once.
+export const ResetPasswordResultSchema = z.object({
+  initialPassword: z.string(),
+})
+
+export type ResetPasswordResult = z.infer<typeof ResetPasswordResultSchema>

@@ -1458,6 +1458,59 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(found)
   }),
+  http.post('*/api/users/:id/reset-password', ({ params }) => {
+    const found = APP_USER_FIXTURES.find((u) => u.id === params.id)
+    if (!found) {
+      return new HttpResponse(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      })
+    }
+    recordAudit(
+      'user.reset_password',
+      'Staf',
+      `Reset kata sandi ${found.fullName}`,
+      'Admin',
+      found.id,
+    )
+    // A deterministic mock one-time password (18 chars) — the real backend
+    // generates it server-side and returns it exactly once.
+    return HttpResponse.json({
+      initialPassword: `Reset-${found.id.slice(0, 12)}`,
+    })
+  }),
+  http.delete('*/api/users/:id', ({ params }) => {
+    const idx = APP_USER_FIXTURES.findIndex((u) => u.id === params.id)
+    if (idx === -1) {
+      return new HttpResponse(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      })
+    }
+    const [removed] = APP_USER_FIXTURES.splice(idx, 1)
+    if (removed) {
+      recordAudit(
+        'user.soft_delete',
+        'Staf',
+        `Menonaktifkan ${removed.fullName}`,
+        'Admin',
+        removed.id,
+      )
+    }
+    persistDb()
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('*/api/auth/change-password', async ({ request }) => {
+    const body = (await request.json()) as {
+      currentPassword?: string
+      newPassword?: string
+    }
+    if (!body.newPassword || body.newPassword.length < 12) {
+      return new HttpResponse(JSON.stringify({ message: 'Kata sandi baru terlalu pendek' }), {
+        status: 400,
+      })
+    }
+    recordAudit('auth.change_password', 'Keamanan', 'Mengubah kata sandi', 'Admin')
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // Plans
   http.get('*/api/plans', ({ request }) => {
