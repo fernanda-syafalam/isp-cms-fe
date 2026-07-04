@@ -40,6 +40,7 @@ const USER_FIXTURE = {
   email: 'admin@example.com',
   fullName: 'Test Admin',
   role: 'admin' as const,
+  resellerId: null,
 }
 
 const SESSION_FIXTURE = {

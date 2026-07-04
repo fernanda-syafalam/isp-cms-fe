@@ -11,7 +11,10 @@ export const UserSchema = z.object({
   id: userId,
   email: z.email(),
   fullName: z.string().min(1),
-  role: z.enum(['admin', 'staff', 'customer']),
+  role: z.enum(['admin', 'staff', 'customer', 'teknisi', 'mitra']),
+  // The mitra principal's own reseller (ADR-0010); null for other roles.
+  // Used to route a mitra to their own storefront instead of a stand-in.
+  resellerId: z.string().nullable().default(null),
 })
 
 export const SessionSchema = z.object({

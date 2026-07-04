@@ -8,8 +8,7 @@ import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/table/data-table'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useEffectiveRole } from '@/features/auth'
+import { useCurrentUser, useEffectiveRole } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -25,6 +24,7 @@ const routeApi = getRouteApi('/_auth/resellers/')
 
 export function ResellersListPage() {
   const role = useEffectiveRole()
+  const { data: user } = useCurrentUser()
   const { status: statusParam } = routeApi.useSearch()
   const status = statusParam ?? 'all'
   const navigate = routeApi.useNavigate()
@@ -73,13 +73,19 @@ export function ResellersListPage() {
   }
 
   // A partner (mitra) only sees their own storefront, not the org-wide table.
-  // Demo identity = the first reseller record.
+  // Their identity is the resellerId on their own account (P1.5) — never a
+  // stand-in record. An unlinked mitra has no storefront to show.
   if (role === 'mitra') {
-    const mine = data?.items[0]
-    if (mine) {
-      return <Navigate to="/resellers/$resellerId" params={{ resellerId: mine.id }} replace />
+    if (user?.resellerId) {
+      return (
+        <Navigate to="/resellers/$resellerId" params={{ resellerId: user.resellerId }} replace />
+      )
     }
-    return <Skeleton className="h-64 w-full" />
+    return (
+      <p className="text-muted-foreground text-sm" role="status">
+        Akun mitra Anda belum tertaut ke data reseller. Hubungi admin.
+      </p>
+    )
   }
 
   return (
