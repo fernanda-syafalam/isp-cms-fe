@@ -12,6 +12,7 @@ import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/s
 import type { SplitterRatio } from '@/schemas/splitter'
 import type { TicketEvent } from '@/schemas/ticket'
 import { UpdateUserSchema } from '@/schemas/user'
+import { CompleteWorkOrderInputSchema } from '@/schemas/workorder'
 import type { NodeLifecycle } from '@/schemas/topology'
 import { CreateNodeSchema, UpdateNodeSchema } from '@/schemas/topology'
 
@@ -421,6 +422,14 @@ const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     status: WORKORDER_STATUS[i % WORKORDER_STATUS.length] ?? 'scheduled',
     ticketId: null as string | null,
     createdAt: iso(2026, 5, 3),
+    scannedOnuSerial: null as string | null,
+    measuredRxPower: null as number | null,
+    photos: null as string[] | null,
+    signatureUrl: null as string | null,
+    gpsLat: null as number | null,
+    gpsLng: null as number | null,
+    completedAt: null as string | null,
+    completedBy: null as string | null,
   }
 })
 
@@ -2023,6 +2032,14 @@ export const handlers = [
       status: 'scheduled' as const,
       ticketId: null as string | null,
       createdAt: new Date().toISOString(),
+      scannedOnuSerial: null as string | null,
+      measuredRxPower: null as number | null,
+      photos: null as string[] | null,
+      signatureUrl: null as string | null,
+      gpsLat: null as number | null,
+      gpsLng: null as number | null,
+      completedAt: null as string | null,
+      completedBy: null as string | null,
     })
     found.stage = 'won'
     recordAudit('lead.convert', 'Prospek', `Konversi prospek ${found.name}`)
@@ -2323,6 +2340,14 @@ export const handlers = [
       status: 'scheduled' as const,
       ticketId: null as string | null,
       createdAt: new Date().toISOString(),
+      scannedOnuSerial: null as string | null,
+      measuredRxPower: null as number | null,
+      photos: null as string[] | null,
+      signatureUrl: null as string | null,
+      gpsLat: null as number | null,
+      gpsLng: null as number | null,
+      completedAt: null as string | null,
+      completedBy: null as string | null,
     })
     // Drop the new subscriber onto the topology map under an ODP that still has
     // a free splitter port, at the picked coordinates. allocateDrop creates the
@@ -3392,13 +3417,18 @@ export const handlers = [
     return HttpResponse.json({ ...result, summary })
   }),
   // Complete a WO; an install also activates + provisions + invoices the customer.
-  http.post('*/api/work-orders/:id/complete', ({ params }) => {
+  http.post('*/api/work-orders/:id/complete', async ({ params, request }) => {
     const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
     if (!wo) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
         status: 404,
       })
     }
+    // Field-completion body (P3.B.3) — all fields optional, so a quick complete
+    // can still POST an empty body. Ignore a malformed/absent body gracefully.
+    const raw = await request.json().catch(() => ({}))
+    const parsed = CompleteWorkOrderInputSchema.safeParse(raw ?? {})
+    const input = parsed.success ? parsed.data : {}
     // Idempotent: a WO already done doesn't re-provision (no duplicate ONU /
     // secret / invoice on a double-click or repeat call).
     if (wo.status === 'done') {
@@ -3416,12 +3446,15 @@ export const handlers = [
         // the stock movement, so inventory reflects the install. Falls back to
         // a synthetic serial if no ONU is in stock.
         const onu = INVENTORY_FIXTURES.find((it) => it.kind === 'onu' && it.status === 'warehouse')
-        let onuSerial = `ZTEG${String(20000000 + seq)}`
+        // Prefer the technician's scanned serial when provided; else the
+        // consumed ONU's serial; else a synthetic fallback.
+        let onuSerial = input.onuSerial ?? `ZTEG${String(20000000 + seq)}`
         if (onu) {
           onu.status = 'installed'
           onu.assignedTo = customer.fullName
           onu.assignedCustomerId = customer.id
-          onuSerial = onu.serial
+          // A scanned serial from the field still wins over the warehouse ONU.
+          onuSerial = input.onuSerial ?? onu.serial
           STOCK_MOVEMENT_FIXTURES.unshift({
             id: crypto.randomUUID(),
             itemId: onu.id,
@@ -3441,7 +3474,7 @@ export const handlers = [
           onuSerial,
           olt: 'OLT-1',
           ponPort: `0/${seq % 8}/${seq % 16}`,
-          rxPower: -20 - (seq % 6),
+          rxPower: input.rxPower ?? -20 - (seq % 6),
         }
         // Provision a PPPoE secret on a Mikrotik so the new subscriber shows up
         // on the router (Secrets tab) — closes the connect-router → customer loop.
@@ -3514,6 +3547,17 @@ export const handlers = [
         })
       }
     }
+    // Capture the field-completion evidence on the WO fixture and echo it back
+    // (P3.B.3). completedBy/completedAt are always stamped on completion.
+    wo.scannedOnuSerial = input.onuSerial ?? null
+    wo.measuredRxPower = input.rxPower ?? null
+    wo.photos = input.photos ?? null
+    wo.signatureUrl = input.signatureUrl ?? null
+    wo.gpsLat = input.gps?.lat ?? null
+    wo.gpsLng = input.gps?.lng ?? null
+    if (input.technician) wo.technician = input.technician
+    wo.completedAt = new Date().toISOString()
+    wo.completedBy = USER_FIXTURE.fullName
     persistDb()
     return HttpResponse.json(wo)
   }),
@@ -4048,6 +4092,14 @@ export const handlers = [
       // auto-resolves the ticket.
       ticketId: ticket.id as string | null,
       createdAt: new Date().toISOString(),
+      scannedOnuSerial: null as string | null,
+      measuredRxPower: null as number | null,
+      photos: null as string[] | null,
+      signatureUrl: null as string | null,
+      gpsLat: null as number | null,
+      gpsLng: null as number | null,
+      completedAt: null as string | null,
+      completedBy: null as string | null,
     }
     WORKORDER_FIXTURES.unshift(wo)
     TICKET_EVENT_FIXTURES.push({

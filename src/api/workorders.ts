@@ -1,5 +1,6 @@
 import { api } from './client'
 import {
+  type CompleteWorkOrderInput,
   type WorkOrder,
   WorkOrderListSchema,
   WorkOrderSchema,
@@ -35,8 +36,11 @@ export async function listWorkOrders(filter: WorkOrderFilter = {}): Promise<Work
 
 // Complete a work order. For an install WO the backend (mock) also activates the
 // customer, provisions the connection, and issues the first invoice.
-export async function completeWorkOrder(id: string): Promise<WorkOrder> {
-  const json = await api.post(`work-orders/${id}/complete`).json()
+export async function completeWorkOrder(
+  id: string,
+  input?: CompleteWorkOrderInput,
+): Promise<WorkOrder> {
+  const json = await api.post(`work-orders/${id}/complete`, { json: input ?? {} }).json()
   return WorkOrderSchema.parse(json)
 }
 

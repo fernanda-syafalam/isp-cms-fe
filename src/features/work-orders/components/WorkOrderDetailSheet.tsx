@@ -18,6 +18,7 @@ import { formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { WorkOrder, WorkOrderType } from '@/schemas/workorder'
 
+import { WorkOrderEvidence } from './WorkOrderEvidence'
 import { WorkOrderRowActions } from './WorkOrderRowActions'
 
 const TYPE_TONE: Record<WorkOrderType, StatusTone> = {
@@ -89,6 +90,8 @@ function Body({ wo }: { wo: WorkOrder }) {
             <DetailMeta label="Dibuat">{formatDateTime(wo.createdAt)}</DetailMeta>
           </DetailMetaGrid>
         </DetailSection>
+
+        {wo.status === 'done' ? <WorkOrderEvidence wo={wo} /> : null}
 
         {wo.customerId ? (
           <DetailSection title="Tertaut">

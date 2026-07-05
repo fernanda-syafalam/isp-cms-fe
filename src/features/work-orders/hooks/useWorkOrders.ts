@@ -12,6 +12,7 @@ import {
   startWorkOrder,
 } from '@/api/workorders'
 import { getErrorMessage } from '@/lib/errors'
+import type { CompleteWorkOrderInput } from '@/schemas/workorder'
 
 export function useWorkOrdersList(filter: WorkOrderFilter = {}) {
   return useQuery({
@@ -43,7 +44,8 @@ export function useExportWorkOrders() {
 export function useCompleteWorkOrder() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => completeWorkOrder(id),
+    mutationFn: ({ id, input }: { id: string; input?: CompleteWorkOrderInput }) =>
+      completeWorkOrder(id, input),
     onSuccess: (wo) => {
       qc.invalidateQueries({ queryKey: ['work-orders'] })
       // An install completion activates + provisions + invoices the customer,
