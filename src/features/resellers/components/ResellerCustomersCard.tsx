@@ -12,11 +12,18 @@ import type { Customer } from '@/schemas/customer'
 
 import { useResellerCustomers } from '../hooks/useResellers'
 
-export function ResellerCustomersCard({ resellerName }: { resellerName: string }) {
+export function ResellerCustomersCard({
+  resellerId,
+  resellerName,
+}: {
+  resellerId: string
+  resellerName: string
+}) {
   const { data: customers, isLoading } = useResellerCustomers(resellerName)
-  // A partner (mitra) can't open the customer detail page (not in their
-  // allowlist) — show names as plain text so they don't bounce off the guard.
-  const canOpenCustomer = isRouteAllowed(useEffectiveRole(), '/customers')
+  // admin/staff open the org-wide customer detail; a mitra (scoped to
+  // `/resellers`) instead opens the read-only, reseller-scoped detail so the
+  // name is never a dead-end (P3.D.5).
+  const canOpenOrgCustomer = isRouteAllowed(useEffectiveRole(), '/customers')
   return (
     <Card>
       <CardHeader>
@@ -45,7 +52,7 @@ export function ResellerCustomersCard({ resellerName }: { resellerName: string }
               )
               return (
                 <li key={c.id} className="flex items-center justify-between gap-3 py-2.5">
-                  {canOpenCustomer ? (
+                  {canOpenOrgCustomer ? (
                     <Link
                       to="/customers/$customerId"
                       params={{ customerId: c.id }}
@@ -54,7 +61,13 @@ export function ResellerCustomersCard({ resellerName }: { resellerName: string }
                       {info}
                     </Link>
                   ) : (
-                    <div className="min-w-0">{info}</div>
+                    <Link
+                      to="/resellers/$resellerId/customers/$customerId"
+                      params={{ resellerId, customerId: c.id }}
+                      className="min-w-0 hover:underline"
+                    >
+                      {info}
+                    </Link>
                   )}
                   <StatusBadge tone={CUSTOMER_TONE[c.status]} label={statusLabel(c.status)} />
                 </li>

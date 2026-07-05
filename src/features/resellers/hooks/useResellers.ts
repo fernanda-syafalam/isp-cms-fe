@@ -51,6 +51,20 @@ export function useResellerCustomers(resellerName: string) {
   })
 }
 
+// A single customer scoped to one reseller (P3.D.5). Reuses the reseller →
+// customers join, then finds the id within it — so an id that is NOT one of
+// this reseller's own customers resolves to `undefined`. That enforces the
+// mitra scope on the FE (the scoped detail page renders not-found for it)
+// without widening the mitra surface to the org-wide `/customers` list.
+export function useResellerCustomer(resellerName: string, customerId: string) {
+  return useQuery({
+    queryKey: ['customers', 'list', { reseller: resellerName }] as const,
+    queryFn: () => listCustomers({}),
+    select: (data) =>
+      data.items.find((c) => c.resellerName === resellerName && c.id === customerId),
+  })
+}
+
 export function useReseller(id: string) {
   return useQuery({
     queryKey: ['resellers', 'detail', id] as const,
@@ -111,7 +125,10 @@ export function useResellerCommissionTotal(id: string) {
   return useQuery({
     queryKey: ['resellers', 'detail', id, 'commission-total'] as const,
     queryFn: async () => {
-      const ledger = await listResellerLedger(id, { limit: COMMISSION_LEDGER_LIMIT, offset: 0 })
+      const ledger = await listResellerLedger(id, {
+        limit: COMMISSION_LEDGER_LIMIT,
+        offset: 0,
+      })
       return ledger.items
         .filter((e) => e.type === 'commission')
         .reduce((sum, e) => sum + e.amount, 0)
