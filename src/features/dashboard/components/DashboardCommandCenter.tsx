@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { BellIcon, HandCoinsIcon, SplitIcon, TargetIcon, TrendingDownIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import { EstimateBadge } from '@/components/shared/estimate-badge'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import type { DashboardSummary } from '@/schemas/analytics'
 
@@ -25,6 +26,7 @@ export function DashboardCommandCenter({ summary }: { summary: DashboardSummary 
           value={formatPercent(cc.churnRate)}
           hint="pelanggan berisiko"
           icon={TrendingDownIcon}
+          estimated
         />
         <CommandCard
           to="/sla-credits"
@@ -59,12 +61,14 @@ function CommandCard({
   value,
   hint,
   icon: Icon,
+  estimated = false,
 }: {
   to: '/leads' | '/satisfaction' | '/sla-credits' | '/network/monitoring' | '/network/ftth'
   label: string
   value: string
   hint: string
   icon: ComponentType<{ className?: string }>
+  estimated?: boolean
 }) {
   return (
     <Link
@@ -72,7 +76,10 @@ function CommandCard({
       className="group rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
     >
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs">{label}</span>
+        <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+          {label}
+          {estimated ? <EstimateBadge /> : null}
+        </span>
         <Icon className="size-4 text-muted-foreground" />
       </div>
       <p className="mt-2 font-bold text-xl tabular-nums">{value}</p>
