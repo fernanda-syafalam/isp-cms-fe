@@ -1521,6 +1521,47 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
+  // Setup status (admin first-run checklist). Derives every `done` flag from the
+  // same mock stores the individual list endpoints read, mirroring the BE shape
+  // of GET /v1/setup/status so the FE checklist parses identically in dev + test.
+  http.get('*/api/setup/status', () => {
+    const plansCount = PLAN_FIXTURES.filter((p) => p.status === 'active').length
+    const routersCount = ROUTER_FIXTURES.length
+    const profilesCount = MIKROTIK_PROFILE_FIXTURES.length
+    const poolsCount = MIKROTIK_POOL_FIXTURES.length
+    const branchesCount = BRANCH_FIXTURES.length
+    const companyName = SETTINGS_FIXTURE.company.name
+    // Parity with BE: only admin/staff roles count, and "done" needs more than
+    // the bootstrap admin alone (> 1) — portal customers share the users table.
+    const staffCount = APP_USER_FIXTURES.filter(
+      (u) => u.role === 'admin' || u.role === 'staff',
+    ).length
+    const instalasiCount = CUSTOMER_FIXTURES.filter((c) => c.status === 'instalasi').length
+    const aktifCount = CUSTOMER_FIXTURES.filter((c) => c.status === 'aktif').length
+    const installDoneCount = WORKORDER_FIXTURES.filter(
+      (w) => w.type === 'install' && w.status === 'done',
+    ).length
+    return HttpResponse.json({
+      catalogue: { done: plansCount > 0, plansCount },
+      network: {
+        done: routersCount > 0 && profilesCount > 0 && poolsCount > 0,
+        routersCount,
+        profilesCount,
+        poolsCount,
+      },
+      branches: { done: branchesCount > 0, branchesCount },
+      settings: { done: companyName.trim().length > 0, companyName },
+      staff: { done: staffCount > 1, staffCount },
+      onboarding: {
+        done: instalasiCount > 0 || aktifCount > 0,
+        instalasiCount,
+        aktifCount,
+      },
+      workOrders: { done: installDoneCount > 0, installDoneCount },
+      active: { done: aktifCount > 0, activeCount: aktifCount },
+    })
+  }),
+
   // Plans
   http.get('*/api/plans', ({ request }) => {
     const url = new URL(request.url)

@@ -2,12 +2,12 @@ import { PageHeaderSkeleton } from '@/components/shared/skeletons'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// Stable keys for the fixed five-step placeholder list (mirrors the real steps).
-const STEP_ROWS = ['a', 'b', 'c', 'd', 'e'] as const
+// Stable keys for the fixed eight-step placeholder list (mirrors the real steps).
+const STEP_ROWS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
 
 // Loading placeholder shaped like {@link SetupGuidePage}: header, a progress
-// card, and the five step rows. Skeleton over spinner so the layout holds while
-// the routers/customers/work-orders queries settle.
+// card, and the eight step rows. Skeleton over spinner so the layout holds while
+// the setup-status query settles.
 export function SetupGuideSkeleton() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">

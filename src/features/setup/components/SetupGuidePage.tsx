@@ -5,33 +5,20 @@ import { ErrorState } from '@/components/shared/error-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useCustomersList } from '@/features/customers'
-import { useRoutersList } from '@/features/routers'
-import { useWorkOrdersList } from '@/features/work-orders'
+import { useSetupStatus } from '@/features/setup/hooks/useSetupStatus'
 import { cn } from '@/lib/cn'
 
 import { buildSteps } from './setupSteps'
 import { SetupGuideSkeleton } from './SetupGuideSkeleton'
 
-// Guided launchpad for the full "set up Mikrotik → win a customer" flow, with
-// live status from the data so a demo can run it end-to-end in order.
+// Guided launchpad for the full "stand up the ISP → win a customer" flow. Step
+// completion comes from a single server query (GET /v1/setup/status) — the
+// backend owns every `done` flag, so the checklist stays honest.
 export function SetupGuidePage() {
-  const routersQuery = useRoutersList()
-  const customersQuery = useCustomersList()
-  const workOrdersQuery = useWorkOrdersList()
+  const statusQuery = useSetupStatus()
 
-  const isLoading = routersQuery.isLoading || customersQuery.isLoading || workOrdersQuery.isLoading
-  const isError = routersQuery.isError || customersQuery.isError || workOrdersQuery.isError
-
-  // Retry every underlying query in one tap from the error state.
-  const handleRetry = () => {
-    routersQuery.refetch()
-    customersQuery.refetch()
-    workOrdersQuery.refetch()
-  }
-
-  if (isLoading) return <SetupGuideSkeleton />
-  if (isError) {
+  if (statusQuery.isLoading) return <SetupGuideSkeleton />
+  if (statusQuery.isError || !statusQuery.data) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <PageHeader
@@ -40,31 +27,13 @@ export function SetupGuidePage() {
         />
         <ErrorState
           description="Tidak bisa memuat status setup. Periksa koneksi lalu coba lagi."
-          onRetry={handleRetry}
+          onRetry={() => statusQuery.refetch()}
         />
       </div>
     )
   }
 
-  const routers = routersQuery.data
-  const customers = customersQuery.data
-  const workOrders = workOrdersQuery.data
-
-  const routerCount = routers?.items.length ?? 0
-  const items = customers?.items ?? []
-  const installing = items.filter((c) => c.status === 'instalasi').length
-  const active = items.filter((c) => c.status === 'aktif').length
-  const installWos = (workOrders?.items ?? []).filter((w) => w.type === 'install')
-  const scheduledInstalls = installWos.filter((w) => w.status === 'scheduled').length
-  const completedInstalls = installWos.filter((w) => w.status === 'done').length
-
-  const steps = buildSteps({
-    routerCount,
-    installing,
-    active,
-    scheduledInstalls,
-    completedInstalls,
-  })
+  const steps = buildSteps(statusQuery.data)
 
   const doneCount = steps.filter((s) => s.done).length
   const pct = Math.round((doneCount / steps.length) * 100)
