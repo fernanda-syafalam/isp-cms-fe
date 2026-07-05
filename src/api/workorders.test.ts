@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { listWorkOrders } from './workorders'
+import { completeWorkOrder, listWorkOrders } from './workorders'
 
 // Integration over the MSW layer (server from test/setup.ts; resetMockDb runs
 // before each test). Proves the work-orders list handler honours the backend
@@ -66,5 +66,48 @@ describe('listWorkOrders', () => {
       offset: 4,
     })
     expect(second.items.map((w) => w.code)).toEqual(all.items.slice(4, 8).map((w) => w.code))
+  })
+})
+
+// P3.B.3 field-completion: the complete endpoint accepts an evidence body and
+// echoes the captured evidence on the (schema-validated) work-order response.
+describe('completeWorkOrder', () => {
+  async function findOpenWorkOrder() {
+    const { items } = await listWorkOrders()
+    const wo = items.find((w) => w.status !== 'done' && w.status !== 'cancelled')
+    if (!wo) throw new Error('seed has no completable work order')
+    return wo
+  }
+
+  it('completes with an empty body (quick complete) and parses the new fields', async () => {
+    const wo = await findOpenWorkOrder()
+    const done = await completeWorkOrder(wo.id)
+
+    expect(done.status).toBe('done')
+    expect(done.completedAt).not.toBeNull()
+    expect(done.completedBy).not.toBeNull()
+    // No evidence was posted, so the capture fields stay null.
+    expect(done.scannedOnuSerial).toBeNull()
+    expect(done.measuredRxPower).toBeNull()
+  })
+
+  it('posts the field-completion body and echoes the captured evidence', async () => {
+    const wo = await findOpenWorkOrder()
+    const done = await completeWorkOrder(wo.id, {
+      onuSerial: 'ZTEGABCD1234',
+      rxPower: -21.4,
+      photos: ['https://cdn.example.com/wo/photo-1.jpg'],
+      signatureUrl: 'https://cdn.example.com/wo/ttd.png',
+      gps: { lat: -6.5514, lng: 110.6811 },
+      notes: 'Instalasi selesai, sinyal bagus.',
+    })
+
+    expect(done.status).toBe('done')
+    expect(done.scannedOnuSerial).toBe('ZTEGABCD1234')
+    expect(done.measuredRxPower).toBe(-21.4)
+    expect(done.photos).toEqual(['https://cdn.example.com/wo/photo-1.jpg'])
+    expect(done.signatureUrl).toBe('https://cdn.example.com/wo/ttd.png')
+    expect(done.gpsLat).toBe(-6.5514)
+    expect(done.gpsLng).toBe(110.6811)
   })
 })

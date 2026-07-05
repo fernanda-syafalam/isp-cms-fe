@@ -35,10 +35,10 @@ import type { WorkOrder } from '@/schemas/workorder'
 import {
   useAssignWorkOrder,
   useCancelWorkOrder,
-  useCompleteWorkOrder,
   useRescheduleWorkOrder,
   useStartWorkOrder,
 } from '../hooks/useWorkOrders'
+import { WorkOrderCompleteDialog } from './WorkOrderCompleteDialog'
 
 export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
   const [open, setOpen] = useState(false)
@@ -48,7 +48,6 @@ export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
   const [technician, setTechnician] = useState(workOrder.technician ?? '')
   const [scheduledAt, setScheduledAt] = useState(workOrder.scheduledAt.slice(0, 10))
   const canManage = useCan('network.manage')
-  const complete = useCompleteWorkOrder()
   const start = useStartWorkOrder()
   const cancel = useCancelWorkOrder()
   const assign = useAssignWorkOrder()
@@ -57,8 +56,6 @@ export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
   const isOpen = workOrder.status === 'scheduled' || workOrder.status === 'in_progress'
   // No actions for a done/cancelled order, or without the manage permission.
   if (!canManage || !isOpen) return null
-
-  const isInstall = workOrder.type === 'install'
 
   const handleAssign = () => {
     assign.mutate({ id: workOrder.id, technician }, { onSuccess: () => setAssignOpen(false) })
@@ -169,27 +166,7 @@ export function WorkOrderRowActions({ workOrder }: { workOrder: WorkOrder }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Selesaikan work order?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isInstall
-                ? `Menyelesaikan ${workOrder.code} akan mengaktifkan "${workOrder.customerName}", melakukan provisioning koneksi, dan membuat tagihan pertama.`
-                : `Tandai ${workOrder.code} selesai.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={complete.isPending}
-              onClick={() => complete.mutate(workOrder.id)}
-            >
-              {complete.isPending ? 'Menyelesaikan…' : 'Selesaikan'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <WorkOrderCompleteDialog workOrder={workOrder} open={open} onOpenChange={setOpen} />
     </>
   )
 }
