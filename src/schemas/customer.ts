@@ -34,6 +34,9 @@ export const CustomerSchema = z.object({
   planId: planId,
   planName: z.string(),
   status: CustomerStatusSchema,
+  // Why the customer is in `isolir` (P3.A.3): 'overdue' (punitive, non-payment)
+  // vs 'voluntary' (cuti, customer-requested). Null when not held.
+  holdReason: z.enum(['overdue', 'voluntary']).nullable().default(null),
   outstanding: z.number().int().nonnegative(), // piutang (IDR)
   npwp: z.string().nullable(), // NPWP pembeli untuk faktur pajak (PKP)
   ktp: z.string().nullable(), // NIK/KTP untuk KYC (UU PDP)

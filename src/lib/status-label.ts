@@ -94,3 +94,14 @@ const STATUS_LABELS: Record<string, string> = {
 export function statusLabel(value: string): string {
   return STATUS_LABELS[value] ?? value
 }
+
+// Display label for a customer's lifecycle state that distinguishes a
+// voluntary hold (cuti) from a punitive isolir (P3.A.3). Both are `isolir`
+// on the wire; only the label differs.
+export function customerStatusLabel(
+  status: string,
+  holdReason: 'overdue' | 'voluntary' | null | undefined,
+): string {
+  if (status === 'isolir' && holdReason === 'voluntary') return 'Cuti'
+  return statusLabel(status)
+}

@@ -175,6 +175,9 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     planId: plan?.id ?? oid('bbbbbbbb', 1),
     planName: plan?.name ?? 'Home 20',
     status,
+    // Hold reason (P3.A.3): most isolir fixtures are punitive (overdue); every
+    // 5th one is a voluntary hold (cuti) so the distinction is visible in dev.
+    holdReason: status === 'isolir' ? (i % 5 === 0 ? 'voluntary' : 'overdue') : null,
     outstanding: status === 'isolir' ? 200_000 + (i % 3) * 150_000 : 0,
     // Every 4th subscriber is a PKP/business account with an NPWP.
     npwp:
@@ -1757,6 +1760,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    found.holdReason = 'voluntary'
     setTopoCustomerLifecycle(found.fullName, 'isolir')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
@@ -1772,6 +1776,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
+    found.holdReason = null
     setTopoCustomerLifecycle(found.fullName, 'aktif')
     setSecretsDisabledByCustomer(found.fullName, false)
     persistDb()
@@ -1915,6 +1920,7 @@ export const handlers = [
       planId: plan?.id ?? oid('bbbbbbbb', 1),
       planName: plan?.name ?? 'Home 20',
       status: 'instalasi' as const,
+      holdReason: null,
       outstanding: 0,
       npwp: null,
       ktp: null,
@@ -2147,6 +2153,7 @@ export const handlers = [
       planId: plan?.id ?? oid('bbbbbbbb', 1),
       planName: plan?.name ?? 'Home 20',
       status: 'prospek' as const,
+      holdReason: null,
       outstanding: 0,
       npwp: null,
       ktp: null,
@@ -2186,6 +2193,7 @@ export const handlers = [
       planId: plan?.id ?? oid('bbbbbbbb', 1),
       planName: plan?.name ?? 'Home 20',
       status: 'instalasi' as const,
+      holdReason: null,
       outstanding: 0,
       npwp: null,
       ktp: null,
@@ -2255,6 +2263,7 @@ export const handlers = [
       })
     }
     found.status = 'isolir'
+    found.holdReason = 'overdue'
     setTopoCustomerLifecycle(found.fullName, 'isolir')
     setSecretsDisabledByCustomer(found.fullName, true)
     persistDb()
@@ -2268,6 +2277,7 @@ export const handlers = [
       })
     }
     found.status = 'aktif'
+    found.holdReason = null
     setTopoCustomerLifecycle(found.fullName, 'aktif')
     found.outstanding = 0
     setSecretsDisabledByCustomer(found.fullName, false)
