@@ -55,10 +55,15 @@ export function useCompleteWorkOrder() {
       qc.invalidateQueries({ queryKey: ['inventory'] })
       // …and provisions a PPPoE secret on a router.
       qc.invalidateQueries({ queryKey: ['routers'] })
+      // A repair completion auto-resolves the linked ticket (P3.B.4) — refresh
+      // the ticket list + timeline so it reflects the close.
+      qc.invalidateQueries({ queryKey: ['tickets'] })
       toast.success(
         wo.type === 'install'
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`
-          : `WO ${wo.code} selesai`,
+          : wo.ticketId
+            ? `WO ${wo.code} selesai — tiket terkait ditutup`
+            : `WO ${wo.code} selesai`,
       )
     },
     onError: (err) => toast.error(getErrorMessage(err)),

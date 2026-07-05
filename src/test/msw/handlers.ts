@@ -419,6 +419,7 @@ const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     technician: TECHNICIANS[i % TECHNICIANS.length] ?? null,
     scheduledAt: iso(2026, 5, 6 + (i % 5)),
     status: WORKORDER_STATUS[i % WORKORDER_STATUS.length] ?? 'scheduled',
+    ticketId: null as string | null,
     createdAt: iso(2026, 5, 3),
   }
 })
@@ -2020,6 +2021,7 @@ export const handlers = [
       technician: null,
       scheduledAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
       status: 'scheduled' as const,
+      ticketId: null as string | null,
       createdAt: new Date().toISOString(),
     })
     found.stage = 'won'
@@ -2319,6 +2321,7 @@ export const handlers = [
       technician: body.technician,
       scheduledAt: new Date(body.scheduledAt).toISOString(),
       status: 'scheduled' as const,
+      ticketId: null as string | null,
       createdAt: new Date().toISOString(),
     })
     // Drop the new subscriber onto the topology map under an ODP that still has
@@ -3485,6 +3488,32 @@ export const handlers = [
         })
       }
     }
+    // P3.B.4: completing a repair WO closes the linked ticket — append a
+    // workorder + status event and resolve it (or breached if past SLA).
+    if (wo.type === 'repair' && wo.ticketId) {
+      const ticket = TICKET_FIXTURES.find((t) => t.id === wo.ticketId)
+      if (ticket && ticket.status !== 'resolved' && ticket.status !== 'breached') {
+        const author = USER_FIXTURE.fullName
+        const at = new Date().toISOString()
+        TICKET_EVENT_FIXTURES.push({
+          id: crypto.randomUUID(),
+          ticketId: ticket.id,
+          kind: 'workorder',
+          author,
+          body: `Perbaikan selesai — WO ${wo.code}`,
+          at,
+        })
+        ticket.status = new Date(ticket.slaDueAt).getTime() < Date.now() ? 'breached' : 'resolved'
+        TICKET_EVENT_FIXTURES.push({
+          id: crypto.randomUUID(),
+          ticketId: ticket.id,
+          kind: 'status',
+          author,
+          body: `Status → ${ticket.status}`,
+          at,
+        })
+      }
+    }
     persistDb()
     return HttpResponse.json(wo)
   }),
@@ -4015,6 +4044,9 @@ export const handlers = [
       technician: null,
       scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
       status: 'scheduled' as const,
+      // Link back to the origin ticket (P3.B.4) so completing this repair WO
+      // auto-resolves the ticket.
+      ticketId: ticket.id as string | null,
       createdAt: new Date().toISOString(),
     }
     WORKORDER_FIXTURES.unshift(wo)

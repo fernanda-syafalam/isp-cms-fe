@@ -14,6 +14,9 @@ export const WorkOrderSchema = z.object({
   technician: z.string().nullable(),
   scheduledAt: z.iso.datetime(),
   status: WorkOrderStatusSchema,
+  // The ticket that spawned this repair WO, if any (P3.B.4). Completing the WO
+  // auto-resolves this ticket.
+  ticketId: z.string().nullable(),
   createdAt: z.iso.datetime(),
 })
 
