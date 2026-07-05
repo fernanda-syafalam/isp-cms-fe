@@ -37,6 +37,7 @@ export function DashboardKpis({ summary, isLoading, isError }: Props) {
       />
       <KpiCard
         label="MRR"
+        estimated
         value={summary?.mrr ?? 0}
         format={formatCurrency}
         hint="Pendapatan bulanan berulang"

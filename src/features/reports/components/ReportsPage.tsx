@@ -54,6 +54,7 @@ export function ReportsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <KpiCard
           label="MRR"
+          estimated
           value={dashboard?.mrr ?? 0}
           format={formatCurrency}
           hint="Pendapatan bulanan berulang"
@@ -89,6 +90,7 @@ export function ReportsPage() {
         />
         <KpiCard
           label="ARPU"
+          estimated
           value={reports?.arpu ?? 0}
           format={formatCurrency}
           hint="Pendapatan per pelanggan"
@@ -98,6 +100,7 @@ export function ReportsPage() {
         />
         <KpiCard
           label="Tingkat churn"
+          estimated
           value={reports?.churnRate ?? 0}
           format={formatPercent}
           hint="Pelanggan hilang bulan ini"

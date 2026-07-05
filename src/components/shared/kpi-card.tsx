@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { TrendingDownIcon, TrendingUpIcon, TriangleAlertIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 
+import { EstimateBadge } from '@/components/shared/estimate-badge'
 import { Sparkline } from '@/components/shared/sparkline'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -41,6 +42,8 @@ type BaseProps = {
   isLoading?: boolean
   /** Render an error placeholder instead of a stale/zero value. */
   isError?: boolean
+  /** Metric is inferred (industry heuristics), not from real records — shows an "Estimasi" marker. */
+  estimated?: boolean
 }
 
 type Props = BaseProps & KpiDrill
@@ -77,6 +80,7 @@ export function KpiCard(props: Props) {
     series,
     isLoading = false,
     isError = false,
+    estimated = false,
   } = props
 
   const numeric = typeof value === 'number'
@@ -104,7 +108,10 @@ export function KpiCard(props: Props) {
     >
       <CardContent className="space-y-3 pt-6">
         <div className="flex items-start justify-between gap-3">
-          <p className="font-medium text-muted-foreground text-sm">{label}</p>
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="font-medium text-muted-foreground text-sm">{label}</p>
+            {estimated ? <EstimateBadge /> : null}
+          </div>
           <span
             className={cn(
               'flex size-9 shrink-0 items-center justify-center rounded-xl',

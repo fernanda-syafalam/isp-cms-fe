@@ -50,6 +50,7 @@ export function SatisfactionPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="CSAT"
+          estimated
           value={data.csat.avg}
           format={(v) => `${v.toFixed(1)} / 5`}
           hint={`${data.csat.count} respons`}
@@ -57,6 +58,7 @@ export function SatisfactionPage() {
         />
         <KpiCard
           label="NPS"
+          estimated
           value={data.nps.score}
           hint={`${data.nps.total} responden`}
           hintTone={data.nps.score >= 0 ? 'positive' : 'negative'}
@@ -64,6 +66,7 @@ export function SatisfactionPage() {
         />
         <KpiCard
           label="Churn rate"
+          estimated
           value={data.churn.rate}
           format={(v) => `${v.toFixed(1)}%`}
           hint="periode berjalan"

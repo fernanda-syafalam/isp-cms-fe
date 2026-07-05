@@ -65,6 +65,35 @@ describe('KpiCard', () => {
     expect(container.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
   })
 
+  it('shows the "Estimasi" marker only when estimated is set', () => {
+    const { rerender } = renderWithProviders(
+      <KpiCard label="MRR" value={42} icon={ActivityIcon} estimated />,
+    )
+    expect(screen.getByText('Estimasi')).toBeInTheDocument()
+
+    rerender(<KpiCard label="MRR" value={42} icon={ActivityIcon} />)
+    expect(screen.queryByText('Estimasi')).not.toBeInTheDocument()
+  })
+
+  it('carries the estimate caveat as an accessible label', () => {
+    renderWithProviders(<KpiCard label="MRR" value={42} icon={ActivityIcon} estimated />)
+
+    expect(screen.getByText('Estimasi')).toHaveAttribute(
+      'aria-label',
+      expect.stringContaining('estimasi'),
+    )
+  })
+
+  it('never shows the estimate marker in the loading or error states', () => {
+    const { rerender } = renderWithProviders(
+      <KpiCard label="MRR" value={42} icon={ActivityIcon} estimated isLoading />,
+    )
+    expect(screen.queryByText('Estimasi')).not.toBeInTheDocument()
+
+    rerender(<KpiCard label="MRR" value={42} icon={ActivityIcon} estimated isError />)
+    expect(screen.queryByText('Estimasi')).not.toBeInTheDocument()
+  })
+
   it('does not wrap a non-drill-down card in a link', () => {
     const { container } = renderWithProviders(
       <KpiCard label="Total cabang" value={42} icon={ActivityIcon} />,
