@@ -5,6 +5,8 @@ import {
   PaymentIntentSchema,
   type PaymentList,
   PaymentListSchema,
+  type PaymentReconciliation,
+  PaymentReconciliationSchema,
 } from '@/schemas/payment'
 
 export type PaymentFilter = {
@@ -30,6 +32,14 @@ export async function listPayments(filter: PaymentFilter = {}): Promise<PaymentL
   if (filter.offset !== undefined) searchParams.set('offset', String(filter.offset))
   const json = await api.get('payments', { searchParams }).json()
   return PaymentListSchema.parse(json)
+}
+
+// End-of-day cash-drawer + per-method reconciliation for a single date
+// (YYYY-MM-DD). Admin/staff only on the backend.
+export async function getReconciliation(date: string): Promise<PaymentReconciliation> {
+  const searchParams = new URLSearchParams({ date })
+  const json = await api.get('payments/reconciliation', { searchParams }).json()
+  return PaymentReconciliationSchema.parse(json)
 }
 
 // Create a gateway charge for an invoice (mock returns VA/QR + pending status).

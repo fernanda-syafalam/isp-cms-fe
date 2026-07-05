@@ -9,6 +9,7 @@ import {
   payInvoice,
 } from '@/api/invoices'
 import { getErrorMessage } from '@/lib/errors'
+import { formatCurrency } from '@/lib/format'
 import type { InvoiceList } from '@/schemas/invoice'
 import type { RecordPaymentInput } from '@/schemas/payment'
 
@@ -54,7 +55,14 @@ export function usePayInvoice(id: string) {
       // payment can reactivate an isolated customer + change AR
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['analytics'] })
-      toast.success(`Pembayaran ${invoice.invoiceNo} dicatat`)
+      // A partial payment still owes balanceDue — say so instead of implying paid.
+      if (invoice.status === 'partial') {
+        toast.success(
+          `Pembayaran sebagian ${invoice.invoiceNo} dicatat · sisa ${formatCurrency(invoice.balanceDue)}`,
+        )
+      } else {
+        toast.success(`Pembayaran ${invoice.invoiceNo} dicatat`)
+      }
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

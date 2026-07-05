@@ -4,29 +4,21 @@ import { useState } from 'react'
 
 import { DetailActionBar } from '@/components/shared/detail-sheet'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
-import { statusLabel } from '@/lib/status-label'
 import type { Invoice } from '@/schemas/invoice'
-import { PaymentMethodSchema } from '@/schemas/payment'
 
 import { useRemindOverdue } from '../hooks/useBilling'
-import { usePayInvoice } from '../hooks/useInvoices'
 import { CheckoutDialog } from './CheckoutDialog'
+import { LoketPayDialog } from './LoketPayDialog'
 
 // Action bar for the invoice quick-view drawer: online checkout, manual payment
-// recording, overdue reminder (gated), and print/receipt.
+// recording (loket, supports partial + cash change), overdue reminder (gated),
+// and print/receipt.
 export function InvoiceSheetActions({ invoice }: { invoice: Invoice }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [loketOpen, setLoketOpen] = useState(false)
   const canRemind = useCan('billing.run')
   const remind = useRemindOverdue()
-  const pay = usePayInvoice(invoice.id)
   const unpaid = invoice.status !== 'paid'
 
   return (
@@ -38,22 +30,11 @@ export function InvoiceSheetActions({ invoice }: { invoice: Invoice }) {
             Bayar online
           </Button>
           <CheckoutDialog invoice={invoice} open={checkoutOpen} onOpenChange={setCheckoutOpen} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={pay.isPending}>
-                <WalletIcon className="size-4" />
-                Catat manual
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Metode</DropdownMenuLabel>
-              {PaymentMethodSchema.options.map((method) => (
-                <DropdownMenuItem key={method} onSelect={() => pay.mutate({ method })}>
-                  {statusLabel(method)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" size="sm" onClick={() => setLoketOpen(true)}>
+            <WalletIcon className="size-4" />
+            Catat manual
+          </Button>
+          <LoketPayDialog invoice={invoice} open={loketOpen} onOpenChange={setLoketOpen} />
           {canRemind ? (
             <Button
               variant="outline"

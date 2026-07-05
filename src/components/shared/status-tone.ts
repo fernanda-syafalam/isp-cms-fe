@@ -20,6 +20,7 @@ export const customerStatusTone: Record<CustomerStatus, StatusTone> = {
 
 export const invoiceStatusTone: Record<InvoiceStatus, StatusTone> = {
   paid: 'success',
+  partial: 'info',
   pending: 'warning',
   overdue: 'danger',
   draft: 'neutral',

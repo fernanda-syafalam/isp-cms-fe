@@ -16,6 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
   archived: 'Arsip',
   // invoice
   paid: 'Lunas',
+  partial: 'Sebagian',
   pending: 'Menunggu',
   overdue: 'Terlambat',
   draft: 'Draf',

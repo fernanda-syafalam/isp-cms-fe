@@ -1,6 +1,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { PAYMENT_EXPORT_LIMIT, type PaymentFilter, listPayments } from '@/api/payments'
+import {
+  PAYMENT_EXPORT_LIMIT,
+  type PaymentFilter,
+  getReconciliation,
+  listPayments,
+} from '@/api/payments'
+
+// End-of-day cash-drawer + per-method reconciliation for a single date.
+export function useReconciliation(date: string) {
+  return useQuery({
+    queryKey: ['payments', 'reconciliation', date] as const,
+    queryFn: () => getReconciliation(date),
+  })
+}
 
 export function usePaymentsList(filter: PaymentFilter = {}) {
   return useQuery({
