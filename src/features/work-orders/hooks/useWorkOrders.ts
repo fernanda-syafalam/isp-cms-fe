@@ -4,9 +4,11 @@ import { toast } from 'sonner'
 import {
   type WorkOrderFilter,
   WORKORDER_EXPORT_LIMIT,
+  assignWorkOrder,
   cancelWorkOrder,
   completeWorkOrder,
   listWorkOrders,
+  rescheduleWorkOrder,
   startWorkOrder,
 } from '@/api/workorders'
 import { getErrorMessage } from '@/lib/errors'
@@ -82,6 +84,32 @@ export function useCancelWorkOrder() {
     onSuccess: (wo) => {
       qc.invalidateQueries({ queryKey: ['work-orders'] })
       toast.success(`WO ${wo.code} dibatalkan`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useAssignWorkOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, technician }: { id: string; technician: string }) =>
+      assignWorkOrder(id, technician),
+    onSuccess: (wo) => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`WO ${wo.code} ditugaskan ke ${wo.technician}`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useRescheduleWorkOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
+      rescheduleWorkOrder(id, scheduledAt),
+    onSuccess: (wo) => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`Jadwal WO ${wo.code} diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
