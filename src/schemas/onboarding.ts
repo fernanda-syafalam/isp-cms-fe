@@ -17,6 +17,14 @@ export const OnboardingSchema = z.object({
   // customer's node on the topology map.
   lat: z.number().optional(),
   lng: z.number().optional(),
+  // Chosen FTTH distribution point. The backend reserves a splitter port
+  // atomically on submit (409 if the ODP is already full).
+  odpId: z.string().optional(),
+  // KYC identity (UU PDP). Optional at onboarding — ops can complete it later.
+  ktp: z.string().max(32).optional(),
+  npwp: z.string().max(40).optional(),
+  // UU PDP data-processing consent given at onboarding.
+  consent: z.boolean().optional(),
 })
 
 export type OnboardingInput = z.infer<typeof OnboardingSchema>

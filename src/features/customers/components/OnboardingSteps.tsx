@@ -8,7 +8,15 @@ import type { usePlanOptions } from '@/hooks/usePlanOptions'
 import { SERVICE_AREAS } from '@/lib/areas'
 import type { OnboardingInput } from '@/schemas/onboarding'
 
-import { type OnboardingForm, SelectField, Summary, TextField } from './OnboardingFields'
+import {
+  ConsentField,
+  OdpSelectField,
+  type OnboardingForm,
+  SelectField,
+  ServiceabilityHint,
+  Summary,
+  TextField,
+} from './OnboardingFields'
 
 // Code-split the Leaflet map picker so it (and Leaflet) stays out of the main
 // bundle — loaded only when the onboarding wizard renders.
@@ -21,16 +29,39 @@ const LocationPicker = lazy(() =>
 const AREAS = SERVICE_AREAS
 const TECHNICIANS = ['Teknisi Budi', 'Teknisi Sari', 'Teknisi Joko']
 
-// Step 0: identity, area, and the map pin for the install location.
+// Step 0: identity + KYC (KTP/NPWP) and UU-PDP data-processing consent.
 export function CustomerStep({ form }: { form: OnboardingForm }) {
-  const latValue = form.watch('lat')
-  const lngValue = form.watch('lng')
-
   return (
     <>
       <TextField form={form} name="fullName" label="Nama" placeholder="Budi Santoso" />
       <TextField form={form} name="phone" label="Telepon" placeholder="0812xxxxxxx" />
       <TextField form={form} name="email" label="Email (opsional)" placeholder="budi@example.com" />
+      <TextField
+        form={form}
+        name="ktp"
+        label="NIK / KTP (opsional)"
+        placeholder="3300xxxxxxxxxxxx"
+      />
+      <TextField
+        form={form}
+        name="npwp"
+        label="NPWP (opsional)"
+        placeholder="00.000.000.0-000.000"
+      />
+      <ConsentField form={form} />
+    </>
+  )
+}
+
+// Step 1: install location — address, service area, serviceability pre-warning,
+// the FTTH ODP to attach to, and the map pin.
+export function LocationStep({ form }: { form: OnboardingForm }) {
+  const latValue = form.watch('lat')
+  const lngValue = form.watch('lng')
+  const areaName = form.watch('areaName')
+
+  return (
+    <>
       <TextField
         form={form}
         name="address"
@@ -44,6 +75,8 @@ export function CustomerStep({ form }: { form: OnboardingForm }) {
         placeholder="Pilih area"
         options={AREAS.map((a) => ({ value: a, label: a }))}
       />
+      <ServiceabilityHint areaName={areaName} />
+      <OdpSelectField form={form} areaName={areaName} />
       <FormItem>
         <FormLabel>Titik lokasi instalasi</FormLabel>
         <Suspense fallback={<div className="h-56 animate-pulse rounded-lg bg-muted" />}>
@@ -63,7 +96,7 @@ export function CustomerStep({ form }: { form: OnboardingForm }) {
   )
 }
 
-// Step 1: package picker, with the plan query's loading/error/empty states.
+// Step 2: package picker, with the plan query's loading/error/empty states.
 export function PlanStep({
   form,
   planQuery,
@@ -100,7 +133,7 @@ export function PlanStep({
   )
 }
 
-// Step 2: technician, schedule date, and an optional survey note.
+// Step 3: technician, schedule date, and an optional survey note.
 export function ScheduleStep({ form }: { form: OnboardingForm }) {
   return (
     <>
@@ -141,8 +174,16 @@ export function ScheduleStep({ form }: { form: OnboardingForm }) {
   )
 }
 
-// Step 3: read-only review of everything captured before submit.
-export function SummaryStep({ values, planLabel }: { values: OnboardingInput; planLabel: string }) {
+// Step 4: read-only review of everything captured before submit.
+export function SummaryStep({
+  values,
+  planLabel,
+  odpName,
+}: {
+  values: OnboardingInput
+  planLabel: string
+  odpName: string
+}) {
   return (
     <dl className="grid gap-3 sm:grid-cols-2">
       <Summary label="Nama" value={values.fullName} />
@@ -150,6 +191,10 @@ export function SummaryStep({ values, planLabel }: { values: OnboardingInput; pl
       <Summary label="Email" value={values.email || '—'} />
       <Summary label="Alamat" value={values.address} />
       <Summary label="Area" value={values.areaName} />
+      <Summary label="ODP" value={odpName} />
+      <Summary label="KTP" value={values.ktp || '—'} />
+      <Summary label="NPWP" value={values.npwp || '—'} />
+      <Summary label="Persetujuan data (UU PDP)" value={values.consent ? 'Ya' : 'Belum'} />
       <Summary label="Paket" value={planLabel} />
       <Summary label="Teknisi" value={values.technician} />
       <Summary label="Jadwal instalasi" value={values.scheduledAt} />
