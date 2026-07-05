@@ -4,8 +4,10 @@ import { toast } from 'sonner'
 import {
   type WorkOrderFilter,
   WORKORDER_EXPORT_LIMIT,
+  cancelWorkOrder,
   completeWorkOrder,
   listWorkOrders,
+  startWorkOrder,
 } from '@/api/workorders'
 import { getErrorMessage } from '@/lib/errors'
 
@@ -56,6 +58,30 @@ export function useCompleteWorkOrder() {
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`
           : `WO ${wo.code} selesai`,
       )
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useStartWorkOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => startWorkOrder(id),
+    onSuccess: (wo) => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`WO ${wo.code} dimulai`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useCancelWorkOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => cancelWorkOrder(id),
+    onSuccess: (wo) => {
+      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      toast.success(`WO ${wo.code} dibatalkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
