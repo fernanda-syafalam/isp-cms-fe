@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as BootstrapRouteImport } from './routes/bootstrap'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthIndexRouteImport } from './routes/_auth.index'
 import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
@@ -62,6 +63,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+const BootstrapRoute = BootstrapRouteImport.update({
+  id: '/bootstrap',
+  path: '/bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/bootstrap.lazy').then((d) => d.Route))
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -331,6 +337,7 @@ const AuthInvoicesPrintInvoiceIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
+  '/bootstrap': typeof BootstrapRoute
   '/login': typeof LoginRoute
   '/accounting': typeof AuthAccountingRoute
   '/audit': typeof AuthAuditRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/network/routers/': typeof AuthNetworkRoutersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/bootstrap': typeof BootstrapRoute
   '/login': typeof LoginRoute
   '/accounting': typeof AuthAccountingRoute
   '/audit': typeof AuthAuditRoute
@@ -423,6 +431,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_auth': typeof AuthRouteWithChildren
+  '/bootstrap': typeof BootstrapRoute
   '/login': typeof LoginRoute
   '/_auth/accounting': typeof AuthAccountingRoute
   '/_auth/audit': typeof AuthAuditRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bootstrap'
     | '/login'
     | '/accounting'
     | '/audit'
@@ -521,6 +531,7 @@ export interface FileRouteTypes {
     | '/network/routers/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/bootstrap'
     | '/login'
     | '/accounting'
     | '/audit'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_auth'
+    | '/bootstrap'
     | '/login'
     | '/_auth/accounting'
     | '/_auth/audit'
@@ -615,6 +627,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
+  BootstrapRoute: typeof BootstrapRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -625,6 +638,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bootstrap': {
+      id: '/bootstrap'
+      path: '/bootstrap'
+      fullPath: '/bootstrap'
+      preLoaderRoute: typeof BootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -1102,6 +1122,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
+  BootstrapRoute: BootstrapRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

@@ -1416,6 +1416,11 @@ export const handlers = [
   http.post('*/api/auth/refresh', () => HttpResponse.json(SESSION_FIXTURE)),
   http.post('*/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
   http.get('*/api/auth/me', () => HttpResponse.json(USER_FIXTURE)),
+  // First-run bootstrap (P3.E.1). Default: already bootstrapped (fixtures have
+  // users). Tests exercising the fresh-install path override the GET with
+  // server.use(...). POST mirrors the BE: 201 with a session, auto-login.
+  http.get('*/api/auth/bootstrap', () => HttpResponse.json({ required: false })),
+  http.post('*/api/auth/bootstrap', () => HttpResponse.json(SESSION_FIXTURE, { status: 201 })),
 
   // Staff (cursor pagination, cursor?/limit?)
   http.get('*/api/users', ({ request }) => {

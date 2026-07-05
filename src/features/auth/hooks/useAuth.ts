@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { getCurrentUser, login, logout } from '@/api/auth'
+import { bootstrapAdmin, getCurrentUser, login, logout } from '@/api/auth'
 import { getErrorMessage } from '@/lib/errors'
-import type { LoginInput } from '@/schemas/auth'
+import type { BootstrapInput, LoginInput } from '@/schemas/auth'
 
 import { useAuthStore } from '../store/authStore'
 
@@ -30,6 +30,25 @@ export function useLogin() {
     onSuccess: (session) => {
       setSession(session)
       qc.setQueryData(['auth', 'me'], session.user)
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err))
+    },
+  })
+}
+
+export function useBootstrap() {
+  const setSession = useAuthStore((s) => s.setSession)
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (input: BootstrapInput) => bootstrapAdmin(input),
+    onSuccess: (session) => {
+      // Bootstrap auto-logs-in the new admin; prime the session + me cache
+      // and mark bootstrap done so the guard can't loop back to /bootstrap.
+      setSession(session)
+      qc.setQueryData(['auth', 'me'], session.user)
+      qc.setQueryData(['auth', 'bootstrap'], { required: false })
     },
     onError: (err) => {
       toast.error(getErrorMessage(err))
