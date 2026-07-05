@@ -13,6 +13,10 @@ export const PaymentSchema = z.object({
   amount: z.number().int().nonnegative(),
   method: PaymentMethodSchema,
   paidAt: z.iso.datetime(),
+  // Cash-drawer fields (loket/tunai): uang diterima + kembalian. Null for any
+  // non-cash method (QRIS/VA/e-wallet/transfer) where no change is handled.
+  tenderedAmount: z.number().int().nonnegative().nullable(),
+  changeAmount: z.number().int().nonnegative().nullable(),
 })
 
 // Full-set rollups over ALL payments (ignores the method filter) — drives the
@@ -37,9 +41,33 @@ export const PaymentListSchema = z.object({
 
 export type PaymentSummary = z.infer<typeof PaymentSummarySchema>
 
-// Input when recording a payment against an invoice (offline/loket).
+// Input when recording a payment against an invoice (offline/loket). `amount`
+// is optional — omitted means pay the full balanceDue; a smaller value records a
+// partial payment. `tenderedAmount` (uang diterima) is cash-only and drives the
+// change (kembalian) computation server-side.
 export const RecordPaymentSchema = z.object({
   method: PaymentMethodSchema,
+  amount: z.number().int().positive().optional(),
+  tenderedAmount: z.number().int().positive().optional(),
+})
+
+// GET /v1/payments/reconciliation?date=YYYY-MM-DD — end-of-day cash-drawer +
+// per-method totals for the given date (admin/staff).
+export const PaymentReconciliationSchema = z.object({
+  date: z.iso.date(),
+  byMethod: z.array(
+    z.object({
+      method: z.string(),
+      count: z.number().int().nonnegative(),
+      totalAmount: z.number().int().nonnegative(),
+    }),
+  ),
+  totalCount: z.number().int().nonnegative(),
+  totalAmount: z.number().int().nonnegative(),
+  cash: z.object({
+    totalTendered: z.number().int().nonnegative(),
+    totalChange: z.number().int().nonnegative(),
+  }),
 })
 
 // Online payment gateway (QRIS / Virtual Account / e-wallet). Channels mirror
@@ -84,6 +112,7 @@ export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
 export type Payment = z.infer<typeof PaymentSchema>
 export type PaymentList = z.infer<typeof PaymentListSchema>
 export type RecordPaymentInput = z.infer<typeof RecordPaymentSchema>
+export type PaymentReconciliation = z.infer<typeof PaymentReconciliationSchema>
 export type PaymentChannel = z.infer<typeof PaymentChannelSchema>
 export type PaymentIntentStatus = z.infer<typeof PaymentIntentStatusSchema>
 export type PaymentIntent = z.infer<typeof PaymentIntentSchema>

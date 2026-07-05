@@ -5,6 +5,7 @@ import { projectNodeMeta } from '@/features/topology/lib/projection'
 import { SLA_HOURS } from '@/lib/sla'
 import type { AuditEntry } from '@/schemas/audit'
 import { UpdateBranchSchema } from '@/schemas/branch'
+import type { InvoiceStatus } from '@/schemas/invoice'
 import { CreateCableSchema, CustomerDropSchema, UpdateCableSchema } from '@/schemas/cable'
 import { CreateClosureSchema, CreateSpliceSchema } from '@/schemas/closure'
 import type { IpPool, PppProfile, PppSecret, PppSession, SimpleQueue } from '@/schemas/mikrotik'
@@ -179,6 +180,8 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     // 5th one is a voluntary hold (cuti) so the distinction is visible in dev.
     holdReason: status === 'isolir' ? (i % 5 === 0 ? 'voluntary' : 'overdue') : null,
     outstanding: status === 'isolir' ? 200_000 + (i % 3) * 150_000 : 0,
+    // Due-date anchor (1..28). Every 4th subscriber follows the operator default.
+    billingAnchorDay: i % 4 === 0 ? null : (i % 28) + 1,
     // Every 4th subscriber is a PKP/business account with an NPWP.
     npwp:
       i % 4 === 0
@@ -193,7 +196,14 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
   }
 })
 
-const INVOICE_STATUS = ['paid', 'paid', 'pending', 'overdue', 'paid', 'draft'] as const
+const INVOICE_STATUS: readonly InvoiceStatus[] = [
+  'paid',
+  'paid',
+  'pending',
+  'overdue',
+  'paid',
+  'draft',
+]
 // PPN efektif 11% (mekanisme DPP 11/12). Nomor faktur pajak format 16-digit.
 const PPN_RATE = 0.11
 const ppnOf = (dpp: number) => Math.round(dpp * PPN_RATE)
@@ -201,8 +211,16 @@ const fakturNo = (seq: number) => `010.000-26.${String(10_000_000 + seq).padStar
 
 const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
   const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
-  const status = INVOICE_STATUS[i % INVOICE_STATUS.length] ?? 'pending'
+  // Widen to the full InvoiceStatus union so the store can later move an invoice
+  // into 'partial'/'paid' at runtime (seed values are a narrow subset).
+  const status: InvoiceStatus = INVOICE_STATUS[i % INVOICE_STATUS.length] ?? 'pending'
   const amount = 200_000 + (i % 4) * 150_000
+  const lateFee = status === 'overdue' ? 25_000 : 0
+  const taxAmount = ppnOf(amount)
+  const discountAmount = 0
+  const gross = amount + lateFee + taxAmount - discountAmount
+  // Seed invoices are all-or-nothing: paid → fully settled, else nothing paid.
+  const paidAmount = status === 'paid' ? gross : 0
   return {
     id: oid('cccccccc', i),
     invoiceNo: `INV-2026-${String(100 + i)}`,
@@ -211,8 +229,11 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
     periodStart: ymd(2026, 4, 1),
     periodEnd: ymd(2026, 4, 30),
     amount,
-    lateFee: status === 'overdue' ? 25_000 : 0,
-    taxAmount: ppnOf(amount),
+    lateFee,
+    taxAmount,
+    discountAmount,
+    paidAmount,
+    balanceDue: gross - paidAmount,
     // Draft invoices have no tax invoice number yet (type stays string | null).
     taxInvoiceNo: status === 'draft' ? null : fakturNo(i),
     status,
@@ -224,16 +245,25 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
 })
 
 const PAYMENT_METHODS = ['qris', 'va', 'ewallet', 'transfer', 'cash'] as const
-const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid').map((inv, i) => ({
-  id: oid('a9a9a9a9', i),
-  invoiceId: inv.id,
-  invoiceNo: inv.invoiceNo,
-  customerId: inv.customerId,
-  customerName: inv.customerName,
-  amount: inv.amount + inv.lateFee + inv.taxAmount,
-  method: PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris',
-  paidAt: inv.paidAt ?? iso(2026, 5, 5),
-}))
+const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid').map((inv, i) => {
+  const method = PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris'
+  const amount = inv.amount + inv.lateFee + inv.taxAmount
+  // Seed cash payments round the tendered up to the nearest 50k so the drawer
+  // has a non-trivial change (kembalian) for reconciliation.
+  const tenderedAmount = method === 'cash' ? Math.ceil(amount / 50_000) * 50_000 : null
+  return {
+    id: oid('a9a9a9a9', i),
+    invoiceId: inv.id,
+    invoiceNo: inv.invoiceNo,
+    customerId: inv.customerId,
+    customerName: inv.customerName,
+    amount,
+    method,
+    paidAt: inv.paidAt ?? iso(2026, 5, 5),
+    tenderedAmount,
+    changeAmount: tenderedAmount === null ? null : tenderedAmount - amount,
+  }
+})
 
 // Online payment-gateway charges (QRIS/VA/e-wallet). Created at checkout, marked
 // paid by a simulated webhook. Starts empty; loose-typed so the array can grow.
@@ -1766,6 +1796,9 @@ export const handlers = [
         amount: prorate,
         lateFee: 0,
         taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(prorate) : 0,
+        discountAmount: 0,
+        paidAmount: 0,
+        balanceDue: prorate + (SETTINGS_FIXTURE.tax.pkp ? ppnOf(prorate) : 0),
         taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
         status: 'pending',
         dueDate: due.toISOString().slice(0, 10),
@@ -1968,6 +2001,7 @@ export const handlers = [
       status: 'instalasi' as const,
       holdReason: null,
       outstanding: 0,
+      billingAnchorDay: null,
       npwp: null,
       ktp: null,
       consentAt: null,
@@ -2201,6 +2235,7 @@ export const handlers = [
       status: 'prospek' as const,
       holdReason: null,
       outstanding: 0,
+      billingAnchorDay: null,
       npwp: null,
       ktp: null,
       consentAt: null,
@@ -2266,6 +2301,7 @@ export const handlers = [
       status: 'instalasi' as const,
       holdReason: null,
       outstanding: 0,
+      billingAnchorDay: null,
       npwp: body.npwp ? body.npwp : null,
       ktp: body.ktp ? body.ktp : null,
       consentAt: body.consent ? new Date().toISOString() : null,
@@ -2387,18 +2423,20 @@ export const handlers = [
   http.get('*/api/invoices', ({ request }) => {
     const url = new URL(request.url)
     // AR summary: full-set invariant over ALL invoices (ignores status/q/paging).
-    // Grand total = DPP + late fee + PPN (mirrors lib/invoice.invoiceTotal).
-    const grandTotal = (i: (typeof INVOICE_FIXTURES)[number]) => i.amount + i.lateFee + i.taxAmount
-    const unpaid = INVOICE_FIXTURES.filter((i) => i.status === 'pending' || i.status === 'overdue')
+    // Outstanding sums the remaining balanceDue so partial payments shrink it.
+    const unpaid = INVOICE_FIXTURES.filter(
+      (i) => i.status === 'pending' || i.status === 'overdue' || i.status === 'partial',
+    )
     const overdueList = INVOICE_FIXTURES.filter((i) => i.status === 'overdue')
     const countStatus = (s: string) => INVOICE_FIXTURES.filter((i) => i.status === s).length
     const summary = {
-      outstanding: unpaid.reduce((sum, i) => sum + grandTotal(i), 0),
-      overdue: overdueList.reduce((sum, i) => sum + grandTotal(i), 0),
+      outstanding: unpaid.reduce((sum, i) => sum + i.balanceDue, 0),
+      overdue: overdueList.reduce((sum, i) => sum + i.balanceDue, 0),
       unpaidCount: unpaid.length,
       total: INVOICE_FIXTURES.length,
       byStatus: {
         paid: countStatus('paid'),
+        partial: countStatus('partial'),
         pending: countStatus('pending'),
         overdue: countStatus('overdue'),
         draft: countStatus('draft'),
@@ -2437,33 +2475,58 @@ export const handlers = [
     }
     const body = (await request.json()) as {
       method: (typeof PAYMENT_METHODS)[number]
+      amount?: number
+      tenderedAmount?: number
     }
-    found.status = 'paid'
-    found.paidAt = new Date().toISOString()
+    // Current balance = gross − discount − already-paid. `amount` defaults to the
+    // full balance (settle in one shot); a smaller value is a partial payment.
+    const gross = found.amount + found.lateFee + found.taxAmount - found.discountAmount
+    const balanceDue = gross - found.paidAmount
+    const amount = body.amount ?? balanceDue
+    // Overpay is rejected (mirrors BE 422).
+    if (amount > balanceDue) {
+      return HttpResponse.json({ message: 'Jumlah melebihi saldo tertagih.' }, { status: 422 })
+    }
+    const isCash = body.method === 'cash'
+    // Cash short (tendered < amount) is rejected (mirrors BE 400).
+    if (isCash && body.tenderedAmount != null && body.tenderedAmount < amount) {
+      return HttpResponse.json(
+        { message: 'Uang diterima kurang dari jumlah bayar.' },
+        { status: 400 },
+      )
+    }
+    const now = new Date().toISOString()
+    found.paidAmount += amount
+    found.balanceDue = gross - found.paidAmount
+    found.status = found.balanceDue <= 0 ? 'paid' : 'partial'
+    // paidAt only stamps once the bill is fully settled.
+    found.paidAt = found.balanceDue <= 0 ? now : found.paidAt
+    const tenderedAmount = isCash ? (body.tenderedAmount ?? amount) : null
+    const changeAmount = tenderedAmount === null ? null : tenderedAmount - amount
     PAYMENT_FIXTURES.unshift({
       id: crypto.randomUUID(),
       invoiceId: found.id,
       invoiceNo: found.invoiceNo,
       customerId: found.customerId,
       customerName: found.customerName,
-      amount: found.amount + found.lateFee + found.taxAmount,
+      amount,
       method: body.method,
-      paidAt: found.paidAt,
+      paidAt: now,
+      tenderedAmount,
+      changeAmount,
     })
-    // Settling a bill recomputes the customer's outstanding and, if they were
-    // isolir and now have no overdue left, reactivates them + re-enables PPPoE.
+    // Settling a bill recomputes the customer's outstanding (sum of remaining
+    // balanceDue over unpaid invoices) and, once they owe nothing, reactivates
+    // an isolir subscriber + re-enables PPPoE.
     const customer = CUSTOMER_FIXTURES.find((c) => c.id === found.customerId)
     if (customer) {
       const unpaid = INVOICE_FIXTURES.filter(
         (inv) =>
-          inv.customerId === customer.id && (inv.status === 'pending' || inv.status === 'overdue'),
+          inv.customerId === customer.id &&
+          (inv.status === 'pending' || inv.status === 'overdue' || inv.status === 'partial'),
       )
-      customer.outstanding = unpaid.reduce(
-        (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
-        0,
-      )
-      const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
-      if (customer.status === 'isolir' && !hasOverdue) {
+      customer.outstanding = unpaid.reduce((sum, inv) => sum + inv.balanceDue, 0)
+      if (customer.status === 'isolir' && customer.outstanding === 0) {
         customer.status = 'aktif'
         setTopoCustomerLifecycle(customer.fullName, 'aktif')
         setSecretsDisabledByCustomer(customer.fullName, false)
@@ -2500,6 +2563,9 @@ export const handlers = [
         amount: dpp,
         lateFee: 0,
         taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+        discountAmount: 0,
+        paidAmount: 0,
+        balanceDue: dpp + (SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0),
         taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
         status: 'pending',
         dueDate,
@@ -2649,6 +2715,9 @@ export const handlers = [
         amount: dpp,
         lateFee: 0,
         taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+        discountAmount: 0,
+        paidAmount: 0,
+        balanceDue: dpp + (SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0),
         taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
         status: 'pending',
         dueDate,
@@ -2749,6 +2818,37 @@ export const handlers = [
     })
     return HttpResponse.json({ ...result, summary })
   }),
+  // End-of-day reconciliation: per-method totals + cash-drawer summary for a
+  // single date. Derives everything from the payment fixtures paid that day.
+  http.get('*/api/payments/reconciliation', ({ request }) => {
+    const url = new URL(request.url)
+    const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10)
+    const rows = PAYMENT_FIXTURES.filter((p) => p.paidAt.slice(0, 10) === date)
+    const byMethodMap = new Map<string, { count: number; totalAmount: number }>()
+    for (const p of rows) {
+      const agg = byMethodMap.get(p.method) ?? { count: 0, totalAmount: 0 }
+      agg.count += 1
+      agg.totalAmount += p.amount
+      byMethodMap.set(p.method, agg)
+    }
+    const byMethod = [...byMethodMap.entries()].map(([method, agg]) => ({
+      method,
+      count: agg.count,
+      totalAmount: agg.totalAmount,
+    }))
+    const cashRows = rows.filter((p) => p.method === 'cash')
+    const cash = {
+      totalTendered: cashRows.reduce((s, p) => s + (p.tenderedAmount ?? 0), 0),
+      totalChange: cashRows.reduce((s, p) => s + (p.changeAmount ?? 0), 0),
+    }
+    return HttpResponse.json({
+      date,
+      byMethod,
+      totalCount: rows.length,
+      totalAmount: rows.reduce((s, p) => s + p.amount, 0),
+      cash,
+    })
+  }),
   // Payment gateway: create a charge (QRIS/VA/e-wallet) for an invoice.
   http.post('*/api/payments/intent', async ({ request }) => {
     const body = (await request.json()) as {
@@ -2797,8 +2897,12 @@ export const handlers = [
     intent.status = 'paid'
     intent.paidAt = nowIso
     if (invoice) {
+      // Gateway settlement always clears the full remaining balance in one shot.
+      const settledAmount = invoice.balanceDue
       invoice.status = 'paid'
       invoice.paidAt = nowIso
+      invoice.paidAmount += settledAmount
+      invoice.balanceDue = 0
       const method =
         intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
       PAYMENT_FIXTURES.unshift({
@@ -2807,9 +2911,11 @@ export const handlers = [
         invoiceNo: invoice.invoiceNo,
         customerId: invoice.customerId,
         customerName: invoice.customerName,
-        amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
+        amount: settledAmount,
         method,
         paidAt: nowIso,
+        tenderedAmount: null,
+        changeAmount: null,
       })
       const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
       if (customer) {
@@ -3368,6 +3474,9 @@ export const handlers = [
           amount: dpp,
           lateFee: 0,
           taxAmount: SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0,
+          discountAmount: 0,
+          paidAmount: 0,
+          balanceDue: dpp + (SETTINGS_FIXTURE.tax.pkp ? ppnOf(dpp) : 0),
           taxInvoiceNo: SETTINGS_FIXTURE.tax.pkp ? fakturNo(INVOICE_FIXTURES.length) : null,
           status: 'pending',
           dueDate: due.toISOString().slice(0, 10),

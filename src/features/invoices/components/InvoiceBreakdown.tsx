@@ -4,10 +4,10 @@ import { invoiceTotal } from '@/lib/invoice'
 import type { Invoice } from '@/schemas/invoice'
 
 // "Rincian" amount breakdown for the invoice quick-view drawer: DPP, PPN, late
-// fee, total, and the outstanding/paid balance line.
+// fee, discount, total, the amount already paid, and the outstanding balanceDue.
 export function InvoiceBreakdown({ invoice }: { invoice: Invoice }) {
   const total = invoiceTotal(invoice)
-  const paid = invoice.status === 'paid'
+  const settled = invoice.balanceDue <= 0
 
   return (
     <DetailSection title="Rincian">
@@ -19,20 +19,31 @@ export function InvoiceBreakdown({ invoice }: { invoice: Invoice }) {
         {invoice.lateFee > 0 ? (
           <TotalRow label="Denda keterlambatan" value={formatCurrency(invoice.lateFee)} danger />
         ) : null}
+        {invoice.discountAmount > 0 ? (
+          <TotalRow label="Diskon" value={`- ${formatCurrency(invoice.discountAmount)}`} />
+        ) : null}
         <div className="flex items-center justify-between border-sidebar-border border-t pt-2">
           <span className="text-muted-foreground">Total tagihan</span>
           <span className="font-bold font-mono tabular-nums">{formatCurrency(total)}</span>
         </div>
+        {invoice.paidAmount > 0 ? (
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Dibayar</span>
+            <span className="font-mono text-emerald-600 tabular-nums dark:text-emerald-400">
+              {formatCurrency(invoice.paidAmount)}
+            </span>
+          </div>
+        ) : null}
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{paid ? 'Dibayar' : 'Saldo tertagih'}</span>
+          <span className="text-muted-foreground">Saldo tertagih</span>
           <span
             className={
-              paid
+              settled
                 ? 'font-mono text-emerald-600 tabular-nums dark:text-emerald-400'
                 : 'font-mono font-semibold tabular-nums'
             }
           >
-            {formatCurrency(total)}
+            {formatCurrency(invoice.balanceDue)}
           </span>
         </div>
       </div>

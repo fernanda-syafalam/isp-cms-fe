@@ -38,6 +38,10 @@ export const CustomerSchema = z.object({
   // vs 'voluntary' (cuti, customer-requested). Null when not held.
   holdReason: z.enum(['overdue', 'voluntary']).nullable().default(null),
   outstanding: z.number().int().nonnegative(), // piutang (IDR)
+  // Due-date anchor day of month (1..28) used to align this subscriber's billing
+  // cycle. Null = follow the operator default. Capped at 28 so it exists in
+  // every month (P3.A.4).
+  billingAnchorDay: z.number().int().min(1).max(28).nullable(),
   npwp: z.string().nullable(), // NPWP pembeli untuk faktur pajak (PKP)
   ktp: z.string().nullable(), // NIK/KTP untuk KYC (UU PDP)
   // When the subscriber consented to data processing (UU PDP). Null = belum.

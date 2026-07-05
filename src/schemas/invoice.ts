@@ -2,7 +2,9 @@ import { z } from 'zod'
 
 import { customerId, invoiceId } from '@/types/ids'
 
-export const InvoiceStatusSchema = z.enum(['paid', 'pending', 'overdue', 'draft'])
+// `partial` = some (but not all) of the balance has been paid (P3.A.4 partial
+// payments / loket). It still owes `balanceDue` and is treated as unpaid.
+export const InvoiceStatusSchema = z.enum(['paid', 'partial', 'pending', 'overdue', 'draft'])
 
 export const InvoiceSchema = z.object({
   id: invoiceId,
@@ -14,6 +16,10 @@ export const InvoiceSchema = z.object({
   amount: z.number().int().nonnegative(), // DPP / harga langganan
   lateFee: z.number().int().nonnegative(), // denda keterlambatan
   taxAmount: z.number().int().nonnegative(), // PPN (efektif 11% via DPP 11/12)
+  discountAmount: z.number().int().nonnegative(), // potongan/diskon (IDR)
+  paidAmount: z.number().int().nonnegative(), // total sudah dibayar (IDR)
+  // Sisa tertagih = amount + lateFee + taxAmount − discountAmount − paidAmount.
+  balanceDue: z.number().int().nonnegative(),
   // Nomor faktur pajak (e-Faktur/Coretax) — null untuk non-PKP.
   taxInvoiceNo: z.string().nullable(),
   status: InvoiceStatusSchema,
@@ -35,6 +41,7 @@ export const InvoiceSummarySchema = z.object({
   // Per-status counts (over ALL invoices) — drives the status filter tabs.
   byStatus: z.object({
     paid: z.number().int().nonnegative(),
+    partial: z.number().int().nonnegative(),
     pending: z.number().int().nonnegative(),
     overdue: z.number().int().nonnegative(),
     draft: z.number().int().nonnegative(),
