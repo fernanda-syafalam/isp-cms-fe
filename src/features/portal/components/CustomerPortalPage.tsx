@@ -13,6 +13,7 @@ import type { Payment } from '@/schemas/payment'
 import type { Ticket } from '@/schemas/ticket'
 
 import { usePortalMe } from '../hooks/usePortal'
+import { IsolirWalledGarden } from './IsolirWalledGarden'
 import { PayNowCard, PortalInvoiceRow } from './PortalInvoiceList'
 import { ReportIssueDialog } from './ReportIssueDialog'
 
@@ -47,6 +48,20 @@ export function CustomerPortalPage() {
   // Oldest unpaid invoice → the one to settle first (drives the prominent CTA).
   const oldestUnpaid = [...unpaid].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
 
+  // Isolir subscribers get a focused full-screen "walled garden" instead of the
+  // normal dashboard chrome (P3.C.1) — punitive overdue isolation vs a voluntary
+  // (cuti) pause is decided inside by customer.holdReason.
+  if (customer.status === 'isolir') {
+    return (
+      <IsolirWalledGarden
+        customer={customer}
+        invoices={invoices}
+        outstanding={outstanding}
+        oldestUnpaid={oldestUnpaid}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -80,13 +95,6 @@ export function CustomerPortalPage() {
 
       {oldestUnpaid ? (
         <PayNowCard invoice={oldestUnpaid} outstanding={outstanding} count={unpaid.length} />
-      ) : null}
-
-      {customer.status === 'isolir' ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm">
-          Layanan Anda sedang diisolir karena tagihan belum dibayar. Selesaikan pembayaran untuk
-          mengaktifkan kembali secara otomatis.
-        </p>
       ) : null}
 
       <Card>

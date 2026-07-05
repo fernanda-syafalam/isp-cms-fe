@@ -4959,9 +4959,16 @@ export const handlers = [
     // identity plumbing yet, so it defaults to an active subscriber but
     // accepts `?preview=<status>` to reach the isolir UX in dev — otherwise
     // that state was unreachable (drift: portal/me always picked `aktif`).
-    const preview = new URL(request.url).searchParams.get('preview')
+    const params = new URL(request.url).searchParams
+    const preview = params.get('preview')
+    // `?preview=isolir&hold=voluntary` reaches the voluntary (cuti) walled-garden
+    // branch in dev — most isolir fixtures are punitive (overdue), so without the
+    // hold hint that non-punitive state is otherwise unreachable (P3.C.1).
+    const hold = params.get('hold')
     const me =
-      (preview ? CUSTOMER_FIXTURES.find((c) => c.status === preview) : undefined) ??
+      (preview
+        ? CUSTOMER_FIXTURES.find((c) => c.status === preview && (!hold || c.holdReason === hold))
+        : undefined) ??
       CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ??
       CUSTOMER_FIXTURES[0]
     if (!me) {
