@@ -34,13 +34,17 @@ import {
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
-import type { Role } from '@/lib/permissions'
+import { type Permission, type Role, can } from '@/lib/permissions'
 
 export type NavItem = {
   to: string
   label: string
   icon: ComponentType<{ className?: string }>
   exact?: boolean
+  // Least-privilege gate (P3.E.4): a role sees/visits this item only if it
+  // holds this permission. Absent = visible to every role that clears the
+  // ROLE_ROUTES allowlist. Used to hide admin-only surfaces from staff.
+  permission?: Permission
 }
 
 export type NavGroup = {
@@ -58,7 +62,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: LayoutDashboardIcon,
     items: [
       { to: '/', label: 'Dasbor', icon: LayoutDashboardIcon, exact: true },
-      { to: '/setup', label: 'Panduan Setup', icon: RouteIcon },
+      // Operator first-run config — admin-only (P3.E.4).
+      {
+        to: '/setup',
+        label: 'Panduan Setup',
+        icon: RouteIcon,
+        permission: 'settings.manage',
+      },
     ],
   },
   {
@@ -112,12 +122,34 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Admin',
     icon: SettingsIcon,
     items: [
-      { to: '/staff', label: 'Staf', icon: ShieldCheckIcon },
+      // Admin-only oversight/config surfaces (P3.E.4): staff lack
+      // staff.manage / settings.manage, so these are hidden from them.
+      {
+        to: '/staff',
+        label: 'Staf',
+        icon: ShieldCheckIcon,
+        permission: 'staff.manage',
+      },
       { to: '/branches', label: 'Cabang', icon: Building2Icon },
       { to: '/notifications', label: 'Notifikasi WA', icon: MessageCircleIcon },
-      { to: '/security', label: 'Keamanan', icon: KeyRoundIcon },
-      { to: '/audit', label: 'Log Audit', icon: ScrollTextIcon },
-      { to: '/settings', label: 'Pengaturan', icon: SettingsIcon },
+      {
+        to: '/security',
+        label: 'Keamanan',
+        icon: KeyRoundIcon,
+        permission: 'settings.manage',
+      },
+      {
+        to: '/audit',
+        label: 'Log Audit',
+        icon: ScrollTextIcon,
+        permission: 'settings.manage',
+      },
+      {
+        to: '/settings',
+        label: 'Pengaturan',
+        icon: SettingsIcon,
+        permission: 'settings.manage',
+      },
     ],
   },
 ]
@@ -176,12 +208,22 @@ const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
   customer: ['/portal'],
 }
 
-// Whether a role may visit a path (admin/staff: everything). Used by the route
-// guard so deep-links/bookmarks respect the same allowlist as the sidebar.
+// Whether a role may visit a path. Enforces two gates so deep-links/bookmarks
+// respect the same rules as the sidebar (P3.E.4): the ROLE_ROUTES allowlist for
+// restricted roles, and the per-item `permission` gate (which also hides
+// admin-only surfaces from staff).
 export function isRouteAllowed(role: Role, pathname: string): boolean {
   const allow = ROLE_ROUTES[role]
-  if (!allow) return true
-  return allow.some((route) => isNavItemActive(pathname, route))
+  if (allow && !allow.some((route) => isNavItemActive(pathname, route))) {
+    return false
+  }
+  const item = NAV_ITEMS.filter((i) => i.to !== '/' && isNavItemActive(pathname, i.to)).sort(
+    (a, b) => b.to.length - a.to.length,
+  )[0]
+  if (item?.permission && !can(role, item.permission)) {
+    return false
+  }
+  return true
 }
 
 // Where each restricted role lands instead of the ops dashboard. admin/staff
@@ -192,13 +234,17 @@ export const ROLE_HOME: Partial<Record<Role, string>> = {
   customer: '/portal',
 }
 
-// Navigation groups visible to a role (empty groups dropped).
+// Navigation groups visible to a role (empty groups dropped). Applies both the
+// ROLE_ROUTES allowlist (restricted roles) and the per-item permission gate
+// (hides admin-only surfaces from staff — P3.E.4).
 export function navGroupsForRole(role: Role): NavGroup[] {
   const allow = ROLE_ROUTES[role]
-  if (!allow) return NAV_GROUPS
   return NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => allow.includes(item.to)),
+    items: group.items.filter(
+      (item) =>
+        (!allow || allow.includes(item.to)) && (!item.permission || can(role, item.permission)),
+    ),
   })).filter((group) => group.items.length > 0)
 }
 
