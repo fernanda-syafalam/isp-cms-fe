@@ -8,7 +8,7 @@ import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-to
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { statusLabel } from '@/lib/status-label'
+import { customerStatusLabel } from '@/lib/status-label'
 
 import { useCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
@@ -66,7 +66,10 @@ export function CustomerDetailPage({ customerId }: Props) {
         description={`${customer.customerNo} · ${customer.areaName ?? 'Tanpa area'}`}
         actions={
           <div className="flex items-center gap-2">
-            <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
+            <StatusBadge
+              tone={STATUS_TONE[customer.status]}
+              label={customerStatusLabel(customer.status, customer.holdReason)}
+            />
             <CustomerMapButton customer={customer} />
             <CustomerNavigateButton customer={customer} />
             <CustomerWhatsappButton customerId={customer.id} />

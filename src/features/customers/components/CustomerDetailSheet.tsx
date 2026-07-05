@@ -15,7 +15,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
-import { statusLabel } from '@/lib/status-label'
+import { customerStatusLabel } from '@/lib/status-label'
 import type { Customer } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
@@ -57,7 +57,10 @@ function SheetBody({ customerId }: { customerId: string }) {
         title={customer?.fullName ?? 'Pelanggan'}
         status={
           customer ? (
-            <StatusBadge tone={STATUS_TONE[customer.status]} label={statusLabel(customer.status)} />
+            <StatusBadge
+              tone={STATUS_TONE[customer.status]}
+              label={customerStatusLabel(customer.status, customer.holdReason)}
+            />
           ) : null
         }
         description={

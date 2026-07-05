@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { customerStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatDate } from '@/lib/format'
-import { statusLabel } from '@/lib/status-label'
+import { customerStatusLabel } from '@/lib/status-label'
 import type { Customer, CustomerStatus } from '@/schemas/customer'
 
 import { CustomerRowActions } from './CustomerRowActions'
@@ -24,7 +24,7 @@ export const toCsvRow = (c: Customer) => ({
   Telepon: c.phone,
   Area: c.areaName ?? '',
   Paket: c.planName,
-  Status: statusLabel(c.status),
+  Status: customerStatusLabel(c.status, c.holdReason),
   Bergabung: formatDate(c.joinedAt),
 })
 
@@ -66,7 +66,7 @@ export const customerColumns: ColumnDef<Customer>[] = [
     cell: ({ row }) => (
       <StatusBadge
         tone={STATUS_TONE[row.original.status]}
-        label={STATUS_LABEL[row.original.status]}
+        label={customerStatusLabel(row.original.status, row.original.holdReason)}
       />
     ),
   },
