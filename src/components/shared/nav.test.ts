@@ -50,6 +50,37 @@ describe('navGroupsForRole', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0]?.items.map((i) => i.to)).toEqual(['/resellers'])
   })
+
+  it('hides admin-only surfaces from staff (P3.E.4)', () => {
+    const staffPaths = navGroupsForRole('staff').flatMap((g) => g.items.map((i) => i.to))
+    for (const adminOnly of ['/setup', '/staff', '/security', '/audit', '/settings']) {
+      expect(staffPaths).not.toContain(adminOnly)
+    }
+    // Staff keep their operational surfaces.
+    expect(staffPaths).toContain('/customers')
+    expect(staffPaths).toContain('/branches')
+  })
+
+  it('admin still sees the admin surfaces', () => {
+    const adminPaths = navGroupsForRole('admin').flatMap((g) => g.items.map((i) => i.to))
+    for (const adminOnly of ['/setup', '/staff', '/security', '/audit', '/settings']) {
+      expect(adminPaths).toContain(adminOnly)
+    }
+  })
+})
+
+describe('isRouteAllowed (permission gate, P3.E.4)', () => {
+  it('denies staff the admin-only routes but allows admin', () => {
+    for (const path of ['/settings', '/audit', '/security', '/staff', '/setup']) {
+      expect(isRouteAllowed('staff', path)).toBe(false)
+      expect(isRouteAllowed('admin', path)).toBe(true)
+    }
+  })
+
+  it('still allows staff their operational routes', () => {
+    expect(isRouteAllowed('staff', '/customers')).toBe(true)
+    expect(isRouteAllowed('staff', '/branches')).toBe(true)
+  })
 })
 
 describe('resolveBreadcrumb', () => {
