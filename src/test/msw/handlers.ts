@@ -2225,7 +2225,32 @@ export const handlers = [
       scheduledAt: string
       lat?: number
       lng?: number
+      odpId?: string
+      ktp?: string
+      npwp?: string
+      consent?: boolean
     }
+    // Serviceability gate (mirrors the BE 422): a `down` coverage area is hard-
+    // blocked. Match the plain kecamatan name against the prefixed coverage name.
+    const coverage = COVERAGE_FIXTURES.find(
+      (c) => c.name === body.areaName || c.name.endsWith(` ${body.areaName}`),
+    )
+    if (coverage?.status === 'down') {
+      return HttpResponse.json(
+        { message: 'Area belum terjangkau layanan (belum serviceable).' },
+        { status: 422 },
+      )
+    }
+    // ODP port reservation (mirrors the BE 409): refuse a full ODP, else reserve
+    // one port atomically by incrementing usedPorts on the chosen ODP fixture.
+    const chosenOdp = body.odpId ? ODP_FIXTURES.find((o) => o.id === body.odpId) : undefined
+    if (chosenOdp && chosenOdp.usedPorts >= chosenOdp.totalPorts) {
+      return HttpResponse.json(
+        { message: 'ODP penuh — tidak ada port tersisa. Pilih ODP lain.' },
+        { status: 409 },
+      )
+    }
+    if (chosenOdp) chosenOdp.usedPorts += 1
     const plan = PLAN_FIXTURES.find((p) => p.id === body.planId) ?? PLAN_FIXTURES[0]
     const customer = {
       id: crypto.randomUUID(),
@@ -2241,9 +2266,9 @@ export const handlers = [
       status: 'instalasi' as const,
       holdReason: null,
       outstanding: 0,
-      npwp: null,
-      ktp: null,
-      consentAt: null,
+      npwp: body.npwp ? body.npwp : null,
+      ktp: body.ktp ? body.ktp : null,
+      consentAt: body.consent ? new Date().toISOString() : null,
       resellerName: null,
       connection: null,
       joinedAt: new Date().toISOString(),

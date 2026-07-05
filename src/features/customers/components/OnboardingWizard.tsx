@@ -8,28 +8,31 @@ import { PageHeader } from '@/components/shared/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Form } from '@/components/ui/form'
+import { useOdpList } from '@/features/ftth/hooks/useOdp'
 import { usePlanOptions } from '@/hooks/usePlanOptions'
 import { cn } from '@/lib/cn'
 import { OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
 
 import { useOnboardCustomer } from '../hooks/useOnboarding'
-import { CustomerStep, PlanStep, ScheduleStep, SummaryStep } from './OnboardingSteps'
+import { CustomerStep, LocationStep, PlanStep, ScheduleStep, SummaryStep } from './OnboardingSteps'
 
-const STEPS = ['Data pelanggan', 'Paket', 'Jadwal instalasi', 'Ringkasan']
+const STEPS = ['Data pelanggan', 'Lokasi & jaringan', 'Paket', 'Jadwal instalasi', 'Ringkasan']
 const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
-  ['fullName', 'phone', 'email', 'address', 'areaName'],
+  ['fullName', 'phone', 'email', 'ktp', 'npwp'],
+  ['address', 'areaName'],
   ['planId'],
   ['technician', 'scheduledAt', 'note'],
 ]
 
-// Guided 4-step flow (data → paket → jadwal → ringkasan) that provisions a new
-// subscriber. Step bodies live in OnboardingSteps; field helpers in
-// OnboardingFields — this shell owns form state, navigation, and layout.
+// Guided 5-step flow (data → lokasi/jaringan → paket → jadwal → ringkasan) that
+// provisions a new subscriber. Step bodies live in OnboardingSteps; field
+// helpers in OnboardingFields — this shell owns form state, navigation, layout.
 export function OnboardingWizard() {
   const [step, setStep] = useState(0)
   const navigate = useNavigate()
   const onboard = useOnboardCustomer()
   const planQuery = usePlanOptions()
+  const odpQuery = useOdpList()
 
   const form = useForm<OnboardingInput>({
     resolver: zodResolver(OnboardingSchema),
@@ -43,6 +46,10 @@ export function OnboardingWizard() {
       technician: '',
       scheduledAt: '',
       note: '',
+      odpId: '',
+      ktp: '',
+      npwp: '',
+      consent: false,
     },
   })
 
@@ -60,12 +67,13 @@ export function OnboardingWizard() {
         params: { customerId: customer.id },
       })
     } catch {
-      // useOnboardCustomer surfaces a toast.
+      // useOnboardCustomer surfaces a toast (incl. 422 not-serviceable / 409 ODP full).
     }
   })
 
   const values = form.getValues()
   const planLabel = planQuery.data?.find((p) => p.value === values.planId)?.label ?? '—'
+  const odpName = odpQuery.data?.items.find((o) => o.id === values.odpId)?.name ?? '—'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -105,9 +113,12 @@ export function OnboardingWizard() {
           <Form {...form}>
             <form onSubmit={submit} noValidate className="space-y-4">
               {step === 0 ? <CustomerStep form={form} /> : null}
-              {step === 1 ? <PlanStep form={form} planQuery={planQuery} /> : null}
-              {step === 2 ? <ScheduleStep form={form} /> : null}
-              {step === 3 ? <SummaryStep values={values} planLabel={planLabel} /> : null}
+              {step === 1 ? <LocationStep form={form} /> : null}
+              {step === 2 ? <PlanStep form={form} planQuery={planQuery} /> : null}
+              {step === 3 ? <ScheduleStep form={form} /> : null}
+              {step === 4 ? (
+                <SummaryStep values={values} planLabel={planLabel} odpName={odpName} />
+              ) : null}
 
               <div className="flex items-center justify-between border-border border-t pt-4">
                 <Button
