@@ -1,5 +1,14 @@
 import { api } from './client'
-import { SessionSchema, UserSchema, type LoginInput, type Session, type User } from '@/schemas/auth'
+import {
+  type BootstrapInput,
+  type BootstrapStatus,
+  BootstrapStatusSchema,
+  type LoginInput,
+  type Session,
+  SessionSchema,
+  type User,
+  UserSchema,
+} from '@/schemas/auth'
 
 // All auth endpoints send credentials so the HttpOnly refresh cookie travels.
 // Backend contract: POST /auth/refresh reads the cookie and returns a fresh
@@ -30,4 +39,16 @@ export async function changePassword(input: {
   newPassword: string
 }): Promise<void> {
   await api.post('auth/change-password', { json: input })
+}
+
+// First-run bootstrap (P3.E.1). Status is @Public; the create call auto-logs
+// in the new admin, so it must carry credentials for the refresh cookie.
+export async function getBootstrapStatus(): Promise<BootstrapStatus> {
+  const json = await api.get('auth/bootstrap').json()
+  return BootstrapStatusSchema.parse(json)
+}
+
+export async function bootstrapAdmin(input: BootstrapInput): Promise<Session> {
+  const json = await api.post('auth/bootstrap', { json: input, ...credentialsOptions }).json()
+  return SessionSchema.parse(json)
 }
