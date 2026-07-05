@@ -22,14 +22,10 @@ import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 import type { LedgerEntryType } from '@/schemas/reseller'
 
-import { useReseller, useResellerLedger } from '../hooks/useResellers'
+import { useReseller, useResellerCommissionTotal, useResellerLedger } from '../hooks/useResellers'
 import { LedgerEntryDialog } from './LedgerEntryDialog'
 import { ledgerColumns } from './resellerLedgerColumns'
 import { ResellerCustomersCard } from './ResellerCustomersCard'
-
-// Representative ARPU used to estimate a reseller's monthly commission from
-// their customer count and commission rate (mock — real systems sum invoices).
-const ARPU = 250_000
 
 type Props = {
   resellerId: string
@@ -42,9 +38,9 @@ export function ResellerDetailPage({ resellerId }: Props) {
   const canManage = useCan('resellers.manage')
   const [dialogType, setDialogType] = useState<LedgerEntryType | null>(null)
 
-  const estimatedCommission = reseller
-    ? Math.round(reseller.customerCount * ARPU * reseller.commissionPct)
-    : 0
+  // Real commission earned from the ledger (P3.D.1), replacing the old ARPU
+  // estimate — the BE now posts a commission entry on each invoice payment.
+  const { data: commissionTotal = 0 } = useResellerCommissionTotal(resellerId)
 
   if (isLoading) {
     return (
@@ -121,10 +117,10 @@ export function ResellerDetailPage({ resellerId }: Props) {
           icon={UsersIcon}
         />
         <KpiCard
-          label="Estimasi komisi / bulan"
-          value={estimatedCommission}
+          label="Total komisi"
+          value={commissionTotal}
           format={formatCurrency}
-          hint="perkiraan dari basis pelanggan"
+          hint="dari ledger pembayaran tagihan"
           icon={CoinsIcon}
         />
       </div>
@@ -161,7 +157,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
           type={dialogType}
           open={dialogType !== null}
           onOpenChange={(open) => !open && setDialogType(null)}
-          defaultAmount={dialogType === 'commission' ? estimatedCommission : 0}
+          defaultAmount={0}
         />
       ) : null}
     </div>
