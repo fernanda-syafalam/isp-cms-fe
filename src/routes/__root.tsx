@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { useEffectiveRole, useIsAuthenticated } from '@/features/auth'
+import { PortalShell } from '@/features/portal'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -43,6 +44,17 @@ function RootLayout() {
         </div>
         <Outlet />
       </div>
+    )
+  }
+
+  // Customers get a slim consumer shell (no sidebar / ⌘K / bell) instead of the
+  // ops chrome. E.4 already restricts them to /portal, so this only ever wraps
+  // the portal. The #main-content focus effect above works for this branch too.
+  if (role === 'customer') {
+    return (
+      <PortalShell>
+        <Outlet />
+      </PortalShell>
     )
   }
 
