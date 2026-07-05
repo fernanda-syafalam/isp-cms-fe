@@ -3298,6 +3298,66 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(wo)
   }),
+  // State-machine actions (P3.B.2). Mirror the BE transition guards so dev
+  // and prod agree (ADR-0011): can't act on a done/cancelled order; start
+  // only from scheduled; cancel not from done.
+  http.post('*/api/work-orders/:id/start', ({ params }) => {
+    const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
+    if (!wo)
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    if (wo.status === 'in_progress') return HttpResponse.json(wo)
+    if (wo.status !== 'scheduled') {
+      return new HttpResponse(
+        JSON.stringify({ message: `cannot start a ${wo.status} work order` }),
+        {
+          status: 400,
+        },
+      )
+    }
+    wo.status = 'in_progress'
+    persistDb()
+    return HttpResponse.json(wo)
+  }),
+  http.post('*/api/work-orders/:id/cancel', ({ params }) => {
+    const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
+    if (!wo)
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    if (wo.status === 'cancelled') return HttpResponse.json(wo)
+    if (wo.status === 'done') {
+      return new HttpResponse(JSON.stringify({ message: 'cannot cancel a completed work order' }), {
+        status: 400,
+      })
+    }
+    wo.status = 'cancelled'
+    persistDb()
+    return HttpResponse.json(wo)
+  }),
+  http.post('*/api/work-orders/:id/assign', async ({ params, request }) => {
+    const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
+    if (!wo)
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    const body = (await request.json()) as { technician?: string }
+    if (body.technician) wo.technician = body.technician
+    persistDb()
+    return HttpResponse.json(wo)
+  }),
+  http.post('*/api/work-orders/:id/reschedule', async ({ params, request }) => {
+    const wo = WORKORDER_FIXTURES.find((w) => w.id === params.id)
+    if (!wo)
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    const body = (await request.json()) as { scheduledAt?: string }
+    if (body.scheduledAt) wo.scheduledAt = new Date(body.scheduledAt).toISOString()
+    persistDb()
+    return HttpResponse.json(wo)
+  }),
 
   // Resellers
   http.get('*/api/resellers', ({ request }) => {

@@ -39,3 +39,25 @@ export async function completeWorkOrder(id: string): Promise<WorkOrder> {
   const json = await api.post(`work-orders/${id}/complete`).json()
   return WorkOrderSchema.parse(json)
 }
+
+// State-machine actions (P3.B.2): start/cancel an open order, (re)assign the
+// technician, reschedule. Each returns the updated work order.
+export async function startWorkOrder(id: string): Promise<WorkOrder> {
+  const json = await api.post(`work-orders/${id}/start`).json()
+  return WorkOrderSchema.parse(json)
+}
+
+export async function cancelWorkOrder(id: string): Promise<WorkOrder> {
+  const json = await api.post(`work-orders/${id}/cancel`).json()
+  return WorkOrderSchema.parse(json)
+}
+
+export async function assignWorkOrder(id: string, technician: string): Promise<WorkOrder> {
+  const json = await api.post(`work-orders/${id}/assign`, { json: { technician } }).json()
+  return WorkOrderSchema.parse(json)
+}
+
+export async function rescheduleWorkOrder(id: string, scheduledAt: string): Promise<WorkOrder> {
+  const json = await api.post(`work-orders/${id}/reschedule`, { json: { scheduledAt } }).json()
+  return WorkOrderSchema.parse(json)
+}
