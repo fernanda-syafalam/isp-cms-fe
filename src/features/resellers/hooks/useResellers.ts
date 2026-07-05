@@ -101,3 +101,20 @@ export function useUpdateReseller(id: string) {
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
+
+// Real commission earned (P3.D.1): sum of the reseller's `commission` ledger
+// entries, replacing the old hardcoded-ARPU estimate. Pulls one max-size
+// ledger page (the ledger is small per reseller) and sums client-side.
+const COMMISSION_LEDGER_LIMIT = 200
+
+export function useResellerCommissionTotal(id: string) {
+  return useQuery({
+    queryKey: ['resellers', 'detail', id, 'commission-total'] as const,
+    queryFn: async () => {
+      const ledger = await listResellerLedger(id, { limit: COMMISSION_LEDGER_LIMIT, offset: 0 })
+      return ledger.items
+        .filter((e) => e.type === 'commission')
+        .reduce((sum, e) => sum + e.amount, 0)
+    },
+  })
+}
