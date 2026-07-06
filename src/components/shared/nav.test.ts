@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { isNavItemActive, isRouteAllowed, navGroupsForRole, resolveBreadcrumb } from './nav'
+import {
+  isNavItemActive,
+  isRouteAllowed,
+  navGroupsForRole,
+  resolveBreadcrumb,
+  ROLE_HOME,
+} from './nav'
 
 describe('isNavItemActive', () => {
   it('matches the destination itself', () => {
@@ -88,6 +94,34 @@ describe('isRouteAllowed (permission gate, P3.E.4)', () => {
   it('still allows staff their operational routes', () => {
     expect(isRouteAllowed('staff', '/customers')).toBe(true)
     expect(isRouteAllowed('staff', '/branches')).toBe(true)
+  })
+})
+
+// Regression guard for the route-guard deep-link bypass (A1): the _auth layout
+// enforces `isRouteAllowed` for EVERY role and redirects to `ROLE_HOME[role] ??
+// '/'`. These assertions pin the exact inputs that guard relies on, so a role
+// without a ROLE_HOME entry can never silently re-open the bypass.
+describe('deep-link guard inputs (A1 route-guard bypass)', () => {
+  it("denies staff deep-linking admin-only paths and lands them on '/'", () => {
+    for (const path of ['/settings', '/setup']) {
+      expect(isRouteAllowed('staff', path)).toBe(false)
+    }
+    // staff has no restricted home, so the guard falls back to the dashboard.
+    expect(ROLE_HOME.staff ?? '/').toBe('/')
+  })
+
+  it('does not redirect an admin away from an admin-only path', () => {
+    expect(isRouteAllowed('admin', '/settings')).toBe(true)
+    expect(isRouteAllowed('admin', '/setup')).toBe(true)
+  })
+
+  it('denies teknisi and mitra the admin-only paths and gives them a valid home', () => {
+    for (const path of ['/settings', '/setup']) {
+      expect(isRouteAllowed('teknisi', path)).toBe(false)
+      expect(isRouteAllowed('mitra', path)).toBe(false)
+    }
+    expect(ROLE_HOME.teknisi ?? '/').toBe('/work-orders')
+    expect(ROLE_HOME.mitra ?? '/').toBe('/resellers')
   })
 })
 

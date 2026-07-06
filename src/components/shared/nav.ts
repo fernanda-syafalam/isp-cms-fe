@@ -226,9 +226,13 @@ export function isRouteAllowed(role: Role, pathname: string): boolean {
   return true
 }
 
-// Where each restricted role lands instead of the ops dashboard. admin/staff
-// (omitted) stay on the dashboard at "/".
+// Where each role lands when it hits a route outside its allowlist. admin and
+// staff run the ops dashboard at "/"; the restricted roles land on their own
+// surface. Any role omitted here falls back to "/" at the call site, so a new
+// role can never re-open the deep-link bypass by lacking an entry.
 export const ROLE_HOME: Partial<Record<Role, string>> = {
+  admin: '/',
+  staff: '/',
   teknisi: '/work-orders',
   mitra: '/resellers',
   customer: '/portal',
