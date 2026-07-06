@@ -14,8 +14,8 @@ describe('listPayments', () => {
 
   it('searches by invoice number (case-insensitive)', async () => {
     const all = await listPayments()
-    const target = all.items[0]
-    if (!target) throw new Error('seed has no payments')
+    const target = all.items.find((p) => p.invoiceNo)
+    if (!target?.invoiceNo) throw new Error('seed has no invoice payment')
 
     const { items } = await listPayments({ q: target.invoiceNo.toLowerCase() })
     expect(items.length).toBeGreaterThan(0)
@@ -24,8 +24,8 @@ describe('listPayments', () => {
 
   it('searches by customer name', async () => {
     const all = await listPayments()
-    const target = all.items[0]
-    if (!target) throw new Error('seed has no payments')
+    const target = all.items.find((p) => p.customerName)
+    if (!target?.customerName) throw new Error('seed has no named-customer payment')
 
     const { items } = await listPayments({ q: target.customerName })
     expect(items.length).toBeGreaterThan(0)

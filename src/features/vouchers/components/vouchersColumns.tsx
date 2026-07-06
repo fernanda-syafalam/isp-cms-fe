@@ -21,6 +21,7 @@ export const toCsvRow = (v: Voucher) => ({
   Harga: formatCurrency(v.priceIdr),
   'Masa aktif (hari)': v.durationDays,
   Status: statusLabel(v.status),
+  Mitra: v.resellerName ?? '—',
   Dibuat: formatDate(v.createdAt),
 })
 
@@ -62,6 +63,17 @@ export const voucherColumns: ColumnDef<Voucher>[] = [
         label={statusLabel(row.original.status)}
       />
     ),
+  },
+  {
+    id: 'reseller',
+    header: 'Mitra',
+    meta: { title: 'Mitra' },
+    cell: ({ row }) =>
+      row.original.resellerName ? (
+        row.original.resellerName
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
   },
   {
     accessorKey: 'batchId',

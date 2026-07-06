@@ -4,12 +4,16 @@ import { customerId, invoiceId, paymentId } from '@/types/ids'
 
 export const PaymentMethodSchema = z.enum(['qris', 'va', 'ewallet', 'transfer', 'cash'])
 
+export const PaymentSourceSchema = z.enum(['invoice', 'voucher'])
+
 export const PaymentSchema = z.object({
   id: paymentId,
-  invoiceId: invoiceId,
-  invoiceNo: z.string(),
-  customerId: customerId,
-  customerName: z.string(),
+  // Invoice/customer are nullable: a voucher settlement (P3.D.3) writes a payment
+  // with no invoice and (usually) no named customer.
+  invoiceId: invoiceId.nullable(),
+  invoiceNo: z.string().nullable(),
+  customerId: customerId.nullable(),
+  customerName: z.string().nullable(),
   amount: z.number().int().nonnegative(),
   method: PaymentMethodSchema,
   paidAt: z.iso.datetime(),
@@ -17,6 +21,9 @@ export const PaymentSchema = z.object({
   // non-cash method (QRIS/VA/e-wallet/transfer) where no change is handled.
   tenderedAmount: z.number().int().nonnegative().nullable(),
   changeAmount: z.number().int().nonnegative().nullable(),
+  // What produced this payment: settling an invoice, or redeeming a voucher.
+  source: PaymentSourceSchema,
+  voucherId: z.string().nullable(),
 })
 
 // Full-set rollups over ALL payments (ignores the method filter) — drives the
@@ -108,6 +115,7 @@ export const CreatePaymentIntentSchema = z.object({
   channel: PaymentChannelSchema,
 })
 
+export type PaymentSource = z.infer<typeof PaymentSourceSchema>
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
 export type Payment = z.infer<typeof PaymentSchema>
 export type PaymentList = z.infer<typeof PaymentListSchema>

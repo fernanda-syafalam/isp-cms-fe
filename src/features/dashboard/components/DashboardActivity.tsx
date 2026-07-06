@@ -39,15 +39,22 @@ function RecentPaymentsCard({ payments }: { payments: Payment[] | undefined }) {
             {payments.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <Link
-                    to="/customers/$customerId"
-                    params={{ customerId: p.customerId }}
-                    className="block truncate font-medium text-sm hover:underline"
-                  >
-                    {p.customerName}
-                  </Link>
+                  {p.customerId && p.customerName ? (
+                    <Link
+                      to="/customers/$customerId"
+                      params={{ customerId: p.customerId }}
+                      className="block truncate font-medium text-sm hover:underline"
+                    >
+                      {p.customerName}
+                    </Link>
+                  ) : (
+                    <span className="block truncate font-medium text-sm">
+                      {p.customerName ?? 'Anonim'}
+                    </span>
+                  )}
                   <p className="font-mono text-muted-foreground text-xs">
-                    {p.invoiceNo} · {statusLabel(p.method)}
+                    {p.invoiceNo ?? (p.source === 'voucher' ? 'Voucher' : '—')} ·{' '}
+                    {statusLabel(p.method)}
                   </p>
                 </div>
                 <div className="text-right">

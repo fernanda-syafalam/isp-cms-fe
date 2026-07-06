@@ -5,7 +5,7 @@ import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
-import type { Payment, PaymentMethod } from '@/schemas/payment'
+import type { Payment, PaymentMethod, PaymentSource } from '@/schemas/payment'
 
 const METHOD_TONE: Record<PaymentMethod, StatusTone> = {
   qris: 'info',
@@ -15,10 +15,21 @@ const METHOD_TONE: Record<PaymentMethod, StatusTone> = {
   cash: 'neutral',
 }
 
+// Source of a payment: settling an invoice, or redeeming a prepaid voucher.
+const SOURCE_LABEL: Record<PaymentSource, string> = {
+  invoice: 'Tagihan',
+  voucher: 'Voucher',
+}
+const SOURCE_TONE: Record<PaymentSource, StatusTone> = {
+  invoice: 'neutral',
+  voucher: 'info',
+}
+
 export const toCsvRow = (p: Payment) => ({
   Tanggal: formatDateTime(p.paidAt),
-  Tagihan: p.invoiceNo,
-  Pelanggan: p.customerName,
+  Sumber: SOURCE_LABEL[p.source],
+  Tagihan: p.invoiceNo ?? '—',
+  Pelanggan: p.customerName ?? 'Anonim',
   Metode: statusLabel(p.method),
   Jumlah: formatCurrency(p.amount),
 })
@@ -36,29 +47,42 @@ export const paymentColumns: ColumnDef<Payment>[] = [
     accessorKey: 'invoiceNo',
     header: ({ column }) => <DataTableColumnHeader column={column} title="Tagihan" />,
     meta: { title: 'Tagihan' },
-    cell: ({ row }) => (
-      <Link
-        to="/invoices/$invoiceId"
-        params={{ invoiceId: row.original.invoiceId }}
-        className="font-mono text-sm hover:underline"
-      >
-        {row.original.invoiceNo}
-      </Link>
-    ),
+    // A voucher settlement has no invoice — show its source badge instead of a
+    // dead link.
+    cell: ({ row }) =>
+      row.original.invoiceId && row.original.invoiceNo ? (
+        <Link
+          to="/invoices/$invoiceId"
+          params={{ invoiceId: row.original.invoiceId }}
+          className="font-mono text-sm hover:underline"
+        >
+          {row.original.invoiceNo}
+        </Link>
+      ) : (
+        <StatusBadge
+          tone={SOURCE_TONE[row.original.source]}
+          label={SOURCE_LABEL[row.original.source]}
+          dot={false}
+        />
+      ),
   },
   {
     accessorKey: 'customerName',
     header: 'Pelanggan',
     meta: { title: 'Pelanggan' },
-    cell: ({ row }) => (
-      <Link
-        to="/customers/$customerId"
-        params={{ customerId: row.original.customerId }}
-        className="font-medium hover:underline"
-      >
-        {row.original.customerName}
-      </Link>
-    ),
+    // Null customer (anonymous voucher redemption) renders plain text, no link.
+    cell: ({ row }) =>
+      row.original.customerId && row.original.customerName ? (
+        <Link
+          to="/customers/$customerId"
+          params={{ customerId: row.original.customerId }}
+          className="font-medium hover:underline"
+        >
+          {row.original.customerName}
+        </Link>
+      ) : (
+        <span className="text-muted-foreground">Anonim</span>
+      ),
   },
   {
     accessorKey: 'method',

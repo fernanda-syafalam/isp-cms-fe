@@ -13,6 +13,8 @@ const validPayment = {
   paidAt: '2026-07-06T03:00:00.000Z',
   tenderedAmount: 250_000,
   changeAmount: 28_000,
+  source: 'invoice',
+  voucherId: null,
 }
 
 describe('PaymentSchema', () => {
@@ -20,6 +22,8 @@ describe('PaymentSchema', () => {
     const parsed = PaymentSchema.parse(validPayment)
     expect(parsed.tenderedAmount).toBe(250_000)
     expect(parsed.changeAmount).toBe(28_000)
+    expect(parsed.source).toBe('invoice')
+    expect(parsed.voucherId).toBeNull()
   })
 
   it('accepts null tendered/change for non-cash methods', () => {
@@ -31,6 +35,31 @@ describe('PaymentSchema', () => {
     })
     expect(parsed.tenderedAmount).toBeNull()
     expect(parsed.changeAmount).toBeNull()
+  })
+
+  it('parses a voucher settlement with null invoice/customer', () => {
+    const parsed = PaymentSchema.parse({
+      id: '66666666-6666-4666-8666-666666666666',
+      invoiceId: null,
+      invoiceNo: null,
+      customerId: null,
+      customerName: null,
+      amount: 5_000,
+      method: 'cash',
+      paidAt: '2026-07-06T03:00:00.000Z',
+      tenderedAmount: 5_000,
+      changeAmount: 0,
+      source: 'voucher',
+      voucherId: '77777777-7777-4777-8777-777777777777',
+    })
+    expect(parsed.invoiceId).toBeNull()
+    expect(parsed.customerName).toBeNull()
+    expect(parsed.source).toBe('voucher')
+    expect(parsed.voucherId).toBe('77777777-7777-4777-8777-777777777777')
+  })
+
+  it('rejects an unknown source', () => {
+    expect(PaymentSchema.safeParse({ ...validPayment, source: 'gift' }).success).toBe(false)
   })
 })
 
