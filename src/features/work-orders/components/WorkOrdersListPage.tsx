@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useCurrentUser, useEffectiveRole } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -37,8 +38,18 @@ export function WorkOrdersListPage() {
   const navigate = routeApi.useNavigate()
   const table = useTableQuery({ pageSize: 20 })
   const exportWorkOrders = useExportWorkOrders()
+  const role = useEffectiveRole()
+  const { data: user } = useCurrentUser()
   const [isExporting, setIsExporting] = useState(false)
   const [openWo, setOpenWo] = useState<WorkOrder | null>(null)
+  // "Tugas saya" (P3.B.1): a teknisi can scope the board to work orders assigned
+  // to them. The BE matches the `technician` param exactly against the WO's
+  // technician name, so we pass the current user's fullName. Off by default so
+  // admin/staff keep the org-wide board.
+  const [onlyMine, setOnlyMine] = useState(false)
+  const technicianName = user?.fullName
+  const canFilterMine = role === 'teknisi' && Boolean(technicianName)
+  const mineActive = canFilterMine && onlyMine
 
   // Build a search object with only the keys that are set (omit when "all") so
   // it satisfies validateSearch under exactOptionalPropertyTypes. Changing a
@@ -64,6 +75,7 @@ export function WorkOrdersListPage() {
   const baseFilter: WorkOrderFilter = {
     ...(status === 'all' ? {} : { status }),
     ...(type === 'all' ? {} : { type }),
+    ...(mineActive && technicianName ? { technician: technicianName } : {}),
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -158,18 +170,35 @@ export function WorkOrdersListPage() {
           onSearchChange: table.onSearchChange,
         }}
         toolbar={
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter jenis">
-              <SelectValue placeholder="Jenis" />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_OPTIONS.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t === 'all' ? 'Semua jenis' : statusLabel(t)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {canFilterMine ? (
+              <Button
+                type="button"
+                variant={mineActive ? 'default' : 'outline'}
+                size="sm"
+                className="h-11 w-full sm:h-8 sm:w-auto"
+                aria-pressed={mineActive}
+                onClick={() => {
+                  table.resetPage()
+                  setOnlyMine((v) => !v)
+                }}
+              >
+                Tugas saya
+              </Button>
+            ) : null}
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="h-11 w-full sm:h-8 sm:w-40" aria-label="Filter jenis">
+                <SelectValue placeholder="Jenis" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t === 'all' ? 'Semua jenis' : statusLabel(t)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 

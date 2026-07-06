@@ -2159,8 +2159,11 @@ export const handlers = [
     const found = LEAD_FIXTURES.find((l) => l.id === params.id)
     if (!found) return new HttpResponse(null, { status: 404 })
     const plan = PLAN_FIXTURES.find((p) => p.name === found.planName) ?? PLAN_FIXTURES[0]
+    // Capture the new customer's id so the install WO can link to it directly
+    // (mirrors the real BE, which sets customerId on convert and rejects null).
+    const newCustomerId = crypto.randomUUID()
     CUSTOMER_FIXTURES.unshift({
-      id: crypto.randomUUID(),
+      id: newCustomerId,
       customerNo: `CUST-${9000 + CUSTOMER_FIXTURES.length}`,
       fullName: found.name,
       phone: found.phone,
@@ -2189,7 +2192,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       code: `WO-${9000 + WORKORDER_FIXTURES.length}`,
       type: 'install' as const,
-      customerId: null, // lead becomes a subscriber only at onboarding
+      customerId: newCustomerId,
       customerName: found.name,
       technician: null,
       scheduledAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
@@ -3582,6 +3585,9 @@ export const handlers = [
     let rows = filterByStatus(WORKORDER_FIXTURES, url.searchParams.get('status'))
     const type = url.searchParams.get('type')
     if (type) rows = rows.filter((w) => w.type === type)
+    // Exact-match technician filter — powers the teknisi "Tugas saya" view.
+    const technician = url.searchParams.get('technician')
+    if (technician) rows = rows.filter((w) => w.technician === technician)
     const result = applyListQuery(rows, url.searchParams, {
       searchFields: ['code', 'customerName', 'technician'],
       sortAccessors: {
@@ -3614,7 +3620,12 @@ export const handlers = [
     }
     wo.status = 'done'
     if (wo.type === 'install') {
-      const customer = CUSTOMER_FIXTURES.find((c) => c.fullName === wo.customerName)
+      // Resolve by the WO's customerId first (matches the real BE, which links
+      // the customer on convert); fall back to name only for legacy WOs whose
+      // customerId was never set.
+      const customer = wo.customerId
+        ? CUSTOMER_FIXTURES.find((c) => c.id === wo.customerId)
+        : CUSTOMER_FIXTURES.find((c) => c.fullName === wo.customerName)
       // Only provision a customer that isn't active yet.
       if (customer && customer.status !== 'aktif') {
         const seq = CUSTOMER_FIXTURES.indexOf(customer)

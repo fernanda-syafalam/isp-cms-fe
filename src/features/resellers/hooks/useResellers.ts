@@ -26,10 +26,14 @@ import type {
   UpdateResellerInput,
 } from '@/schemas/reseller'
 
-export function useResellersList(filter: ResellerFilter = {}) {
+// `enabled` lets a caller skip the fetch when the current role isn't allowed to
+// read the org-wide list (e.g. a mitra, who is redirected to their own
+// storefront) — this avoids a 403 GET /v1/resellers on every session start.
+export function useResellersList(filter: ResellerFilter = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['resellers', 'list', filter] as const,
     queryFn: () => listResellers(filter),
+    enabled: options?.enabled ?? true,
   })
 }
 

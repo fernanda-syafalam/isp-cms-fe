@@ -11,6 +11,8 @@ export type WorkOrderFilter = {
   q?: string | undefined
   status?: string | undefined
   type?: string | undefined
+  // Exact-match technician name — powers the teknisi "Tugas saya" view.
+  technician?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
   limit?: number | undefined
@@ -26,6 +28,7 @@ export async function listWorkOrders(filter: WorkOrderFilter = {}): Promise<Work
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.status) searchParams.set('status', filter.status)
   if (filter.type) searchParams.set('type', filter.type)
+  if (filter.technician) searchParams.set('technician', filter.technician)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
   if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
