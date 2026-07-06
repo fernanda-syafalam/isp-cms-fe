@@ -34,6 +34,16 @@ describe('OnboardingSchema', () => {
     expect(() => OnboardingSchema.parse(BASE)).not.toThrow()
   })
 
+  it('accepts an optional reseller id and treats it as optional (P3.D.2)', () => {
+    const parsed = OnboardingSchema.parse({
+      ...BASE,
+      resellerId: '00000000-0000-4000-8000-000000000002',
+    })
+    expect(parsed.resellerId).toBe('00000000-0000-4000-8000-000000000002')
+    expect(OnboardingSchema.safeParse(BASE).success).toBe(true)
+    expect(OnboardingSchema.parse({ ...BASE, resellerId: null }).resellerId).toBeNull()
+  })
+
   it('rejects a KTP longer than 32 chars', () => {
     expect(OnboardingSchema.safeParse({ ...BASE, ktp: 'x'.repeat(33) }).success).toBe(false)
   })

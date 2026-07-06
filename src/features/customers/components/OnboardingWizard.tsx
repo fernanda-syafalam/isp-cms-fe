@@ -20,7 +20,7 @@ const STEPS = ['Data pelanggan', 'Lokasi & jaringan', 'Paket', 'Jadwal instalasi
 const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
   ['fullName', 'phone', 'email', 'ktp', 'npwp'],
   ['address', 'areaName'],
-  ['planId'],
+  ['planId', 'resellerId'],
   ['technician', 'scheduledAt', 'note'],
 ]
 
@@ -50,6 +50,7 @@ export function OnboardingWizard() {
       ktp: '',
       npwp: '',
       consent: false,
+      resellerId: null,
     },
   })
 

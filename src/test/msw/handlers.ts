@@ -191,7 +191,7 @@ const CUSTOMER_FIXTURES = Array.from({ length: 14 }, (_, i) => {
     ktp: i % 3 === 0 ? `327${String(1000000000000 + i * 7)}`.slice(0, 16) : null,
     // Most active/isolir subscribers already consented at onboarding.
     consentAt: provisioned ? iso(2025, i % 12, 1 + (i % 27)) : null,
-    resellerName: RESELLER_NAMES[i % RESELLER_NAMES.length] ?? null,
+    resellerName: (RESELLER_NAMES[i % RESELLER_NAMES.length] ?? null) as string | null,
     connection,
     joinedAt: iso(2025, i % 12, 1 + (i % 27)),
   }
@@ -460,6 +460,11 @@ const RESELLER_FIXTURES = Array.from({ length: 6 }, (_, i) => {
     status: RESELLER_STATUS[i % RESELLER_STATUS.length] ?? 'active',
   }
 })
+
+// Referral attribution (P3.D.2): resolve a reseller id to its display name so a
+// created/converted customer carries `resellerName` (customers store the name).
+const resellerNameById = (id: string | null | undefined): string | null =>
+  id ? (RESELLER_FIXTURES.find((r) => r.id === id)?.name ?? null) : null
 
 // Deposit/commission ledger per reseller. Built cumulatively so balanceAfter is
 // always consistent; each reseller's balance is then synced to its final entry.
@@ -1280,6 +1285,11 @@ const LEAD_SOURCES = ['walk_in', 'referral', 'online', 'reseller'] as const
 const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
   const plan = PLAN_FIXTURES[i % PLAN_FIXTURES.length]
   const stage = LEAD_STAGES[i % LEAD_STAGES.length] ?? 'new'
+  const source = (LEAD_SOURCES[i % LEAD_SOURCES.length] ?? 'walk_in') as
+    | 'walk_in'
+    | 'referral'
+    | 'online'
+    | 'reseller'
   return {
     id: oid('1ead0000', i),
     name: `Calon ${String.fromCharCode(65 + i)}`,
@@ -1289,12 +1299,13 @@ const LEAD_FIXTURES = Array.from({ length: 9 }, (_, i) => {
     planName: plan?.name ?? 'Home 20',
     stage: stage as 'new' | 'survey' | 'quote' | 'won' | 'lost',
     estValue: plan?.priceMonthly ?? 200_000,
-    source: (LEAD_SOURCES[i % LEAD_SOURCES.length] ?? 'walk_in') as
-      | 'walk_in'
-      | 'referral'
-      | 'online'
-      | 'reseller',
+    source,
     note: null as string | null,
+    // Referral/reseller-sourced leads carry an attributed mitra (P3.D.2); the
+    // ids map onto the seeded RESELLER_FIXTURES so convert resolves the name.
+    resellerId: (source === 'referral' || source === 'reseller' ? oid('a3a3a3a3', i % 6) : null) as
+      | string
+      | null,
     createdAt: iso(2026, 4, 1 + i),
   }
 })
@@ -2025,6 +2036,7 @@ export const handlers = [
       estValue: number
       source: 'walk_in' | 'referral' | 'online' | 'reseller'
       note?: string
+      resellerId?: string | null
     }
     const lead = {
       id: crypto.randomUUID(),
@@ -2037,6 +2049,7 @@ export const handlers = [
       estValue: body.estValue,
       source: body.source,
       note: body.note ? body.note : null,
+      resellerId: (body.resellerId ?? null) as string | null,
       createdAt: new Date().toISOString(),
     }
     LEAD_FIXTURES.unshift(lead)
@@ -2076,7 +2089,9 @@ export const handlers = [
       npwp: null,
       ktp: null,
       consentAt: null,
-      resellerName: null,
+      // Referral attribution (P3.D.2): carry the lead's reseller onto the new
+      // customer, resolving the id to the display name customers store.
+      resellerName: resellerNameById(found.resellerId),
       connection: null,
       joinedAt: new Date().toISOString(),
     })
@@ -2299,6 +2314,7 @@ export const handlers = [
       email: string
       address: string
       planId: string
+      resellerId?: string | null
     }
     const plan = PLAN_FIXTURES.find((p) => p.id === body.planId) ?? PLAN_FIXTURES[0]
     const customer = {
@@ -2319,7 +2335,8 @@ export const handlers = [
       npwp: null,
       ktp: null,
       consentAt: null,
-      resellerName: null,
+      // Referral attribution (P3.D.2): resolve the picked reseller to its name.
+      resellerName: resellerNameById(body.resellerId),
       connection: null,
       joinedAt: new Date().toISOString(),
     }
@@ -2344,6 +2361,7 @@ export const handlers = [
       ktp?: string
       npwp?: string
       consent?: boolean
+      resellerId?: string | null
     }
     // Serviceability gate (mirrors the BE 422): a `down` coverage area is hard-
     // blocked. Match the plain kecamatan name against the prefixed coverage name.
@@ -2385,7 +2403,8 @@ export const handlers = [
       npwp: body.npwp ? body.npwp : null,
       ktp: body.ktp ? body.ktp : null,
       consentAt: body.consent ? new Date().toISOString() : null,
-      resellerName: null,
+      // Referral attribution (P3.D.2): resolve the picked reseller to its name.
+      resellerName: resellerNameById(body.resellerId),
       connection: null,
       joinedAt: new Date().toISOString(),
     }

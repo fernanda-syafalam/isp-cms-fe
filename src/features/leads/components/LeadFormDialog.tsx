@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { usePlansList } from '@/features/plans'
+import { ResellerSelectField } from '@/features/resellers/components/ResellerSelectField'
 import { statusLabel } from '@/lib/status-label'
 import { CreateLeadSchema, type CreateLeadInput, type LeadSource } from '@/schemas/lead'
 
@@ -55,6 +56,7 @@ export function LeadFormDialog({ open, onOpenChange }: Props) {
       estValue: 0,
       source: 'walk_in',
       note: '',
+      resellerId: null,
     },
   })
 
@@ -158,6 +160,9 @@ export function LeadFormDialog({ open, onOpenChange }: Props) {
                 )}
               />
             </div>
+            {form.watch('source') === 'referral' || form.watch('source') === 'reseller' ? (
+              <ResellerSelectField control={form.control} name="resellerId" />
+            ) : null}
             <DialogFooter>
               <Button
                 type="button"

@@ -15,6 +15,8 @@ export const LeadSchema = z.object({
   estValue: z.number().int().nonnegative(), // est. monthly value (IDR)
   source: LeadSourceSchema,
   note: z.string().nullable(),
+  // Referral/reseller attribution (P3.D.2). Carried onto the customer on convert.
+  resellerId: z.string().nullable(),
   createdAt: z.iso.datetime(),
 })
 
@@ -32,6 +34,8 @@ export const CreateLeadSchema = z.object({
   estValue: z.number().int().nonnegative(),
   source: LeadSourceSchema,
   note: z.string().max(500).optional(),
+  // Referral/reseller attribution (P3.D.2). Optional — null when no mitra.
+  resellerId: z.uuid('Reseller tidak valid').nullable().optional(),
 })
 
 export type LeadStage = z.infer<typeof LeadStageSchema>

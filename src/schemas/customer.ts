@@ -84,6 +84,9 @@ export const CreateCustomerSchema = z.object({
   email: z.email('Email tidak valid').or(z.literal('')),
   address: z.string().min(1, 'Alamat wajib diisi').max(255),
   planId: z.string().min(1, 'Paket wajib dipilih'),
+  // Referral/reseller attribution (P3.D.2): the mitra that brought this
+  // customer. Optional — null when onboarded directly.
+  resellerId: z.uuid('Reseller tidak valid').nullable().optional(),
 })
 
 export const ChangePlanSchema = z.object({

@@ -25,6 +25,9 @@ export const OnboardingSchema = z.object({
   npwp: z.string().max(40).optional(),
   // UU PDP data-processing consent given at onboarding.
   consent: z.boolean().optional(),
+  // Referral/reseller attribution (P3.D.2): the mitra that brought this
+  // customer. Optional — null when onboarded directly.
+  resellerId: z.uuid('Reseller tidak valid').nullable().optional(),
 })
 
 export type OnboardingInput = z.infer<typeof OnboardingSchema>
