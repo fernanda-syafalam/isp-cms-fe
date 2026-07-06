@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CustomerSchema } from './customer'
+import { CreateCustomerSchema, CustomerSchema } from './customer'
 
 const validCustomer = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -54,5 +54,40 @@ describe('CustomerSchema', () => {
 
   it('rejects a billing anchor day outside 1..28', () => {
     expect(CustomerSchema.safeParse({ ...validCustomer, billingAnchorDay: 31 }).success).toBe(false)
+  })
+})
+
+const validCreate = {
+  fullName: 'Budi Santoso',
+  phone: '081234567890',
+  email: '',
+  address: 'Jl. Merdeka 1',
+  planId: '33333333-3333-4333-8333-333333333333',
+}
+
+describe('CreateCustomerSchema (referral attribution)', () => {
+  it('accepts an optional reseller id (P3.D.2)', () => {
+    const parsed = CreateCustomerSchema.parse({
+      ...validCreate,
+      resellerId: '00000000-0000-4000-8000-000000000001',
+    })
+    expect(parsed.resellerId).toBe('00000000-0000-4000-8000-000000000001')
+  })
+
+  it('treats resellerId as optional (omitted is valid)', () => {
+    expect(CreateCustomerSchema.safeParse(validCreate).success).toBe(true)
+  })
+
+  it('accepts an explicit null resellerId', () => {
+    expect(CreateCustomerSchema.parse({ ...validCreate, resellerId: null }).resellerId).toBeNull()
+  })
+
+  it('rejects a non-uuid resellerId', () => {
+    expect(
+      CreateCustomerSchema.safeParse({
+        ...validCreate,
+        resellerId: 'not-a-uuid',
+      }).success,
+    ).toBe(false)
   })
 })

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 
 import { ErrorState } from '@/components/shared/error-state'
+import { ResellerSelectField } from '@/features/resellers/components/ResellerSelectField'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -117,19 +118,22 @@ export function PlanStep({
   }
 
   return (
-    <SelectField
-      form={form}
-      name="planId"
-      label="Paket"
-      placeholder={planQuery.isLoading ? 'Memuat paket…' : 'Pilih paket'}
-      options={planOptions ?? []}
-      disabled={planQuery.isLoading}
-      hint={
-        !planQuery.isLoading && (planOptions?.length ?? 0) === 0
-          ? 'Belum ada paket aktif. Buat paket dulu di menu Paket.'
-          : undefined
-      }
-    />
+    <>
+      <SelectField
+        form={form}
+        name="planId"
+        label="Paket"
+        placeholder={planQuery.isLoading ? 'Memuat paket…' : 'Pilih paket'}
+        options={planOptions ?? []}
+        disabled={planQuery.isLoading}
+        hint={
+          !planQuery.isLoading && (planOptions?.length ?? 0) === 0
+            ? 'Belum ada paket aktif. Buat paket dulu di menu Paket.'
+            : undefined
+        }
+      />
+      <ResellerSelectField control={form.control} name="resellerId" />
+    </>
   )
 }
 
