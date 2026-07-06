@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { CustomerSchema } from './customer'
 import { InvoiceSchema } from './invoice'
-import { PaymentSchema } from './payment'
+import { PaymentIntentSchema, PaymentSchema } from './payment'
 import { TicketSchema } from './ticket'
 
 // Self-service "me" snapshot for the customer portal. A real backend resolves
@@ -12,6 +12,9 @@ export const PortalMeSchema = z.object({
   invoices: z.array(InvoiceSchema),
   payments: z.array(PaymentSchema),
   tickets: z.array(TicketSchema),
+  // Still-pending (unpaid, non-expired) QRIS/VA intents the customer already
+  // started — lets the portal resume an unfinished payment (ADR-0011 parity).
+  pendingIntents: z.array(PaymentIntentSchema),
 })
 
 export const ReportIssueSchema = z.object({

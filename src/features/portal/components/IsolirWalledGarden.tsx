@@ -7,6 +7,8 @@ import { CheckoutDialog } from '@/features/invoices'
 import { formatCurrency, formatDate } from '@/lib/format'
 import type { Customer } from '@/schemas/customer'
 import type { Invoice } from '@/schemas/invoice'
+import type { InvoiceId } from '@/types/ids'
+import type { PaymentIntent } from '@/schemas/payment'
 
 import { PortalInvoiceRow } from './PortalInvoiceList'
 
@@ -15,6 +17,8 @@ type Props = {
   invoices: Invoice[]
   outstanding: number
   oldestUnpaid: Invoice | undefined
+  // Still-pending QRIS/VA intents keyed by invoice — resume instead of restart.
+  intentByInvoice: Map<InvoiceId, PaymentIntent>
 }
 
 // Full-screen "walled garden" shown while a subscriber is isolir. It replaces
@@ -22,8 +26,15 @@ type Props = {
 // blocked and how to restore it. Punitive (overdue) isolation gets a working
 // pay-to-reactivate CTA; a voluntary hold (cuti) is non-punitive — it points to
 // support instead, never framing it as pay-to-unblock (see P3.A.3).
-export function IsolirWalledGarden({ customer, invoices, outstanding, oldestUnpaid }: Props) {
+export function IsolirWalledGarden({
+  customer,
+  invoices,
+  outstanding,
+  oldestUnpaid,
+  intentByInvoice,
+}: Props) {
   const [payOpen, setPayOpen] = useState(false)
+  const oldestIntent = oldestUnpaid ? intentByInvoice.get(oldestUnpaid.id) : undefined
   const unpaid = invoices.filter((i) => i.status === 'pending' || i.status === 'overdue')
 
   if (customer.holdReason === 'voluntary') {
@@ -88,9 +99,15 @@ export function IsolirWalledGarden({ customer, invoices, outstanding, oldestUnpa
           <>
             <Button size="lg" onClick={() => setPayOpen(true)}>
               <CreditCardIcon className="size-4" />
-              Bayar sekarang
+              {oldestIntent ? 'Lanjutkan pembayaran' : 'Bayar sekarang'}
             </Button>
-            <CheckoutDialog invoice={oldestUnpaid} open={payOpen} onOpenChange={setPayOpen} />
+            <CheckoutDialog
+              invoice={oldestUnpaid}
+              open={payOpen}
+              onOpenChange={setPayOpen}
+              scope="portal"
+              existingIntent={oldestIntent}
+            />
           </>
         ) : null}
       </div>
@@ -103,7 +120,11 @@ export function IsolirWalledGarden({ customer, invoices, outstanding, oldestUnpa
           <CardContent>
             <ul className="divide-y divide-border">
               {unpaid.map((inv) => (
-                <PortalInvoiceRow key={inv.id} invoice={inv} />
+                <PortalInvoiceRow
+                  key={inv.id}
+                  invoice={inv}
+                  pendingIntent={intentByInvoice.get(inv.id)}
+                />
               ))}
             </ul>
           </CardContent>

@@ -1,4 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Outlet, createFileRoute } from '@tanstack/react-router'
 
-// Route stub only — component is code-split into _auth.portal.lazy.tsx.
-export const Route = createFileRoute('/_auth/portal')({})
+// Layout route for the customer portal — renders its child routes (the
+// dashboard index and the invoice print page) via <Outlet />.
+export const Route = createFileRoute('/_auth/portal')({
+  component: Outlet,
+})

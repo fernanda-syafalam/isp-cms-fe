@@ -42,11 +42,13 @@ export function CustomerPortalPage() {
     )
   }
 
-  const { customer, invoices, payments, tickets } = data
+  const { customer, invoices, payments, tickets, pendingIntents } = data
   const unpaid = invoices.filter((i) => i.status === 'pending' || i.status === 'overdue')
   const outstanding = unpaid.reduce((sum, i) => sum + invoiceTotal(i), 0)
   // Oldest unpaid invoice → the one to settle first (drives the prominent CTA).
   const oldestUnpaid = [...unpaid].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
+  // Resume affordance: index the still-pending intents by the invoice they charge.
+  const intentByInvoice = new Map(pendingIntents.map((pi) => [pi.invoiceId, pi]))
 
   // Isolir subscribers get a focused full-screen "walled garden" instead of the
   // normal dashboard chrome (P3.C.1) — punitive overdue isolation vs a voluntary
@@ -58,6 +60,7 @@ export function CustomerPortalPage() {
         invoices={invoices}
         outstanding={outstanding}
         oldestUnpaid={oldestUnpaid}
+        intentByInvoice={intentByInvoice}
       />
     )
   }
@@ -94,7 +97,12 @@ export function CustomerPortalPage() {
       </div>
 
       {oldestUnpaid ? (
-        <PayNowCard invoice={oldestUnpaid} outstanding={outstanding} count={unpaid.length} />
+        <PayNowCard
+          invoice={oldestUnpaid}
+          outstanding={outstanding}
+          count={unpaid.length}
+          pendingIntent={intentByInvoice.get(oldestUnpaid.id)}
+        />
       ) : null}
 
       <Card>
@@ -107,7 +115,11 @@ export function CustomerPortalPage() {
           ) : (
             <ul className="divide-y divide-border">
               {invoices.map((inv) => (
-                <PortalInvoiceRow key={inv.id} invoice={inv} />
+                <PortalInvoiceRow
+                  key={inv.id}
+                  invoice={inv}
+                  pendingIntent={intentByInvoice.get(inv.id)}
+                />
               ))}
             </ul>
           )}

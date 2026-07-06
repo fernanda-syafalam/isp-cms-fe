@@ -1,5 +1,12 @@
 import type { ReactElement, ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router'
 import { render, type RenderOptions } from '@testing-library/react'
 
 import { useAuthStore } from '@/features/auth/store/authStore'
@@ -51,4 +58,37 @@ export function renderWithProviders(ui: ReactElement, options: RenderWithProvide
 // so leaving stale state in there causes cross-test pollution.
 export function resetAuthStore(): void {
   useAuthStore.setState({ accessToken: null, user: null })
+}
+
+type RenderWithRouterOptions = {
+  // Which portal URL the memory history starts at — selects which registered
+  // route renders the component under test.
+  initialPath?: string
+  queryClient?: QueryClient
+}
+
+// Render a component that uses <Link>/router hooks inside a real (in-memory)
+// TanStack Router. Registers the portal navigation targets so Link can resolve
+// hrefs; the component under test mounts at `initialPath` (default '/portal').
+export function renderWithRouter(ui: ReactElement, options: RenderWithRouterOptions = {}) {
+  const { initialPath = '/portal', queryClient } = options
+  const atPortal = initialPath === '/portal'
+  const rootRoute = createRootRoute()
+  const portalRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/portal',
+    component: () => (atPortal ? ui : null),
+  })
+  const printRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/portal/invoices/$invoiceId/print',
+    component: () => (atPortal ? null : ui),
+  })
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([portalRoute, printRoute]),
+    history: createMemoryHistory({ initialEntries: [initialPath] }),
+  })
+  return render(<RouterProvider router={router} />, {
+    wrapper: ({ children }) => <TestProviders queryClient={queryClient}>{children}</TestProviders>,
+  })
 }
