@@ -3,6 +3,7 @@ import {
   ArrowLeftIcon,
   BanknoteIcon,
   CoinsIcon,
+  HandCoinsIcon,
   PercentIcon,
   UsersIcon,
   WalletIcon,
@@ -24,6 +25,8 @@ import type { LedgerEntryType } from '@/schemas/reseller'
 
 import { useReseller, useResellerCommissionTotal, useResellerLedger } from '../hooks/useResellers'
 import { LedgerEntryDialog } from './LedgerEntryDialog'
+import { PayoutDialog } from './PayoutDialog'
+import { PayoutsCard } from './PayoutsCard'
 import { ledgerColumns } from './resellerLedgerColumns'
 import { ResellerCustomersCard } from './ResellerCustomersCard'
 
@@ -37,6 +40,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
   const ledger = useResellerLedger(resellerId, table.params)
   const canManage = useCan('resellers.manage')
   const [dialogType, setDialogType] = useState<LedgerEntryType | null>(null)
+  const [payoutOpen, setPayoutOpen] = useState(false)
 
   // Real commission earned from the ledger (P3.D.1), replacing the old ARPU
   // estimate — the BE now posts a commission entry on each invoice payment.
@@ -83,9 +87,9 @@ export function ResellerDetailPage({ resellerId }: Props) {
                   <CoinsIcon className="size-4" />
                   Catat komisi
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setDialogType('withdrawal')}>
-                  <WalletIcon className="size-4" />
-                  Tarik saldo
+                <Button variant="outline" size="sm" onClick={() => setPayoutOpen(true)}>
+                  <HandCoinsIcon className="size-4" />
+                  Ajukan pencairan
                 </Button>
               </>
             ) : null}
@@ -151,6 +155,8 @@ export function ResellerDetailPage({ resellerId }: Props) {
         }}
       />
 
+      <PayoutsCard resellerId={reseller.id} canManage={canManage} />
+
       {dialogType ? (
         <LedgerEntryDialog
           resellerId={reseller.id}
@@ -160,6 +166,13 @@ export function ResellerDetailPage({ resellerId }: Props) {
           defaultAmount={0}
         />
       ) : null}
+
+      <PayoutDialog
+        resellerId={reseller.id}
+        balance={reseller.balance}
+        open={payoutOpen}
+        onOpenChange={setPayoutOpen}
+      />
     </div>
   )
 }
