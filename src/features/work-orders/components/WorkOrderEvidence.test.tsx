@@ -6,10 +6,10 @@ import { WorkOrderSchema } from '@/schemas/workorder'
 import { WorkOrderEvidence } from './WorkOrderEvidence'
 
 const baseWo = WorkOrderSchema.parse({
-  id: '00000000-0000-0000-0000-0000000000a1',
+  id: '00000000-0000-4000-8000-0000000000a1',
   code: 'WO-9001',
   type: 'install',
-  customerId: '00000000-0000-0000-0000-0000000000c1',
+  customerId: '00000000-0000-4000-8000-0000000000c1',
   customerName: 'Budi Santoso',
   technician: 'Teknisi Budi',
   scheduledAt: '2026-06-16T00:00:00.000Z',

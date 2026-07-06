@@ -125,7 +125,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
         />
       </div>
 
-      <ResellerCustomersCard resellerName={reseller.name} />
+      <ResellerCustomersCard resellerId={reseller.id} resellerName={reseller.name} />
 
       <DataTable
         columns={ledgerColumns}

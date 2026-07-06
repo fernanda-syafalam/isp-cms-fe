@@ -57,6 +57,7 @@ import { Route as AuthNetworkDevicesIndexRouteImport } from './routes/_auth.netw
 import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
 import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
 import { Route as AuthInvoicesPrintInvoiceIdRouteImport } from './routes/_auth.invoices.print.$invoiceId'
+import { Route as AuthResellersResellerIdCustomersCustomerIdRouteImport } from './routes/_auth.resellers.$resellerId.customers.$customerId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -334,6 +335,12 @@ const AuthInvoicesPrintInvoiceIdRoute =
     path: '/print/$invoiceId',
     getParentRoute: () => AuthInvoicesRoute,
   } as any)
+const AuthResellersResellerIdCustomersCustomerIdRoute =
+  AuthResellersResellerIdCustomersCustomerIdRouteImport.update({
+    id: '/customers/$customerId',
+    path: '/customers/$customerId',
+    getParentRoute: () => AuthResellersResellerIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -371,7 +378,7 @@ export interface FileRoutesByFullPath {
   '/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/network/usage': typeof AuthNetworkUsageRoute
-  '/resellers/$resellerId': typeof AuthResellersResellerIdRoute
+  '/resellers/$resellerId': typeof AuthResellersResellerIdRouteWithChildren
   '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers/': typeof AuthCustomersIndexRoute
   '/inventory/': typeof AuthInventoryIndexRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices/': typeof AuthNetworkDevicesIndexRoute
   '/network/routers/': typeof AuthNetworkRoutersIndexRoute
+  '/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRoutesByTo {
   '/bootstrap': typeof BootstrapRoute
@@ -415,7 +423,7 @@ export interface FileRoutesByTo {
   '/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/network/topology': typeof AuthNetworkTopologyRoute
   '/network/usage': typeof AuthNetworkUsageRoute
-  '/resellers/$resellerId': typeof AuthResellersResellerIdRoute
+  '/resellers/$resellerId': typeof AuthResellersResellerIdRouteWithChildren
   '/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/customers': typeof AuthCustomersIndexRoute
   '/inventory': typeof AuthInventoryIndexRoute
@@ -427,6 +435,7 @@ export interface FileRoutesByTo {
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices': typeof AuthNetworkDevicesIndexRoute
   '/network/routers': typeof AuthNetworkRoutersIndexRoute
+  '/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -466,7 +475,7 @@ export interface FileRoutesById {
   '/_auth/network/monitoring': typeof AuthNetworkMonitoringRoute
   '/_auth/network/topology': typeof AuthNetworkTopologyRoute
   '/_auth/network/usage': typeof AuthNetworkUsageRoute
-  '/_auth/resellers/$resellerId': typeof AuthResellersResellerIdRoute
+  '/_auth/resellers/$resellerId': typeof AuthResellersResellerIdRouteWithChildren
   '/_auth/tickets/$ticketId': typeof AuthTicketsTicketIdRoute
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/inventory/': typeof AuthInventoryIndexRoute
@@ -478,6 +487,7 @@ export interface FileRoutesById {
   '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/_auth/network/devices/': typeof AuthNetworkDevicesIndexRoute
   '/_auth/network/routers/': typeof AuthNetworkRoutersIndexRoute
+  '/_auth/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -529,6 +539,7 @@ export interface FileRouteTypes {
     | '/network/routers/$routerId'
     | '/network/devices/'
     | '/network/routers/'
+    | '/resellers/$resellerId/customers/$customerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/bootstrap'
@@ -573,6 +584,7 @@ export interface FileRouteTypes {
     | '/network/routers/$routerId'
     | '/network/devices'
     | '/network/routers'
+    | '/resellers/$resellerId/customers/$customerId'
   id:
     | '__root__'
     | '/_auth'
@@ -623,6 +635,7 @@ export interface FileRouteTypes {
     | '/_auth/network/routers/$routerId'
     | '/_auth/network/devices/'
     | '/_auth/network/routers/'
+    | '/_auth/resellers/$resellerId/customers/$customerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -969,6 +982,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthInvoicesPrintInvoiceIdRouteImport
       parentRoute: typeof AuthInvoicesRoute
     }
+    '/_auth/resellers/$resellerId/customers/$customerId': {
+      id: '/_auth/resellers/$resellerId/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/resellers/$resellerId/customers/$customerId'
+      preLoaderRoute: typeof AuthResellersResellerIdCustomersCustomerIdRouteImport
+      parentRoute: typeof AuthResellersResellerIdRoute
+    }
   }
 }
 
@@ -1018,13 +1038,28 @@ const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
   AuthInvoicesRouteChildren,
 )
 
+interface AuthResellersResellerIdRouteChildren {
+  AuthResellersResellerIdCustomersCustomerIdRoute: typeof AuthResellersResellerIdCustomersCustomerIdRoute
+}
+
+const AuthResellersResellerIdRouteChildren: AuthResellersResellerIdRouteChildren =
+  {
+    AuthResellersResellerIdCustomersCustomerIdRoute:
+      AuthResellersResellerIdCustomersCustomerIdRoute,
+  }
+
+const AuthResellersResellerIdRouteWithChildren =
+  AuthResellersResellerIdRoute._addFileChildren(
+    AuthResellersResellerIdRouteChildren,
+  )
+
 interface AuthResellersRouteChildren {
-  AuthResellersResellerIdRoute: typeof AuthResellersResellerIdRoute
+  AuthResellersResellerIdRoute: typeof AuthResellersResellerIdRouteWithChildren
   AuthResellersIndexRoute: typeof AuthResellersIndexRoute
 }
 
 const AuthResellersRouteChildren: AuthResellersRouteChildren = {
-  AuthResellersResellerIdRoute: AuthResellersResellerIdRoute,
+  AuthResellersResellerIdRoute: AuthResellersResellerIdRouteWithChildren,
   AuthResellersIndexRoute: AuthResellersIndexRoute,
 }
 

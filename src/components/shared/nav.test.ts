@@ -42,6 +42,14 @@ describe('isRouteAllowed (shares the segment-aware matcher)', () => {
     expect(isRouteAllowed('customer', '/portal')).toBe(true)
     expect(isRouteAllowed('customer', '/portal-admin')).toBe(false)
   })
+
+  it('grants mitra the reseller-scoped customer detail but not the org-wide list (P3.D.5)', () => {
+    // The scoped detail nests under /resellers, so it is inside the mitra
+    // allowlist by construction — no ROLE_ROUTES change needed.
+    expect(isRouteAllowed('mitra', '/resellers/r1/customers/c1')).toBe(true)
+    // The org-wide customer surface stays denied — the scope is not widened.
+    expect(isRouteAllowed('mitra', '/customers/c1')).toBe(false)
+  })
 })
 
 describe('navGroupsForRole', () => {
