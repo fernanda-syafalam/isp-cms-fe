@@ -140,6 +140,24 @@ describe('onboarding submission (MSW contract)', () => {
     expect(reserved?.usedPorts).toBe(target.usedPorts + 1)
   })
 
+  it('retains the one-time portal password when the subscriber has an email', async () => {
+    const result = await onboardCustomer({
+      ...BASE,
+      email: 'budi@example.com',
+      areaName: 'Jepara',
+    })
+
+    expect(result.portalLogin).not.toBeNull()
+    expect(result.portalLogin?.email).toBe('budi@example.com')
+    expect(result.portalLogin?.initialPassword).toBeTruthy()
+  })
+
+  it('returns a null portal login when no email is provided', async () => {
+    const result = await onboardCustomer({ ...BASE, areaName: 'Jepara' })
+
+    expect(result.portalLogin).toBeNull()
+  })
+
   it('rejects a non-serviceable (down) area with 422', async () => {
     await expect(onboardCustomer({ ...BASE, areaName: 'Kalinyamatan' })).rejects.toThrow()
   })

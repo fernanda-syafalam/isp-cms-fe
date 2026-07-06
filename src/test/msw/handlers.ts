@@ -2555,7 +2555,13 @@ export const handlers = [
       },
     })
     persistDb()
-    return HttpResponse.json(customer, { status: 201 })
+    // Mirror the BE OnboardResponseDto: provision a portal login when the
+    // subscriber has an email. The initial password is a one-time secret; a
+    // deterministic mock keeps the offline clickthrough reproducible.
+    const portalLogin = customer.email
+      ? { email: customer.email, initialPassword: `Init-${customer.customerNo}` }
+      : null
+    return HttpResponse.json({ ...customer, portalLogin }, { status: 201 })
   }),
   // Network enforcement (mock): flip lifecycle state for isolir/aktivasi.
   http.post('*/api/customers/:id/isolate', ({ params }) => {
