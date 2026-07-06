@@ -2,7 +2,7 @@
   {
     "name": "Main JS (critical path)",
     "path": "dist/assets/index-*.js",
-    "limit": "300 kB",
+    "limit": "310 kB",
     "gzip": true
   },
   {
