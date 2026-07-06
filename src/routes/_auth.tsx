@@ -25,11 +25,12 @@ function AuthLayout() {
   const role = useEffectiveRole()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
-  // Restricted roles can't reach pages outside their allowlist via deep-link or
-  // bookmark — bounce them to their home (sidebar uses the same allowlist).
-  const home = ROLE_HOME[role]
-  if (home && !isRouteAllowed(role, pathname)) {
-    return <Navigate to={home} replace />
+  // No role may reach a page outside its allowlist via deep-link or bookmark —
+  // bounce them to their home (the sidebar uses the same allowlist). The guard
+  // must run for EVERY role, not only those with a ROLE_HOME entry, so a role
+  // without an explicit home still can't bypass the check; fall back to "/".
+  if (!isRouteAllowed(role, pathname)) {
+    return <Navigate to={ROLE_HOME[role] ?? '/'} replace />
   }
 
   return <Outlet />
