@@ -48,11 +48,16 @@ export function ResellersListPage() {
     sort: table.params.sort,
     order: table.params.order,
   }
-  const { data, isLoading, isError, refetch } = useResellersList({
-    ...baseFilter,
-    limit: table.params.limit,
-    offset: table.params.offset,
-  })
+  // A mitra is redirected to their own storefront below and must never fetch the
+  // admin/staff-only org-wide list — that GET /v1/resellers returns 403.
+  const { data, isLoading, isError, refetch } = useResellersList(
+    {
+      ...baseFilter,
+      limit: table.params.limit,
+      offset: table.params.offset,
+    },
+    { enabled: role !== 'mitra' },
+  )
   const total = data?.total ?? 0
   const summary = data?.summary
   const by = summary?.byStatus

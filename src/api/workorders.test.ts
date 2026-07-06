@@ -38,6 +38,23 @@ describe('listWorkOrders', () => {
     expect(items.every((w) => w.type === 'install')).toBe(true)
   })
 
+  // "Tugas saya" (P3.B.1): the technician param is an exact-match scope. The
+  // teknisi board sends the current user's fullName here.
+  it('filters by technician (exact match) for the "Tugas saya" view', async () => {
+    const all = await listWorkOrders()
+    const target = all.items.find((w) => w.technician)
+    if (!target?.technician) throw new Error('seed has no assigned work order')
+
+    const { items, total } = await listWorkOrders({
+      technician: target.technician,
+    })
+    expect(items.length).toBe(total)
+    expect(items.length).toBeGreaterThan(0)
+    expect(items.every((w) => w.technician === target.technician)).toBe(true)
+    // Exact match, not substring: a different technician's orders are excluded.
+    expect(items.every((w) => w.technician !== null)).toBe(true)
+  })
+
   it('sorts by code in both directions', async () => {
     const asc = await listWorkOrders({ sort: 'code', order: 'asc' })
     const desc = await listWorkOrders({ sort: 'code', order: 'desc' })
