@@ -321,6 +321,7 @@ const ROUTER_FIXTURES = Array.from({ length: 6 }, (_, i) => ({
 
 const TICKET_PRIORITY = ['low', 'medium', 'high', 'urgent'] as const
 const TICKET_STATUS = ['open', 'in_progress', 'resolved', 'breached'] as const
+const TICKET_CATEGORY = ['koneksi_putus', 'lambat', 'tagihan', 'perangkat', 'lainnya'] as const
 const TICKET_FIXTURES = Array.from({ length: 8 }, (_, i) => {
   const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
   return {
@@ -334,6 +335,13 @@ const TICKET_FIXTURES = Array.from({ length: 8 }, (_, i) => {
     assignee: i % 3 === 0 ? null : 'Agent Sari',
     slaDueAt: iso(2026, 5, 6 + (i % 3)),
     createdAt: iso(2026, 5, 4),
+    // Portal ticket depth + CSAT (P3.C.2). CSAT stays null until the customer
+    // rates a resolved/breached ticket.
+    category: (TICKET_CATEGORY[i % TICKET_CATEGORY.length] ?? 'lainnya') as string | null,
+    photoUrl: null as string | null,
+    csatRating: null as number | null,
+    csatComment: null as string | null,
+    csatAt: null as string | null,
   }
 })
 
@@ -1347,7 +1355,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v22'
+const DB_KEY = 'isp-cms-mock-db-v23'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1446,6 +1454,23 @@ export function resetMockDb() {
 
 hydrateDb()
 syncSettingsRef()
+
+// Resolve the portal "me" customer the same way GET /portal/me does, so the
+// owner-scoped ticket handlers agree with the snapshot the portal rendered.
+// The mock has no per-user auth plumbing yet; it defaults to an active
+// subscriber but honours `?preview=<status>` / `?hold=<reason>` in dev.
+function resolvePortalCustomer(request: Request) {
+  const params = new URL(request.url).searchParams
+  const preview = params.get('preview')
+  const hold = params.get('hold')
+  return (
+    (preview
+      ? CUSTOMER_FIXTURES.find((c) => c.status === preview && (!hold || c.holdReason === hold))
+      : undefined) ??
+    CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ??
+    CUSTOMER_FIXTURES[0]
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Handlers — base path is `*/api/*` (dev worker + node tests both use /api).
@@ -3990,6 +4015,11 @@ export const handlers = [
       assignee: null,
       slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
       createdAt: new Date(now).toISOString(),
+      category: null as string | null,
+      photoUrl: null as string | null,
+      csatRating: null as number | null,
+      csatComment: null as string | null,
+      csatAt: null as string | null,
     }
     TICKET_FIXTURES.unshift(ticket)
     persistDb()
@@ -4239,6 +4269,11 @@ export const handlers = [
       assignee: null,
       slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
       createdAt: new Date(now).toISOString(),
+      category: null as string | null,
+      photoUrl: null as string | null,
+      csatRating: null as number | null,
+      csatComment: null as string | null,
+      csatAt: null as string | null,
     }
     TICKET_FIXTURES.unshift(ticket)
     found.acknowledged = true
@@ -5011,18 +5046,10 @@ export const handlers = [
     // identity plumbing yet, so it defaults to an active subscriber but
     // accepts `?preview=<status>` to reach the isolir UX in dev — otherwise
     // that state was unreachable (drift: portal/me always picked `aktif`).
-    const params = new URL(request.url).searchParams
-    const preview = params.get('preview')
     // `?preview=isolir&hold=voluntary` reaches the voluntary (cuti) walled-garden
     // branch in dev — most isolir fixtures are punitive (overdue), so without the
     // hold hint that non-punitive state is otherwise unreachable (P3.C.1).
-    const hold = params.get('hold')
-    const me =
-      (preview
-        ? CUSTOMER_FIXTURES.find((c) => c.status === preview && (!hold || c.holdReason === hold))
-        : undefined) ??
-      CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ??
-      CUSTOMER_FIXTURES[0]
+    const me = resolvePortalCustomer(request)
     if (!me) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
         status: 404,
@@ -5050,10 +5077,15 @@ export const handlers = [
     })
   }),
   // Customer reports a problem → opens a support ticket on their account.
+  // Category is required (P3.C.2); an optional photo URL is persisted too.
   http.post('*/api/portal/tickets', async ({ request }) => {
-    const me = CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
+    const me = resolvePortalCustomer(request)
     if (!me) return new HttpResponse(null, { status: 404 })
-    const body = (await request.json()) as { subject: string }
+    const body = (await request.json()) as {
+      subject: string
+      category?: string
+      photoUrl?: string
+    }
     const now = Date.now()
     const slaHours = SLA_HOURS.medium ?? 24
     const ticket = {
@@ -5067,10 +5099,92 @@ export const handlers = [
       assignee: null,
       slaDueAt: new Date(now + slaHours * 3_600_000).toISOString(),
       createdAt: new Date(now).toISOString(),
+      category: (body.category ?? null) as string | null,
+      photoUrl: (body.photoUrl ?? null) as string | null,
+      csatRating: null as number | null,
+      csatComment: null as string | null,
+      csatAt: null as string | null,
     }
     TICKET_FIXTURES.unshift(ticket)
+    // Seed the "created" event so the thread renders immediately.
+    TICKET_EVENT_FIXTURES.push({
+      id: `${ticket.id}-ev-created`,
+      ticketId: ticket.id,
+      kind: 'created',
+      author: me.fullName,
+      body: ticket.subject,
+      at: ticket.createdAt,
+    })
     persistDb()
     return HttpResponse.json(ticket, { status: 201 })
+  }),
+  // Owner-scoped ticket detail: the ticket plus its timeline. 404 if the ticket
+  // is not owned by the resolved portal customer (mirrors the BE ownership).
+  http.get('*/api/portal/tickets/:id', ({ params, request }) => {
+    const me = resolvePortalCustomer(request)
+    const ticket = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!me || !ticket || ticket.customerName !== me.fullName) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const events = TICKET_EVENT_FIXTURES.filter((e) => e.ticketId === ticket.id).sort((a, b) =>
+      a.at.localeCompare(b.at),
+    )
+    return HttpResponse.json({ ...ticket, events })
+  }),
+  // Customer adds a comment to their own ticket thread.
+  http.post('*/api/portal/tickets/:id/comments', async ({ params, request }) => {
+    const me = resolvePortalCustomer(request)
+    const ticket = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!me || !ticket || ticket.customerName !== me.fullName) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as { body: string }
+    TICKET_EVENT_FIXTURES.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      kind: 'comment',
+      author: me.fullName,
+      body: body.body,
+      at: new Date().toISOString(),
+    })
+    persistDb()
+    return new HttpResponse(null, { status: 201 })
+  }),
+  // Customer rates a resolved/breached ticket (CSAT). Records the rating and
+  // pushes a `csat` timeline event.
+  http.post('*/api/portal/tickets/:id/csat', async ({ params, request }) => {
+    const me = resolvePortalCustomer(request)
+    const ticket = TICKET_FIXTURES.find((t) => t.id === params.id)
+    if (!me || !ticket || ticket.customerName !== me.fullName) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (ticket.status !== 'resolved' && ticket.status !== 'breached') {
+      return new HttpResponse(JSON.stringify({ message: 'Ticket not resolved' }), { status: 400 })
+    }
+    const body = (await request.json()) as {
+      rating: number
+      comment?: string
+    }
+    const at = new Date().toISOString()
+    ticket.csatRating = body.rating
+    ticket.csatComment = body.comment ?? null
+    ticket.csatAt = at
+    TICKET_EVENT_FIXTURES.push({
+      id: crypto.randomUUID(),
+      ticketId: ticket.id,
+      kind: 'csat',
+      author: me.fullName,
+      body: `Penilaian ${body.rating}/5${body.comment ? ` — ${body.comment}` : ''}`,
+      at,
+    })
+    persistDb()
+    return HttpResponse.json(ticket)
   }),
   // Portal-scoped gateway charge — mirrors the staff /payments/intent route but
   // is the one a customer may call from their own portal (P3.C.3). Creates a

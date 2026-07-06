@@ -2,19 +2,17 @@ import { PackageIcon, WalletIcon, WifiIcon } from 'lucide-react'
 
 import { KpiCard } from '@/components/shared/kpi-card'
 import { PageHeader } from '@/components/shared/page-header'
-import { StatusBadge } from '@/components/shared/status-badge'
-import { ticketStatusToneCustomer as TICKET_TONE } from '@/components/shared/status-tone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Payment } from '@/schemas/payment'
-import type { Ticket } from '@/schemas/ticket'
 
 import { usePortalMe } from '../hooks/usePortal'
 import { IsolirWalledGarden } from './IsolirWalledGarden'
 import { PayNowCard, PortalInvoiceRow } from './PortalInvoiceList'
+import { PortalTicketsCard } from './PortalTicketsCard'
 import { ReportIssueDialog } from './ReportIssueDialog'
 
 export function CustomerPortalPage() {
@@ -127,27 +125,7 @@ export function CustomerPortalPage() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Laporan saya</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {tickets.length === 0 ? (
-              <p className="py-6 text-center text-muted-foreground text-sm">
-                Belum ada laporan gangguan.
-              </p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {tickets.map((t: Ticket) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="min-w-0 truncate text-sm">{t.subject}</span>
-                    <StatusBadge tone={TICKET_TONE[t.status]} label={statusLabel(t.status)} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <PortalTicketsCard tickets={tickets} />
 
         <Card>
           <CardHeader>
