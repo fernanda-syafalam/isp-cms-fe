@@ -5031,7 +5031,23 @@ export const handlers = [
     const invoices = INVOICE_FIXTURES.filter((inv) => inv.customerId === me.id)
     const payments = PAYMENT_FIXTURES.filter((p) => p.customerName === me.fullName)
     const tickets = TICKET_FIXTURES.filter((t) => t.customerName === me.fullName)
-    return HttpResponse.json({ customer: me, invoices, payments, tickets })
+    // Still-pending (unpaid, non-expired) gateway intents for this customer's
+    // invoices — lets the portal resume an unfinished QRIS/VA payment (P3.C.3).
+    const nowMs = Date.now()
+    const invoiceIds = new Set(invoices.map((inv) => inv.id))
+    const pendingIntents = PAYMENT_INTENT_FIXTURES.filter(
+      (pi) =>
+        pi.status === 'pending' &&
+        invoiceIds.has(pi.invoiceId) &&
+        new Date(pi.expiresAt).getTime() > nowMs,
+    )
+    return HttpResponse.json({
+      customer: me,
+      invoices,
+      payments,
+      tickets,
+      pendingIntents,
+    })
   }),
   // Customer reports a problem → opens a support ticket on their account.
   http.post('*/api/portal/tickets', async ({ request }) => {
@@ -5055,5 +5071,97 @@ export const handlers = [
     TICKET_FIXTURES.unshift(ticket)
     persistDb()
     return HttpResponse.json(ticket, { status: 201 })
+  }),
+  // Portal-scoped gateway charge — mirrors the staff /payments/intent route but
+  // is the one a customer may call from their own portal (P3.C.3). Creates a
+  // pending intent that then surfaces under portal/me → pendingIntents.
+  http.post('*/api/portal/pay-intent', async ({ request }) => {
+    const body = (await request.json()) as {
+      invoiceId: string
+      channel: string
+    }
+    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === body.invoiceId)
+    if (!invoice) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const isVa = body.channel.startsWith('va_')
+    const rand = crypto.randomUUID().replace(/\D/g, '').padEnd(12, '0')
+    const now = new Date()
+    const intent = {
+      id: crypto.randomUUID(),
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      customerName: invoice.customerName,
+      amount: invoice.amount + invoice.lateFee + invoice.taxAmount,
+      channel: body.channel,
+      status: 'pending' as const,
+      vaNumber: isVa ? `88${rand.slice(0, 14)}` : null,
+      qrPayload: isVa ? null : `00020101021226${rand.slice(0, 10)}5204481253033605802ID`,
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + 86_400_000).toISOString(),
+      paidAt: null,
+    }
+    PAYMENT_INTENT_FIXTURES.unshift(intent)
+    persistDb()
+    return HttpResponse.json(intent, { status: 201 })
+  }),
+  // Portal settlement webhook simulation: mark the intent + invoice paid,
+  // reconcile AR, reactivate an isolir customer if nothing overdue remains.
+  http.post('*/api/portal/pay-intent/:id/confirm', ({ params }) => {
+    const intent = PAYMENT_INTENT_FIXTURES.find((p) => p.id === params.id)
+    if (!intent) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (intent.status === 'paid') return HttpResponse.json(intent)
+    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === intent.invoiceId)
+    const nowIso = new Date().toISOString()
+    intent.status = 'paid'
+    intent.paidAt = nowIso
+    if (invoice) {
+      const settledAmount = invoice.balanceDue
+      invoice.status = 'paid'
+      invoice.paidAt = nowIso
+      invoice.paidAmount += settledAmount
+      invoice.balanceDue = 0
+      const method =
+        intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
+      PAYMENT_FIXTURES.unshift({
+        id: crypto.randomUUID(),
+        invoiceId: invoice.id,
+        invoiceNo: invoice.invoiceNo,
+        customerId: invoice.customerId,
+        customerName: invoice.customerName,
+        amount: settledAmount,
+        method,
+        paidAt: nowIso,
+        tenderedAmount: null,
+        changeAmount: null,
+      })
+      const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
+      if (customer) {
+        const unpaid = INVOICE_FIXTURES.filter(
+          (inv) =>
+            inv.customerId === customer.id &&
+            (inv.status === 'pending' || inv.status === 'overdue'),
+        )
+        customer.outstanding = unpaid.reduce(
+          (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
+          0,
+        )
+        const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
+        if (customer.status === 'isolir' && !hasOverdue) {
+          customer.status = 'aktif'
+          setTopoCustomerLifecycle(customer.fullName, 'aktif')
+          setSecretsDisabledByCustomer(customer.fullName, false)
+        }
+      }
+      recordAudit('payment.gateway', 'Tagihan', `Pembayaran ${intent.channel} ${invoice.invoiceNo}`)
+    }
+    persistDb()
+    return HttpResponse.json(intent)
   }),
 ]

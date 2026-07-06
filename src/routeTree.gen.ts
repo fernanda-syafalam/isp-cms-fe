@@ -38,6 +38,7 @@ import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
 import { Route as AuthAccountingRouteImport } from './routes/_auth.accounting'
 import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
 import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
+import { Route as AuthPortalIndexRouteImport } from './routes/_auth.portal.index'
 import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
 import { Route as AuthInventoryIndexRouteImport } from './routes/_auth.inventory.index'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
@@ -58,6 +59,7 @@ import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.n
 import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
 import { Route as AuthInvoicesPrintInvoiceIdRouteImport } from './routes/_auth.invoices.print.$invoiceId'
 import { Route as AuthResellersResellerIdCustomersCustomerIdRouteImport } from './routes/_auth.resellers.$resellerId.customers.$customerId'
+import { Route as AuthPortalInvoicesInvoiceIdPrintRouteImport } from './routes/_auth.portal.invoices.$invoiceId.print'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -149,7 +151,7 @@ const AuthPortalRoute = AuthPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
   getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.portal.lazy').then((d) => d.Route))
+} as any)
 const AuthPlansRoute = AuthPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -225,6 +227,13 @@ const AuthResellersIndexRoute = AuthResellersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthResellersRoute,
 } as any)
+const AuthPortalIndexRoute = AuthPortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthPortalRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.portal.index.lazy').then((d) => d.Route),
+)
 const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -341,6 +350,12 @@ const AuthResellersResellerIdCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AuthResellersResellerIdRoute,
   } as any)
+const AuthPortalInvoicesInvoiceIdPrintRoute =
+  AuthPortalInvoicesInvoiceIdPrintRouteImport.update({
+    id: '/invoices/$invoiceId/print',
+    path: '/invoices/$invoiceId/print',
+    getParentRoute: () => AuthPortalRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -357,7 +372,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
-  '/portal': typeof AuthPortalRoute
+  '/portal': typeof AuthPortalRouteWithChildren
   '/reports': typeof AuthReportsRoute
   '/resellers': typeof AuthResellersRouteWithChildren
   '/satisfaction': typeof AuthSatisfactionRoute
@@ -383,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof AuthCustomersIndexRoute
   '/inventory/': typeof AuthInventoryIndexRoute
   '/invoices/': typeof AuthInvoicesIndexRoute
+  '/portal/': typeof AuthPortalIndexRoute
   '/resellers/': typeof AuthResellersIndexRoute
   '/tickets/': typeof AuthTicketsIndexRoute
   '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
@@ -390,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices/': typeof AuthNetworkDevicesIndexRoute
   '/network/routers/': typeof AuthNetworkRoutersIndexRoute
+  '/portal/invoices/$invoiceId/print': typeof AuthPortalInvoicesInvoiceIdPrintRoute
   '/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRoutesByTo {
@@ -403,7 +420,6 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthNotificationsRoute
   '/payments': typeof AuthPaymentsRoute
   '/plans': typeof AuthPlansRoute
-  '/portal': typeof AuthPortalRoute
   '/reports': typeof AuthReportsRoute
   '/satisfaction': typeof AuthSatisfactionRoute
   '/security': typeof AuthSecurityRoute
@@ -428,6 +444,7 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthCustomersIndexRoute
   '/inventory': typeof AuthInventoryIndexRoute
   '/invoices': typeof AuthInvoicesIndexRoute
+  '/portal': typeof AuthPortalIndexRoute
   '/resellers': typeof AuthResellersIndexRoute
   '/tickets': typeof AuthTicketsIndexRoute
   '/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
@@ -435,6 +452,7 @@ export interface FileRoutesByTo {
   '/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/network/devices': typeof AuthNetworkDevicesIndexRoute
   '/network/routers': typeof AuthNetworkRoutersIndexRoute
+  '/portal/invoices/$invoiceId/print': typeof AuthPortalInvoicesInvoiceIdPrintRoute
   '/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRoutesById {
@@ -453,7 +471,7 @@ export interface FileRoutesById {
   '/_auth/notifications': typeof AuthNotificationsRoute
   '/_auth/payments': typeof AuthPaymentsRoute
   '/_auth/plans': typeof AuthPlansRoute
-  '/_auth/portal': typeof AuthPortalRoute
+  '/_auth/portal': typeof AuthPortalRouteWithChildren
   '/_auth/reports': typeof AuthReportsRoute
   '/_auth/resellers': typeof AuthResellersRouteWithChildren
   '/_auth/satisfaction': typeof AuthSatisfactionRoute
@@ -480,6 +498,7 @@ export interface FileRoutesById {
   '/_auth/customers/': typeof AuthCustomersIndexRoute
   '/_auth/inventory/': typeof AuthInventoryIndexRoute
   '/_auth/invoices/': typeof AuthInvoicesIndexRoute
+  '/_auth/portal/': typeof AuthPortalIndexRoute
   '/_auth/resellers/': typeof AuthResellersIndexRoute
   '/_auth/tickets/': typeof AuthTicketsIndexRoute
   '/_auth/invoices/print/$invoiceId': typeof AuthInvoicesPrintInvoiceIdRoute
@@ -487,6 +506,7 @@ export interface FileRoutesById {
   '/_auth/network/routers/$routerId': typeof AuthNetworkRoutersRouterIdRoute
   '/_auth/network/devices/': typeof AuthNetworkDevicesIndexRoute
   '/_auth/network/routers/': typeof AuthNetworkRoutersIndexRoute
+  '/_auth/portal/invoices/$invoiceId/print': typeof AuthPortalInvoicesInvoiceIdPrintRoute
   '/_auth/resellers/$resellerId/customers/$customerId': typeof AuthResellersResellerIdCustomersCustomerIdRoute
 }
 export interface FileRouteTypes {
@@ -532,6 +552,7 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/inventory/'
     | '/invoices/'
+    | '/portal/'
     | '/resellers/'
     | '/tickets/'
     | '/invoices/print/$invoiceId'
@@ -539,6 +560,7 @@ export interface FileRouteTypes {
     | '/network/routers/$routerId'
     | '/network/devices/'
     | '/network/routers/'
+    | '/portal/invoices/$invoiceId/print'
     | '/resellers/$resellerId/customers/$customerId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -552,7 +574,6 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/payments'
     | '/plans'
-    | '/portal'
     | '/reports'
     | '/satisfaction'
     | '/security'
@@ -577,6 +598,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/inventory'
     | '/invoices'
+    | '/portal'
     | '/resellers'
     | '/tickets'
     | '/invoices/print/$invoiceId'
@@ -584,6 +606,7 @@ export interface FileRouteTypes {
     | '/network/routers/$routerId'
     | '/network/devices'
     | '/network/routers'
+    | '/portal/invoices/$invoiceId/print'
     | '/resellers/$resellerId/customers/$customerId'
   id:
     | '__root__'
@@ -628,6 +651,7 @@ export interface FileRouteTypes {
     | '/_auth/customers/'
     | '/_auth/inventory/'
     | '/_auth/invoices/'
+    | '/_auth/portal/'
     | '/_auth/resellers/'
     | '/_auth/tickets/'
     | '/_auth/invoices/print/$invoiceId'
@@ -635,6 +659,7 @@ export interface FileRouteTypes {
     | '/_auth/network/routers/$routerId'
     | '/_auth/network/devices/'
     | '/_auth/network/routers/'
+    | '/_auth/portal/invoices/$invoiceId/print'
     | '/_auth/resellers/$resellerId/customers/$customerId'
   fileRoutesById: FileRoutesById
 }
@@ -849,6 +874,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResellersIndexRouteImport
       parentRoute: typeof AuthResellersRoute
     }
+    '/_auth/portal/': {
+      id: '/_auth/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof AuthPortalIndexRouteImport
+      parentRoute: typeof AuthPortalRoute
+    }
     '/_auth/invoices/': {
       id: '/_auth/invoices/'
       path: '/'
@@ -989,6 +1021,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResellersResellerIdCustomersCustomerIdRouteImport
       parentRoute: typeof AuthResellersResellerIdRoute
     }
+    '/_auth/portal/invoices/$invoiceId/print': {
+      id: '/_auth/portal/invoices/$invoiceId/print'
+      path: '/invoices/$invoiceId/print'
+      fullPath: '/portal/invoices/$invoiceId/print'
+      preLoaderRoute: typeof AuthPortalInvoicesInvoiceIdPrintRouteImport
+      parentRoute: typeof AuthPortalRoute
+    }
   }
 }
 
@@ -1036,6 +1075,20 @@ const AuthInvoicesRouteChildren: AuthInvoicesRouteChildren = {
 
 const AuthInvoicesRouteWithChildren = AuthInvoicesRoute._addFileChildren(
   AuthInvoicesRouteChildren,
+)
+
+interface AuthPortalRouteChildren {
+  AuthPortalIndexRoute: typeof AuthPortalIndexRoute
+  AuthPortalInvoicesInvoiceIdPrintRoute: typeof AuthPortalInvoicesInvoiceIdPrintRoute
+}
+
+const AuthPortalRouteChildren: AuthPortalRouteChildren = {
+  AuthPortalIndexRoute: AuthPortalIndexRoute,
+  AuthPortalInvoicesInvoiceIdPrintRoute: AuthPortalInvoicesInvoiceIdPrintRoute,
+}
+
+const AuthPortalRouteWithChildren = AuthPortalRoute._addFileChildren(
+  AuthPortalRouteChildren,
 )
 
 interface AuthResellersResellerIdRouteChildren {
@@ -1093,7 +1146,7 @@ interface AuthRouteChildren {
   AuthNotificationsRoute: typeof AuthNotificationsRoute
   AuthPaymentsRoute: typeof AuthPaymentsRoute
   AuthPlansRoute: typeof AuthPlansRoute
-  AuthPortalRoute: typeof AuthPortalRoute
+  AuthPortalRoute: typeof AuthPortalRouteWithChildren
   AuthReportsRoute: typeof AuthReportsRoute
   AuthResellersRoute: typeof AuthResellersRouteWithChildren
   AuthSatisfactionRoute: typeof AuthSatisfactionRoute
@@ -1129,7 +1182,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthNotificationsRoute: AuthNotificationsRoute,
   AuthPaymentsRoute: AuthPaymentsRoute,
   AuthPlansRoute: AuthPlansRoute,
-  AuthPortalRoute: AuthPortalRoute,
+  AuthPortalRoute: AuthPortalRouteWithChildren,
   AuthReportsRoute: AuthReportsRoute,
   AuthResellersRoute: AuthResellersRouteWithChildren,
   AuthSatisfactionRoute: AuthSatisfactionRoute,

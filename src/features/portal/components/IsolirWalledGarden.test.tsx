@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { formatDate } from '@/lib/format'
 import type { CustomerStatus } from '@/schemas/customer'
-import { renderWithProviders } from '@/test/helpers'
+import { renderWithRouter } from '@/test/helpers'
 import { server } from '@/test/msw/server'
 
 import { CustomerPortalPage } from './CustomerPortalPage'
@@ -71,7 +71,7 @@ function buildMe({ status, holdReason, withUnpaid = true }: MeOptions) {
         },
       ]
     : []
-  return { customer, invoices, payments: [], tickets: [] }
+  return { customer, invoices, payments: [], tickets: [], pendingIntents: [] }
 }
 
 function mockMe(options: MeOptions) {
@@ -81,7 +81,7 @@ function mockMe(options: MeOptions) {
 describe('IsolirWalledGarden (via CustomerPortalPage)', () => {
   it('shows the pay-to-reactivate walled garden for an overdue isolir subscriber', async () => {
     mockMe({ status: 'isolir', holdReason: 'overdue' })
-    renderWithProviders(<CustomerPortalPage />)
+    renderWithRouter(<CustomerPortalPage />)
 
     // Punitive headline is announced to assistive tech.
     const heading = await screen.findByRole('heading', {
@@ -107,7 +107,7 @@ describe('IsolirWalledGarden (via CustomerPortalPage)', () => {
 
   it('shows a non-punitive paused message for a voluntary (cuti) hold', async () => {
     mockMe({ status: 'isolir', holdReason: 'voluntary' })
-    renderWithProviders(<CustomerPortalPage />)
+    renderWithRouter(<CustomerPortalPage />)
 
     const heading = await screen.findByRole('heading', {
       name: /dijeda atas permintaan Anda/i,
@@ -122,7 +122,7 @@ describe('IsolirWalledGarden (via CustomerPortalPage)', () => {
 
   it('renders the normal dashboard for an active subscriber (regression)', async () => {
     mockMe({ status: 'aktif', holdReason: null })
-    renderWithProviders(<CustomerPortalPage />)
+    renderWithRouter(<CustomerPortalPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Status layanan')).toBeInTheDocument()
