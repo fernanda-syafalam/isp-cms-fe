@@ -1,4 +1,4 @@
-import { MessageSquareIcon, UserIcon } from 'lucide-react'
+import { MessageSquareIcon, StarIcon, UserIcon } from 'lucide-react'
 
 import { formatDateTime } from '@/lib/format'
 import type { TicketEvent } from '@/schemas/ticket'
@@ -9,12 +9,14 @@ const KIND_LABEL: Record<TicketEvent['kind'], string> = {
   status: 'status',
   assign: 'assign',
   workorder: 'work order',
+  csat: 'penilaian',
 }
 
 // One row of a ticket's activity timeline. Shared by the full detail page and
 // the quick-view drawer so the two stay in lockstep.
 export function TicketTimelineItem({ event }: { event: TicketEvent }) {
-  const Icon = event.kind === 'comment' ? MessageSquareIcon : UserIcon
+  const Icon =
+    event.kind === 'comment' ? MessageSquareIcon : event.kind === 'csat' ? StarIcon : UserIcon
   return (
     <li className="flex gap-3">
       <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
