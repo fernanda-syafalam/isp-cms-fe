@@ -10,10 +10,13 @@ import { statusLabel } from '@/lib/status-label'
 import type { Payment } from '@/schemas/payment'
 
 import { usePortalMe } from '../hooks/usePortal'
+import { AnnouncementsBanner } from './AnnouncementsBanner'
 import { IsolirWalledGarden } from './IsolirWalledGarden'
 import { PayNowCard, PortalInvoiceRow } from './PortalInvoiceList'
 import { PortalTicketsCard } from './PortalTicketsCard'
 import { ReportIssueDialog } from './ReportIssueDialog'
+import { UsageQuotaCard } from './UsageQuotaCard'
+import { WifiSettingsCard } from './WifiSettingsCard'
 
 export function CustomerPortalPage() {
   const { data, isLoading, isError } = usePortalMe()
@@ -71,6 +74,8 @@ export function CustomerPortalPage() {
         actions={<ReportIssueDialog />}
       />
 
+      <AnnouncementsBanner />
+
       <div className="grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="Status layanan"
@@ -102,6 +107,11 @@ export function CustomerPortalPage() {
           pendingIntent={intentByInvoice.get(oldestUnpaid.id)}
         />
       ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <UsageQuotaCard />
+        <WifiSettingsCard />
+      </div>
 
       <Card>
         <CardHeader>

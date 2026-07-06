@@ -3,13 +3,17 @@ import { toast } from 'sonner'
 
 import {
   addPortalComment,
+  getPortalAnnouncements,
   getPortalMe,
   getPortalTicket,
+  getPortalUsage,
+  getPortalWifi,
   reportIssue,
   submitCsat,
+  updatePortalWifi,
 } from '@/api/portal'
 import { getErrorMessage } from '@/lib/errors'
-import type { ReportIssueInput } from '@/schemas/portal'
+import type { PortalWifiUpdate, ReportIssueInput } from '@/schemas/portal'
 import type { AddCommentInput, SubmitCsatInput } from '@/schemas/ticket'
 
 export function usePortalMe() {
@@ -29,6 +33,39 @@ export function useReportIssue() {
       toast.success('Laporan gangguan terkirim — tim kami segera menindaklanjuti')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function usePortalUsage() {
+  return useQuery({
+    queryKey: ['portal', 'usage'] as const,
+    queryFn: getPortalUsage,
+  })
+}
+
+export function usePortalWifi() {
+  return useQuery({
+    queryKey: ['portal', 'wifi'] as const,
+    queryFn: getPortalWifi,
+  })
+}
+
+export function useUpdatePortalWifi() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: PortalWifiUpdate) => updatePortalWifi(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['portal', 'wifi'] })
+      toast.success('Pengaturan Wi-Fi berhasil diperbarui')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function usePortalAnnouncements() {
+  return useQuery({
+    queryKey: ['portal', 'announcements'] as const,
+    queryFn: getPortalAnnouncements,
   })
 }
 
