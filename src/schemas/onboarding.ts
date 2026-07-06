@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { CustomerSchema } from '@/schemas/customer'
+
 // End-to-end subscriber onboarding: data → plan → install schedule.
 // On submit the backend (mock) creates the customer (status "instalasi") plus
 // an install work order.
@@ -31,3 +33,19 @@ export const OnboardingSchema = z.object({
 })
 
 export type OnboardingInput = z.infer<typeof OnboardingSchema>
+
+// Response of POST /onboarding: the created customer PLUS the portal login the
+// backend provisions for the subscriber (mirrors the BE OnboardResponseDto).
+// `portalLogin` is null when the wizard had no email (or the email already
+// belongs to a user). The `initialPassword` is a one-time secret — it is shown
+// ONCE in the success dialog and never returned again.
+export const OnboardResponseSchema = CustomerSchema.extend({
+  portalLogin: z
+    .object({
+      email: z.email(),
+      initialPassword: z.string(),
+    })
+    .nullable(),
+})
+
+export type OnboardResponse = z.infer<typeof OnboardResponseSchema>

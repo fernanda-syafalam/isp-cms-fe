@@ -11,10 +11,11 @@ import { Form } from '@/components/ui/form'
 import { useOdpList } from '@/features/ftth/hooks/useOdp'
 import { usePlanOptions } from '@/hooks/usePlanOptions'
 import { cn } from '@/lib/cn'
-import { OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
+import { type OnboardResponse, OnboardingSchema, type OnboardingInput } from '@/schemas/onboarding'
 
 import { useOnboardCustomer } from '../hooks/useOnboarding'
 import { CustomerStep, LocationStep, PlanStep, ScheduleStep, SummaryStep } from './OnboardingSteps'
+import { PortalCredentialDialog } from './PortalCredentialDialog'
 
 const STEPS = ['Data pelanggan', 'Lokasi & jaringan', 'Paket', 'Jadwal instalasi', 'Ringkasan']
 const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
@@ -29,6 +30,9 @@ const STEP_FIELDS: FieldPath<OnboardingInput>[][] = [
 // helpers in OnboardingFields — this shell owns form state, navigation, layout.
 export function OnboardingWizard() {
   const [step, setStep] = useState(0)
+  // The provisioned portal login is held here so the one-time password can be
+  // revealed in a dialog before we navigate away (the BE returns it only once).
+  const [onboarded, setOnboarded] = useState<OnboardResponse | null>(null)
   const navigate = useNavigate()
   const onboard = useOnboardCustomer()
   const planQuery = usePlanOptions()
@@ -60,13 +64,20 @@ export function OnboardingWizard() {
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
   }
 
+  const goToCustomer = (customerId: string) =>
+    navigate({ to: '/customers/$customerId', params: { customerId } })
+
   const submit = form.handleSubmit(async (values) => {
     try {
-      const customer = await onboard.mutateAsync(values)
-      await navigate({
-        to: '/customers/$customerId',
-        params: { customerId: customer.id },
-      })
+      const result = await onboard.mutateAsync(values)
+      // A provisioned portal login carries a one-time password — reveal it in a
+      // dialog first; navigation happens when staff dismiss it. Otherwise go
+      // straight to the customer detail.
+      if (result.portalLogin) {
+        setOnboarded(result)
+      } else {
+        await goToCustomer(result.id)
+      }
     } catch {
       // useOnboardCustomer surfaces a toast (incl. 422 not-serviceable / 409 ODP full).
     }
@@ -146,6 +157,13 @@ export function OnboardingWizard() {
           </Form>
         </CardContent>
       </Card>
+
+      <PortalCredentialDialog
+        portalLogin={onboarded?.portalLogin ?? null}
+        onContinue={() => {
+          if (onboarded) void goToCustomer(onboarded.id)
+        }}
+      />
     </div>
   )
 }
