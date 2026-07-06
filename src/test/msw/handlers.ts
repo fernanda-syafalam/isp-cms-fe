@@ -501,6 +501,50 @@ for (const r of RESELLER_FIXTURES) {
   if (last) r.balance = last.balanceAfter
 }
 
+// Payout requests per reseller (P3.D.4). Seeds reseller 0 with one open
+// request and one already-disbursed payout so the lifecycle UI has data.
+type MockPayout = {
+  id: string
+  resellerId: string
+  amount: number
+  status: 'requested' | 'approved' | 'rejected' | 'paid'
+  note: string
+  requestedBy: string | null
+  decidedBy: string | null
+  ledgerEntryId: string | null
+  createdAt: string
+  updatedAt: string
+  decidedAt: string | null
+}
+const RESELLER_PAYOUT_FIXTURES: MockPayout[] = [
+  {
+    id: oid('a4a4a4a4', 0),
+    resellerId: oid('a3a3a3a3', 0),
+    amount: 250_000,
+    status: 'requested',
+    note: 'Pencairan komisi Maret',
+    requestedBy: oid('c4c4c4c4', 1),
+    decidedBy: null,
+    ledgerEntryId: null,
+    createdAt: iso(2026, 2, 20),
+    updatedAt: iso(2026, 2, 20),
+    decidedAt: null,
+  },
+  {
+    id: oid('a4a4a4a4', 1),
+    resellerId: oid('a3a3a3a3', 0),
+    amount: 150_000,
+    status: 'paid',
+    note: 'Pencairan komisi Februari',
+    requestedBy: oid('c4c4c4c4', 1),
+    decidedBy: oid('c4c4c4c4', 2),
+    ledgerEntryId: oid('a4a4a4a4', 9),
+    createdAt: iso(2026, 1, 10),
+    updatedAt: iso(2026, 1, 12),
+    decidedAt: iso(2026, 1, 12),
+  },
+]
+
 const INVENTORY_KIND = ['onu', 'router', 'mikrotik'] as const
 const INVENTORY_STATUS = ['warehouse', 'installed', 'installed', 'broken'] as const
 const INVENTORY_FIXTURES = Array.from({ length: 16 }, (_, i) => {
@@ -1400,7 +1444,7 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v23'
+const DB_KEY = 'isp-cms-mock-db-v24'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -1432,6 +1476,7 @@ const COLLECTIONS: Record<string, unknown[]> = {
   ticketEvents: TICKET_EVENT_FIXTURES,
   vouchers: VOUCHER_FIXTURES,
   resellerLedger: RESELLER_LEDGER_FIXTURES,
+  resellerPayouts: RESELLER_PAYOUT_FIXTURES,
   stockMovements: STOCK_MOVEMENT_FIXTURES,
   paymentIntents: PAYMENT_INTENT_FIXTURES,
   audit: AUDIT_FIXTURES,
@@ -3730,6 +3775,28 @@ export const handlers = [
     })
     return HttpResponse.json({ ...result, summary })
   }),
+  // Create a reseller (admin/staff). Starts with a zero balance and no
+  // customers; commissionPct defaults to 0 when omitted (P3.D.4).
+  http.post('*/api/resellers', async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string
+      area: string
+      commissionPct?: number
+      status?: 'active' | 'inactive'
+    }
+    const reseller = {
+      id: crypto.randomUUID(),
+      name: body.name,
+      area: body.area,
+      balance: 0,
+      commissionPct: body.commissionPct ?? 0,
+      customerCount: 0,
+      status: body.status ?? 'active',
+    }
+    RESELLER_FIXTURES.unshift(reseller)
+    persistDb()
+    return HttpResponse.json(reseller, { status: 201 })
+  }),
   http.get('*/api/resellers/:id', ({ params }) => {
     const found = RESELLER_FIXTURES.find((r) => r.id === params.id)
     return found
@@ -3769,6 +3836,16 @@ export const handlers = [
       amount: number
       note?: string
     }
+    // A direct withdrawal is no longer allowed — cash-out goes through the
+    // payout flow (P3.D.4), which the BE now enforces with a 422.
+    if (body.type === 'withdrawal') {
+      return new HttpResponse(
+        JSON.stringify({
+          message: 'Penarikan langsung tidak diizinkan. Gunakan alur pencairan.',
+        }),
+        { status: 422 },
+      )
+    }
     const credit = body.type === 'topup' || body.type === 'commission'
     const signed = credit ? Math.abs(body.amount) : -Math.abs(body.amount)
     const nextBalance = reseller.balance + signed
@@ -3807,6 +3884,121 @@ export const handlers = [
     if (body.status !== undefined) found.status = body.status
     persistDb()
     return HttpResponse.json(found)
+  }),
+
+  // Payouts (P3.D.4) — reseller cash-out requests + their lifecycle. Mirrors
+  // the BE state machine: create=requested; approve/reject only from requested;
+  // disburse only from approved (debits balance + appends a withdrawal ledger
+  // entry, 422 on insufficient balance). Illegal transitions return 422.
+  http.get('*/api/resellers/:id/payouts', ({ params }) => {
+    const items = RESELLER_PAYOUT_FIXTURES.filter((p) => p.resellerId === params.id)
+      .slice()
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)) // newest first
+    return HttpResponse.json({ items, total: items.length })
+  }),
+  http.post('*/api/resellers/:id/payouts', async ({ params, request }) => {
+    const reseller = RESELLER_FIXTURES.find((r) => r.id === params.id)
+    if (!reseller) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    const body = (await request.json()) as { amount: number; note?: string }
+    const now = new Date().toISOString()
+    const payout: MockPayout = {
+      id: crypto.randomUUID(),
+      resellerId: reseller.id,
+      amount: body.amount,
+      status: 'requested',
+      note: body.note ?? '',
+      requestedBy: null,
+      decidedBy: null,
+      ledgerEntryId: null,
+      createdAt: now,
+      updatedAt: now,
+      decidedAt: null,
+    }
+    RESELLER_PAYOUT_FIXTURES.unshift(payout)
+    persistDb()
+    return HttpResponse.json(payout, { status: 201 })
+  }),
+  http.post('*/api/resellers/:id/payouts/:payoutId/approve', ({ params }) => {
+    const payout = RESELLER_PAYOUT_FIXTURES.find(
+      (p) => p.id === params.payoutId && p.resellerId === params.id,
+    )
+    if (!payout) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (payout.status !== 'requested') {
+      return new HttpResponse(JSON.stringify({ message: 'Pencairan tidak dapat disetujui' }), {
+        status: 422,
+      })
+    }
+    payout.status = 'approved'
+    payout.decidedAt = new Date().toISOString()
+    payout.updatedAt = payout.decidedAt
+    persistDb()
+    return HttpResponse.json(payout)
+  }),
+  http.post('*/api/resellers/:id/payouts/:payoutId/reject', ({ params }) => {
+    const payout = RESELLER_PAYOUT_FIXTURES.find(
+      (p) => p.id === params.payoutId && p.resellerId === params.id,
+    )
+    if (!payout) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (payout.status !== 'requested') {
+      return new HttpResponse(JSON.stringify({ message: 'Pencairan tidak dapat ditolak' }), {
+        status: 422,
+      })
+    }
+    payout.status = 'rejected'
+    payout.decidedAt = new Date().toISOString()
+    payout.updatedAt = payout.decidedAt
+    persistDb()
+    return HttpResponse.json(payout)
+  }),
+  http.post('*/api/resellers/:id/payouts/:payoutId/disburse', ({ params }) => {
+    const reseller = RESELLER_FIXTURES.find((r) => r.id === params.id)
+    const payout = RESELLER_PAYOUT_FIXTURES.find(
+      (p) => p.id === params.payoutId && p.resellerId === params.id,
+    )
+    if (!reseller || !payout) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    if (payout.status !== 'approved') {
+      return new HttpResponse(JSON.stringify({ message: 'Pencairan harus disetujui dulu' }), {
+        status: 422,
+      })
+    }
+    if (reseller.balance < payout.amount) {
+      return new HttpResponse(JSON.stringify({ message: 'Saldo tidak mencukupi' }), { status: 422 })
+    }
+    const nextBalance = reseller.balance - payout.amount
+    reseller.balance = nextBalance
+    const ledgerEntry = {
+      id: crypto.randomUUID(),
+      resellerId: reseller.id,
+      type: 'withdrawal',
+      amount: -payout.amount,
+      note: payout.note || 'Pencairan',
+      balanceAfter: nextBalance,
+      at: new Date().toISOString(),
+    }
+    RESELLER_LEDGER_FIXTURES.unshift(ledgerEntry)
+    const now = new Date().toISOString()
+    payout.status = 'paid'
+    payout.ledgerEntryId = ledgerEntry.id
+    payout.decidedAt = now
+    payout.updatedAt = now
+    persistDb()
+    return HttpResponse.json(payout)
   }),
 
   // Vouchers (prepaid hotspot/PPPoE)

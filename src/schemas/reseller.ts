@@ -38,6 +38,18 @@ export const UpdateResellerSchema = z.object({
   status: ResellerStatusSchema.optional(),
 })
 
+// Create a reseller (admin/staff). commissionPct matches the existing edit form
+// and the BE contract: a percent in 0..100 (the display layer divides by 100).
+export const CreateResellerSchema = z.object({
+  name: z.string().min(1, 'Nama wajib diisi').max(120),
+  area: z.string().min(1, 'Area wajib diisi').max(120),
+  commissionPct: z
+    .number('Komisi wajib diisi')
+    .nonnegative('Komisi tidak boleh negatif')
+    .max(100, 'Komisi maksimal 100'),
+  status: ResellerStatusSchema.optional(),
+})
+
 // Deposit/commission ledger. Positive entries (topup, commission) raise the
 // balance; negative ones (deduction, withdrawal) lower it.
 export const LedgerEntryTypeSchema = z.enum(['topup', 'commission', 'deduction', 'withdrawal'])
@@ -64,6 +76,40 @@ export const AddLedgerEntrySchema = z.object({
   note: z.string().max(200).optional(),
 })
 
+// Payout lifecycle (P3.D.4): a reseller requests a cash-out of their balance;
+// admin/staff approve/reject, then disburse (which debits the balance via a
+// `withdrawal` ledger entry). Replaces the old direct withdrawal ledger post.
+export const PayoutStatusSchema = z.enum(['requested', 'approved', 'rejected', 'paid'])
+
+export const PayoutSchema = z.object({
+  id: z.uuid(),
+  resellerId: resellerId,
+  amount: z.number().int(),
+  status: PayoutStatusSchema,
+  note: z.string(),
+  requestedBy: z.uuid().nullable(),
+  decidedBy: z.uuid().nullable(),
+  ledgerEntryId: z.uuid().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  decidedAt: z.iso.datetime().nullable(),
+})
+
+export const PayoutListSchema = z.object({
+  items: z.array(PayoutSchema),
+  total: z.number().int().nonnegative(),
+})
+
+// The reseller submits an amount + optional note; status starts at 'requested'.
+export const CreatePayoutSchema = z.object({
+  amount: z
+    .number('Jumlah wajib diisi')
+    .int('Jumlah harus bilangan bulat')
+    .positive('Jumlah harus lebih dari 0')
+    .max(2_000_000_000, 'Jumlah terlalu besar'),
+  note: z.string().max(200).optional(),
+})
+
 export type ResellerStatus = z.infer<typeof ResellerStatusSchema>
 export type Reseller = z.infer<typeof ResellerSchema>
 export type ResellerSummary = z.infer<typeof ResellerSummarySchema>
@@ -73,3 +119,8 @@ export type LedgerEntryType = z.infer<typeof LedgerEntryTypeSchema>
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>
 export type LedgerList = z.infer<typeof LedgerListSchema>
 export type AddLedgerEntryInput = z.infer<typeof AddLedgerEntrySchema>
+export type CreateResellerInput = z.infer<typeof CreateResellerSchema>
+export type PayoutStatus = z.infer<typeof PayoutStatusSchema>
+export type Payout = z.infer<typeof PayoutSchema>
+export type PayoutList = z.infer<typeof PayoutListSchema>
+export type CreatePayoutInput = z.infer<typeof CreatePayoutSchema>

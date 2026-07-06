@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { listResellerLedger, listResellers } from './resellers'
+import {
+  addLedgerEntry,
+  approvePayout,
+  createPayout,
+  createReseller,
+  disbursePayout,
+  getReseller,
+  listPayouts,
+  listResellerLedger,
+  listResellers,
+} from './resellers'
+
+// Reseller 0 is seeded with a positive balance (see msw/handlers.ts).
+const RESELLER_ID = 'a3a3a3a3-1111-4111-8111-000000000000'
 
 async function firstResellerId(): Promise<string> {
   const { items } = await listResellers()
@@ -140,5 +153,68 @@ describe('listResellerLedger', () => {
       offset: 2,
     })
     expect(second.items.map((e) => e.id)).toEqual(all.items.slice(2, 4).map((e) => e.id))
+  })
+})
+
+// P3.D.4 — create a reseller and drive the payout lifecycle end to end.
+describe('createReseller', () => {
+  it('creates a reseller with a zero balance and no customers', async () => {
+    const created = await createReseller({
+      name: 'Loket Uji',
+      area: 'Jepara',
+      commissionPct: 5,
+    })
+    expect(created.name).toBe('Loket Uji')
+    expect(created.balance).toBe(0)
+    expect(created.customerCount).toBe(0)
+    expect(created.status).toBe('active')
+  })
+})
+
+describe('payout lifecycle', () => {
+  it('requests, approves, then disburses a payout and debits the balance', async () => {
+    const before = await getReseller(RESELLER_ID)
+    const amount = 100_000
+    expect(before.balance).toBeGreaterThanOrEqual(amount)
+
+    const requested = await createPayout(RESELLER_ID, {
+      amount,
+      note: 'Uji',
+    })
+    expect(requested.status).toBe('requested')
+
+    const approved = await approvePayout(RESELLER_ID, requested.id)
+    expect(approved.status).toBe('approved')
+
+    const paid = await disbursePayout(RESELLER_ID, requested.id)
+    expect(paid.status).toBe('paid')
+    expect(paid.ledgerEntryId).not.toBeNull()
+
+    const after = await getReseller(RESELLER_ID)
+    expect(after.balance).toBe(before.balance - amount)
+
+    const { items } = await listPayouts(RESELLER_ID)
+    expect(items.some((p) => p.id === requested.id && p.status === 'paid')).toBe(true)
+  })
+
+  it('rejects disbursing more than the available balance (422)', async () => {
+    const before = await getReseller(RESELLER_ID)
+    const requested = await createPayout(RESELLER_ID, {
+      amount: 2_000_000_000,
+    })
+    await approvePayout(RESELLER_ID, requested.id)
+    await expect(disbursePayout(RESELLER_ID, requested.id)).rejects.toThrow()
+
+    // A failed disburse leaves the balance untouched.
+    const after = await getReseller(RESELLER_ID)
+    expect(after.balance).toBe(before.balance)
+  })
+})
+
+describe('direct withdrawal ledger entry', () => {
+  it('is rejected — cash-out must go through the payout flow (422)', async () => {
+    await expect(
+      addLedgerEntry(RESELLER_ID, { type: 'withdrawal', amount: 50_000 }),
+    ).rejects.toThrow()
   })
 })

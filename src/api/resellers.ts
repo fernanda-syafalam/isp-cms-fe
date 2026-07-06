@@ -1,8 +1,14 @@
 import { api } from './client'
 import {
   type AddLedgerEntryInput,
+  type CreatePayoutInput,
+  type CreateResellerInput,
   type LedgerList,
   LedgerListSchema,
+  type Payout,
+  type PayoutList,
+  PayoutListSchema,
+  PayoutSchema,
   type Reseller,
   ResellerListSchema,
   ResellerSchema,
@@ -45,6 +51,12 @@ export async function listResellers(filter: ResellerFilter = {}): Promise<Resell
   return ResellerListSchema.parse(json)
 }
 
+// Create a reseller (admin/staff). Returns the new record (customerCount 0).
+export async function createReseller(input: CreateResellerInput): Promise<Reseller> {
+  const json = await api.post('resellers', { json: input }).json()
+  return ResellerSchema.parse(json)
+}
+
 export async function getReseller(id: string): Promise<Reseller> {
   const json = await api.get(`resellers/${id}`).json()
   return ResellerSchema.parse(json)
@@ -70,9 +82,37 @@ export async function listResellerLedger(
   return LedgerListSchema.parse(json)
 }
 
-// Append a ledger entry (top-up, commission, deduction, withdrawal). Returns the
-// reseller with its updated balance.
+// Append a ledger entry (top-up, commission, deduction). Withdrawals now go
+// through the payout flow below; a direct `withdrawal` post is rejected (422).
 export async function addLedgerEntry(id: string, input: AddLedgerEntryInput): Promise<Reseller> {
   const json = await api.post(`resellers/${id}/ledger`, { json: input }).json()
   return ResellerSchema.parse(json)
+}
+
+// Payouts (P3.D.4) — a reseller cash-out request and its lifecycle.
+export async function listPayouts(resellerId: string): Promise<PayoutList> {
+  const json = await api.get(`resellers/${resellerId}/payouts`).json()
+  return PayoutListSchema.parse(json)
+}
+
+export async function createPayout(resellerId: string, input: CreatePayoutInput): Promise<Payout> {
+  const json = await api.post(`resellers/${resellerId}/payouts`, { json: input }).json()
+  return PayoutSchema.parse(json)
+}
+
+export async function approvePayout(resellerId: string, payoutId: string): Promise<Payout> {
+  const json = await api.post(`resellers/${resellerId}/payouts/${payoutId}/approve`).json()
+  return PayoutSchema.parse(json)
+}
+
+export async function rejectPayout(resellerId: string, payoutId: string): Promise<Payout> {
+  const json = await api.post(`resellers/${resellerId}/payouts/${payoutId}/reject`).json()
+  return PayoutSchema.parse(json)
+}
+
+// Disburse debits the reseller balance (via a withdrawal ledger entry) and
+// 422s on insufficient balance.
+export async function disbursePayout(resellerId: string, payoutId: string): Promise<Payout> {
+  const json = await api.post(`resellers/${resellerId}/payouts/${payoutId}/disburse`).json()
+  return PayoutSchema.parse(json)
 }

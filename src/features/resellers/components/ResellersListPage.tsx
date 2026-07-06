@@ -1,5 +1,5 @@
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { DownloadIcon } from 'lucide-react'
+import { DownloadIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -8,7 +8,7 @@ import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/table/data-table'
 import { Button } from '@/components/ui/button'
-import { useCurrentUser, useEffectiveRole } from '@/features/auth'
+import { useCan, useCurrentUser, useEffectiveRole } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -16,6 +16,7 @@ import { statusLabel } from '@/lib/status-label'
 import type { Reseller } from '@/schemas/reseller'
 
 import { useExportResellers, useResellersList } from '../hooks/useResellers'
+import { CreateResellerDialog } from './CreateResellerDialog'
 import { resellerColumns, toCsvRow } from './resellersColumns'
 import { ResellerDetailSheet } from './ResellerDetailSheet'
 import { ResellersKpis } from './ResellersKpis'
@@ -32,6 +33,8 @@ export function ResellersListPage() {
   const exportResellers = useExportResellers()
   const [isExporting, setIsExporting] = useState(false)
   const [openReseller, setOpenReseller] = useState<Reseller | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const canManage = useCan('resellers.manage')
 
   // Status is a URL filter; changing it rewinds to page 1.
   const setStatus = (value: string) => {
@@ -94,16 +97,24 @@ export function ResellersListPage() {
         title="Reseller"
         description="Mitra loket/agen dan saldo komisinya."
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            disabled={!total || isExporting}
-            onClick={handleExport}
-          >
-            <DownloadIcon className="size-4" />
-            <span className="hidden sm:inline">Ekspor</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              disabled={!total || isExporting}
+              onClick={handleExport}
+            >
+              <DownloadIcon className="size-4" />
+              <span className="hidden sm:inline">Ekspor</span>
+            </Button>
+            {canManage ? (
+              <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>
+                <PlusIcon className="size-4" />
+                <span className="hidden sm:inline">Tambah reseller</span>
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -144,6 +155,8 @@ export function ResellersListPage() {
           if (!open) setOpenReseller(null)
         }}
       />
+
+      <CreateResellerDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   )
 }

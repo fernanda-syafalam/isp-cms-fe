@@ -7,13 +7,24 @@ import {
   RESELLER_EXPORT_LIMIT,
   type ResellerFilter,
   addLedgerEntry,
+  approvePayout,
+  createPayout,
+  createReseller,
+  disbursePayout,
   getReseller,
+  listPayouts,
   listResellerLedger,
   listResellers,
+  rejectPayout,
   updateReseller,
 } from '@/api/resellers'
 import { getErrorMessage } from '@/lib/errors'
-import type { AddLedgerEntryInput, UpdateResellerInput } from '@/schemas/reseller'
+import type {
+  AddLedgerEntryInput,
+  CreatePayoutInput,
+  CreateResellerInput,
+  UpdateResellerInput,
+} from '@/schemas/reseller'
 
 export function useResellersList(filter: ResellerFilter = {}) {
   return useQuery({
@@ -95,6 +106,88 @@ export function useAddLedgerEntry(id: string) {
       qc.invalidateQueries({ queryKey: ['resellers', 'detail', id, 'ledger'] })
       qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
       toast.success(LEDGER_TYPE_TOAST[vars.type])
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useCreateReseller() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateResellerInput) => createReseller(input),
+    onSuccess: (reseller) => {
+      qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+      toast.success(`Reseller "${reseller.name}" ditambahkan`)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+// Payouts (P3.D.4). Query key is a sub-resource of the reseller detail.
+export function usePayouts(resellerId: string) {
+  return useQuery({
+    queryKey: ['resellers', 'detail', resellerId, 'payouts'] as const,
+    queryFn: () => listPayouts(resellerId),
+  })
+}
+
+// Shared cache invalidation for any payout write. `disburse` also moves the
+// balance + ledger, so we refresh the detail, its ledger, the payouts list, and
+// the org-wide reseller list (balance column).
+function invalidatePayoutCaches(qc: ReturnType<typeof useQueryClient>, resellerId: string) {
+  qc.invalidateQueries({ queryKey: ['resellers', 'detail', resellerId] })
+  qc.invalidateQueries({
+    queryKey: ['resellers', 'detail', resellerId, 'ledger'],
+  })
+  qc.invalidateQueries({
+    queryKey: ['resellers', 'detail', resellerId, 'payouts'],
+  })
+  qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+}
+
+export function useCreatePayout(resellerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreatePayoutInput) => createPayout(resellerId, input),
+    onSuccess: () => {
+      invalidatePayoutCaches(qc, resellerId)
+      toast.success('Permintaan pencairan diajukan')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useApprovePayout(resellerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payoutId: string) => approvePayout(resellerId, payoutId),
+    onSuccess: () => {
+      invalidatePayoutCaches(qc, resellerId)
+      toast.success('Pencairan disetujui')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useRejectPayout(resellerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payoutId: string) => rejectPayout(resellerId, payoutId),
+    onSuccess: () => {
+      invalidatePayoutCaches(qc, resellerId)
+      toast.success('Pencairan ditolak')
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+}
+
+export function useDisbursePayout(resellerId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payoutId: string) => disbursePayout(resellerId, payoutId),
+    onSuccess: () => {
+      invalidatePayoutCaches(qc, resellerId)
+      toast.success('Pencairan dicairkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
