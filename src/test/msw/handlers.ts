@@ -246,7 +246,25 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
 })
 
 const PAYMENT_METHODS = ['qris', 'va', 'ewallet', 'transfer', 'cash'] as const
-const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid').map((inv, i) => {
+// Invoice/customer are nullable: a voucher settlement (P3.D.3) writes a payment
+// with no invoice and (usually) no named customer. `source` distinguishes them.
+type PaymentRecord = {
+  id: string
+  invoiceId: string | null
+  invoiceNo: string | null
+  customerId: string | null
+  customerName: string | null
+  amount: number
+  method: string
+  paidAt: string
+  tenderedAmount: number | null
+  changeAmount: number | null
+  source: 'invoice' | 'voucher'
+  voucherId: string | null
+}
+const PAYMENT_FIXTURES: PaymentRecord[] = INVOICE_FIXTURES.filter(
+  (inv) => inv.status === 'paid',
+).map((inv, i): PaymentRecord => {
   const method = PAYMENT_METHODS[i % PAYMENT_METHODS.length] ?? 'qris'
   const amount = inv.amount + inv.lateFee + inv.taxAmount
   // Seed cash payments round the tendered up to the nearest 50k so the drawer
@@ -263,6 +281,8 @@ const PAYMENT_FIXTURES = INVOICE_FIXTURES.filter((inv) => inv.status === 'paid')
     paidAt: inv.paidAt ?? iso(2026, 5, 5),
     tenderedAmount,
     changeAmount: tenderedAmount === null ? null : tenderedAmount - amount,
+    source: 'invoice',
+    voucherId: null,
   }
 })
 
@@ -935,10 +955,29 @@ const voucherCode = (n: number) => {
   }
   return `ASH-${s.slice(0, 4)}-${s.slice(4)}`
 }
-const VOUCHER_FIXTURES = VOUCHER_BATCHES.flatMap((batch, bi) =>
-  Array.from({ length: 8 }, (_, j) => {
+type VoucherRecord = {
+  id: string
+  code: string
+  batchId: string
+  profile: string
+  priceIdr: number
+  durationDays: number
+  status: 'unused' | 'used' | 'expired'
+  createdAt: string
+  usedAt: string | null
+  usedBy: string | null
+  // Reseller/mitra attribution (P3.D.3): redeeming a batch-attributed voucher
+  // posts a commission to this mitra.
+  resellerId: string | null
+  resellerName: string | null
+}
+const VOUCHER_FIXTURES: VoucherRecord[] = VOUCHER_BATCHES.flatMap((batch, bi) =>
+  Array.from({ length: 8 }, (_, j): VoucherRecord => {
     const i = bi * 8 + j
     const status = i % 3 === 0 ? 'used' : i % 7 === 0 ? 'expired' : 'unused'
+    // Attribute the first batch to a mitra (with commissionPct > 0) so a redeem
+    // of one of its vouchers posts a commission ledger entry.
+    const reseller = bi === 0 ? RESELLER_FIXTURES[0] : null
     return {
       id: oid('e0e0e0e0', i),
       code: voucherCode(i),
@@ -950,6 +989,8 @@ const VOUCHER_FIXTURES = VOUCHER_BATCHES.flatMap((batch, bi) =>
       createdAt: iso(2026, 4, 1 + bi),
       usedAt: status === 'used' ? iso(2026, 4, 5 + (j % 10)) : null,
       usedBy: status === 'used' ? `Hotspot user ${i}` : null,
+      resellerId: reseller?.id ?? null,
+      resellerName: reseller?.name ?? null,
     }
   }),
 )
@@ -1444,7 +1485,9 @@ const SECURITY_STATE = { twoFactorEnabled: false }
 // localStorage snapshot from an older schema is ignored instead of failing
 // Zod validation. v2: invoices gained `lastRemindedAt` (dunning). v3: invoices
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
-const DB_KEY = 'isp-cms-mock-db-v24'
+// v25: payments gained `source`/`voucherId` (+ nullable invoice/customer),
+// vouchers gained `resellerId`/`resellerName` (P3.D.3 voucher settlement).
+const DB_KEY = 'isp-cms-mock-db-v25'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
@@ -2667,6 +2710,8 @@ export const handlers = [
       paidAt: now,
       tenderedAmount,
       changeAmount,
+      source: 'invoice',
+      voucherId: null,
     })
     // Settling a bill recomputes the customer's outstanding (sum of remaining
     // balanceDue over unpaid invoices) and, once they owe nothing, reactivates
@@ -3069,6 +3114,8 @@ export const handlers = [
         paidAt: nowIso,
         tenderedAmount: null,
         changeAmount: null,
+        source: 'invoice',
+        voucherId: null,
       })
       const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
       if (customer) {
@@ -4036,10 +4083,14 @@ export const handlers = [
       profile: string
       priceIdr: number
       durationDays: number
+      resellerId?: string | null
     }
     const count = Math.max(1, Math.min(500, Math.floor(body.count)))
     const batchId = `BATCH-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
     const createdAt = new Date().toISOString()
+    // Attribute the whole batch to a mitra/reseller (resolve the display name).
+    const resellerId = body.resellerId ?? null
+    const resellerName = resellerNameById(resellerId)
     for (let i = 0; i < count; i++) {
       const raw = crypto.randomUUID().replace(/-/g, '').toUpperCase()
       VOUCHER_FIXTURES.unshift({
@@ -4053,23 +4104,74 @@ export const handlers = [
         createdAt,
         usedAt: null,
         usedBy: null,
+        resellerId,
+        resellerName,
       })
     }
     recordAudit('voucher.batch', 'Voucher', `Membuat ${count} voucher ${body.profile}`)
     persistDb()
     return HttpResponse.json({ batchId, created: count })
   }),
-  // Mark a voucher redeemed.
-  http.post('*/api/vouchers/:id/redeem', ({ params }) => {
+  // Redeem a voucher — a real loket settlement (P3.D.3): mark it used, write a
+  // payment (source=voucher; no invoice/customer), and post the mitra a
+  // commission. Idempotent: an already-used voucher settles nothing again.
+  http.post('*/api/vouchers/:id/redeem', async ({ request, params }) => {
     const found = VOUCHER_FIXTURES.find((v) => v.id === params.id)
     if (!found) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
         status: 404,
       })
     }
+    // Already settled — return as-is without double-posting.
+    if (found.status === 'used') return HttpResponse.json(found)
+
+    const body = (await request.json().catch(() => ({}))) as {
+      resellerId?: string | null
+    }
+    const now = new Date().toISOString()
     found.status = 'used'
-    found.usedAt = new Date().toISOString()
-    found.usedBy = found.usedBy ?? 'Admin (manual)'
+    found.usedAt = now
+    found.usedBy = found.usedBy ?? 'Loket (voucher)'
+
+    // Settlement payment: a voucher redeem tenders exactly the price (no change),
+    // with no invoice/customer attached.
+    PAYMENT_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      invoiceId: null,
+      invoiceNo: null,
+      customerId: null,
+      customerName: null,
+      amount: found.priceIdr,
+      method: 'cash',
+      paidAt: now,
+      tenderedAmount: found.priceIdr,
+      changeAmount: 0,
+      source: 'voucher',
+      voucherId: found.id,
+    })
+
+    // Reseller commission: the redeem may override the batch mitra. Post only
+    // when the mitra has a commissionPct > 0.
+    const effectiveResellerId = body?.resellerId ?? found.resellerId ?? null
+    const reseller = effectiveResellerId
+      ? RESELLER_FIXTURES.find((r) => r.id === effectiveResellerId)
+      : undefined
+    if (reseller && reseller.commissionPct > 0) {
+      const commission = Math.round(found.priceIdr * reseller.commissionPct)
+      if (commission > 0) {
+        reseller.balance += commission
+        RESELLER_LEDGER_FIXTURES.unshift({
+          id: crypto.randomUUID(),
+          resellerId: reseller.id,
+          type: 'commission',
+          amount: commission,
+          note: `Komisi voucher ${found.code}`,
+          balanceAfter: reseller.balance,
+          at: now,
+        })
+      }
+    }
+    recordAudit('voucher.redeem', 'Voucher', `Menukar voucher ${found.code}`)
     persistDb()
     return HttpResponse.json(found)
   }),
@@ -5544,6 +5646,8 @@ export const handlers = [
         paidAt: nowIso,
         tenderedAmount: null,
         changeAmount: null,
+        source: 'invoice',
+        voucherId: null,
       })
       const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
       if (customer) {

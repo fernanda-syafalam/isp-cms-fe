@@ -43,7 +43,10 @@ export function VoucherRowActions({ voucher }: { voucher: Voucher }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Tandai voucher terpakai?</AlertDialogTitle>
             <AlertDialogDescription>
-              Voucher "{voucher.code}" akan ditandai sudah ditukar dan tidak bisa dipakai lagi.
+              Voucher "{voucher.code}" akan ditandai sudah ditukar, mencatat pembayaran senilai
+              harga voucher
+              {voucher.resellerName ? ` dan komisi untuk ${voucher.resellerName}` : ''}, dan tidak
+              bisa dipakai lagi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

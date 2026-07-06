@@ -17,6 +17,10 @@ export const VoucherSchema = z.object({
   createdAt: z.iso.datetime(),
   usedAt: z.iso.datetime().nullable(),
   usedBy: z.string().nullable(), // who redeemed it (free-text in mock)
+  // Reseller/mitra attribution (P3.D.3): a batch (or a single redemption) can be
+  // credited to a mitra so redeeming the voucher posts them a commission.
+  resellerId: z.string().nullable(),
+  resellerName: z.string().nullable().optional(),
 })
 
 // Full-set rollup over ALL vouchers, computed before any status/q filter or
@@ -44,6 +48,14 @@ export const GenerateVoucherBatchSchema = z.object({
   profile: z.string().min(1, 'Profil wajib diisi').max(80),
   priceIdr: z.number().int().nonnegative(),
   durationDays: z.number().int().positive().max(365),
+  // Attribute the whole batch to a mitra/reseller (optional).
+  resellerId: z.string().nullable().optional(),
+})
+
+// Redeem a single voucher. `resellerId` optionally overrides the batch's mitra
+// for this one redemption (loket voucher settlement, P3.D.3).
+export const RedeemVoucherSchema = z.object({
+  resellerId: z.string().nullable().optional(),
 })
 
 // Result of a batch generation: the shared batch id + how many were created.
@@ -58,3 +70,4 @@ export type VoucherSummary = z.infer<typeof VoucherSummarySchema>
 export type VoucherList = z.infer<typeof VoucherListSchema>
 export type GenerateVoucherBatchInput = z.infer<typeof GenerateVoucherBatchSchema>
 export type VoucherBatchResult = z.infer<typeof VoucherBatchResultSchema>
+export type RedeemVoucherInput = z.infer<typeof RedeemVoucherSchema>

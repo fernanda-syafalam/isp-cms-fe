@@ -23,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { ResellerSelectField } from '@/features/resellers/components/ResellerSelectField'
 import { GenerateVoucherBatchSchema, type GenerateVoucherBatchInput } from '@/schemas/voucher'
 
 import { useGenerateVoucherBatch } from '../hooks/useVouchers'
@@ -32,6 +33,7 @@ const DEFAULTS: GenerateVoucherBatchInput = {
   profile: 'Hotspot 1 Hari',
   priceIdr: 5000,
   durationDays: 1,
+  resellerId: null,
 }
 
 export function GenerateBatchDialog() {
@@ -151,7 +153,10 @@ export function GenerateBatchDialog() {
                 )}
               />
             </div>
-            <FormDescription>Maksimal 500 voucher per batch.</FormDescription>
+            <ResellerSelectField control={form.control} name="resellerId" />
+            <FormDescription>
+              Maksimal 500 voucher per batch. Batch dapat diatribusikan ke satu mitra/reseller.
+            </FormDescription>
             <DialogFooter>
               <Button
                 type="button"
