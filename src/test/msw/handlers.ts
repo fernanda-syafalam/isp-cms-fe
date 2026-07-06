@@ -1149,6 +1149,40 @@ const USAGE_FIXTURES = CUSTOMER_FIXTURES.filter(
   }
 })
 
+// Customer self-care Wi-Fi state (P3.C.4). Single record; the POST handler
+// persists the renamed SSID so a subsequent GET reflects it. Held in a
+// one-element array so resetMockDb() restores the seed like `settings`.
+const PORTAL_WIFI_FIXTURE = {
+  serial: 'ZTEGD8A21F30',
+  model: 'ZTE F670L',
+  ssid: 'Ashnet-Home',
+}
+
+// Operator broadcast notices for the portal (P3.C.4), newest-first, active only.
+// UUIDs are valid v4 so the strict z.uuid() schema accepts them.
+const ANNOUNCEMENT_FIXTURES = [
+  {
+    id: '00000000-0000-4000-8000-0000000000a1',
+    title: 'Gangguan layanan area Jepara Kota',
+    body: 'Sedang terjadi gangguan pada jaringan di area Jepara Kota. Tim kami sedang menangani.',
+    severity: 'outage',
+    active: true,
+    startsAt: '2026-07-06T02:00:00.000Z',
+    endsAt: null,
+    createdAt: '2026-07-06T02:00:00.000Z',
+  },
+  {
+    id: '00000000-0000-4000-8000-0000000000a2',
+    title: 'Pemeliharaan terjadwal',
+    body: 'Pemeliharaan jaringan akan dilakukan Minggu dini hari, 03.00–05.00 WIB.',
+    severity: 'info',
+    active: true,
+    startsAt: null,
+    endsAt: null,
+    createdAt: '2026-07-05T00:00:00.000Z',
+  },
+]
+
 // NOC telemetry derived from device fixtures (mock; real backend polls SNMP).
 const MONITORING_METRIC_FIXTURES = DEVICE_FIXTURES.map((d, i) => {
   const status = d.status === 'offline' ? 'down' : d.status === 'degraded' ? 'degraded' : 'up'
@@ -1403,6 +1437,8 @@ const COLLECTIONS: Record<string, unknown[]> = {
   slaCredits: SLA_CREDIT_FIXTURES,
   branches: BRANCH_FIXTURES,
   securitySessions: SECURITY_SESSION_FIXTURES,
+  portalWifi: [PORTAL_WIFI_FIXTURE],
+  announcements: ANNOUNCEMENT_FIXTURES,
 }
 const COLLECTION_KEYS = Object.keys(COLLECTIONS)
 
@@ -5075,6 +5111,49 @@ export const handlers = [
       tickets,
       pendingIntents,
     })
+  }),
+  // Self-care data-usage snapshot for the resolved portal customer (P3.C.4).
+  // 404 when the subscriber has no usage record (not provisioned).
+  http.get('*/api/portal/usage', ({ request }) => {
+    const me = resolvePortalCustomer(request)
+    const record = me ? USAGE_FIXTURES.find((u) => u.customerId === me.id) : undefined
+    if (!record) {
+      return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+      })
+    }
+    return HttpResponse.json(record)
+  }),
+  // Current Wi-Fi / CPE for the portal customer (P3.C.4).
+  http.get('*/api/portal/wifi', () => {
+    const wifi = COLLECTIONS.portalWifi?.[0] ?? PORTAL_WIFI_FIXTURE
+    return HttpResponse.json(wifi)
+  }),
+  // Customer renames their Wi-Fi (self-care). Validates ssid 1..32 / password
+  // 8..63, persists the SSID so a re-GET reflects it, echoes { ok, ssid }.
+  http.post('*/api/portal/wifi', async ({ request }) => {
+    const body = (await request.json()) as {
+      ssid?: unknown
+      password?: unknown
+    }
+    const ssid = typeof body.ssid === 'string' ? body.ssid : ''
+    const password = typeof body.password === 'string' ? body.password : ''
+    if (ssid.length < 1 || ssid.length > 32 || password.length < 8 || password.length > 63) {
+      return new HttpResponse(JSON.stringify({ message: 'Invalid Wi-Fi settings' }), {
+        status: 400,
+      })
+    }
+    const wifi = COLLECTIONS.portalWifi?.[0] as { ssid: string | null } | undefined
+    if (wifi) wifi.ssid = ssid
+    persistDb()
+    return HttpResponse.json({ ok: true, ssid })
+  }),
+  // Active operator broadcast notices, newest-first (P3.C.4).
+  http.get('*/api/portal/announcements', () => {
+    const items = ANNOUNCEMENT_FIXTURES.filter((a) => a.active).sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    )
+    return HttpResponse.json(items)
   }),
   // Customer reports a problem → opens a support ticket on their account.
   // Category is required (P3.C.2); an optional photo URL is persisted too.
