@@ -35,11 +35,17 @@ describe('FE↔BE list-schema parity (ADR-0011)', () => {
     }
   })
 
-  // These endpoints have a real, still-open FE↔BE drift (BE PR #111 did not
-  // close them). Each test locks the drift: it stays green while the BE gap
-  // exists and turns RED once the BE returns the missing field and the fixture
-  // is re-derived — the cue to move the entry into ALIGNED.
+  // Any entry here has a real, still-open FE↔BE drift. Each test locks the
+  // drift: it stays green while the BE gap exists and turns RED once the BE
+  // returns the missing field and the fixture is re-derived — the cue to move
+  // the entry into ALIGNED. Currently EMPTY: BE PR #115 closed the last six, so
+  // every list endpoint is ALIGNED. This block re-arms automatically the moment
+  // a new drift is registered.
   describe('known drift — BE-derived fixture is expected to FAIL the FE schema (follow-up)', () => {
+    it('has no outstanding drift (all list endpoints aligned)', () => {
+      expect(KNOWN_DRIFT).toHaveLength(0)
+    })
+
     for (const entry of KNOWN_DRIFT) {
       it(`${entry.endpoint} still misses ${entry.missingPaths.join(', ')} → ${entry.followUp}`, () => {
         const result = entry.feSchema.safeParse(entry.beFixture)

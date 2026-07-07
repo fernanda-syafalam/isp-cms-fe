@@ -17,6 +17,10 @@
   "summary": {
     "branches": 3,
     "customers": 640,
-    "mrr": 128000000
+    "mrr": 128000000,
+    "byStatus": {
+      "active": 3,
+      "inactive": 0
+    }
   }
 }
