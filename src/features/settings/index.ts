@@ -1,2 +1,6 @@
 export { SettingsPage } from './components/SettingsPage'
-export { useSettings, useUpdateSettings } from './hooks/useSettings'
+export {
+  usePublicSettings,
+  useSettings,
+  useUpdateSettings,
+} from './hooks/useSettings'

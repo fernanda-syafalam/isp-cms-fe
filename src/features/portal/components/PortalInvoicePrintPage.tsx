@@ -4,6 +4,7 @@ import { ArrowLeftIcon, PrinterIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PrintableInvoice } from '@/features/invoices/components/PrintableInvoice'
+import { usePublicSettings } from '@/features/settings'
 
 import { usePortalMe } from '../hooks/usePortal'
 
@@ -18,6 +19,20 @@ type Props = {
 export function PortalInvoicePrintPage({ invoiceId }: Props) {
   const { data, isLoading, isError } = usePortalMe()
   const invoice = data?.invoices.find((inv) => inv.id === invoiceId)
+
+  // Real operator identity for the invoice header. Falls back to
+  // PrintableInvoice's DEFAULT_ISSUER when the request is pending/offline.
+  const { data: settings } = usePublicSettings()
+  const issuer = settings
+    ? {
+        name: settings.company.name,
+        address: settings.company.address,
+        phone: settings.company.phone,
+        email: settings.company.email,
+        // Only attach NPWP when PKP (omit the key entirely otherwise).
+        ...(settings.tax.pkp ? { npwp: settings.tax.npwp } : {}),
+      }
+    : undefined
 
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-neutral-100 print:static print:overflow-visible print:bg-white">
@@ -47,7 +62,7 @@ export function PortalInvoicePrintPage({ invoiceId }: Props) {
           </p>
         ) : (
           <div id="print-document">
-            <PrintableInvoice invoice={invoice} />
+            <PrintableInvoice invoice={invoice} issuer={issuer} />
           </div>
         )}
       </div>
