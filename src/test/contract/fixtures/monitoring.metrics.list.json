@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "deviceId": "d1d1d1d1-1111-4111-8111-111111111111",
+      "name": "OLT-Core-01",
+      "type": "olt",
+      "areaName": "Bandung Kota",
+      "status": "up",
+      "uptimePct": 99.9,
+      "latencyMs": 4,
+      "utilizationPct": 62
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "up": 8,
+    "degraded": 1,
+    "down": 1,
+    "total": 10,
+    "avgUptimePct": 98.7
+  }
+}

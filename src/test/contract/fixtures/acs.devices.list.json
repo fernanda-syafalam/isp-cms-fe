@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "ac511111-1111-4111-8111-111111111111",
+      "serial": "ZTEG-ABCD1234",
+      "customerName": "Budi Santoso",
+      "model": "ZTE F660",
+      "firmware": "V6.0.10P2N3",
+      "rxPowerDbm": -21.4,
+      "status": "online",
+      "lastInform": "2026-07-06T23:55:00.000Z"
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 12,
+    "byStatus": {
+      "online": 10,
+      "offline": 2
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "51a11111-1111-4111-8111-111111111111",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "amount": 25000,
+      "reason": "Gangguan 2 hari (SLA)",
+      "ticketId": "71c11111-1111-4111-8111-111111111111",
+      "ticketCode": "TKT-2026-0007",
+      "status": "pending",
+      "createdAt": "2026-07-05T09:00:00.000Z",
+      "appliedAt": null
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "activeAmount": 75000,
+    "pending": 2,
+    "applied": 1
+  }
+}

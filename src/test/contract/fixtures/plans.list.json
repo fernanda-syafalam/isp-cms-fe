@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "id": "b1a11111-1111-4111-8111-111111111111",
+      "name": "Home 20 Mbps",
+      "speedMbps": 20,
+      "priceMonthly": 200000,
+      "status": "active",
+      "subscriberCount": 128
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 5,
+    "totalSubscribers": 640,
+    "byStatus": {
+      "active": 4,
+      "archived": 1
+    }
+  }
+}

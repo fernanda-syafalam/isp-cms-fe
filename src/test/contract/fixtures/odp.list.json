@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "id": "odp-bdg-001",
+      "name": "ODP-BDG-001",
+      "area": "Bandung Kota",
+      "splitter": "1:8",
+      "totalPorts": 8,
+      "usedPorts": 6,
+      "avgRxPowerDbm": -22.5,
+      "status": "healthy"
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "totalOdp": 40,
+    "utilization": 72,
+    "full": 5,
+    "optical": 3
+  }
+}

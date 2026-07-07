@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "invoiceNo": "INV-2026-0100",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "periodStart": "2026-06-01",
+      "periodEnd": "2026-06-30",
+      "amount": 200000,
+      "lateFee": 0,
+      "taxAmount": 22000,
+      "discountAmount": 0,
+      "paidAmount": 0,
+      "balanceDue": 222000,
+      "taxInvoiceNo": null,
+      "status": "pending",
+      "dueDate": "2026-07-10",
+      "paidAt": null,
+      "lastRemindedAt": null
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "outstanding": 222000,
+    "overdue": 0,
+    "unpaidCount": 1,
+    "total": 3
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "5e511111-1111-4111-8111-111111111111",
+      "name": "Mitra Jaya",
+      "area": "Bandung Selatan",
+      "balance": 1500000,
+      "commissionPct": 7.5,
+      "customerCount": 42,
+      "status": "active"
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 8,
+    "totalBalance": 12500000,
+    "byStatus": {
+      "active": 6,
+      "inactive": 2
+    }
+  }
+}
