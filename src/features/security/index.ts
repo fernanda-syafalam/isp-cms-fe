@@ -1,7 +1,8 @@
 export { SecurityPage } from './components/SecurityPage'
 export {
+  useConfirmTwoFactor,
   useDisableTwoFactor,
-  useEnableTwoFactor,
+  useEnrollTwoFactor,
   useRevokeOtherSessions,
   useRevokeSession,
   useSecurity,

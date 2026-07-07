@@ -1,6 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2Icon } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
+import { CopyButton } from '@/components/shared/copy-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,12 +23,10 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { EnableTwoFactorSchema, type EnableTwoFactorInput } from '@/schemas/security'
+import { Skeleton } from '@/components/ui/skeleton'
+import { type TwoFactorCodeInput, TwoFactorCodeSchema } from '@/schemas/security'
 
-import { useEnableTwoFactor } from '../hooks/useSecurity'
-
-// Static demo secret — a real backend issues a per-user TOTP secret + QR.
-const DEMO_SECRET = 'JBSWY3DPEHPK3PXP'
+import { useConfirmTwoFactor, useEnrollTwoFactor } from '../hooks/useSecurity'
 
 type Props = {
   open: boolean
@@ -32,20 +34,40 @@ type Props = {
 }
 
 export function TwoFactorDialog({ open, onOpenChange }: Props) {
-  const enable = useEnableTwoFactor()
+  const {
+    mutate: startEnroll,
+    reset: resetEnroll,
+    data: enrollData,
+    isPending: isEnrolling,
+    isError: enrollFailed,
+  } = useEnrollTwoFactor()
+  const confirm = useConfirmTwoFactor()
 
-  const form = useForm<EnableTwoFactorInput>({
-    resolver: zodResolver(EnableTwoFactorSchema),
+  const form = useForm<TwoFactorCodeInput>({
+    resolver: zodResolver(TwoFactorCodeSchema),
     defaultValues: { code: '' },
   })
 
+  // Begin enrollment when the dialog opens (a fresh secret each time) and
+  // discard it when it closes. Firing an imperative POST on open/close is a
+  // side effect, not query-style data fetching — mutate/reset are stable.
+  useEffect(() => {
+    if (open) {
+      startEnroll()
+    } else {
+      resetEnroll()
+      confirm.reset()
+      form.reset()
+    }
+  }, [open, startEnroll, resetEnroll, confirm.reset, form.reset])
+
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      await enable.mutateAsync(values.code)
-      form.reset()
+      await confirm.mutateAsync(values.code)
       onOpenChange(false)
     } catch {
-      // useEnableTwoFactor surfaces a toast.
+      // Wrong/expired code — keep the dialog open and show an inline error.
+      form.setError('code', { message: 'Kode salah, coba lagi.' })
     }
   })
 
@@ -55,14 +77,44 @@ export function TwoFactorDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Aktifkan autentikasi dua faktor</DialogTitle>
           <DialogDescription>
-            Pindai kode di aplikasi authenticator (Google Authenticator / Authy), lalu masukkan kode
-            6 digit untuk verifikasi.
+            Pindai kode QR di aplikasi authenticator (Google Authenticator / Authy), lalu masukkan
+            kode 6 digit untuk verifikasi.
           </DialogDescription>
         </DialogHeader>
-        <div className="rounded-md border border-border bg-muted/40 p-3 text-center">
-          <p className="text-muted-foreground text-xs">Kunci rahasia (manual)</p>
-          <p className="mt-1 font-mono text-sm tracking-widest">{DEMO_SECRET}</p>
-        </div>
+
+        {enrollFailed ? (
+          <div className="space-y-3 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-center">
+            <p className="text-destructive text-sm">Gagal memulai pendaftaran 2FA.</p>
+            <Button type="button" variant="outline" size="sm" onClick={() => startEnroll()}>
+              Coba lagi
+            </Button>
+          </div>
+        ) : isEnrolling || !enrollData ? (
+          <div className="flex flex-col items-center gap-3">
+            <Skeleton className="size-40" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <div className="rounded-md border border-border bg-white p-3">
+              <QRCodeSVG
+                value={enrollData.otpauthUri}
+                size={160}
+                aria-label="Kode QR autentikator"
+              />
+            </div>
+            <div className="w-full rounded-md border border-border bg-muted/40 p-3 text-center">
+              <p className="text-muted-foreground text-xs">Kunci rahasia (entri manual)</p>
+              <div className="mt-1 flex items-center justify-center gap-1">
+                <p className="break-all font-mono text-sm tracking-widest">
+                  {enrollData.twoFactorSecret}
+                </p>
+                <CopyButton value={enrollData.twoFactorSecret} label="Kunci disalin" />
+              </div>
+            </div>
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <FormField
@@ -78,6 +130,7 @@ export function TwoFactorDialog({ open, onOpenChange }: Props) {
                       maxLength={6}
                       placeholder="123456"
                       className="font-mono tracking-widest"
+                      disabled={!enrollData}
                       {...field}
                     />
                   </FormControl>
@@ -90,12 +143,19 @@ export function TwoFactorDialog({ open, onOpenChange }: Props) {
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                disabled={form.formState.isSubmitting}
+                disabled={confirm.isPending}
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Memverifikasi…' : 'Aktifkan'}
+              <Button type="submit" disabled={!enrollData || confirm.isPending}>
+                {confirm.isPending ? (
+                  <>
+                    <Loader2Icon className="size-4 animate-spin" />
+                    Memverifikasi…
+                  </>
+                ) : (
+                  'Aktifkan'
+                )}
               </Button>
             </DialogFooter>
           </form>

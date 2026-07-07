@@ -1477,6 +1477,33 @@ const SECURITY_SESSION_FIXTURES = [
 ]
 const SECURITY_STATE = { twoFactorEnabled: false }
 
+// Deterministic 2FA fixtures so the offline clickthrough + tests exercise the
+// real enroll/confirm/challenge flow (ADR-0011). `123456` is the code the mock
+// accepts everywhere; `000000` simulates the brute-force lockout; a login with
+// TWO_FACTOR_LOGIN_EMAIL is treated as a 2FA-enabled account and challenged.
+const TWO_FACTOR_ENROLL = {
+  twoFactorSecret: 'JBSWY3DPEHPK3PXP',
+  otpauthUri: 'otpauth://totp/ISP%20CMS:admin@example.com?secret=JBSWY3DPEHPK3PXP&issuer=ISP%20CMS',
+}
+const TWO_FACTOR_TEST_CODE = '123456'
+const TWO_FACTOR_LOCK_CODE = '000000'
+const TWO_FACTOR_LOGIN_EMAIL = '2fa@example.com'
+
+// RFC 7807-shaped 401 carrying the machine-readable `code` marker the FE reads
+// via getErrorCode (mirrors AllExceptionsFilter on the backend).
+function totpProblem(code: string, message: string) {
+  return HttpResponse.json(
+    {
+      type: 'about:blank',
+      title: message,
+      status: 401,
+      instance: '/api/auth/login',
+      code,
+    },
+    { status: 401, headers: { 'content-type': 'application/problem+json' } },
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Stateful store — collections persist to localStorage so CRUD survives a
 // refresh (dev). Tests reset to the seed before each test (see test/setup.ts).
@@ -1584,6 +1611,9 @@ function syncSettingsRef() {
 export function resetMockDb() {
   replaceAll(clone(SEED))
   syncSettingsRef()
+  // 2FA is a module-level flag, not a registered collection — reset it too so
+  // a confirm/disable in one test cannot leak into the next.
+  SECURITY_STATE.twoFactorEnabled = false
   persistDb()
 }
 
@@ -1612,7 +1642,26 @@ function resolvePortalCustomer(request: Request) {
 // ---------------------------------------------------------------------------
 export const handlers = [
   // Auth
-  http.post('*/api/auth/login', () => HttpResponse.json(SESSION_FIXTURE)),
+  http.post('*/api/auth/login', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      email?: string
+      totpCode?: string
+    }
+    // A designated account has confirmed 2FA — mirror the backend challenge:
+    // correct password (any here) still requires a valid TOTP code.
+    if (body.email?.toLowerCase() === TWO_FACTOR_LOGIN_EMAIL) {
+      if (!body.totpCode) {
+        return totpProblem('totp_required', 'two-factor authentication code required')
+      }
+      if (body.totpCode === TWO_FACTOR_LOCK_CODE) {
+        return totpProblem('totp_locked', 'too many failed two-factor attempts — try again later')
+      }
+      if (body.totpCode !== TWO_FACTOR_TEST_CODE) {
+        return totpProblem('totp_invalid', 'invalid two-factor authentication code')
+      }
+    }
+    return HttpResponse.json(SESSION_FIXTURE)
+  }),
   http.post('*/api/auth/refresh', () => HttpResponse.json(SESSION_FIXTURE)),
   http.post('*/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
   http.get('*/api/auth/me', () => HttpResponse.json(USER_FIXTURE)),
@@ -2364,7 +2413,15 @@ export const handlers = [
       sessions: SECURITY_SESSION_FIXTURES,
     }),
   ),
-  http.post('*/api/security/2fa/enable', () => {
+  // Step 1/2 — begin enrollment: return a deterministic otpauth URI + secret.
+  // 2FA stays disabled until /2fa/confirm succeeds.
+  http.post('*/api/security/2fa/enroll', () => HttpResponse.json(TWO_FACTOR_ENROLL)),
+  // Step 2/2 — confirm: accept the test code, reject anything else with a 401.
+  http.post('*/api/security/2fa/confirm', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as { code?: string }
+    if (body.code !== TWO_FACTOR_TEST_CODE) {
+      return totpProblem('totp_invalid', 'invalid two-factor authentication code')
+    }
     SECURITY_STATE.twoFactorEnabled = true
     recordAudit('security.2fa_enable', 'Keamanan', '2FA diaktifkan')
     persistDb()
@@ -2373,7 +2430,12 @@ export const handlers = [
       sessions: SECURITY_SESSION_FIXTURES,
     })
   }),
-  http.post('*/api/security/2fa/disable', () => {
+  http.post('*/api/security/2fa/disable', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as { code?: string }
+    // A current code is required while 2FA is active (mirrors the backend).
+    if (SECURITY_STATE.twoFactorEnabled && body.code !== TWO_FACTOR_TEST_CODE) {
+      return totpProblem('totp_invalid', 'invalid two-factor authentication code')
+    }
     SECURITY_STATE.twoFactorEnabled = false
     recordAudit('security.2fa_disable', 'Keamanan', '2FA dinonaktifkan')
     persistDb()
@@ -2562,7 +2624,10 @@ export const handlers = [
     // subscriber has an email. The initial password is a one-time secret; a
     // deterministic mock keeps the offline clickthrough reproducible.
     const portalLogin = customer.email
-      ? { email: customer.email, initialPassword: `Init-${customer.customerNo}` }
+      ? {
+          email: customer.email,
+          initialPassword: `Init-${customer.customerNo}`,
+        }
       : null
     return HttpResponse.json({ ...customer, portalLogin }, { status: 201 })
   }),

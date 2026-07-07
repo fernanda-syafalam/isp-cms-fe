@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe('LoginForm', () => {
   it('blocks submit and never logs in when the form is empty', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     const onSuccess = vi.fn()
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
@@ -31,7 +31,7 @@ describe('LoginForm', () => {
   })
 
   it('blocks submit when the email format is invalid', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     const onSuccess = vi.fn()
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
@@ -46,7 +46,7 @@ describe('LoginForm', () => {
   })
 
   it('logs the user in and calls onSuccess on valid submit', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     const onSuccess = vi.fn()
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
@@ -69,7 +69,7 @@ describe('LoginForm', () => {
       ),
     )
 
-    const user = userEvent.setup()
+    const user = userEvent.setup({ delay: null })
     const onSuccess = vi.fn()
 
     renderWithProviders(<LoginForm onSuccess={onSuccess} />)
@@ -82,4 +82,47 @@ describe('LoginForm', () => {
     })
     expect(onSuccess).not.toHaveBeenCalled()
   })
+
+  it('reveals the TOTP challenge and logs in with the correct code for a 2FA account', async () => {
+    const user = userEvent.setup({ delay: null })
+    const onSuccess = vi.fn()
+
+    renderWithProviders(<LoginForm onSuccess={onSuccess} />)
+    await user.type(screen.getByLabelText(/email/i), '2fa@example.com')
+    await user.type(screen.getByLabelText(/kata sandi/i), 'super-secret')
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
+
+    // Password accepted but 2FA required — the code input replaces the form.
+    const codeInput = await screen.findByLabelText(/kode autentikator/i)
+    expect(useAuthStore.getState().accessToken).toBeNull()
+    expect(onSuccess).not.toHaveBeenCalled()
+
+    await user.type(codeInput, '123456')
+    await user.click(screen.getByRole('button', { name: /verifikasi/i }))
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalledTimes(1)
+    })
+    expect(useAuthStore.getState().accessToken).toBe('test-access-token')
+  }, 20000)
+
+  it('shows an inline error when the TOTP code is wrong', async () => {
+    const user = userEvent.setup({ delay: null })
+    const onSuccess = vi.fn()
+
+    renderWithProviders(<LoginForm onSuccess={onSuccess} />)
+    await user.type(screen.getByLabelText(/email/i), '2fa@example.com')
+    await user.type(screen.getByLabelText(/kata sandi/i), 'super-secret')
+    await user.click(screen.getByRole('button', { name: /masuk/i }))
+
+    const codeInput = await screen.findByLabelText(/kode autentikator/i)
+    await user.type(codeInput, '654321')
+    await user.click(screen.getByRole('button', { name: /verifikasi/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/kode salah/i)).toBeInTheDocument()
+    })
+    expect(onSuccess).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().accessToken).toBeNull()
+  }, 20000)
 })
