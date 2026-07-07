@@ -55,6 +55,16 @@ describe('CustomerSchema', () => {
   it('rejects a billing anchor day outside 1..28', () => {
     expect(CustomerSchema.safeParse({ ...validCustomer, billingAnchorDay: 31 }).success).toBe(false)
   })
+
+  // KYC-safe mitra projection (BE #114): for a mitra caller the BE omits the
+  // npwp/ktp keys entirely (absent, not null). The schema must accept the
+  // missing keys so .parse() does not throw at the boundary for a mitra.
+  it('parses a mitra projection with npwp/ktp keys omitted', () => {
+    const { npwp: _npwp, ktp: _ktp, ...mitraProjection } = validCustomer
+    const parsed = CustomerSchema.parse(mitraProjection)
+    expect(parsed.npwp).toBeUndefined()
+    expect(parsed.ktp).toBeUndefined()
+  })
 })
 
 const validCreate = {
