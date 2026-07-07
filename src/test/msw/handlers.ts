@@ -456,6 +456,7 @@ const WORKORDER_FIXTURES = Array.from({ length: 10 }, (_, i) => {
     signatureUrl: null as string | null,
     gpsLat: null as number | null,
     gpsLng: null as number | null,
+    completionNotes: null as string | null,
     completedAt: null as string | null,
     completedBy: null as string | null,
   }
@@ -2263,6 +2264,7 @@ export const handlers = [
       signatureUrl: null as string | null,
       gpsLat: null as number | null,
       gpsLng: null as number | null,
+      completionNotes: null as string | null,
       completedAt: null as string | null,
       completedBy: null as string | null,
     })
@@ -2588,6 +2590,7 @@ export const handlers = [
       signatureUrl: null as string | null,
       gpsLat: null as number | null,
       gpsLng: null as number | null,
+      completionNotes: null as string | null,
       completedAt: null as string | null,
       completedBy: null as string | null,
     })
@@ -3818,6 +3821,7 @@ export const handlers = [
     wo.signatureUrl = input.signatureUrl ?? null
     wo.gpsLat = input.gps?.lat ?? null
     wo.gpsLng = input.gps?.lng ?? null
+    wo.completionNotes = input.notes ?? null
     if (input.technician) wo.technician = input.technician
     wo.completedAt = new Date().toISOString()
     wo.completedBy = USER_FIXTURE.fullName
@@ -4568,6 +4572,7 @@ export const handlers = [
       signatureUrl: null as string | null,
       gpsLat: null as number | null,
       gpsLng: null as number | null,
+      completionNotes: null as string | null,
       completedAt: null as string | null,
       completedBy: null as string | null,
     }

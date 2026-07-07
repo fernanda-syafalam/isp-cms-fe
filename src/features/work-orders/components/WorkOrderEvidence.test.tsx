@@ -37,12 +37,16 @@ describe('WorkOrderEvidence', () => {
           photos: ['https://cdn.example/p1.jpg', 'https://cdn.example/p2.jpg'],
           gpsLat: -6.59,
           gpsLng: 110.67,
+          completionNotes: 'Redaman aman, pelanggan sudah tanda tangan.',
           completedBy: 'Teknisi Budi',
           completedAt: '2026-06-20T03:00:00.000Z',
         }}
       />,
     )
     expect(screen.getByText('ZTEGABCD1234')).toBeInTheDocument()
+    // The technician's completion notes render read-only.
+    expect(screen.getByText('Catatan penyelesaian')).toBeInTheDocument()
+    expect(screen.getByText('Redaman aman, pelanggan sudah tanda tangan.')).toBeInTheDocument()
     expect(screen.getByText('-21.4 dBm')).toBeInTheDocument()
     expect(screen.getByText('Teknisi Budi')).toBeInTheDocument()
     // Two photo evidence links.
@@ -60,5 +64,7 @@ describe('WorkOrderEvidence', () => {
     expect(screen.getByText('Tidak ada foto.')).toBeInTheDocument()
     // Serial / RX / signature all fall back to the em dash.
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    // No completion-notes section when the WO has none.
+    expect(screen.queryByText('Catatan penyelesaian')).not.toBeInTheDocument()
   })
 })

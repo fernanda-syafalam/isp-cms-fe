@@ -26,6 +26,9 @@ export const WorkOrderSchema = z.object({
   signatureUrl: z.string().nullable(),
   gpsLat: z.number().nullable(),
   gpsLng: z.number().nullable(),
+  // Free-text field notes the technician enters on completion ("Catatan").
+  // Only present on a completed WO; optional so a non-completed WO still parses.
+  completionNotes: z.string().nullable().optional(),
   completedAt: z.iso.datetime().nullable(),
   completedBy: z.string().nullable(),
 })
