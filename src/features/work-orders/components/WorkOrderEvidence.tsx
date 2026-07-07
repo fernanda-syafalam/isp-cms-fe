@@ -7,6 +7,7 @@ import type { WorkOrder } from '@/schemas/workorder'
 export function WorkOrderEvidence({ wo }: { wo: WorkOrder }) {
   const hasGps = wo.gpsLat !== null && wo.gpsLng !== null
   const photos = wo.photos ?? []
+  const completionNotes = wo.completionNotes?.trim()
 
   return (
     <DetailSection title="Bukti penyelesaian">
@@ -69,6 +70,15 @@ export function WorkOrderEvidence({ wo }: { wo: WorkOrder }) {
           <p className="text-sm text-muted-foreground">Tidak ada foto.</p>
         )}
       </div>
+
+      {completionNotes ? (
+        <div>
+          <p className="mb-1.5 text-[0.7rem] text-muted-foreground uppercase tracking-wider">
+            Catatan penyelesaian
+          </p>
+          <p className="whitespace-pre-wrap text-sm">{completionNotes}</p>
+        </div>
+      ) : null}
     </DetailSection>
   )
 }
