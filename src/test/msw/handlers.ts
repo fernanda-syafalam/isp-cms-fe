@@ -45,9 +45,34 @@ const USER_FIXTURE = {
   resellerId: null,
 }
 
+// Mock access tokens are self-describing — there is no JWT/session store. A
+// plain ACCESS_TOKEN is the default admin/dev session; a subscriber login
+// appends its email (see customerAccessToken) so the portal handlers can
+// resolve THAT customer from the request — the mock's stand-in for the real BE
+// reading the identity off the JWT (ADR-0011 parity). Deliberately lightweight:
+// no server-side session map is kept, the token carries the identity.
+const ACCESS_TOKEN = 'test-access-token'
+const CUSTOMER_TOKEN_SEP = '~'
+
 const SESSION_FIXTURE = {
-  accessToken: 'test-access-token',
+  accessToken: ACCESS_TOKEN,
   user: USER_FIXTURE,
+}
+
+// Encode a subscriber identity into an opaque-looking access token so a later
+// request can be resolved back to that customer (mock login carrier).
+function customerAccessToken(email: string): string {
+  return `${ACCESS_TOKEN}${CUSTOMER_TOKEN_SEP}${email}`
+}
+
+// The customer identity (login email) a bearer token carries, or null for the
+// default opaque token (admin/dev session).
+function readPortalIdentity(request: Request): string | null {
+  const header = request.headers.get('Authorization') ?? ''
+  const token = header.startsWith('Bearer ') ? header.slice(7) : header
+  const sep = token.indexOf(CUSTOMER_TOKEN_SEP)
+  if (sep === -1) return null
+  return token.slice(sep + 1).toLowerCase() || null
 }
 
 const USER_ROLE_CYCLE = ['admin', 'staff', 'customer', 'teknisi', 'mitra'] as const
@@ -1638,13 +1663,26 @@ function resolvePortalCustomer(request: Request) {
   const params = new URL(request.url).searchParams
   const preview = params.get('preview')
   const hold = params.get('hold')
-  return (
-    (preview
-      ? CUSTOMER_FIXTURES.find((c) => c.status === preview && (!hold || c.holdReason === hold))
-      : undefined) ??
-    CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ??
-    CUSTOMER_FIXTURES[0]
-  )
+  // Dev-only status preview override (unchanged): reach the isolir/cuti UX in
+  // dev without seeding a matching login. `?preview=isolir&hold=voluntary`
+  // targets the voluntary (cuti) walled-garden branch.
+  if (preview) {
+    const match = CUSTOMER_FIXTURES.find(
+      (c) => c.status === preview && (!hold || c.holdReason === hold),
+    )
+    if (match) return match
+  }
+  // Per-user parity (ADR-0011): when the bearer token carries a customer
+  // identity, resolve THAT subscriber by their login email — the mock's
+  // stand-in for the BE customers.user_id FK — and FAIL CLOSED on a miss
+  // (never fall back to someone else's account; mirrors resolveForPortal → 404).
+  const identity = readPortalIdentity(request)
+  if (identity) {
+    return CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === identity)
+  }
+  // Default opaque (admin/dev) token: a representative active subscriber, so the
+  // offline clickthrough still renders without a dedicated customer login.
+  return CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
 }
 
 // ---------------------------------------------------------------------------
@@ -1669,6 +1707,26 @@ export const handlers = [
       if (body.totpCode !== TWO_FACTOR_TEST_CODE) {
         return totpProblem('totp_invalid', 'invalid two-factor authentication code')
       }
+    }
+    // Parity (ADR-0011): a subscriber login yields a CUSTOMER identity whose
+    // access token carries their email, so GET /portal/me resolves to their own
+    // account (two distinct subscriber logins → two distinct portal snapshots).
+    // Any other login stays the default admin/dev session.
+    const email = body.email?.toLowerCase()
+    const customer = email
+      ? CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === email)
+      : undefined
+    if (customer && email) {
+      return HttpResponse.json({
+        accessToken: customerAccessToken(email),
+        user: {
+          id: customer.id,
+          email,
+          fullName: customer.fullName,
+          role: 'customer' as const,
+          resellerId: null,
+        },
+      })
     }
     return HttpResponse.json(SESSION_FIXTURE)
   }),
