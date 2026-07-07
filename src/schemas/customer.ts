@@ -42,8 +42,11 @@ export const CustomerSchema = z.object({
   // cycle. Null = follow the operator default. Capped at 28 so it exists in
   // every month (P3.A.4).
   billingAnchorDay: z.number().int().min(1).max(28).nullable(),
-  npwp: z.string().nullable(), // NPWP pembeli untuk faktur pajak (PKP)
-  ktp: z.string().nullable(), // NIK/KTP untuk KYC (UU PDP)
+  // Omitted entirely (key absent) in the KYC-safe mitra projection (BE #114);
+  // admin/staff still send them (string | null). `.optional()` accepts the
+  // absent key without loosening the non-mitra contract.
+  npwp: z.string().nullable().optional(), // NPWP pembeli untuk faktur pajak (PKP)
+  ktp: z.string().nullable().optional(), // NIK/KTP untuk KYC (UU PDP)
   // When the subscriber consented to data processing (UU PDP). Null = belum.
   consentAt: z.iso.datetime().nullable(),
   resellerName: z.string().nullable(),
