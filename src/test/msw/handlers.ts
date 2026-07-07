@@ -5382,6 +5382,14 @@ export const handlers = [
 
   // Settings (single record)
   http.get('*/api/settings', () => HttpResponse.json(SETTINGS_FIXTURE)),
+  // Invoice-render subset for any authenticated role (staff, customer). Mirrors
+  // BE `GET /v1/settings/public` — company identity + tax fields only.
+  http.get('*/api/settings/public', () =>
+    HttpResponse.json({
+      company: SETTINGS_FIXTURE.company,
+      tax: SETTINGS_FIXTURE.tax,
+    }),
+  ),
   http.patch('*/api/settings', async ({ request }) => {
     const body = (await request.json()) as {
       company?: typeof SETTINGS_FIXTURE.company

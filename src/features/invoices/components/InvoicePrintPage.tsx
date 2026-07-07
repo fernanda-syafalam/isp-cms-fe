@@ -3,7 +3,7 @@ import { ArrowLeftIcon, PrinterIcon } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useSettings } from '@/features/settings'
+import { usePublicSettings } from '@/features/settings'
 
 import { useInvoice } from '../hooks/useInvoices'
 import { PrintableInvoice } from './PrintableInvoice'
@@ -16,7 +16,7 @@ type Props = {
 // shell on screen; @media print (globals.css) then prints only #print-document.
 export function InvoicePrintPage({ invoiceId }: Props) {
   const { data: invoice, isLoading, isError } = useInvoice(invoiceId)
-  const { data: settings } = useSettings()
+  const { data: settings } = usePublicSettings()
 
   const issuer = settings
     ? {

@@ -21,6 +21,25 @@ export const SettingsSchema = z.object({
   }),
 })
 
+// Invoice-render subset exposed by `GET /v1/settings/public` to any
+// authenticated role (staff, customer). Mirrors the BE
+// `PublicSettingsResponseSchema` — company identity + the tax fields a
+// FAKTUR/KWITANSI must show. Operational billing config stays admin-only
+// behind the full `GET /v1/settings`.
+export const PublicSettingsSchema = z.object({
+  company: z.object({
+    name: z.string(),
+    address: z.string(),
+    phone: z.string(),
+    email: z.string(),
+  }),
+  tax: z.object({
+    pkp: z.boolean(),
+    npwp: z.string(),
+    ppnRate: z.number().nonnegative(),
+  }),
+})
+
 // Partial update — each section optional, validated with user-facing messages.
 export const UpdateSettingsSchema = z.object({
   company: z
@@ -48,4 +67,5 @@ export const UpdateSettingsSchema = z.object({
 })
 
 export type Settings = z.infer<typeof SettingsSchema>
+export type PublicSettings = z.infer<typeof PublicSettingsSchema>
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsSchema>
