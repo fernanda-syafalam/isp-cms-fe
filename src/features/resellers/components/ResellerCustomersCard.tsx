@@ -12,14 +12,8 @@ import type { Customer } from '@/schemas/customer'
 
 import { useResellerCustomers } from '../hooks/useResellers'
 
-export function ResellerCustomersCard({
-  resellerId,
-  resellerName,
-}: {
-  resellerId: string
-  resellerName: string
-}) {
-  const { data: customers, isLoading } = useResellerCustomers(resellerName)
+export function ResellerCustomersCard({ resellerId }: { resellerId: string }) {
+  const { data: customers, isLoading } = useResellerCustomers(resellerId)
   // admin/staff open the org-wide customer detail; a mitra (scoped to
   // `/resellers`) instead opens the read-only, reseller-scoped detail so the
   // name is never a dead-end (P3.D.5).

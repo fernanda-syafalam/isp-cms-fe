@@ -1965,10 +1965,20 @@ export const handlers = [
     // track of them. The summary + status tabs are computed over this scope but
     // BEFORE the status filter, so their counts stay stable across tab switches.
     const areas = url.searchParams.getAll('area')
-    const scoped =
+    const areaScoped =
       areas.length > 0
         ? CUSTOMER_FIXTURES.filter((c) => c.areaName === null || areas.includes(c.areaName))
         : CUSTOMER_FIXTURES
+    // Reseller scope (BE #118): narrow to one reseller's own customers by id, or
+    // to the unassigned ones. Customers store `resellerName`, so resolve the id
+    // to its display name first.
+    const resellerId = url.searchParams.get('resellerId')
+    const unassignedReseller = url.searchParams.get('unassignedReseller') === 'true'
+    const scoped = resellerId
+      ? areaScoped.filter((c) => c.resellerName === resellerNameById(resellerId))
+      : unassignedReseller
+        ? areaScoped.filter((c) => c.resellerName === null)
+        : areaScoped
     const countBy = (s: string) => scoped.filter((c) => c.status === s).length
     const summary = {
       total: scoped.length,

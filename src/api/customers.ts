@@ -18,6 +18,11 @@ export type CustomerFilter = {
   // param. Omitted = no area constraint. Unassigned customers are included by
   // the server in every scope, so they are never filtered out here.
   area?: string[] | undefined
+  // Server-side reseller scope (BE #118): return only the customers attributed
+  // to this reseller. Replaces filtering the full list client-side.
+  resellerId?: string | undefined
+  // Return only customers with no reseller attribution (BE #118).
+  unassignedReseller?: boolean | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
   limit?: number | undefined
@@ -32,6 +37,8 @@ export async function listCustomers(filter: CustomerFilter = {}): Promise<Custom
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.status) searchParams.set('status', filter.status)
   for (const area of filter.area ?? []) searchParams.append('area', area)
+  if (filter.resellerId) searchParams.set('resellerId', filter.resellerId)
+  if (filter.unassignedReseller) searchParams.set('unassignedReseller', 'true')
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
   if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
