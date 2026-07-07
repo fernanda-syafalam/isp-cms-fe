@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { useAuthStore } from '@/features/auth/store/authStore'
+
+import { login } from './auth'
 import { updateTicket } from './tickets'
 import { addPortalComment, getPortalMe, getPortalTicket, reportIssue, submitCsat } from './portal'
 
@@ -61,5 +64,52 @@ describe('submitCsat', () => {
 
     const detail = await getPortalTicket(owned.id)
     expect(detail.events.some((e) => e.kind === 'csat')).toBe(true)
+  })
+})
+
+// Per-user identity resolution (ADR-0011 parity): GET /portal/me must reflect
+// the AUTHENTICATED subscriber, not a fixed account. The mock login carries the
+// identity inside the access token; here we log in as two different customers
+// and assert their portal snapshots differ. Fail-closed mirrors the BE
+// resolveForPortal (404 when the token maps to no customer).
+describe('portal identity resolves per authenticated customer', () => {
+  afterEach(() => {
+    useAuthStore.setState({ accessToken: null, user: null })
+  })
+
+  async function loginAsCustomer(email: string) {
+    const session = await login({ email, password: 'portal-secret-123' })
+    useAuthStore.setState({
+      accessToken: session.accessToken,
+      user: session.user,
+    })
+    return session
+  }
+
+  it("returns customer A for A's login and customer B for B's login", async () => {
+    // pelanggan1 is an active subscriber; pelanggan2 is isolir — distinct people
+    // AND distinct states, so the difference is unmistakable.
+    const sessionA = await loginAsCustomer('pelanggan1@example.com')
+    expect(sessionA.user.role).toBe('customer')
+    const meA = await getPortalMe()
+    expect(meA.customer.email).toBe('pelanggan1@example.com')
+    expect(meA.customer.status).toBe('aktif')
+
+    await loginAsCustomer('pelanggan2@example.com')
+    const meB = await getPortalMe()
+    expect(meB.customer.email).toBe('pelanggan2@example.com')
+    expect(meB.customer.status).toBe('isolir')
+
+    // The whole point: two logins, two identities.
+    expect(meB.customer.id).not.toBe(meA.customer.id)
+  })
+
+  it('fails closed (rejects) when the token maps to no customer', async () => {
+    // A token carrying an identity that matches no subscriber must 404 rather
+    // than fall back to someone else's account (mirrors resolveForPortal).
+    useAuthStore.setState({
+      accessToken: 'test-access-token~ghost@example.com',
+    })
+    await expect(getPortalMe()).rejects.toThrow()
   })
 })
