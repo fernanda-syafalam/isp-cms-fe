@@ -33,7 +33,7 @@ export function ResellerCustomerDetailPage({ resellerId, customerId }: Props) {
     isLoading: isCustomerLoading,
     isError: isCustomerError,
     refetch,
-  } = useResellerCustomer(reseller?.name ?? '', customerId)
+  } = useResellerCustomer(resellerId, customerId)
 
   const isLoading = isResellerLoading || (Boolean(reseller) && isCustomerLoading)
 

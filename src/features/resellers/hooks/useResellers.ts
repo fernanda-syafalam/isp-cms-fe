@@ -57,26 +57,27 @@ export function useExportResellers() {
   }
 }
 
-// Customers registered by a reseller — joins the customer base by resellerName.
-export function useResellerCustomers(resellerName: string) {
+// Customers registered by a reseller. The server narrows the list by
+// `resellerId` (BE #118), so the FE no longer pulls the full customer base and
+// filters it in the browser.
+export function useResellerCustomers(resellerId: string) {
   return useQuery({
-    queryKey: ['customers', 'list', { reseller: resellerName }] as const,
-    queryFn: () => listCustomers({}),
-    select: (data) => data.items.filter((c) => c.resellerName === resellerName),
+    queryKey: ['customers', 'list', { resellerId }] as const,
+    queryFn: () => listCustomers({ resellerId }),
+    select: (data) => data.items,
   })
 }
 
-// A single customer scoped to one reseller (P3.D.5). Reuses the reseller →
-// customers join, then finds the id within it — so an id that is NOT one of
-// this reseller's own customers resolves to `undefined`. That enforces the
+// A single customer scoped to one reseller (P3.D.5). Reuses the server-side
+// reseller-scoped list, then finds the id within it — so an id that is NOT one
+// of this reseller's own customers resolves to `undefined`. That enforces the
 // mitra scope on the FE (the scoped detail page renders not-found for it)
 // without widening the mitra surface to the org-wide `/customers` list.
-export function useResellerCustomer(resellerName: string, customerId: string) {
+export function useResellerCustomer(resellerId: string, customerId: string) {
   return useQuery({
-    queryKey: ['customers', 'list', { reseller: resellerName }] as const,
-    queryFn: () => listCustomers({}),
-    select: (data) =>
-      data.items.find((c) => c.resellerName === resellerName && c.id === customerId),
+    queryKey: ['customers', 'list', { resellerId }] as const,
+    queryFn: () => listCustomers({ resellerId }),
+    select: (data) => data.items.find((c) => c.id === customerId),
   })
 }
 
