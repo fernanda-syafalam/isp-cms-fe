@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
+  confirmTwoFactor,
   disableTwoFactor,
-  enableTwoFactor,
+  enrollTwoFactor,
   getSecurity,
   revokeOtherSessions,
   revokeSession,
@@ -17,22 +18,32 @@ export function useSecurity() {
   })
 }
 
-export function useEnableTwoFactor() {
+// Step 1/2 — begin enrollment. The dialog reads the returned otpauth URI +
+// secret to render the QR. Errors surface via the mutation state (the dialog
+// shows a retry), so no toast here.
+export function useEnrollTwoFactor() {
+  return useMutation({
+    mutationFn: () => enrollTwoFactor(),
+  })
+}
+
+// Step 2/2 — confirm the authenticator code. On success 2FA is active.
+// A wrong code is handled inline by the dialog, so it does not toast.
+export function useConfirmTwoFactor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (code: string) => enableTwoFactor(code),
+    mutationFn: (code: string) => confirmTwoFactor(code),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['security'] })
       toast.success('Autentikasi dua faktor diaktifkan')
     },
-    onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
 
 export function useDisableTwoFactor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => disableTwoFactor(),
+    mutationFn: (code: string) => disableTwoFactor(code),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['security'] })
       toast.success('Autentikasi dua faktor dinonaktifkan')

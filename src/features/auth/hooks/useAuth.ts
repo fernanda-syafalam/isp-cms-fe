@@ -2,8 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { bootstrapAdmin, getCurrentUser, login, logout } from '@/api/auth'
-import { getErrorMessage } from '@/lib/errors'
+import { getErrorCode, getErrorMessage } from '@/lib/errors'
 import type { BootstrapInput, LoginInput } from '@/schemas/auth'
+
+// Login failures the form handles inline (TOTP challenge) — these must not
+// raise a generic error toast (ADR-0002 error markers).
+const TOTP_CHALLENGE_CODES = new Set(['totp_required', 'totp_invalid', 'totp_locked'])
 
 import { useAuthStore } from '../store/authStore'
 
@@ -32,6 +36,10 @@ export function useLogin() {
       qc.setQueryData(['auth', 'me'], session.user)
     },
     onError: (err) => {
+      // A TOTP challenge is not an error to the user — the form reveals the
+      // code input and (on retry) shows an inline message. Skip the toast.
+      const code = getErrorCode(err)
+      if (code && TOTP_CHALLENGE_CODES.has(code)) return
       toast.error(getErrorMessage(err))
     },
   })

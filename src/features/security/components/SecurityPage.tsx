@@ -19,13 +19,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useEffectiveRole } from '@/features/auth'
 
-import {
-  useDisableTwoFactor,
-  useRevokeOtherSessions,
-  useRevokeSession,
-  useSecurity,
-} from '../hooks/useSecurity'
+import { useRevokeOtherSessions, useRevokeSession, useSecurity } from '../hooks/useSecurity'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
+import { DisableTwoFactorDialog } from './DisableTwoFactorDialog'
 import { SecurityRbacCard } from './SecurityRbacCard'
 import { SecuritySessionsCard } from './SecuritySessionsCard'
 import { TwoFactorDialog } from './TwoFactorDialog'
@@ -33,10 +29,10 @@ import { TwoFactorDialog } from './TwoFactorDialog'
 export function SecurityPage() {
   const { data, isLoading, isError } = useSecurity()
   const role = useEffectiveRole()
-  const disable = useDisableTwoFactor()
   const revoke = useRevokeSession()
   const revokeOthers = useRevokeOtherSessions()
   const [twoFaOpen, setTwoFaOpen] = useState(false)
+  const [disableOpen, setDisableOpen] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -73,12 +69,7 @@ export function SecurityPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {data.twoFactorEnabled ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={disable.isPending}
-                      onClick={() => disable.mutate()}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setDisableOpen(true)}>
                       Nonaktifkan 2FA
                     </Button>
                   ) : (
@@ -137,6 +128,7 @@ export function SecurityPage() {
       </Card>
 
       <TwoFactorDialog open={twoFaOpen} onOpenChange={setTwoFaOpen} />
+      <DisableTwoFactorDialog open={disableOpen} onOpenChange={setDisableOpen} />
     </div>
   )
 }
