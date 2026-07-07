@@ -25,6 +25,13 @@
     "outstanding": 222000,
     "overdue": 0,
     "unpaidCount": 1,
-    "total": 3
+    "total": 3,
+    "byStatus": {
+      "paid": 2,
+      "partial": 0,
+      "pending": 1,
+      "overdue": 0,
+      "draft": 0
+    }
   }
 }

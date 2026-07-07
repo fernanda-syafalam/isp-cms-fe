@@ -14,6 +14,7 @@
       "status": "aktif",
       "holdReason": null,
       "outstanding": 0,
+      "billingAnchorDay": 1,
       "npwp": null,
       "ktp": null,
       "consentAt": "2026-05-01T08:00:00.000Z",

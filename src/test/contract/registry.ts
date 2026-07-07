@@ -92,12 +92,42 @@ export const ALIGNED: readonly ContractEntry[] = [
     feSchema: TicketListSchema,
     beFixture: ticketsList,
   },
+  // Promoted from KNOWN_DRIFT after BE PR #115 added the previously-missing
+  // fields (summary.byStatus / summary.available / summary.total+void /
+  // summary.expired / items[].billingAnchorDay). Fixtures re-derived to include
+  // them; each now satisfies its FE schema.
+  {
+    endpoint: 'GET /v1/invoices',
+    feSchema: InvoiceListSchema,
+    beFixture: invoicesList,
+  },
+  {
+    endpoint: 'GET /v1/branches',
+    feSchema: BranchListSchema,
+    beFixture: branchesList,
+  },
+  { endpoint: 'GET /v1/odp', feSchema: OdpListSchema, beFixture: odpList },
+  {
+    endpoint: 'GET /v1/sla-credits',
+    feSchema: SlaCreditListSchema,
+    beFixture: slaCreditsList,
+  },
+  {
+    endpoint: 'GET /v1/vouchers',
+    feSchema: VoucherListSchema,
+    beFixture: vouchersList,
+  },
+  {
+    endpoint: 'GET /v1/customers',
+    feSchema: CustomerListSchema,
+    beFixture: customersList,
+  },
 ]
 
-// A known FE↔BE drift the summary fix (BE PR #111) did NOT close. The
-// BE-derived fixture reflects the real backend, which does NOT yet return the
-// FE-required field(s) at `missingPaths`, so the FE schema rejects it TODAY.
-// The test asserts this rejection at the exact path, which:
+// A known FE↔BE drift is one where the BE-derived fixture reflects a real
+// backend that does NOT yet return an FE-required field at `missingPaths`, so
+// the FE schema rejects it. The test asserts that rejection at the exact path,
+// which:
 //   1. documents + locks the drift (green while the gap exists), and
 //   2. turns RED the moment the BE closes the gap and the fixture is
 //      re-derived — the signal to move the entry into ALIGNED.
@@ -109,48 +139,10 @@ export type KnownDriftEntry = ContractEntry & {
   readonly followUp: string
 }
 
-export const KNOWN_DRIFT: readonly KnownDriftEntry[] = [
-  {
-    endpoint: 'GET /v1/invoices',
-    feSchema: InvoiceListSchema,
-    beFixture: invoicesList,
-    missingPaths: ['summary.byStatus'],
-    followUp: 'BE invoices summary lacks per-status counts (byStatus).',
-  },
-  {
-    endpoint: 'GET /v1/branches',
-    feSchema: BranchListSchema,
-    beFixture: branchesList,
-    missingPaths: ['summary.byStatus'],
-    followUp: 'BE branches summary lacks per-status counts (byStatus).',
-  },
-  {
-    endpoint: 'GET /v1/odp',
-    feSchema: OdpListSchema,
-    beFixture: odpList,
-    missingPaths: ['summary.available'],
-    followUp: 'BE odp summary lacks the `available` (ODP with a free port) count.',
-  },
-  {
-    endpoint: 'GET /v1/sla-credits',
-    feSchema: SlaCreditListSchema,
-    beFixture: slaCreditsList,
-    missingPaths: ['summary.total', 'summary.void'],
-    followUp: 'BE sla-credits summary lacks the `total` and `void` counts.',
-  },
-  {
-    endpoint: 'GET /v1/vouchers',
-    feSchema: VoucherListSchema,
-    beFixture: vouchersList,
-    missingPaths: ['summary.expired'],
-    followUp: 'BE vouchers summary lacks the `expired` count.',
-  },
-  {
-    endpoint: 'GET /v1/customers',
-    feSchema: CustomerListSchema,
-    beFixture: customersList,
-    missingPaths: ['items.0.billingAnchorDay'],
-    followUp:
-      'BE customer item lacks `billingAnchorDay` (per-subscriber billing anchor); item-level, not summary.',
-  },
-]
+// Empty: BE PR #115 closed the last six known drifts (invoices/branches
+// summary.byStatus, odp summary.available, sla-credits summary.total+void,
+// vouchers summary.expired, customers items[].billingAnchorDay). Their fixtures
+// were re-derived to include the fields and the entries promoted to ALIGNED.
+// New drift found via a re-derived fixture goes here with an accurate
+// `missingPaths` + `followUp`.
+export const KNOWN_DRIFT: readonly KnownDriftEntry[] = []

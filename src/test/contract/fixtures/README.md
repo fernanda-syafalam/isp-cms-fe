@@ -54,13 +54,9 @@ There is no generated client across the two repos, so these fixtures are the
 
 ## Currently known-open drift (see `../registry.ts` → `KNOWN_DRIFT`)
 
-These BE endpoints do not yet return a field the FE schema requires:
-
-| Endpoint              | FE requires                | BE returns (origin/main)            |
-| --------------------- | -------------------------- | ----------------------------------- |
-| `GET /v1/invoices`    | `summary.byStatus`         | no `byStatus`                       |
-| `GET /v1/branches`    | `summary.byStatus`         | no `byStatus`                       |
-| `GET /v1/odp`         | `summary.available`        | no `available`                      |
-| `GET /v1/sla-credits` | `summary.total`, `.void`   | only `activeAmount/pending/applied` |
-| `GET /v1/vouchers`    | `summary.expired`          | no `expired`                        |
-| `GET /v1/customers`   | `items[].billingAnchorDay` | item omits `billingAnchorDay`       |
+None. BE PR #115 closed the last six drifts (invoices/branches
+`summary.byStatus`, odp `summary.available`, sla-credits `summary.total`+`void`,
+vouchers `summary.expired`, customers `items[].billingAnchorDay`). Their
+fixtures were re-derived to include the fields and the entries promoted to
+`ALIGNED`. When the BE next drops or renames a list field, a re-derived fixture
+will fail its FE schema — add a `KNOWN_DRIFT` entry naming the exact path.

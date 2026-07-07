@@ -15,6 +15,7 @@
   "summary": {
     "totalOdp": 40,
     "utilization": 72,
+    "available": 35,
     "full": 5,
     "optical": 3
   }
