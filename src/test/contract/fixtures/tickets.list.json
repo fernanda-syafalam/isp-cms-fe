@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "id": "71c11111-1111-4111-8111-111111111111",
+      "code": "TKT-2026-0007",
+      "subject": "Internet putus sejak pagi",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "priority": "high",
+      "status": "open",
+      "assignee": "Dewi",
+      "slaDueAt": "2026-07-07T12:00:00.000Z",
+      "createdAt": "2026-07-07T06:00:00.000Z",
+      "category": "koneksi_putus",
+      "photoUrl": null,
+      "csatRating": null,
+      "csatComment": null,
+      "csatAt": null
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 15,
+    "byStatus": {
+      "open": 6,
+      "in_progress": 4,
+      "resolved": 4,
+      "breached": 1
+    }
+  }
+}

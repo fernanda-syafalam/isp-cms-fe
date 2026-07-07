@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "id": "60c11111-1111-4111-8111-111111111111",
+      "code": "ASH-7F3K-2M9P",
+      "batchId": "batch-2026-07-01",
+      "profile": "Hotspot 1 Hari",
+      "priceIdr": 5000,
+      "durationDays": 1,
+      "status": "unused",
+      "usedAt": null,
+      "usedBy": null,
+      "resellerId": null,
+      "resellerName": null,
+      "createdAt": "2026-07-01T00:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 100,
+    "unused": 60,
+    "used": 30,
+    "revenue": 150000
+  }
+}

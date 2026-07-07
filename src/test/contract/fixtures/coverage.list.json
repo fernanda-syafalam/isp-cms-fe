@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "c0e11111-1111-4111-8111-111111111111",
+      "name": "POP Bandung Kota",
+      "type": "pop",
+      "region": "Jawa Barat",
+      "capacity": 500,
+      "activeConnections": 312,
+      "status": "operational"
+    }
+  ],
+  "total": 1,
+  "summary": {
+    "total": 6,
+    "byStatus": {
+      "operational": 4,
+      "maintenance": 1,
+      "down": 1
+    }
+  }
+}
