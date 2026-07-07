@@ -1452,24 +1452,31 @@ const BRANCH_FIXTURES = [
 ]
 
 // Account security: current user's active sessions + 2FA flag (mock).
+// `device` mirrors the real backend: the raw User-Agent string from the
+// refresh-token store (the FE humanizes it at the display boundary via
+// parseUserAgent). Exactly one session is `current: true` — the one making
+// the request — matching GET /v1/security (ADR-0011 MSW parity).
 const SECURITY_SESSION_FIXTURES = [
   {
     id: oid('5e555510', 0),
-    device: 'Chrome · macOS',
+    device:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     ip: '103.12.34.56',
     lastActiveAt: iso(2026, 5, 6),
     current: true,
   },
   {
     id: oid('5e555510', 1),
-    device: 'Safari · iOS',
+    device:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     ip: '103.12.34.57',
     lastActiveAt: iso(2026, 5, 5),
     current: false,
   },
   {
     id: oid('5e555510', 2),
-    device: 'Edge · Windows',
+    device:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
     ip: '180.250.1.2',
     lastActiveAt: iso(2026, 5, 4),
     current: false,
@@ -1514,7 +1521,9 @@ function totpProblem(code: string, message: string) {
 // gained `taxAmount`/`taxInvoiceNo`, customers `npwp`, settings `tax`.
 // v25: payments gained `source`/`voucherId` (+ nullable invoice/customer),
 // vouchers gained `resellerId`/`resellerName` (P3.D.3 voucher settlement).
-const DB_KEY = 'isp-cms-mock-db-v25'
+// v26: security sessions `device` now carries the raw User-Agent (matches the
+// real backend) instead of a pre-humanized label.
+const DB_KEY = 'isp-cms-mock-db-v26'
 
 // All mutable collections, registered by name. Handlers read/write these
 // arrays in place; resetMockDb()/persistDb() operate over the whole registry.
