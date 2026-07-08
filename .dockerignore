@@ -1,0 +1,32 @@
+# Build artifacts and ephemeral state
+node_modules
+dist
+.tanstack
+*.tsbuildinfo
+playwright-report
+test-results
+
+# Git / IDE / OS
+.git
+.gitignore
+.idea
+.vscode
+.DS_Store
+
+# Local env files (build args come from the orchestrator)
+.env
+.env.*
+!.env.example
+
+# Tests / tooling not needed in the image build
+tests
+**/*.spec.ts
+**/*.test.ts
+playwright.config.*
+.github
+.claude
+
+# Docs and READMEs
+docs
+README.md
+*.md
