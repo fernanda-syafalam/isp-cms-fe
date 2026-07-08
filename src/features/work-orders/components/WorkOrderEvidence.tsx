@@ -2,6 +2,13 @@ import { DetailMeta, DetailMetaGrid, DetailSection } from '@/components/shared/d
 import { formatDateTime } from '@/lib/format'
 import type { WorkOrder } from '@/schemas/workorder'
 
+// Backend-supplied URLs (signature, evidence photos) are rendered as clickable
+// hrefs; guard against `javascript:` / `data:` scheme values that would execute
+// on click (A6-L1). Only http(s) URLs are treated as links.
+function isSafeUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url)
+}
+
 // Read-only field-completion evidence captured when the WO was completed
 // (P3.B.3). Rendered on a done WO's detail sheet.
 export function WorkOrderEvidence({ wo }: { wo: WorkOrder }) {
@@ -37,7 +44,7 @@ export function WorkOrderEvidence({ wo }: { wo: WorkOrder }) {
           )}
         </DetailMeta>
         <DetailMeta label="Tanda tangan">
-          {wo.signatureUrl ? (
+          {wo.signatureUrl && isSafeUrl(wo.signatureUrl) ? (
             <a href={wo.signatureUrl} target="_blank" rel="noreferrer" className="hover:underline">
               Lihat
             </a>
@@ -53,18 +60,24 @@ export function WorkOrderEvidence({ wo }: { wo: WorkOrder }) {
         </p>
         {photos.length > 0 ? (
           <ul className="grid gap-1.5">
-            {photos.map((url, index) => (
-              <li key={url}>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-mono text-xs hover:underline"
-                >
+            {photos.map((url, index) =>
+              isSafeUrl(url) ? (
+                <li key={url}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-xs hover:underline"
+                  >
+                    Foto {index + 1}
+                  </a>
+                </li>
+              ) : (
+                <li key={url} className="font-mono text-muted-foreground text-xs">
                   Foto {index + 1}
-                </a>
-              </li>
-            ))}
+                </li>
+              ),
+            )}
           </ul>
         ) : (
           <p className="text-sm text-muted-foreground">Tidak ada foto.</p>

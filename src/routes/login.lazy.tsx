@@ -3,6 +3,7 @@ import { Building2Icon, CheckCircle2Icon } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginForm } from '@/features/auth'
+import { safeInternalPath } from '@/lib/safeRedirect'
 
 export const Route = createLazyFileRoute('/login')({
   component: LoginPage,
@@ -19,7 +20,8 @@ function LoginPage() {
   const navigate = useNavigate()
 
   const handleSuccess = () => {
-    void navigate({ to: from ?? '/', replace: true })
+    // `from` is attacker-controllable (?from=…); only honor internal paths.
+    void navigate({ to: safeInternalPath(from), replace: true })
   }
 
   return (
