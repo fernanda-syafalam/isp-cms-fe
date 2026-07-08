@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   verify:
-    name: Lint • Typecheck • Test • Build
+    name: Audit • Lint • Typecheck • Test • Build • Size
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -29,11 +29,20 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Blocking dependency audit (CLAUDE.md security baseline): fail the PR on
+      # any high/critical advisory. Fixes are preferred over waivers — see
+      # pnpm.overrides in package.json. If a future advisory has no trivial fix,
+      # do NOT silently drop this gate: bump the dep, add a scoped override, or
+      # (last resort) make this step non-blocking WITH a loud TODO referencing
+      # the advisory so it stays visible.
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
 
       - name: Lint
         run: pnpm lint:ci
