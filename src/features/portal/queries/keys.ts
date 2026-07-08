@@ -7,4 +7,5 @@ export const portalKeys = {
   wifi: () => [...root, 'wifi'] as const,
   announcements: () => [...root, 'announcements'] as const,
   ticket: (id: string) => [...root, 'ticket', id] as const,
+  payIntent: (id: string) => [...root, 'pay-intent', id] as const,
 }

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { Loader2Icon } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +26,7 @@ import {
   type CheckoutScope,
   useConfirmPaymentIntent,
   useCreatePaymentIntent,
+  usePollPortalPayIntent,
 } from '../hooks/useCheckout'
 import { CheckoutIntentView } from './CheckoutIntentView'
 
@@ -50,6 +52,26 @@ type Props = {
   existingIntent?: PaymentIntent | undefined
 }
 
+// The customer can no longer self-settle (SEC-H1); once the charge exists the
+// portal only watches it. This footnote replaces the staff "simulate" hint.
+function PortalWaitingFooter({ isTimedOut }: { isTimedOut: boolean }) {
+  if (isTimedOut) {
+    return (
+      <p className="text-muted-foreground text-xs" role="status">
+        Kami belum menerima konfirmasi pembayaran. Tutup jendela ini dan periksa kembali status
+        tagihan Anda nanti.
+      </p>
+    )
+  }
+  return (
+    <p className="flex items-center gap-2 text-muted-foreground text-xs" role="status">
+      <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
+      Menunggu konfirmasi pembayaran… Selesaikan pembayaran melalui QRIS/VA di atas; layanan aktif
+      otomatis setelah pembayaran terkonfirmasi.
+    </p>
+  )
+}
+
 export function CheckoutDialog({
   invoice,
   open,
@@ -57,17 +79,31 @@ export function CheckoutDialog({
   scope = 'staff',
   existingIntent,
 }: Props) {
+  const isPortal = scope === 'portal'
   const isResume = existingIntent != null
   const [channel, setChannel] = useState<PaymentChannel>('qris')
   const [intent, setIntent] = useState<PaymentIntent | null>(existingIntent ?? null)
   const create = useCreatePaymentIntent(scope)
-  const confirm = useConfirmPaymentIntent(scope)
+  // Staff/loket only — the portal never confirms, it polls (SEC-H1).
+  const confirm = useConfirmPaymentIntent()
 
   // Resuming keeps the seeded intent on close (no discard); a fresh flow clears.
-  const reset = () => {
+  const reset = useCallback(() => {
     setIntent(existingIntent ?? null)
     setChannel('qris')
-  }
+  }, [existingIntent])
+
+  const closeAndReset = useCallback(() => {
+    reset()
+    onOpenChange(false)
+  }, [reset, onOpenChange])
+
+  // Portal watches its own intent until settlement/expiry drives the close.
+  const poll = usePollPortalPayIntent(isPortal ? (intent?.id ?? null) : null, {
+    enabled: isPortal && open && intent != null,
+    onPaid: closeAndReset,
+    onExpired: closeAndReset,
+  })
 
   const handleCreate = async () => {
     try {
@@ -85,8 +121,7 @@ export function CheckoutDialog({
     if (!intent) return
     try {
       await confirm.mutateAsync(intent.id)
-      reset()
-      onOpenChange(false)
+      closeAndReset()
     } catch {
       // useConfirmPaymentIntent surfaces a toast.
     }
@@ -118,7 +153,10 @@ export function CheckoutDialog({
         ) : null}
 
         {intent ? (
-          <CheckoutIntentView intent={intent} />
+          <CheckoutIntentView
+            intent={intent}
+            footer={isPortal ? <PortalWaitingFooter isTimedOut={poll.isTimedOut} /> : undefined}
+          />
         ) : (
           <div className="space-y-2">
             <Select value={channel} onValueChange={(v) => setChannel(v as PaymentChannel)}>
@@ -146,9 +184,12 @@ export function CheckoutDialog({
             {isResume ? 'Tutup' : 'Batal'}
           </Button>
           {intent ? (
-            <Button onClick={handleConfirm} disabled={confirm.isPending}>
-              {confirm.isPending ? 'Memproses…' : 'Simulasikan pembayaran berhasil'}
-            </Button>
+            // Staff/loket simulate settlement; the portal only polls (no button).
+            isPortal ? null : (
+              <Button onClick={handleConfirm} disabled={confirm.isPending}>
+                {confirm.isPending ? 'Memproses…' : 'Simulasikan pembayaran berhasil'}
+              </Button>
+            )
           ) : (
             <Button onClick={handleCreate} disabled={create.isPending}>
               {create.isPending ? 'Memproses…' : 'Lanjut bayar'}

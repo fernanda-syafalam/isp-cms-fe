@@ -329,6 +329,64 @@ type PaymentIntentRecord = {
 }
 const PAYMENT_INTENT_FIXTURES: PaymentIntentRecord[] = []
 
+// Simulate the gateway settlement webhook against the mock store: mark the
+// intent + its invoice paid, write the payment, reconcile AR, and reactivate an
+// isolir subscriber once nothing overdue remains. Idempotent — a second call on
+// an already-paid intent is a no-op. Shared by the staff/loket confirm route
+// and the portal status poll. The portal customer can no longer self-confirm
+// (SEC-H1), so in the demo the FIRST poll of a pending intent stands in for the
+// gateway webhook, driving the same settlement through the read path.
+function settlePaymentIntentMock(intent: PaymentIntentRecord): void {
+  if (intent.status === 'paid') return
+  const invoice = INVOICE_FIXTURES.find((inv) => inv.id === intent.invoiceId)
+  const nowIso = new Date().toISOString()
+  intent.status = 'paid'
+  intent.paidAt = nowIso
+  if (invoice) {
+    // Gateway settlement always clears the full remaining balance in one shot.
+    const settledAmount = invoice.balanceDue
+    invoice.status = 'paid'
+    invoice.paidAt = nowIso
+    invoice.paidAmount += settledAmount
+    invoice.balanceDue = 0
+    const method =
+      intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
+    PAYMENT_FIXTURES.unshift({
+      id: crypto.randomUUID(),
+      invoiceId: invoice.id,
+      invoiceNo: invoice.invoiceNo,
+      customerId: invoice.customerId,
+      customerName: invoice.customerName,
+      amount: settledAmount,
+      method,
+      paidAt: nowIso,
+      tenderedAmount: null,
+      changeAmount: null,
+      source: 'invoice',
+      voucherId: null,
+    })
+    const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
+    if (customer) {
+      const unpaid = INVOICE_FIXTURES.filter(
+        (inv) =>
+          inv.customerId === customer.id && (inv.status === 'pending' || inv.status === 'overdue'),
+      )
+      customer.outstanding = unpaid.reduce(
+        (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
+        0,
+      )
+      const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
+      if (customer.status === 'isolir' && !hasOverdue) {
+        customer.status = 'aktif'
+        setTopoCustomerLifecycle(customer.fullName, 'aktif')
+        setSecretsDisabledByCustomer(customer.fullName, false)
+      }
+    }
+    recordAudit('payment.gateway', 'Tagihan', `Pembayaran ${intent.channel} ${invoice.invoiceNo}`)
+  }
+  persistDb()
+}
+
 const DEVICE_TYPES = ['olt', 'onu', 'mikrotik'] as const
 const DEVICE_STATUS = ['online', 'online', 'degraded', 'online', 'offline'] as const
 const DEVICE_FIXTURES = Array.from({ length: 10 }, (_, i) => {
@@ -3277,8 +3335,8 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(intent, { status: 201 })
   }),
-  // Simulated settlement webhook: mark the intent + invoice paid, reconcile AR,
-  // reactivate an isolir customer if nothing overdue remains.
+  // Simulated settlement webhook (staff/loket): mark the intent + invoice paid,
+  // reconcile AR, reactivate an isolir customer if nothing overdue remains.
   http.post('*/api/payments/intent/:id/confirm', ({ params }) => {
     const intent = PAYMENT_INTENT_FIXTURES.find((p) => p.id === params.id)
     if (!intent) {
@@ -3286,55 +3344,7 @@ export const handlers = [
         status: 404,
       })
     }
-    if (intent.status === 'paid') return HttpResponse.json(intent)
-    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === intent.invoiceId)
-    const nowIso = new Date().toISOString()
-    intent.status = 'paid'
-    intent.paidAt = nowIso
-    if (invoice) {
-      // Gateway settlement always clears the full remaining balance in one shot.
-      const settledAmount = invoice.balanceDue
-      invoice.status = 'paid'
-      invoice.paidAt = nowIso
-      invoice.paidAmount += settledAmount
-      invoice.balanceDue = 0
-      const method =
-        intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
-      PAYMENT_FIXTURES.unshift({
-        id: crypto.randomUUID(),
-        invoiceId: invoice.id,
-        invoiceNo: invoice.invoiceNo,
-        customerId: invoice.customerId,
-        customerName: invoice.customerName,
-        amount: settledAmount,
-        method,
-        paidAt: nowIso,
-        tenderedAmount: null,
-        changeAmount: null,
-        source: 'invoice',
-        voucherId: null,
-      })
-      const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
-      if (customer) {
-        const unpaid = INVOICE_FIXTURES.filter(
-          (inv) =>
-            inv.customerId === customer.id &&
-            (inv.status === 'pending' || inv.status === 'overdue'),
-        )
-        customer.outstanding = unpaid.reduce(
-          (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
-          0,
-        )
-        const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
-        if (customer.status === 'isolir' && !hasOverdue) {
-          customer.status = 'aktif'
-          setTopoCustomerLifecycle(customer.fullName, 'aktif')
-          setSecretsDisabledByCustomer(customer.fullName, false)
-        }
-      }
-      recordAudit('payment.gateway', 'Tagihan', `Pembayaran ${intent.channel} ${invoice.invoiceNo}`)
-    }
-    persistDb()
+    settlePaymentIntentMock(intent)
     return HttpResponse.json(intent)
   }),
 
@@ -5828,63 +5838,22 @@ export const handlers = [
     persistDb()
     return HttpResponse.json(intent, { status: 201 })
   }),
-  // Portal settlement webhook simulation: mark the intent + invoice paid,
-  // reconcile AR, reactivate an isolir customer if nothing overdue remains.
-  http.post('*/api/portal/pay-intent/:id/confirm', ({ params }) => {
+  // Portal status poll (SEC-H1, replaces the removed `POST .../confirm`): the
+  // customer watches their own intent settle but can never flip it. There is no
+  // gateway webhook in the mock, so the first poll of a still-pending, unexpired
+  // intent stands in for it — settling the intent + invoice and reactivating an
+  // isolir subscriber — so the demo pay→reactivate flow still completes end to
+  // end, now through the read path instead of the removed confirm route.
+  http.get('*/api/portal/pay-intent/:id', ({ params }) => {
     const intent = PAYMENT_INTENT_FIXTURES.find((p) => p.id === params.id)
     if (!intent) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
         status: 404,
       })
     }
-    if (intent.status === 'paid') return HttpResponse.json(intent)
-    const invoice = INVOICE_FIXTURES.find((inv) => inv.id === intent.invoiceId)
-    const nowIso = new Date().toISOString()
-    intent.status = 'paid'
-    intent.paidAt = nowIso
-    if (invoice) {
-      const settledAmount = invoice.balanceDue
-      invoice.status = 'paid'
-      invoice.paidAt = nowIso
-      invoice.paidAmount += settledAmount
-      invoice.balanceDue = 0
-      const method =
-        intent.channel === 'qris' ? 'qris' : intent.channel.startsWith('va_') ? 'va' : 'ewallet'
-      PAYMENT_FIXTURES.unshift({
-        id: crypto.randomUUID(),
-        invoiceId: invoice.id,
-        invoiceNo: invoice.invoiceNo,
-        customerId: invoice.customerId,
-        customerName: invoice.customerName,
-        amount: settledAmount,
-        method,
-        paidAt: nowIso,
-        tenderedAmount: null,
-        changeAmount: null,
-        source: 'invoice',
-        voucherId: null,
-      })
-      const customer = CUSTOMER_FIXTURES.find((c) => c.id === invoice.customerId)
-      if (customer) {
-        const unpaid = INVOICE_FIXTURES.filter(
-          (inv) =>
-            inv.customerId === customer.id &&
-            (inv.status === 'pending' || inv.status === 'overdue'),
-        )
-        customer.outstanding = unpaid.reduce(
-          (sum, inv) => sum + inv.amount + inv.lateFee + inv.taxAmount,
-          0,
-        )
-        const hasOverdue = unpaid.some((inv) => inv.status === 'overdue')
-        if (customer.status === 'isolir' && !hasOverdue) {
-          customer.status = 'aktif'
-          setTopoCustomerLifecycle(customer.fullName, 'aktif')
-          setSecretsDisabledByCustomer(customer.fullName, false)
-        }
-      }
-      recordAudit('payment.gateway', 'Tagihan', `Pembayaran ${intent.channel} ${invoice.invoiceNo}`)
+    if (intent.status === 'pending' && new Date(intent.expiresAt).getTime() > Date.now()) {
+      settlePaymentIntentMock(intent)
     }
-    persistDb()
     return HttpResponse.json(intent)
   }),
 ]

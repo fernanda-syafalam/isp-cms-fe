@@ -93,9 +93,11 @@ export async function createPortalPayIntent(
   return PaymentIntentSchema.parse(json)
 }
 
-// Simulate the gateway settlement webhook from the portal — marks the intent +
-// invoice paid and reactivates the subscriber when nothing overdue remains.
-export async function confirmPortalPayIntent(id: string): Promise<PaymentIntent> {
-  const json = await api.post(`portal/pay-intent/${id}/confirm`).json()
+// Poll the status of the customer's own gateway charge (SEC-H1). Read-only:
+// settlement is no longer reachable from the customer — the intent flips to
+// `paid` only via the staff/admin route or (P4, future) a signed gateway
+// webhook. The customer watches it here until it settles or expires.
+export async function getPortalPayIntent(id: string): Promise<PaymentIntent> {
+  const json = await api.get(`portal/pay-intent/${id}`).json()
   return PaymentIntentSchema.parse(json)
 }

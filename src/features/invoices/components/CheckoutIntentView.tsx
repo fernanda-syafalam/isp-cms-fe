@@ -1,15 +1,20 @@
 import { CreditCardIcon, QrCodeIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import type { PaymentIntent } from '@/schemas/payment'
 
 type Props = {
   intent: PaymentIntent
+  // Footnote under the charge. Defaults to the staff/loket "simulate" hint; the
+  // portal passes its own "waiting for confirmation" status instead, since the
+  // customer can no longer trigger settlement (SEC-H1).
+  footer?: ReactNode
 }
 
 // The VA-number / QRIS payload view shown once an intent exists. Shared by the
 // fresh-checkout and resume-pending flows so both render an identical charge.
-export function CheckoutIntentView({ intent }: Props) {
+export function CheckoutIntentView({ intent, footer }: Props) {
   return (
     <div className="space-y-4">
       {intent.qrPayload ? (
@@ -36,10 +41,12 @@ export function CheckoutIntentView({ intent }: Props) {
           <dd>{formatDateTime(intent.expiresAt)}</dd>
         </div>
       </dl>
-      <p className="text-muted-foreground text-xs">
-        Di produksi, gateway akan mengirim webhook saat pembayaran masuk. Untuk demo, tekan tombol
-        di bawah untuk mensimulasikan pembayaran berhasil.
-      </p>
+      {footer ?? (
+        <p className="text-muted-foreground text-xs">
+          Di produksi, gateway akan mengirim webhook saat pembayaran masuk. Untuk demo, tekan tombol
+          di bawah untuk mensimulasikan pembayaran berhasil.
+        </p>
+      )}
     </div>
   )
 }
