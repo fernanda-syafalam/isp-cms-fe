@@ -1680,9 +1680,36 @@ function resolvePortalCustomer(request: Request) {
   if (identity) {
     return CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === identity)
   }
+  // Dev role switcher (UserMenu → roleStore): switching to the customer role only
+  // regates nav — there is no subscriber login, so the bearer token still carries
+  // the default admin identity and the portal would render the anonymous default
+  // subscriber (no email/ticket context). For a flawless demo, resolve a concrete
+  // seeded subscriber (pelanggan1) so the portal shows real status/tagihan/usage/
+  // tickets. Mock/dev-only: MSW never runs in a production bundle, and a real
+  // subscriber login (identity above) still wins.
+  const demo = devDemoPortalCustomer()
+  if (demo) return demo
   // Default opaque (admin/dev) token: a representative active subscriber, so the
   // offline clickthrough still renders without a dedicated customer login.
   return CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
+}
+
+// The dev role switcher persists its override to this localStorage key (see
+// src/features/auth/store/roleStore.ts). When it is set to `customer`, resolve a
+// concrete seeded subscriber for the demo instead of the anonymous default.
+const DEV_ROLE_OVERRIDE_KEY = 'isp-cms-dev-role'
+const DEV_DEMO_CUSTOMER_EMAIL = 'pelanggan1@example.com'
+
+function devDemoPortalCustomer() {
+  if (typeof window === 'undefined') return undefined
+  let override: string | null
+  try {
+    override = window.localStorage.getItem(DEV_ROLE_OVERRIDE_KEY)
+  } catch {
+    return undefined
+  }
+  if (override !== 'customer') return undefined
+  return CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === DEV_DEMO_CUSTOMER_EMAIL)
 }
 
 // Build a subscriber session (matching the login response shape) for a login
