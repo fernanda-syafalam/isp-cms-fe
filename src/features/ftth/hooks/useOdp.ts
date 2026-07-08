@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { ODP_EXPORT_LIMIT, type OdpFilter, listOdp } from '@/api/odp'
+import { odpKeys } from '@/features/ftth/queries/keys'
 import type { OdpList } from '@/schemas/odp'
 
 export function useOdpList(filter: OdpFilter = {}) {
   return useQuery({
-    queryKey: ['odp', 'list', filter] as const,
+    queryKey: odpKeys.list(filter),
     queryFn: () => listOdp(filter),
   })
 }
@@ -21,7 +22,7 @@ export function useExportOdp() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['odp', 'list', exportFilter] as const,
+      queryKey: odpKeys.list(exportFilter),
       queryFn: () => listOdp(exportFilter),
     })
   }

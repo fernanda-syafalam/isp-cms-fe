@@ -8,18 +8,20 @@ import {
   listAlerts,
   listDeviceMetrics,
 } from '@/api/monitoring'
+import { monitoringKeys } from '@/features/monitoring/queries/keys'
+import { ticketKeys } from '@/features/tickets/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 
 export function useDeviceMetrics(filter: DeviceMetricFilter = {}) {
   return useQuery({
-    queryKey: ['monitoring', 'metrics', filter] as const,
+    queryKey: monitoringKeys.metrics(filter),
     queryFn: () => listDeviceMetrics(filter),
   })
 }
 
 export function useAlerts() {
   return useQuery({
-    queryKey: ['monitoring', 'alerts'] as const,
+    queryKey: monitoringKeys.alerts(),
     queryFn: listAlerts,
   })
 }
@@ -29,7 +31,7 @@ export function useAcknowledgeAlert() {
   return useMutation({
     mutationFn: (id: string) => acknowledgeAlert(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['monitoring', 'alerts'] })
+      qc.invalidateQueries({ queryKey: monitoringKeys.alerts() })
       toast.success('Alert ditandai sudah ditangani')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -41,8 +43,8 @@ export function useCreateTicketFromAlert() {
   return useMutation({
     mutationFn: (id: string) => createTicketFromAlert(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['monitoring', 'alerts'] })
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: monitoringKeys.alerts() })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success('Tiket dibuat dari alert')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

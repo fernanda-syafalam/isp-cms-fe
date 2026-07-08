@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { ACCOUNTING_EXPORT_LIMIT, getJournal, type JournalFilter } from '@/api/accounting'
+import { accountingKeys } from '@/features/accounting/queries/keys'
 import type { Journal } from '@/schemas/accounting'
 
 export function useJournal(period: string, filter: JournalFilter = {}) {
   return useQuery({
-    queryKey: ['accounting', 'journal', period, filter] as const,
+    queryKey: accountingKeys.journal(period, filter),
     queryFn: () => getJournal(period, filter),
   })
 }
@@ -21,7 +22,7 @@ export function useExportJournal() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['accounting', 'journal', period, exportFilter] as const,
+      queryKey: accountingKeys.journal(period, exportFilter),
       queryFn: () => getJournal(period, exportFilter),
     })
   }

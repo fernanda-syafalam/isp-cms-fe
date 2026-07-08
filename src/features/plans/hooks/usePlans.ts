@@ -9,12 +9,13 @@ import {
   type PlanFilter,
   updatePlan,
 } from '@/api/plans'
+import { planKeys } from '@/features/plans/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreatePlanInput, PlanList } from '@/schemas/plan'
 
 export function usePlansList(filter: PlanFilter = {}) {
   return useQuery({
-    queryKey: ['plans', 'list', filter] as const,
+    queryKey: planKeys.list(filter),
     queryFn: () => listPlans(filter),
   })
 }
@@ -30,7 +31,7 @@ export function useExportPlans() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['plans', 'list', exportFilter] as const,
+      queryKey: planKeys.list(exportFilter),
       queryFn: () => listPlans(exportFilter),
     })
   }
@@ -41,7 +42,7 @@ export function useCreatePlan() {
   return useMutation({
     mutationFn: (input: CreatePlanInput) => createPlan(input),
     onSuccess: (plan) => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      qc.invalidateQueries({ queryKey: planKeys.all })
       toast.success(`Paket "${plan.name}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -53,7 +54,7 @@ export function useUpdatePlan(id: string) {
   return useMutation({
     mutationFn: (input: CreatePlanInput) => updatePlan(id, input),
     onSuccess: (plan) => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      qc.invalidateQueries({ queryKey: planKeys.all })
       toast.success(`Paket "${plan.name}" diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -65,7 +66,7 @@ export function useArchivePlan() {
   return useMutation({
     mutationFn: (id: string) => archivePlan(id),
     onSuccess: (plan) => {
-      qc.invalidateQueries({ queryKey: ['plans'] })
+      qc.invalidateQueries({ queryKey: planKeys.all })
       toast.success(`Paket "${plan.name}" diarsipkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

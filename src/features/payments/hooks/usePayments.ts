@@ -6,18 +6,19 @@ import {
   getReconciliation,
   listPayments,
 } from '@/api/payments'
+import { paymentKeys } from '@/features/payments/queries/keys'
 
 // End-of-day cash-drawer + per-method reconciliation for a single date.
 export function useReconciliation(date: string) {
   return useQuery({
-    queryKey: ['payments', 'reconciliation', date] as const,
+    queryKey: paymentKeys.reconciliation(date),
     queryFn: () => getReconciliation(date),
   })
 }
 
 export function usePaymentsList(filter: PaymentFilter = {}) {
   return useQuery({
-    queryKey: ['payments', 'list', filter] as const,
+    queryKey: paymentKeys.list(filter),
     queryFn: () => listPayments(filter),
   })
 }
@@ -36,7 +37,7 @@ export function useExportPayments() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['payments', 'list', exportFilter] as const,
+      queryKey: paymentKeys.list(exportFilter),
       queryFn: () => listPayments(exportFilter),
     })
   }

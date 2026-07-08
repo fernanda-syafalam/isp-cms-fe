@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { USAGE_EXPORT_LIMIT, type UsageFilter, listUsage } from '@/api/usage'
+import { usageKeys } from '@/features/usage/queries/keys'
 import type { UsageList } from '@/schemas/usage'
 
 export function useUsageList(filter: UsageFilter = {}) {
   return useQuery({
-    queryKey: ['usage', 'list', filter] as const,
+    queryKey: usageKeys.list(filter),
     queryFn: () => listUsage(filter),
   })
 }
@@ -21,7 +22,7 @@ export function useExportUsage() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['usage', 'list', exportFilter] as const,
+      queryKey: usageKeys.list(exportFilter),
       queryFn: () => listUsage(exportFilter),
     })
   }

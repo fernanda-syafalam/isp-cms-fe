@@ -8,12 +8,13 @@ import {
   type RouterFilter,
   testRouterConnection,
 } from '@/api/routers'
+import { routerKeys } from '@/features/routers/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { ConnectRouterInput, RouterList } from '@/schemas/router'
 
 export function useRoutersList(filter: RouterFilter = {}) {
   return useQuery({
-    queryKey: ['routers', 'list', filter] as const,
+    queryKey: routerKeys.list(filter),
     queryFn: () => listRouters(filter),
   })
 }
@@ -29,7 +30,7 @@ export function useExportRouters() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['routers', 'list', exportFilter] as const,
+      queryKey: routerKeys.list(exportFilter),
       queryFn: () => listRouters(exportFilter),
     })
   }
@@ -47,7 +48,7 @@ export function useConnectRouter() {
   return useMutation({
     mutationFn: (input: ConnectRouterInput) => connectRouter(input),
     onSuccess: (router) => {
-      qc.invalidateQueries({ queryKey: ['routers'] })
+      qc.invalidateQueries({ queryKey: routerKeys.all })
       toast.success(`Router "${router.name}" terhubung`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { bootstrapAdmin, getCurrentUser, login, logout } from '@/api/auth'
+import { authKeys } from '@/features/auth/queries/keys'
 import { getErrorCode, getErrorMessage } from '@/lib/errors'
 import type { BootstrapInput, LoginInput } from '@/schemas/auth'
 
@@ -14,7 +15,7 @@ import { useAuthStore } from '../store/authStore'
 export function useCurrentUser() {
   const accessToken = useAuthStore((s) => s.accessToken)
   return useQuery({
-    queryKey: ['auth', 'me'] as const,
+    queryKey: authKeys.me(),
     queryFn: getCurrentUser,
     enabled: accessToken !== null,
     staleTime: 5 * 60_000,
@@ -33,7 +34,7 @@ export function useLogin() {
     mutationFn: (input: LoginInput) => login(input),
     onSuccess: (session) => {
       setSession(session)
-      qc.setQueryData(['auth', 'me'], session.user)
+      qc.setQueryData(authKeys.me(), session.user)
     },
     onError: (err) => {
       // A TOTP challenge is not an error to the user — the form reveals the
@@ -55,8 +56,8 @@ export function useBootstrap() {
       // Bootstrap auto-logs-in the new admin; prime the session + me cache
       // and mark bootstrap done so the guard can't loop back to /bootstrap.
       setSession(session)
-      qc.setQueryData(['auth', 'me'], session.user)
-      qc.setQueryData(['auth', 'bootstrap'], { required: false })
+      qc.setQueryData(authKeys.me(), session.user)
+      qc.setQueryData(authKeys.bootstrap(), { required: false })
     },
     onError: (err) => {
       toast.error(getErrorMessage(err))

@@ -18,6 +18,7 @@ import {
   rejectPayout,
   updateReseller,
 } from '@/api/resellers'
+import { customerKeys } from '@/features/customers/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   AddLedgerEntryInput,
@@ -25,13 +26,14 @@ import type {
   CreateResellerInput,
   UpdateResellerInput,
 } from '@/schemas/reseller'
+import { resellerKeys } from '../queries/keys'
 
 // `enabled` lets a caller skip the fetch when the current role isn't allowed to
 // read the org-wide list (e.g. a mitra, who is redirected to their own
 // storefront) — this avoids a 403 GET /v1/resellers on every session start.
 export function useResellersList(filter: ResellerFilter = {}, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ['resellers', 'list', filter] as const,
+    queryKey: resellerKeys.list(filter),
     queryFn: () => listResellers(filter),
     enabled: options?.enabled ?? true,
   })
@@ -51,7 +53,7 @@ export function useExportResellers() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['resellers', 'list', exportFilter] as const,
+      queryKey: resellerKeys.list(exportFilter),
       queryFn: () => listResellers(exportFilter),
     })
   }
@@ -62,7 +64,7 @@ export function useExportResellers() {
 // filters it in the browser.
 export function useResellerCustomers(resellerId: string) {
   return useQuery({
-    queryKey: ['customers', 'list', { resellerId }] as const,
+    queryKey: customerKeys.list({ resellerId }),
     queryFn: () => listCustomers({ resellerId }),
     select: (data) => data.items,
   })
@@ -75,7 +77,7 @@ export function useResellerCustomers(resellerId: string) {
 // without widening the mitra surface to the org-wide `/customers` list.
 export function useResellerCustomer(resellerId: string, customerId: string) {
   return useQuery({
-    queryKey: ['customers', 'list', { resellerId }] as const,
+    queryKey: customerKeys.list({ resellerId }),
     queryFn: () => listCustomers({ resellerId }),
     select: (data) => data.items.find((c) => c.id === customerId),
   })
@@ -83,14 +85,14 @@ export function useResellerCustomer(resellerId: string, customerId: string) {
 
 export function useReseller(id: string) {
   return useQuery({
-    queryKey: ['resellers', 'detail', id] as const,
+    queryKey: resellerKeys.detail(id),
     queryFn: () => getReseller(id),
   })
 }
 
 export function useResellerLedger(id: string, filter: LedgerFilter = {}) {
   return useQuery({
-    queryKey: ['resellers', 'detail', id, 'ledger', filter] as const,
+    queryKey: resellerKeys.ledger(id, filter),
     queryFn: () => listResellerLedger(id, filter),
   })
 }
@@ -107,9 +109,9 @@ export function useAddLedgerEntry(id: string) {
   return useMutation({
     mutationFn: (input: AddLedgerEntryInput) => addLedgerEntry(id, input),
     onSuccess: (reseller, vars) => {
-      qc.setQueryData(['resellers', 'detail', id], reseller)
-      qc.invalidateQueries({ queryKey: ['resellers', 'detail', id, 'ledger'] })
-      qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+      qc.setQueryData(resellerKeys.detail(id), reseller)
+      qc.invalidateQueries({ queryKey: resellerKeys.ledgerBase(id) })
+      qc.invalidateQueries({ queryKey: resellerKeys.lists() })
       toast.success(LEDGER_TYPE_TOAST[vars.type])
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -121,7 +123,7 @@ export function useCreateReseller() {
   return useMutation({
     mutationFn: (input: CreateResellerInput) => createReseller(input),
     onSuccess: (reseller) => {
-      qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+      qc.invalidateQueries({ queryKey: resellerKeys.lists() })
       toast.success(`Reseller "${reseller.name}" ditambahkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -131,7 +133,7 @@ export function useCreateReseller() {
 // Payouts (P3.D.4). Query key is a sub-resource of the reseller detail.
 export function usePayouts(resellerId: string) {
   return useQuery({
-    queryKey: ['resellers', 'detail', resellerId, 'payouts'] as const,
+    queryKey: resellerKeys.payouts(resellerId),
     queryFn: () => listPayouts(resellerId),
   })
 }
@@ -140,14 +142,14 @@ export function usePayouts(resellerId: string) {
 // balance + ledger, so we refresh the detail, its ledger, the payouts list, and
 // the org-wide reseller list (balance column).
 function invalidatePayoutCaches(qc: ReturnType<typeof useQueryClient>, resellerId: string) {
-  qc.invalidateQueries({ queryKey: ['resellers', 'detail', resellerId] })
+  qc.invalidateQueries({ queryKey: resellerKeys.detail(resellerId) })
   qc.invalidateQueries({
-    queryKey: ['resellers', 'detail', resellerId, 'ledger'],
+    queryKey: resellerKeys.ledgerBase(resellerId),
   })
   qc.invalidateQueries({
-    queryKey: ['resellers', 'detail', resellerId, 'payouts'],
+    queryKey: resellerKeys.payouts(resellerId),
   })
-  qc.invalidateQueries({ queryKey: ['resellers', 'list'] })
+  qc.invalidateQueries({ queryKey: resellerKeys.lists() })
 }
 
 export function useCreatePayout(resellerId: string) {
@@ -203,7 +205,7 @@ export function useUpdateReseller(id: string) {
   return useMutation({
     mutationFn: (input: UpdateResellerInput) => updateReseller(id, input),
     onSuccess: (reseller) => {
-      qc.invalidateQueries({ queryKey: ['resellers'] })
+      qc.invalidateQueries({ queryKey: resellerKeys.all })
       toast.success(
         reseller.status === 'inactive'
           ? `Reseller "${reseller.name}" dinonaktifkan`
@@ -221,7 +223,7 @@ const COMMISSION_LEDGER_LIMIT = 200
 
 export function useResellerCommissionTotal(id: string) {
   return useQuery({
-    queryKey: ['resellers', 'detail', id, 'commission-total'] as const,
+    queryKey: resellerKeys.commissionTotal(id),
     queryFn: async () => {
       const ledger = await listResellerLedger(id, {
         limit: COMMISSION_LEDGER_LIMIT,

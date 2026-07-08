@@ -11,12 +11,19 @@ import {
   rescheduleWorkOrder,
   startWorkOrder,
 } from '@/api/workorders'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { inventoryKeys } from '@/features/inventory/queries/keys'
+import { invoiceKeys } from '@/features/invoices/queries/keys'
+import { routerKeys } from '@/features/routers/queries/keys'
+import { ticketKeys } from '@/features/tickets/queries/keys'
+import { topologyKeys } from '@/features/topology/queries/keys'
+import { workOrderKeys } from '@/features/work-orders/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { CompleteWorkOrderInput } from '@/schemas/workorder'
 
 export function useWorkOrdersList(filter: WorkOrderFilter = {}) {
   return useQuery({
-    queryKey: ['work-orders', 'list', filter] as const,
+    queryKey: workOrderKeys.list(filter),
     queryFn: () => listWorkOrders(filter),
   })
 }
@@ -35,7 +42,7 @@ export function useExportWorkOrders() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['work-orders', 'list', exportFilter] as const,
+      queryKey: workOrderKeys.list(exportFilter),
       queryFn: () => listWorkOrders(exportFilter),
     })
   }
@@ -47,19 +54,19 @@ export function useCompleteWorkOrder() {
     mutationFn: ({ id, input }: { id: string; input?: CompleteWorkOrderInput }) =>
       completeWorkOrder(id, input),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       // An install completion activates + provisions + invoices the customer,
       // and turns its topology node green (up).
-      qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['invoices'] })
-      qc.invalidateQueries({ queryKey: ['topology'] })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
+      qc.invalidateQueries({ queryKey: invoiceKeys.all })
+      qc.invalidateQueries({ queryKey: topologyKeys.all })
       // An install consumes an ONU from the warehouse.
-      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
       // …and provisions a PPPoE secret on a router.
-      qc.invalidateQueries({ queryKey: ['routers'] })
+      qc.invalidateQueries({ queryKey: routerKeys.all })
       // A repair completion auto-resolves the linked ticket (P3.B.4) — refresh
       // the ticket list + timeline so it reflects the close.
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success(
         wo.type === 'install'
           ? `WO ${wo.code} selesai — pelanggan diaktifkan & tagihan pertama dibuat`
@@ -77,7 +84,7 @@ export function useStartWorkOrder() {
   return useMutation({
     mutationFn: (id: string) => startWorkOrder(id),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       toast.success(`WO ${wo.code} dimulai`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -89,7 +96,7 @@ export function useCancelWorkOrder() {
   return useMutation({
     mutationFn: (id: string) => cancelWorkOrder(id),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       toast.success(`WO ${wo.code} dibatalkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -102,7 +109,7 @@ export function useAssignWorkOrder() {
     mutationFn: ({ id, technician }: { id: string; technician: string }) =>
       assignWorkOrder(id, technician),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       toast.success(`WO ${wo.code} ditugaskan ke ${wo.technician}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -115,7 +122,7 @@ export function useRescheduleWorkOrder() {
     mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
       rescheduleWorkOrder(id, scheduledAt),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       toast.success(`Jadwal WO ${wo.code} diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

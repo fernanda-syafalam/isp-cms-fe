@@ -25,6 +25,7 @@ import {
   updateSecret,
 } from '@/api/mikrotik'
 import type { MikrotikListFilter } from '@/api/mikrotik'
+import { routerKeys } from '@/features/routers/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   CreateIpPoolInput,
@@ -38,7 +39,7 @@ import type {
 
 export function useRouter(id: string) {
   return useQuery({
-    queryKey: ['routers', 'detail', id] as const,
+    queryKey: routerKeys.detail(id),
     queryFn: () => getRouter(id),
   })
 }
@@ -48,7 +49,7 @@ function useRouterAction(id: string, fn: (id: string) => Promise<unknown>, messa
   return useMutation({
     mutationFn: () => fn(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['routers'] })
+      qc.invalidateQueries({ queryKey: routerKeys.all })
       toast.success(message)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -64,7 +65,7 @@ export const useTestRouter = (id: string) => useRouterAction(id, testRouter, 'Ko
 // Profiles
 export function useProfiles(routerId: string) {
   return useQuery({
-    queryKey: ['routers', routerId, 'profiles'] as const,
+    queryKey: routerKeys.profiles(routerId),
     queryFn: () => listProfiles(routerId),
   })
 }
@@ -74,7 +75,7 @@ export function useCreateProfile(routerId: string) {
   return useMutation({
     mutationFn: (input: CreateProfileInput) => createProfile(routerId, input),
     onSuccess: (p) => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'profiles'] })
+      qc.invalidateQueries({ queryKey: routerKeys.profiles(routerId) })
       toast.success(`Profil "${p.name}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -86,7 +87,7 @@ export function useUpdateProfile(routerId: string) {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateProfileInput }) =>
       updateProfile(routerId, id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['routers', routerId, 'profiles'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: routerKeys.profiles(routerId) }),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
@@ -96,7 +97,7 @@ export function useDeleteProfile(routerId: string) {
   return useMutation({
     mutationFn: (id: string) => deleteProfile(routerId, id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'profiles'] })
+      qc.invalidateQueries({ queryKey: routerKeys.profiles(routerId) })
       toast.success('Profil dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -106,7 +107,7 @@ export function useDeleteProfile(routerId: string) {
 // Secrets
 export function useSecrets(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'secrets', filter] as const,
+    queryKey: routerKeys.secrets(routerId, filter),
     queryFn: () => listSecrets(routerId, filter),
   })
 }
@@ -116,8 +117,8 @@ export function useCreateSecret(routerId: string) {
   return useMutation({
     mutationFn: (input: CreateSecretInput) => createSecret(routerId, input),
     onSuccess: (s) => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] })
-      qc.invalidateQueries({ queryKey: ['routers', 'detail', routerId] })
+      qc.invalidateQueries({ queryKey: routerKeys.secretsBase(routerId) })
+      qc.invalidateQueries({ queryKey: routerKeys.detail(routerId) })
       toast.success(`Secret "${s.username}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -129,7 +130,7 @@ export function useUpdateSecret(routerId: string) {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSecretInput }) =>
       updateSecret(routerId, id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: routerKeys.secretsBase(routerId) }),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
@@ -139,8 +140,8 @@ export function useDeleteSecret(routerId: string) {
   return useMutation({
     mutationFn: (id: string) => deleteSecret(routerId, id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] })
-      qc.invalidateQueries({ queryKey: ['routers', 'detail', routerId] })
+      qc.invalidateQueries({ queryKey: routerKeys.secretsBase(routerId) })
+      qc.invalidateQueries({ queryKey: routerKeys.detail(routerId) })
       toast.success('Secret dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -150,7 +151,7 @@ export function useDeleteSecret(routerId: string) {
 // Sessions
 export function useSessions(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'sessions', filter] as const,
+    queryKey: routerKeys.sessions(routerId, filter),
     queryFn: () => listSessions(routerId, filter),
   })
 }
@@ -162,8 +163,8 @@ export function useDisconnectSession(routerId: string) {
     onSuccess: () => {
       // Disconnecting drops a session AND flips the owning secret's connection
       // state, so both lists must refetch.
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'sessions'] })
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'secrets'] })
+      qc.invalidateQueries({ queryKey: routerKeys.sessionsBase(routerId) })
+      qc.invalidateQueries({ queryKey: routerKeys.secretsBase(routerId) })
       toast.success('Sesi diputus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -173,7 +174,7 @@ export function useDisconnectSession(routerId: string) {
 // Queues
 export function useQueues(routerId: string, filter: MikrotikListFilter = {}) {
   return useQuery({
-    queryKey: ['routers', routerId, 'queues', filter] as const,
+    queryKey: routerKeys.queues(routerId, filter),
     queryFn: () => listQueues(routerId, filter),
   })
 }
@@ -183,7 +184,7 @@ export function useCreateQueue(routerId: string) {
   return useMutation({
     mutationFn: (input: CreateQueueInput) => createQueue(routerId, input),
     onSuccess: (q) => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] })
+      qc.invalidateQueries({ queryKey: routerKeys.queuesBase(routerId) })
       toast.success(`Queue "${q.name}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -195,7 +196,7 @@ export function useUpdateQueue(routerId: string) {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateQueueInput }) =>
       updateQueue(routerId, id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: routerKeys.queuesBase(routerId) }),
     onError: (err) => toast.error(getErrorMessage(err)),
   })
 }
@@ -205,7 +206,7 @@ export function useDeleteQueue(routerId: string) {
   return useMutation({
     mutationFn: (id: string) => deleteQueue(routerId, id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'queues'] })
+      qc.invalidateQueries({ queryKey: routerKeys.queuesBase(routerId) })
       toast.success('Queue dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -214,7 +215,7 @@ export function useDeleteQueue(routerId: string) {
 
 export function usePools(routerId: string) {
   return useQuery({
-    queryKey: ['routers', routerId, 'pools'] as const,
+    queryKey: routerKeys.pools(routerId),
     queryFn: () => listPools(routerId),
   })
 }
@@ -224,7 +225,7 @@ export function useCreatePool(routerId: string) {
   return useMutation({
     mutationFn: (input: CreateIpPoolInput) => createPool(routerId, input),
     onSuccess: (p) => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'pools'] })
+      qc.invalidateQueries({ queryKey: routerKeys.pools(routerId) })
       toast.success(`IP pool "${p.name}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -236,7 +237,7 @@ export function useDeletePool(routerId: string) {
   return useMutation({
     mutationFn: (id: string) => deletePool(routerId, id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['routers', routerId, 'pools'] })
+      qc.invalidateQueries({ queryKey: routerKeys.pools(routerId) })
       toast.success('IP pool dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

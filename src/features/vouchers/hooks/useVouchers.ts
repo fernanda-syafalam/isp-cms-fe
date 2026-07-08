@@ -8,12 +8,13 @@ import {
   listVouchers,
   redeemVoucher,
 } from '@/api/vouchers'
+import { voucherKeys } from '@/features/vouchers/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { GenerateVoucherBatchInput, VoucherList } from '@/schemas/voucher'
 
 export function useVouchersList(filter: VoucherFilter = {}) {
   return useQuery({
-    queryKey: ['vouchers', 'list', filter] as const,
+    queryKey: voucherKeys.list(filter),
     queryFn: () => listVouchers(filter),
   })
 }
@@ -29,7 +30,7 @@ export function useExportVouchers() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['vouchers', 'list', exportFilter] as const,
+      queryKey: voucherKeys.list(exportFilter),
       queryFn: () => listVouchers(exportFilter),
     })
   }
@@ -40,7 +41,7 @@ export function useGenerateVoucherBatch() {
   return useMutation({
     mutationFn: (input: GenerateVoucherBatchInput) => generateVoucherBatch(input),
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ['vouchers'] })
+      qc.invalidateQueries({ queryKey: voucherKeys.all })
       toast.success(`${res.created} voucher dibuat (batch ${res.batchId})`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -52,7 +53,7 @@ export function useRedeemVoucher() {
   return useMutation({
     mutationFn: (id: string) => redeemVoucher(id),
     onSuccess: (voucher) => {
-      qc.invalidateQueries({ queryKey: ['vouchers'] })
+      qc.invalidateQueries({ queryKey: voucherKeys.all })
       toast.success(`Voucher ${voucher.code} ditandai terpakai`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
