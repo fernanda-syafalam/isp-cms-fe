@@ -1,8 +1,32 @@
 [
   {
-    "name": "Main JS (critical path)",
+    "name": "Main JS (app entry / critical path)",
     "path": "dist/assets/index-*.js",
-    "limit": "310 kB",
+    "limit": "160 kB",
+    "gzip": true
+  },
+  {
+    "name": "Vendor: React runtime (eager, cached separately)",
+    "path": "dist/assets/vendor-react-*.js",
+    "limit": "64 kB",
+    "gzip": true
+  },
+  {
+    "name": "Vendor: TanStack Router + Query (eager)",
+    "path": "dist/assets/vendor-tanstack-*.js",
+    "limit": "44 kB",
+    "gzip": true
+  },
+  {
+    "name": "Vendor: Radix UI primitives (eager)",
+    "path": "dist/assets/vendor-radix-*.js",
+    "limit": "40 kB",
+    "gzip": true
+  },
+  {
+    "name": "Vendor: Forms + Zod (eager)",
+    "path": "dist/assets/vendor-forms-*.js",
+    "limit": "32 kB",
     "gzip": true
   },
   {

@@ -34,6 +34,55 @@ export default defineConfig({
     // acceptable. Bumped above Vite's 500 kB default so the warning doesn't
     // mask real regressions; revisit with a real bundle-size budget in CI.
     chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // Split STABLE, EAGERLY-loaded vendor libraries out of the app entry
+        // chunk so (a) the entry shrinks and gets budget headroom and (b) the
+        // vendor code caches independently of app deploys (its hash only
+        // changes on a dependency bump, not on every app change).
+        //
+        // Only match libraries that are part of the eager app shell. We must
+        // NOT fight TanStack Router's per-route lazy splitting: heavy, lazily
+        // reached deps (recharts, leaflet, qrcode.react) already live in their
+        // own on-demand chunks — they are intentionally absent from this map so
+        // Rollup keeps them lazy. `react-table` is likewise left to Rollup: it
+        // is only reached from lazy route chunks, so forcing it eager here
+        // would regress the critical path.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          // react / react-dom / scheduler / react/jsx-runtime — the runtime.
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+            return 'vendor-react'
+          }
+          // TanStack Router + Query power the eager app shell (router + query
+          // provider mount in main.tsx). react-table is deliberately excluded.
+          if (
+            id.includes('node_modules/@tanstack/react-router') ||
+            id.includes('node_modules/@tanstack/react-query') ||
+            id.includes('node_modules/@tanstack/query-core') ||
+            id.includes('node_modules/@tanstack/router-core') ||
+            id.includes('node_modules/@tanstack/history') ||
+            id.includes('node_modules/@tanstack/store')
+          ) {
+            return 'vendor-tanstack'
+          }
+          // Radix primitives used across the eager shell (dialogs, dropdowns…).
+          if (id.includes('node_modules/radix-ui/') || id.includes('node_modules/@radix-ui/')) {
+            return 'vendor-radix'
+          }
+          // Form + validation stack (react-hook-form + resolvers + zod) is used
+          // by the eager shell and most routes.
+          if (
+            id.includes('node_modules/react-hook-form') ||
+            id.includes('node_modules/@hookform/') ||
+            id.includes('node_modules/zod/')
+          ) {
+            return 'vendor-forms'
+          }
+          return undefined
+        },
+      },
+    },
   },
   test: {
     globals: true,

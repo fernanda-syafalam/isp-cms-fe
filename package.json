@@ -66,13 +66,17 @@
     "tailwindcss": "^4.0.0",
     "tw-animate-css": "^1.0.0",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0",
-    "vitest": "^3.0.0"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "msw"
-    ]
+    ],
+    "overrides": {
+      "form-data@>=4.0.0 <4.0.6": ">=4.0.6",
+      "ws@>=8.0.0 <8.21.0": ">=8.21.0"
+    }
   },
   "msw": {
     "workerDirectory": [
