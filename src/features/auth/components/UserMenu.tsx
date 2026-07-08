@@ -104,29 +104,40 @@ export function UserMenu({ variant = 'button' }: Props) {
             <span className="font-normal text-muted-foreground text-xs">{user.email}</span>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
-          Mode peran (demo)
-        </DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={effectiveRole}
-          onValueChange={(value) => {
-            if (isRole(value)) setOverride(value)
-          }}
-        >
-          {ROLES.map((role) => (
-            <DropdownMenuRadioItem key={role} value={role}>
-              {ROLE_LABEL[role]}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        {canReset ? (
-          <DropdownMenuItem onSelect={handleReset}>
-            <RotateCcwIcon />
-            Reset data demo
-          </DropdownMenuItem>
+        {/* Demo-only: the role switcher and mock-data reset must never ship to
+            production, where they would let any user change their effective
+            role (FEsec-H1). `import.meta.env.DEV` folds to `false` in a prod
+            build so this whole block tree-shakes out. */}
+        {import.meta.env.DEV ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+              Mode peran (demo)
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={effectiveRole}
+              onValueChange={(value) => {
+                if (isRole(value)) setOverride(value)
+              }}
+            >
+              {ROLES.map((role) => (
+                <DropdownMenuRadioItem key={role} value={role}>
+                  {ROLE_LABEL[role]}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            {canReset ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleReset}>
+                  <RotateCcwIcon />
+                  Reset data demo
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </>
         ) : null}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleLogout} disabled={logoutMutation.isPending}>
           <LogOutIcon />
           Keluar

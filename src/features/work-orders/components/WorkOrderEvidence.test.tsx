@@ -67,4 +67,30 @@ describe('WorkOrderEvidence', () => {
     // No completion-notes section when the WO has none.
     expect(screen.queryByText('Catatan penyelesaian')).not.toBeInTheDocument()
   })
+
+  it('does not render a javascript:-scheme signature URL as a link (A6-L1)', () => {
+    render(<WorkOrderEvidence wo={{ ...baseWo, signatureUrl: 'javascript:alert(1)' }} />)
+    // The unsafe URL must not become a clickable "Lihat" link.
+    expect(screen.queryByRole('link', { name: /lihat/i })).toBeNull()
+  })
+
+  it('renders an https signature URL as a link', () => {
+    render(<WorkOrderEvidence wo={{ ...baseWo, signatureUrl: 'https://cdn.example/sign.png' }} />)
+    expect(screen.getByRole('link', { name: /lihat/i })).toHaveAttribute(
+      'href',
+      'https://cdn.example/sign.png',
+    )
+  })
+
+  it('does not render a javascript:-scheme evidence photo as a link (A6-L1)', () => {
+    render(
+      <WorkOrderEvidence
+        wo={{ ...baseWo, photos: ['javascript:alert(1)', 'https://cdn.example/p1.jpg'] }}
+      />,
+    )
+    // Only the https photo is a link; the javascript: one degrades to plain text.
+    const links = screen.getAllByRole('link', { name: /foto/i })
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAttribute('href', 'https://cdn.example/p1.jpg')
+  })
 })
