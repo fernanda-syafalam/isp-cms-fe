@@ -17,7 +17,7 @@ services:
     image: isp-cms-fe:dokploy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/healthz"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:80/healthz']
       interval: 15s
       timeout: 3s
       retries: 5
@@ -27,8 +27,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
-      # Replace app.example.com with your real FE subdomain.
-      - traefik.http.routers.isp-cms-fe.rule=Host(`app.example.com`)
+      - traefik.http.routers.isp-cms-fe.rule=Host(`isp.astaweda.com`)
       - traefik.http.routers.isp-cms-fe.entrypoints=websecure
       - traefik.http.routers.isp-cms-fe.tls.certresolver=letsencrypt
       - traefik.http.services.isp-cms-fe.loadbalancer.server.port=80
