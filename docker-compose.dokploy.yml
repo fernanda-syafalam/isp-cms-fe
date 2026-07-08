@@ -1,0 +1,37 @@
+# Dokploy deployment compose for isp-cms-fe (static SPA behind Traefik).
+#
+# Deploy as a Dokploy "Compose" application. The bundle is built by the
+# Dockerfile with VITE_* values baked in as build args (Vite inlines
+# them), so changing the API URL requires a rebuild, not just a restart.
+# Set the values in the Dokploy Environment tab; see .env.dokploy.example.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Point at the real backend, including the /v1 version prefix.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_APP_NAME: ${VITE_APP_NAME:-isp-cms}
+    image: isp-cms-fe:dokploy
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:80/healthz']
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.isp-cms-fe.rule=Host(`isp.astaweda.com`)
+      - traefik.http.routers.isp-cms-fe.entrypoints=websecure
+      - traefik.http.routers.isp-cms-fe.tls.certresolver=letsencrypt
+      - traefik.http.services.isp-cms-fe.loadbalancer.server.port=80
+
+networks:
+  dokploy-network:
+    external: true
