@@ -33,9 +33,9 @@ export function ResellerCustomerDetailPage({ resellerId, customerId }: Props) {
     isLoading: isCustomerLoading,
     isError: isCustomerError,
     refetch,
-  } = useResellerCustomer(resellerId, customerId)
+  } = useResellerCustomer(customerId)
 
-  const isLoading = isResellerLoading || (Boolean(reseller) && isCustomerLoading)
+  const isLoading = isResellerLoading || isCustomerLoading
 
   if (isLoading) {
     return (
@@ -46,9 +46,13 @@ export function ResellerCustomerDetailPage({ resellerId, customerId }: Props) {
     )
   }
 
+  // Scope guard: a mitra may only view their own reseller's customers. The BE
+  // 404s a non-owned id (handled as `isCustomerError`); this ownership check
+  // fails closed on the FE too if a projection ever slips through.
+  const isOwned = Boolean(customer && reseller && customer.resellerName === reseller.name)
+
   // Not one of this reseller's own customers (or the fetch failed) → not found.
-  // This is where the FE scope is enforced for a mitra.
-  if (isResellerError || isCustomerError || !reseller || !customer) {
+  if (isResellerError || isCustomerError || !reseller || !customer || !isOwned) {
     return (
       <div className="space-y-4">
         <BackLink resellerId={resellerId} />

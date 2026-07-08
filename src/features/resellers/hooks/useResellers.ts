@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { listCustomers } from '@/api/customers'
+import { getCustomer, listCustomers } from '@/api/customers'
 import {
   type LedgerFilter,
   RESELLER_EXPORT_LIMIT,
@@ -59,27 +59,39 @@ export function useExportResellers() {
   }
 }
 
+// Page size for the reseller roster card. The roster paginates server-side (the
+// customers list supports limit/offset, BE #118) so a reseller with more than
+// one page of customers is never silently truncated to the BE's default page.
+export const RESELLER_ROSTER_PAGE_SIZE = 20
+
 // Customers registered by a reseller. The server narrows the list by
 // `resellerId` (BE #118), so the FE no longer pulls the full customer base and
-// filters it in the browser.
-export function useResellerCustomers(resellerId: string) {
+// filters it in the browser. Paged server-side: the caller drives `page` and
+// reads `total` for the true roster size (which agrees with the KPI
+// `customerCount`).
+export function useResellerCustomers(resellerId: string, page = 0) {
+  const filter = {
+    resellerId,
+    limit: RESELLER_ROSTER_PAGE_SIZE,
+    offset: page * RESELLER_ROSTER_PAGE_SIZE,
+  }
   return useQuery({
-    queryKey: customerKeys.list({ resellerId }),
-    queryFn: () => listCustomers({ resellerId }),
-    select: (data) => data.items,
+    queryKey: customerKeys.list(filter),
+    queryFn: () => listCustomers(filter),
   })
 }
 
-// A single customer scoped to one reseller (P3.D.5). Reuses the server-side
-// reseller-scoped list, then finds the id within it — so an id that is NOT one
-// of this reseller's own customers resolves to `undefined`. That enforces the
-// mitra scope on the FE (the scoped detail page renders not-found for it)
-// without widening the mitra surface to the org-wide `/customers` list.
-export function useResellerCustomer(resellerId: string, customerId: string) {
+// A single customer scoped to one reseller (P3.D.5). Resolves the customer by
+// id directly (GET /v1/customers/:id) instead of scanning the roster page, so a
+// customer beyond the first page still resolves (the old `.find()` over a
+// truncated page returned a false not-found for customer #51+). The BE enforces
+// the mitra scope server-side (404 ownership guard + KYC-safe projection, BE
+// #114); the scoped detail page additionally asserts the customer belongs to
+// this reseller for defense-in-depth.
+export function useResellerCustomer(customerId: string) {
   return useQuery({
-    queryKey: customerKeys.list({ resellerId }),
-    queryFn: () => listCustomers({ resellerId }),
-    select: (data) => data.items.find((c) => c.id === customerId),
+    queryKey: customerKeys.detail(customerId),
+    queryFn: () => getCustomer(customerId),
   })
 }
 

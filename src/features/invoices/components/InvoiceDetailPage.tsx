@@ -9,11 +9,11 @@ import { invoiceStatusTone as STATUS_TONE } from '@/components/shared/status-ton
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/format'
-import { invoiceTotal } from '@/lib/invoice'
+import { formatDate, formatDateTime } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
 
 import { useInvoice } from '../hooks/useInvoices'
+import { InvoiceBreakdownLines } from './InvoiceBreakdownLines'
 import { OnlinePayButton, PayMenu, RemindButton } from './InvoicePageActions'
 
 type Props = {
@@ -41,7 +41,6 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
     )
   }
 
-  const total = invoiceTotal(invoice)
   const fields: Array<{ label: string; value: string; copy?: boolean }> = [
     { label: 'Pelanggan', value: invoice.customerName },
     {
@@ -103,34 +102,9 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
               </div>
             ))}
           </dl>
-          <div className="space-y-2 border-border border-t pt-4 text-sm">
-            <Row label="DPP (langganan)" value={formatCurrency(invoice.amount)} />
-            {invoice.lateFee > 0 ? (
-              <Row label="Denda keterlambatan" value={formatCurrency(invoice.lateFee)} danger />
-            ) : null}
-            {invoice.taxAmount > 0 ? (
-              <Row label="PPN" value={formatCurrency(invoice.taxAmount)} />
-            ) : null}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-muted-foreground">Total tagihan</span>
-              <span className="font-bold font-mono text-2xl tabular-nums tracking-tight">
-                {formatCurrency(total)}
-              </span>
-            </div>
-          </div>
+          <InvoiceBreakdownLines invoice={invoice} emphasizeBalanceDue />
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-function Row({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono tabular-nums ${danger ? 'text-red-600 dark:text-red-400' : ''}`}>
-        {value}
-      </span>
     </div>
   )
 }
