@@ -11,6 +11,7 @@ import path from 'node:path'
 // @/api, ky, msw, react, or @testing-library, and none reference window/document.
 const PURE_TEST_GLOBS = [
   'src/schemas/**/*.test.ts',
+  'src/features/resellers/lib/**/*.test.ts',
   'src/features/topology/lib/**/*.test.ts',
   'src/lib/errors.test.ts',
   'src/lib/invoice.test.ts',

@@ -113,3 +113,30 @@ describe('portal identity resolves per authenticated customer', () => {
     await expect(getPortalMe()).rejects.toThrow()
   })
 })
+
+// Dev role switcher (UserMenu → roleStore) demo ergonomics: switching to the
+// customer role does NOT log in a subscriber, so the token stays the default
+// admin/dev token. Without help the portal would render the anonymous default
+// subscriber (which has no email/ticket context). The mock reads the persisted
+// dev-role override and resolves a concrete seeded subscriber (pelanggan1) so a
+// demo shows real data. Mock/dev-only — no effect on the real token contract.
+describe('portal resolves a seeded customer for the DEV role switcher', () => {
+  const DEV_ROLE_KEY = 'isp-cms-dev-role'
+
+  afterEach(() => {
+    window.localStorage.removeItem(DEV_ROLE_KEY)
+  })
+
+  it('resolves pelanggan1 (real data) instead of the anonymous default', async () => {
+    // No override → the anonymous default subscriber (first active, no email).
+    const anonymous = await getPortalMe()
+    expect(anonymous.customer.email).toBeNull()
+
+    // Demo-er switches to the customer role → a concrete seeded subscriber.
+    window.localStorage.setItem(DEV_ROLE_KEY, 'customer')
+    const demo = await getPortalMe()
+    expect(demo.customer.email).toBe('pelanggan1@example.com')
+    expect(demo.customer.status).toBe('aktif')
+    expect(demo.customer.id).not.toBe(anonymous.customer.id)
+  })
+})

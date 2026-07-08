@@ -15,6 +15,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { statusLabel } from '@/lib/status-label'
 import type { Reseller } from '@/schemas/reseller'
 
+import { resolveMitraResellerId } from '../lib/demoReseller'
 import { useExportResellers, useResellersList } from '../hooks/useResellers'
 import { CreateResellerDialog } from './CreateResellerDialog'
 import { resellerColumns, toCsvRow } from './resellersColumns'
@@ -82,12 +83,13 @@ export function ResellersListPage() {
 
   // A partner (mitra) only sees their own storefront, not the org-wide table.
   // Their identity is the resellerId on their own account (P1.5) — never a
-  // stand-in record. An unlinked mitra has no storefront to show.
+  // stand-in record. An unlinked mitra has no storefront to show. In a dev build
+  // the demo role switcher has no resellerId, so resolveMitraResellerId falls
+  // back to a seeded storefront (DEV-only; the guard below is intact in prod).
   if (role === 'mitra') {
-    if (user?.resellerId) {
-      return (
-        <Navigate to="/resellers/$resellerId" params={{ resellerId: user.resellerId }} replace />
-      )
+    const resellerId = resolveMitraResellerId(role, user?.resellerId)
+    if (resellerId) {
+      return <Navigate to="/resellers/$resellerId" params={{ resellerId }} replace />
     }
     return (
       <p className="text-muted-foreground text-sm" role="status">
