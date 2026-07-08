@@ -1,8 +1,10 @@
 import { screen, waitFor } from '@testing-library/react'
+import { HttpResponse, http } from 'msw'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/helpers'
+import { server } from '@/test/msw/server'
 
 import { ResellerCustomerDetailPage } from './ResellerCustomerDetailPage'
 
@@ -41,5 +43,46 @@ describe('ResellerCustomerDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Pelanggan tidak ditemukan.')).toBeInTheDocument()
     })
+  })
+
+  // Regression: a customer beyond the first roster page must resolve. The old
+  // hook did `.find()` over a truncated list and returned a false not-found for
+  // customer #51+; now the detail resolves via GET /customers/:id directly.
+  it('resolves a customer beyond the first roster page via GET /customers/:id', async () => {
+    const BEYOND_PAGE_ID = 'cccccccc-1111-4111-8111-000000000060'
+    server.use(
+      http.get('*/api/customers/:id', () =>
+        HttpResponse.json({
+          id: BEYOND_PAGE_ID,
+          customerNo: 'CUST-9060',
+          fullName: 'Pelanggan Halaman 4',
+          phone: '08120000000',
+          email: null,
+          address: 'Jl. Uji No. 60',
+          areaId: null,
+          areaName: null,
+          planId: 'dddddddd-1111-4111-8111-000000000001',
+          planName: 'Paket Uji',
+          status: 'aktif',
+          holdReason: null,
+          outstanding: 0,
+          billingAnchorDay: null,
+          // KYC-safe mitra projection omits npwp/ktp entirely (BE #114 / #351).
+          consentAt: null,
+          resellerName: 'Loket Andi',
+          connection: null,
+          joinedAt: '2026-01-01T00:00:00.000Z',
+        }),
+      ),
+    )
+
+    renderWithProviders(
+      <ResellerCustomerDetailPage resellerId={RESELLER_ID} customerId={BEYOND_PAGE_ID} />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Pelanggan Halaman 4' })).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Pelanggan tidak ditemukan.')).toBeNull()
   })
 })
