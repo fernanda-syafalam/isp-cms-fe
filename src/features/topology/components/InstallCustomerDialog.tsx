@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { listCustomers } from '@/api/customers'
+import { customerKeys } from '@/features/customers/queries/keys'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -38,7 +39,7 @@ type Props = {
 // splitter port + TIA-598 core that will be assigned, and provision the drop.
 export function InstallCustomerDialog({ open, onOpenChange, nodes, latLng, onInstalled }: Props) {
   const customersQ = useQuery({
-    queryKey: ['customers', 'list', {}],
+    queryKey: customerKeys.list({}),
     queryFn: () => listCustomers(),
   })
   const install = useInstallCustomer()

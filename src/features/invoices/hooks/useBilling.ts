@@ -8,19 +8,26 @@ import {
   runBilling,
   runScheduler,
 } from '@/api/billing'
+import { analyticsKeys } from '@/features/analytics/queries/keys'
+import { auditKeys } from '@/features/audit/queries/keys'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { billingKeys, invoiceKeys } from '@/features/invoices/queries/keys'
+import { notificationKeys } from '@/features/notifications/queries/keys'
+import { paymentKeys } from '@/features/payments/queries/keys'
+import { topologyKeys } from '@/features/topology/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 
 function useInvalidateBilling() {
   const qc = useQueryClient()
   return () => {
-    qc.invalidateQueries({ queryKey: ['invoices'] })
-    qc.invalidateQueries({ queryKey: ['customers'] })
-    qc.invalidateQueries({ queryKey: ['payments'] })
-    qc.invalidateQueries({ queryKey: ['analytics'] })
+    qc.invalidateQueries({ queryKey: invoiceKeys.all })
+    qc.invalidateQueries({ queryKey: customerKeys.all })
+    qc.invalidateQueries({ queryKey: paymentKeys.all })
+    qc.invalidateQueries({ queryKey: analyticsKeys.all })
     // Mass isolir flips topology nodes to "down" — refresh the map too.
-    qc.invalidateQueries({ queryKey: ['topology'] })
+    qc.invalidateQueries({ queryKey: topologyKeys.all })
     // Reminders write to the WhatsApp notification log.
-    qc.invalidateQueries({ queryKey: ['notifications'] })
+    qc.invalidateQueries({ queryKey: notificationKeys.all })
   }
 }
 
@@ -59,7 +66,7 @@ export function useIsolirOverdue() {
 // Automation: preview what the next cycle would do (open it on a dialog).
 export function useSchedulerPreview(enabled = true) {
   return useQuery({
-    queryKey: ['billing', 'scheduler', 'preview'] as const,
+    queryKey: billingKeys.schedulerPreview(),
     queryFn: getSchedulerPreview,
     enabled,
     staleTime: 0,
@@ -74,8 +81,8 @@ export function useRunScheduler() {
     mutationFn: runScheduler,
     onSuccess: (res) => {
       invalidate()
-      qc.invalidateQueries({ queryKey: ['billing', 'scheduler'] })
-      qc.invalidateQueries({ queryKey: ['audit'] })
+      qc.invalidateQueries({ queryKey: billingKeys.scheduler() })
+      qc.invalidateQueries({ queryKey: auditKeys.all })
       toast.success(
         `Siklus ${res.period}: ${res.created} tagihan, ${res.remindedUpcoming + res.remindedOverdue} pengingat, ${res.isolated} isolir`,
       )

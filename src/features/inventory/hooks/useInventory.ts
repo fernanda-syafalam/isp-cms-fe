@@ -13,6 +13,7 @@ import {
   stockInInventory,
   updateInventory,
 } from '@/api/inventory'
+import { inventoryKeys } from '@/features/inventory/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   MoveInventoryInput,
@@ -23,7 +24,7 @@ import type {
 
 export function useInventoryList(filter: InventoryFilter = {}) {
   return useQuery({
-    queryKey: ['inventory', 'list', filter] as const,
+    queryKey: inventoryKeys.list(filter),
     queryFn: () => listInventory(filter),
   })
 }
@@ -42,7 +43,7 @@ export function useExportInventory() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['inventory', 'list', exportFilter] as const,
+      queryKey: inventoryKeys.list(exportFilter),
       queryFn: () => listInventory(exportFilter),
     })
   }
@@ -50,7 +51,7 @@ export function useExportInventory() {
 
 export function useStockMovements(filter: StockMovementFilter = {}) {
   return useQuery({
-    queryKey: ['inventory', 'movements', filter] as const,
+    queryKey: inventoryKeys.movements(filter),
     queryFn: () => listStockMovements(filter),
   })
 }
@@ -69,7 +70,7 @@ export function useExportStockMovements() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['inventory', 'movements', exportFilter] as const,
+      queryKey: inventoryKeys.movements(exportFilter),
       queryFn: () => listStockMovements(exportFilter),
     })
   }
@@ -80,7 +81,7 @@ export function useStockIn() {
   return useMutation({
     mutationFn: (input: StockInInput) => stockInInventory(input),
     onSuccess: (item) => {
-      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
       toast.success(`Stok masuk: ${item.kind.toUpperCase()} ${item.serial}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -98,7 +99,7 @@ export function useMoveInventory(id: string) {
   return useMutation({
     mutationFn: (input: MoveInventoryInput) => moveInventory(id, input),
     onSuccess: (item, vars) => {
-      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
       toast.success(`Item "${item.serial}" ${MOVE_TOAST[vars.type]}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -110,7 +111,7 @@ export function useUpdateInventory(id: string) {
   return useMutation({
     mutationFn: (input: UpdateInventoryInput) => updateInventory(id, input),
     onSuccess: (item) => {
-      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
       toast.success(`Item "${item.serial}" diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -122,7 +123,7 @@ export function useDeleteInventory() {
   return useMutation({
     mutationFn: (id: string) => deleteInventory(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['inventory'] })
+      qc.invalidateQueries({ queryKey: inventoryKeys.all })
       toast.success('Item dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

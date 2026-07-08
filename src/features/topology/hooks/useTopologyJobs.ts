@@ -30,6 +30,9 @@ function isOpenTicket(status: string): boolean {
 // result is memoized so the (memoized) map markers don't rebuild every render.
 export function useTopologyJobs(myName: string | null): TopologyJobs {
   const workOrders = useQuery({
+    // NOTE: intentional legacy no-hyphen `workorders` root (distinct from the
+    // work-orders feature's `['work-orders']`). Never invalidated by WO
+    // mutations; leave inline — do NOT route through workOrderKeys.
     queryKey: ['workorders', 'list', {}] as const,
     queryFn: () => listWorkOrders(),
   })

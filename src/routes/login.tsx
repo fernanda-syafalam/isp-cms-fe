@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { getBootstrapStatus } from '@/api/auth'
+import { authKeys } from '@/features/auth/queries/keys'
 
 // Search-param validation must run on the eager route file so navigation
 // guards (e.g. _auth.tsx redirecting with ?from=...) can rely on it without
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: async ({ context }) => {
     const status = await context.queryClient
       .ensureQueryData({
-        queryKey: ['auth', 'bootstrap'],
+        queryKey: authKeys.bootstrap(),
         queryFn: getBootstrapStatus,
       })
       .catch(() => ({ required: false }))

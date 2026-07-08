@@ -3,10 +3,11 @@ import { toast } from 'sonner'
 
 import { createContract, getContract, sendContract, signContract } from '@/api/contracts'
 import { getErrorMessage } from '@/lib/errors'
+import { contractKeys } from '../queries/keys'
 
 export function useContract(customerId: string) {
   return useQuery({
-    queryKey: ['contracts', customerId] as const,
+    queryKey: contractKeys.detail(customerId),
     queryFn: () => getContract(customerId),
   })
 }
@@ -20,7 +21,7 @@ function useContractMutation(
   return useMutation({
     mutationFn: () => fn(customerId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contracts', customerId] })
+      qc.invalidateQueries({ queryKey: contractKeys.detail(customerId) })
       toast.success(message)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

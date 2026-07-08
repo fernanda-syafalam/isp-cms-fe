@@ -12,19 +12,21 @@ import {
   listTickets,
   updateTicket,
 } from '@/api/tickets'
+import { workOrderKeys } from '@/features/work-orders/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { AddCommentInput, CreateTicketInput, UpdateTicketInput } from '@/schemas/ticket'
+import { ticketKeys } from '../queries/keys'
 
 export function useTicket(id: string) {
   return useQuery({
-    queryKey: ['tickets', 'detail', id] as const,
+    queryKey: ticketKeys.detail(id),
     queryFn: () => getTicket(id),
   })
 }
 
 export function useTicketEvents(id: string) {
   return useQuery({
-    queryKey: ['tickets', id, 'events'] as const,
+    queryKey: ticketKeys.events(id),
     queryFn: () => listTicketEvents(id),
   })
 }
@@ -34,7 +36,7 @@ export function useAddComment(id: string) {
   return useMutation({
     mutationFn: (input: AddCommentInput) => addTicketComment(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tickets', id, 'events'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.events(id) })
       toast.success('Komentar ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -46,8 +48,8 @@ export function useCreateWorkOrderFromTicket(id: string) {
   return useMutation({
     mutationFn: () => createWorkOrderFromTicket(id),
     onSuccess: (wo) => {
-      qc.invalidateQueries({ queryKey: ['tickets', id, 'events'] })
-      qc.invalidateQueries({ queryKey: ['work-orders'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.events(id) })
+      qc.invalidateQueries({ queryKey: workOrderKeys.all })
       toast.success(`Work order ${wo.code} dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -56,7 +58,7 @@ export function useCreateWorkOrderFromTicket(id: string) {
 
 export function useTicketsList(filter: TicketFilter = {}) {
   return useQuery({
-    queryKey: ['tickets', 'list', filter] as const,
+    queryKey: ticketKeys.list(filter),
     queryFn: () => listTickets(filter),
   })
 }
@@ -75,7 +77,7 @@ export function useExportTickets() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['tickets', 'list', exportFilter] as const,
+      queryKey: ticketKeys.list(exportFilter),
       queryFn: () => listTickets(exportFilter),
     })
   }
@@ -86,7 +88,7 @@ export function useCreateTicket() {
   return useMutation({
     mutationFn: (input: CreateTicketInput) => createTicket(input),
     onSuccess: (ticket) => {
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success(`Tiket ${ticket.code} dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -98,7 +100,7 @@ export function useUpdateTicket(id: string) {
   return useMutation({
     mutationFn: (input: UpdateTicketInput) => updateTicket(id, input),
     onSuccess: (ticket) => {
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success(`Tiket ${ticket.code} diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -114,7 +116,7 @@ export function useBulkResolveTickets() {
       return ids.length
     },
     onSuccess: (count) => {
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success(`${count} tiket ditandai selesai`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

@@ -10,10 +10,11 @@ import {
 } from '@/api/slaCredits'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreateSlaCreditInput } from '@/schemas/slaCredit'
+import { slaCreditKeys } from '../queries/keys'
 
 export function useSlaCredits(filter: SlaCreditFilter = {}) {
   return useQuery({
-    queryKey: ['sla-credits', 'list', filter] as const,
+    queryKey: slaCreditKeys.list(filter),
     queryFn: () => listSlaCredits(filter),
   })
 }
@@ -23,7 +24,7 @@ export function useCreateSlaCredit() {
   return useMutation({
     mutationFn: (input: CreateSlaCreditInput) => createSlaCredit(input),
     onSuccess: (c) => {
-      qc.invalidateQueries({ queryKey: ['sla-credits'] })
+      qc.invalidateQueries({ queryKey: slaCreditKeys.all })
       toast.success(`Kredit SLA untuk "${c.customerName}" diterbitkan`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -35,7 +36,7 @@ export function useApplySlaCredit() {
   return useMutation({
     mutationFn: (id: string) => applySlaCredit(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sla-credits'] })
+      qc.invalidateQueries({ queryKey: slaCreditKeys.all })
       toast.success('Kredit diterapkan ke tagihan berikutnya')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -47,7 +48,7 @@ export function useVoidSlaCredit() {
   return useMutation({
     mutationFn: (id: string) => voidSlaCredit(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sla-credits'] })
+      qc.invalidateQueries({ queryKey: slaCreditKeys.all })
       toast.success('Kredit dibatalkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

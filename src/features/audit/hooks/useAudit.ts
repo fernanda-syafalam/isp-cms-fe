@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { AUDIT_EXPORT_LIMIT, type AuditFilter, listAudit } from '@/api/audit'
+import { auditKeys } from '@/features/audit/queries/keys'
 
 export function useAuditLog(filter: AuditFilter = {}) {
   return useQuery({
-    queryKey: ['audit', 'list', filter] as const,
+    queryKey: auditKeys.list(filter),
     queryFn: () => listAudit(filter),
   })
 }
@@ -23,7 +24,7 @@ export function useExportAudit() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['audit', 'list', exportFilter] as const,
+      queryKey: auditKeys.list(exportFilter),
       queryFn: () => listAudit(exportFilter),
     })
   }

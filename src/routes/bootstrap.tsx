@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { getBootstrapStatus } from '@/api/auth'
+import { authKeys } from '@/features/auth/queries/keys'
 
 // Public first-run route (P3.E.1). Single-use: if the instance is already
 // bootstrapped, bounce to /login. The status is cached under ['auth','bootstrap']
@@ -10,7 +11,7 @@ export const Route = createFileRoute('/bootstrap')({
   beforeLoad: async ({ context }) => {
     const status = await context.queryClient
       .ensureQueryData({
-        queryKey: ['auth', 'bootstrap'],
+        queryKey: authKeys.bootstrap(),
         queryFn: getBootstrapStatus,
       })
       .catch(() => ({ required: false }))

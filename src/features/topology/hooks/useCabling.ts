@@ -16,6 +16,9 @@ import {
   updateCable,
   updateCableRoute,
 } from '@/api/cabling'
+import { auditKeys } from '@/features/audit/queries/keys'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { cablingKeys, topologyKeys } from '@/features/topology/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   CreateCableInput,
@@ -33,42 +36,42 @@ import type { NetworkNode } from '@/schemas/topology'
 // projection of cabling.
 export function useCables() {
   return useQuery({
-    queryKey: ['cabling', 'cables'] as const,
+    queryKey: cablingKeys.cables(),
     queryFn: listCables,
   })
 }
 
 export function useStrands() {
   return useQuery({
-    queryKey: ['cabling', 'strands'] as const,
+    queryKey: cablingKeys.strands(),
     queryFn: listStrands,
   })
 }
 
 export function useClosures() {
   return useQuery({
-    queryKey: ['cabling', 'closures'] as const,
+    queryKey: cablingKeys.closures(),
     queryFn: listClosures,
   })
 }
 
 export function useSplices() {
   return useQuery({
-    queryKey: ['cabling', 'splices'] as const,
+    queryKey: cablingKeys.splices(),
     queryFn: listSplices,
   })
 }
 
 export function useSplitters() {
   return useQuery({
-    queryKey: ['cabling', 'splitters'] as const,
+    queryKey: cablingKeys.splitters(),
     queryFn: listSplitters,
   })
 }
 
 export function useCircuits() {
   return useQuery({
-    queryKey: ['cabling', 'circuits'] as const,
+    queryKey: cablingKeys.circuits(),
     queryFn: listCircuits,
   })
 }
@@ -81,10 +84,10 @@ export function useInstallCustomer() {
   return useMutation({
     mutationFn: (input: CustomerDropInput) => installCustomerDrop(input),
     onSuccess: (node: NetworkNode) => {
-      qc.invalidateQueries({ queryKey: ['topology'] })
-      qc.invalidateQueries({ queryKey: ['cabling'] })
-      qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['audit'] })
+      qc.invalidateQueries({ queryKey: topologyKeys.all })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
+      qc.invalidateQueries({ queryKey: auditKeys.all })
       toast.success(`Pelanggan "${node.name}" terpasang`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -99,7 +102,7 @@ export function useUpdateCableRoute() {
     mutationFn: ({ id, input }: { id: string; input: UpdateCableRouteInput }) =>
       updateCableRoute(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -112,7 +115,7 @@ export function useCreateCable() {
   return useMutation({
     mutationFn: (input: CreateCableInput) => createCable(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
       toast.success('Kabel ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -126,7 +129,7 @@ export function useUpdateCable() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateCableInput }) => updateCable(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
       toast.success('Kabel diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -140,7 +143,7 @@ export function useCreateClosure() {
   return useMutation({
     mutationFn: (input: CreateClosureInput) => createClosure(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
       toast.success('Closure ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -154,7 +157,7 @@ export function useCreateSplice() {
   return useMutation({
     mutationFn: (input: CreateSpliceInput) => createSplice(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
       toast.success('Sambungan ditambahkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -167,7 +170,7 @@ export function useDeleteSplice() {
   return useMutation({
     mutationFn: (id: string) => deleteSplice(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cabling'] })
+      qc.invalidateQueries({ queryKey: cablingKeys.all })
       toast.success('Sambungan dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

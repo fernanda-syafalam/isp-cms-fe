@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { getPublicSettings, getSettings, updateSettings } from '@/api/settings'
+import { auditKeys } from '@/features/audit/queries/keys'
+import { settingsKeys } from '@/features/settings/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { UpdateSettingsInput } from '@/schemas/settings'
 
 export function useSettings() {
   return useQuery({
-    queryKey: ['settings'] as const,
+    queryKey: settingsKeys.all,
     queryFn: getSettings,
     staleTime: 5 * 60_000,
   })
@@ -17,7 +19,7 @@ export function useSettings() {
 // full admin-only settings blob (`GET /v1/settings` is admin-scoped).
 export function usePublicSettings() {
   return useQuery({
-    queryKey: ['settings', 'public'] as const,
+    queryKey: settingsKeys.public(),
     queryFn: getPublicSettings,
     staleTime: 5 * 60_000,
   })
@@ -28,8 +30,8 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (input: UpdateSettingsInput) => updateSettings(input),
     onSuccess: (settings) => {
-      qc.setQueryData(['settings'], settings)
-      qc.invalidateQueries({ queryKey: ['audit'] })
+      qc.setQueryData(settingsKeys.all, settings)
+      qc.invalidateQueries({ queryKey: auditKeys.all })
       toast.success('Pengaturan disimpan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

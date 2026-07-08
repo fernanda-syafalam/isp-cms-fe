@@ -22,6 +22,10 @@ import {
   updateCustomer,
   updateKyc,
 } from '@/api/customers'
+import { analyticsKeys } from '@/features/analytics/queries/keys'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { invoiceKeys } from '@/features/invoices/queries/keys'
+import { topologyKeys } from '@/features/topology/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type {
   ChangePlanInput,
@@ -34,7 +38,7 @@ import type {
 
 export function useCustomersList(filter: CustomerFilter = {}) {
   return useQuery({
-    queryKey: ['customers', 'list', filter] as const,
+    queryKey: customerKeys.list(filter),
     queryFn: () => listCustomers(filter),
   })
 }
@@ -46,7 +50,7 @@ export function useExportCustomers() {
   return (filter: CustomerFilter) => {
     const exportFilter = { ...filter, limit: CUSTOMER_EXPORT_LIMIT, offset: 0 }
     return qc.fetchQuery({
-      queryKey: ['customers', 'list', exportFilter] as const,
+      queryKey: customerKeys.list(exportFilter),
       queryFn: () => listCustomers(exportFilter),
     })
   }
@@ -54,7 +58,7 @@ export function useExportCustomers() {
 
 export function useCustomer(id: string) {
   return useQuery({
-    queryKey: ['customers', 'detail', id] as const,
+    queryKey: customerKeys.detail(id),
     queryFn: () => getCustomer(id),
   })
 }
@@ -64,7 +68,7 @@ export function useCreateCustomer() {
   return useMutation({
     mutationFn: (input: CreateCustomerInput) => createCustomer(input),
     onSuccess: (customer) => {
-      qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
       toast.success(`Pelanggan "${customer.fullName}" dibuat`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -72,10 +76,10 @@ export function useCreateCustomer() {
 }
 
 function syncCustomerCaches(qc: ReturnType<typeof useQueryClient>, customer: Customer) {
-  qc.setQueryData(['customers', 'detail', customer.id], customer)
-  qc.invalidateQueries({ queryKey: ['customers', 'list'] })
+  qc.setQueryData(customerKeys.detail(customer.id), customer)
+  qc.invalidateQueries({ queryKey: customerKeys.lists() })
   // Lifecycle changes (aktif/isolir/berhenti) flip the customer's topology node.
-  qc.invalidateQueries({ queryKey: ['topology'] })
+  qc.invalidateQueries({ queryKey: topologyKeys.all })
 }
 
 export function useIsolateCustomer() {
@@ -112,9 +116,9 @@ export function useBulkCustomerStatus() {
       return { count: ids.length, action }
     },
     onSuccess: ({ count, action }) => {
-      qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['analytics'] })
-      qc.invalidateQueries({ queryKey: ['topology'] })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
+      qc.invalidateQueries({ queryKey: analyticsKeys.all })
+      qc.invalidateQueries({ queryKey: topologyKeys.all })
       toast.success(
         action === 'isolate' ? `${count} pelanggan diisolir` : `${count} pelanggan diaktifkan`,
       )
@@ -141,8 +145,8 @@ export function useChangePlan(id: string) {
     mutationFn: (input: ChangePlanInput) => changeCustomerPlan(id, input),
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
-      qc.invalidateQueries({ queryKey: ['invoices'] })
-      qc.invalidateQueries({ queryKey: ['analytics'] })
+      qc.invalidateQueries({ queryKey: invoiceKeys.all })
+      qc.invalidateQueries({ queryKey: analyticsKeys.all })
       toast.success(`Paket "${customer.fullName}" diubah ke ${customer.planName}`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),

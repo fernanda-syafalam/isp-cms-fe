@@ -10,12 +10,13 @@ import {
   rebootDevice,
   updateDevice,
 } from '@/api/devices'
+import { deviceKeys } from '@/features/devices/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { UpdateDeviceInput } from '@/schemas/device'
 
 export function useDevicesList(filter: DeviceFilter = {}) {
   return useQuery({
-    queryKey: ['devices', 'list', filter] as const,
+    queryKey: deviceKeys.list(filter),
     queryFn: () => listDevices(filter),
   })
 }
@@ -34,7 +35,7 @@ export function useExportDevices() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['devices', 'list', exportFilter] as const,
+      queryKey: deviceKeys.list(exportFilter),
       queryFn: () => listDevices(exportFilter),
     })
   }
@@ -42,7 +43,7 @@ export function useExportDevices() {
 
 export function useDevice(id: string) {
   return useQuery({
-    queryKey: ['devices', 'detail', id] as const,
+    queryKey: deviceKeys.detail(id),
     queryFn: () => getDevice(id),
   })
 }
@@ -52,7 +53,7 @@ export function useRebootDevice(id: string) {
   return useMutation({
     mutationFn: () => rebootDevice(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['devices'] })
+      qc.invalidateQueries({ queryKey: deviceKeys.all })
       toast.success('Perintah reboot dikirim')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -64,7 +65,7 @@ export function useUpdateDevice(id: string) {
   return useMutation({
     mutationFn: (input: UpdateDeviceInput) => updateDevice(id, input),
     onSuccess: (device) => {
-      qc.invalidateQueries({ queryKey: ['devices'] })
+      qc.invalidateQueries({ queryKey: deviceKeys.all })
       toast.success(`Perangkat "${device.name}" diperbarui`)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -76,7 +77,7 @@ export function useDeleteDevice() {
   return useMutation({
     mutationFn: (id: string) => deleteDevice(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['devices'] })
+      qc.invalidateQueries({ queryKey: deviceKeys.all })
       toast.success('Perangkat dihapus')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

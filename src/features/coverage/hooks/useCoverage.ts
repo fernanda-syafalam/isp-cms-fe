@@ -1,16 +1,13 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-import {
-  COVERAGE_EXPORT_LIMIT,
-  type CoverageFilter,
-  listCoverage,
-} from "@/api/coverage";
+import { COVERAGE_EXPORT_LIMIT, type CoverageFilter, listCoverage } from '@/api/coverage'
+import { coverageKeys } from '@/features/coverage/queries/keys'
 
 export function useCoverageList(filter: CoverageFilter = {}) {
   return useQuery({
-    queryKey: ["coverage", "list", filter] as const,
+    queryKey: coverageKeys.list(filter),
     queryFn: () => listCoverage(filter),
-  });
+  })
 }
 
 /**
@@ -19,16 +16,16 @@ export function useCoverageList(filter: CoverageFilter = {}) {
  * page, so export must re-query without the page window.
  */
 export function useExportCoverage() {
-  const qc = useQueryClient();
+  const qc = useQueryClient()
   return (filter: CoverageFilter = {}) => {
     const exportFilter: CoverageFilter = {
       ...filter,
       limit: COVERAGE_EXPORT_LIMIT,
       offset: 0,
-    };
+    }
     return qc.fetchQuery({
-      queryKey: ["coverage", "list", exportFilter] as const,
+      queryKey: coverageKeys.list(exportFilter),
       queryFn: () => listCoverage(exportFilter),
-    });
-  };
+    })
+  }
 }

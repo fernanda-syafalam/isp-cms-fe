@@ -9,11 +9,12 @@ import {
   revokeOtherSessions,
   revokeSession,
 } from '@/api/security'
+import { securityKeys } from '@/features/security/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 
 export function useSecurity() {
   return useQuery({
-    queryKey: ['security'] as const,
+    queryKey: securityKeys.all,
     queryFn: getSecurity,
   })
 }
@@ -34,7 +35,7 @@ export function useConfirmTwoFactor() {
   return useMutation({
     mutationFn: (code: string) => confirmTwoFactor(code),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['security'] })
+      qc.invalidateQueries({ queryKey: securityKeys.all })
       toast.success('Autentikasi dua faktor diaktifkan')
     },
   })
@@ -45,7 +46,7 @@ export function useDisableTwoFactor() {
   return useMutation({
     mutationFn: (code: string) => disableTwoFactor(code),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['security'] })
+      qc.invalidateQueries({ queryKey: securityKeys.all })
       toast.success('Autentikasi dua faktor dinonaktifkan')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -57,7 +58,7 @@ export function useRevokeSession() {
   return useMutation({
     mutationFn: (id: string) => revokeSession(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['security'] })
+      qc.invalidateQueries({ queryKey: securityKeys.all })
       toast.success('Sesi diakhiri')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -69,7 +70,7 @@ export function useRevokeOtherSessions() {
   return useMutation({
     mutationFn: () => revokeOtherSessions(),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['security'] })
+      qc.invalidateQueries({ queryKey: securityKeys.all })
       toast.success('Semua sesi lain diakhiri')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

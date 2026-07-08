@@ -1685,6 +1685,26 @@ function resolvePortalCustomer(request: Request) {
   return CUSTOMER_FIXTURES.find((c) => c.status === 'aktif') ?? CUSTOMER_FIXTURES[0]
 }
 
+// Build a subscriber session (matching the login response shape) for a login
+// email that resolves to a customer fixture, or null on a miss. Shared by
+// /auth/login and /auth/refresh so a mid-session refresh echoes the SAME
+// identity the presented token carries (ADR-0011 per-user parity) instead of
+// reverting to the default admin fixture.
+function customerSessionResponse(email: string) {
+  const customer = CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === email)
+  if (!customer) return null
+  return {
+    accessToken: customerAccessToken(email),
+    user: {
+      id: customer.id,
+      email,
+      fullName: customer.fullName,
+      role: 'customer' as const,
+      resellerId: null,
+    },
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Handlers — base path is `*/api/*` (dev worker + node tests both use /api).
 // ---------------------------------------------------------------------------
@@ -1713,24 +1733,20 @@ export const handlers = [
     // account (two distinct subscriber logins → two distinct portal snapshots).
     // Any other login stays the default admin/dev session.
     const email = body.email?.toLowerCase()
-    const customer = email
-      ? CUSTOMER_FIXTURES.find((c) => c.email?.toLowerCase() === email)
-      : undefined
-    if (customer && email) {
-      return HttpResponse.json({
-        accessToken: customerAccessToken(email),
-        user: {
-          id: customer.id,
-          email,
-          fullName: customer.fullName,
-          role: 'customer' as const,
-          resellerId: null,
-        },
-      })
-    }
+    const session = email ? customerSessionResponse(email) : null
+    if (session) return HttpResponse.json(session)
     return HttpResponse.json(SESSION_FIXTURE)
   }),
-  http.post('*/api/auth/refresh', () => HttpResponse.json(SESSION_FIXTURE)),
+  // Refresh must echo the identity the presented token carries (mirroring
+  // login/portal via readPortalIdentity), NOT the static admin fixture — a
+  // customer/2FA'd session that refreshes mid-flight must stay itself (ADR-0011,
+  // #354). Fail closed to the default session when no subscriber identity is
+  // resolvable (the opaque admin/dev token, or an unknown email).
+  http.post('*/api/auth/refresh', ({ request }) => {
+    const identity = readPortalIdentity(request)
+    const session = identity ? customerSessionResponse(identity) : null
+    return HttpResponse.json(session ?? SESSION_FIXTURE)
+  }),
   http.post('*/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
   http.get('*/api/auth/me', () => HttpResponse.json(USER_FIXTURE)),
   // First-run bootstrap (P3.E.1). Default: already bootstrapped (fixtures have

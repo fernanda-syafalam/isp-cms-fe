@@ -12,13 +12,15 @@ import {
   submitCsat,
   updatePortalWifi,
 } from '@/api/portal'
+import { ticketKeys } from '@/features/tickets/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { PortalWifiUpdate, ReportIssueInput } from '@/schemas/portal'
 import type { AddCommentInput, SubmitCsatInput } from '@/schemas/ticket'
+import { portalKeys } from '../queries/keys'
 
 export function usePortalMe() {
   return useQuery({
-    queryKey: ['portal', 'me'] as const,
+    queryKey: portalKeys.me(),
     queryFn: getPortalMe,
   })
 }
@@ -28,8 +30,8 @@ export function useReportIssue() {
   return useMutation({
     mutationFn: (input: ReportIssueInput) => reportIssue(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['portal', 'me'] })
-      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: portalKeys.me() })
+      qc.invalidateQueries({ queryKey: ticketKeys.all })
       toast.success('Laporan gangguan terkirim — tim kami segera menindaklanjuti')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -38,14 +40,14 @@ export function useReportIssue() {
 
 export function usePortalUsage() {
   return useQuery({
-    queryKey: ['portal', 'usage'] as const,
+    queryKey: portalKeys.usage(),
     queryFn: getPortalUsage,
   })
 }
 
 export function usePortalWifi() {
   return useQuery({
-    queryKey: ['portal', 'wifi'] as const,
+    queryKey: portalKeys.wifi(),
     queryFn: getPortalWifi,
   })
 }
@@ -55,7 +57,7 @@ export function useUpdatePortalWifi() {
   return useMutation({
     mutationFn: (input: PortalWifiUpdate) => updatePortalWifi(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['portal', 'wifi'] })
+      qc.invalidateQueries({ queryKey: portalKeys.wifi() })
       toast.success('Pengaturan Wi-Fi berhasil diperbarui')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -64,14 +66,14 @@ export function useUpdatePortalWifi() {
 
 export function usePortalAnnouncements() {
   return useQuery({
-    queryKey: ['portal', 'announcements'] as const,
+    queryKey: portalKeys.announcements(),
     queryFn: getPortalAnnouncements,
   })
 }
 
 export function usePortalTicket(id: string) {
   return useQuery({
-    queryKey: ['portal', 'ticket', id] as const,
+    queryKey: portalKeys.ticket(id),
     queryFn: () => getPortalTicket(id),
   })
 }
@@ -81,8 +83,8 @@ export function useAddPortalComment(id: string) {
   return useMutation({
     mutationFn: (input: AddCommentInput) => addPortalComment(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['portal', 'ticket', id] })
-      qc.invalidateQueries({ queryKey: ['portal', 'me'] })
+      qc.invalidateQueries({ queryKey: portalKeys.ticket(id) })
+      qc.invalidateQueries({ queryKey: portalKeys.me() })
       toast.success('Komentar terkirim')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -94,8 +96,8 @@ export function useSubmitCsat(id: string) {
   return useMutation({
     mutationFn: (input: SubmitCsatInput) => submitCsat(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['portal', 'ticket', id] })
-      qc.invalidateQueries({ queryKey: ['portal', 'me'] })
+      qc.invalidateQueries({ queryKey: portalKeys.ticket(id) })
+      qc.invalidateQueries({ queryKey: portalKeys.me() })
       toast.success('Terima kasih atas penilaian Anda')
     },
     onError: (err) => toast.error(getErrorMessage(err)),

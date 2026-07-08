@@ -8,6 +8,10 @@ import {
   listInvoices,
   payInvoice,
 } from '@/api/invoices'
+import { analyticsKeys } from '@/features/analytics/queries/keys'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { invoiceKeys } from '@/features/invoices/queries/keys'
+import { paymentKeys } from '@/features/payments/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import { formatCurrency } from '@/lib/format'
 import type { InvoiceList } from '@/schemas/invoice'
@@ -15,7 +19,7 @@ import type { RecordPaymentInput } from '@/schemas/payment'
 
 export function useInvoicesList(filter: InvoiceFilter = {}) {
   return useQuery({
-    queryKey: ['invoices', 'list', filter] as const,
+    queryKey: invoiceKeys.list(filter),
     queryFn: () => listInvoices(filter),
   })
 }
@@ -31,7 +35,7 @@ export function useExportInvoices() {
       offset: 0,
     }
     return qc.fetchQuery({
-      queryKey: ['invoices', 'list', exportFilter] as const,
+      queryKey: invoiceKeys.list(exportFilter),
       queryFn: () => listInvoices(exportFilter),
     })
   }
@@ -39,7 +43,7 @@ export function useExportInvoices() {
 
 export function useInvoice(id: string) {
   return useQuery({
-    queryKey: ['invoices', 'detail', id] as const,
+    queryKey: invoiceKeys.detail(id),
     queryFn: () => getInvoice(id),
   })
 }
@@ -49,12 +53,12 @@ export function usePayInvoice(id: string) {
   return useMutation({
     mutationFn: (input: RecordPaymentInput) => payInvoice(id, input),
     onSuccess: (invoice) => {
-      qc.setQueryData(['invoices', 'detail', id], invoice)
-      qc.invalidateQueries({ queryKey: ['invoices', 'list'] })
-      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.setQueryData(invoiceKeys.detail(id), invoice)
+      qc.invalidateQueries({ queryKey: invoiceKeys.lists() })
+      qc.invalidateQueries({ queryKey: paymentKeys.all })
       // payment can reactivate an isolated customer + change AR
-      qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['analytics'] })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
+      qc.invalidateQueries({ queryKey: analyticsKeys.all })
       // A partial payment still owes balanceDue — say so instead of implying paid.
       if (invoice.status === 'partial') {
         toast.success(

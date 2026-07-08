@@ -3,6 +3,12 @@ import { toast } from 'sonner'
 
 import { confirmPaymentIntent, createPaymentIntent } from '@/api/payments'
 import { confirmPortalPayIntent, createPortalPayIntent } from '@/api/portal'
+import { analyticsKeys } from '@/features/analytics/queries/keys'
+import { auditKeys } from '@/features/audit/queries/keys'
+import { customerKeys } from '@/features/customers/queries/keys'
+import { invoiceKeys } from '@/features/invoices/queries/keys'
+import { paymentKeys } from '@/features/payments/queries/keys'
+import { portalKeys } from '@/features/portal/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 import type { CreatePaymentIntentInput } from '@/schemas/payment'
 
@@ -26,14 +32,14 @@ export function useConfirmPaymentIntent(scope: CheckoutScope = 'staff') {
     mutationFn: (id: string) =>
       scope === 'portal' ? confirmPortalPayIntent(id) : confirmPaymentIntent(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['invoices'] })
-      qc.invalidateQueries({ queryKey: ['payments'] })
-      qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['analytics'] })
-      qc.invalidateQueries({ queryKey: ['audit'] })
+      qc.invalidateQueries({ queryKey: invoiceKeys.all })
+      qc.invalidateQueries({ queryKey: paymentKeys.all })
+      qc.invalidateQueries({ queryKey: customerKeys.all })
+      qc.invalidateQueries({ queryKey: analyticsKeys.all })
+      qc.invalidateQueries({ queryKey: auditKeys.all })
       // Refresh the customer's self-service snapshot so the settled invoice and
       // the now-resolved pending intent drop off the portal immediately.
-      qc.invalidateQueries({ queryKey: ['portal'] })
+      qc.invalidateQueries({ queryKey: portalKeys.all })
       toast.success('Pembayaran berhasil — tagihan lunas')
     },
     onError: (err) => toast.error(getErrorMessage(err)),
