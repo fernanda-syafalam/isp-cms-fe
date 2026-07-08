@@ -1,34 +1,14 @@
-import '@testing-library/jest-dom/vitest'
-import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 
 import { resetMockDb } from './msw/handlers'
 import { server } from './msw/server'
 
-// jsdom doesn't implement these browser APIs that our component libraries rely
-// on (cmdk uses ResizeObserver + scrollIntoView; useIsMobile/Sheet use
-// matchMedia). Polyfill them once for every test instead of per file.
-if (!('ResizeObserver' in globalThis)) {
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-}
-if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = () => {}
-}
-if (!window.matchMedia) {
-  window.matchMedia = (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })
-}
+// MSW lifecycle for the `app` test project only. Pure-logic tests run in a
+// separate `node` project that never imports this file, so they no longer pay
+// the mega-handler import + server.listen + per-test seed-clone cost (this was
+// the root cause of the collect/setup timeouts seen under machine load). The
+// jest-dom + browser polyfills live in ./setup.base.ts, which the `app`
+// project loads before this file.
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 // Reset the stateful mock store to its seed before each test for determinism.
