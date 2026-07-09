@@ -33,6 +33,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
   const [planOpen, setPlanOpen] = useState(false)
   const [relocateOpen, setRelocateOpen] = useState(false)
   const [stopOpen, setStopOpen] = useState(false)
+  const [suspendOpen, setSuspendOpen] = useState(false)
   const canEdit = useCan('customers.manage')
   const canDelete = useCan('records.delete')
   const stop = useStopCustomer()
@@ -67,7 +68,7 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           </DropdownMenuItem>
         ) : null}
         {canSuspend ? (
-          <DropdownMenuItem onSelect={() => suspend.mutate(customer.id)}>
+          <DropdownMenuItem onSelect={() => setSuspendOpen(true)}>
             <PauseIcon className="size-4" />
             Berhenti sementara
           </DropdownMenuItem>
@@ -102,6 +103,24 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
           onOpenChange={setRelocateOpen}
         />
       ) : null}
+
+      <AlertDialog open={suspendOpen} onOpenChange={setSuspendOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Berhenti sementara?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pelanggan "{customer.fullName}" akan dijeda sementara dan koneksinya dinonaktifkan.
+              Tindakan ini bisa dibalik lewat aktivasi kembali.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => suspend.mutate(customer.id)}>
+              Berhenti sementara
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={stopOpen} onOpenChange={setStopOpen}>
         <AlertDialogContent>

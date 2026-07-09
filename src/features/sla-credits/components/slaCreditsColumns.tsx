@@ -1,9 +1,20 @@
 import { Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CheckIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
 
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { DataTableColumnHeader } from '@/components/shared/table/data-table-column-header'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -111,29 +122,83 @@ export function slaCreditColumns({
       cell: ({ row }) => {
         const c = row.original
         if (!canManage || c.status !== 'pending') return null
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8">
-                Aksi
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => apply.mutate(c.id)}>
-                <CheckIcon className="size-4" />
-                Terapkan ke tagihan
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => voidCredit.mutate(c.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <XIcon className="size-4" />
-                Batalkan
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        return <SlaCreditRowActions credit={c} apply={apply} voidCredit={voidCredit} />
       },
     },
   ]
+}
+
+// Actions cell for a pending SLA credit. Both writes are financial, so each is
+// gated behind a confirm dialog. Uses controlled AlertDialogs (the dropdown
+// item closes the menu on select, so the dialog cannot live inside it).
+function SlaCreditRowActions({
+  credit,
+  apply,
+  voidCredit,
+}: {
+  credit: SlaCredit
+  apply: ReturnType<typeof useApplySlaCredit>
+  voidCredit: ReturnType<typeof useVoidSlaCredit>
+}) {
+  const [applyOpen, setApplyOpen] = useState(false)
+  const [voidOpen, setVoidOpen] = useState(false)
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8">
+            Aksi
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem onSelect={() => setApplyOpen(true)}>
+            <CheckIcon className="size-4" />
+            Terapkan ke tagihan
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setVoidOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <XIcon className="size-4" />
+            Batalkan
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={applyOpen} onOpenChange={setApplyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Terapkan kredit ke tagihan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kredit SLA sebesar {formatCurrency(credit.amount)} untuk "{credit.customerName}" akan
+              diterapkan ke tagihan. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => apply.mutate(credit.id)}>Terapkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan kredit SLA?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kredit SLA sebesar {formatCurrency(credit.amount)} untuk "{credit.customerName}" akan
+              dibatalkan dan tidak diterapkan ke tagihan. Tindakan ini tidak dapat dibalik.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => voidCredit.mutate(credit.id)}>
+              Batalkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
 }

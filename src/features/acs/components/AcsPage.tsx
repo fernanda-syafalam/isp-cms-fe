@@ -5,6 +5,17 @@ import { useState } from 'react'
 import { FilterTabs, type FilterTabItem } from '@/components/shared/filter-tabs'
 import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/table/data-table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
@@ -100,16 +111,31 @@ export function AcsPage() {
           const ids = selected.map((d) => d.id)
           return (
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                disabled={bulk.isPending}
-                onClick={() => bulk.mutate({ action: 'reboot', deviceIds: ids })}
-              >
-                <RotateCwIcon className="size-4" />
-                Reboot
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8" disabled={bulk.isPending}>
+                    <RotateCwIcon className="size-4" />
+                    Reboot
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reboot {ids.length} perangkat?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {ids.length} perangkat CPE terpilih akan di-reboot. Koneksi internet pelanggan
+                      terputus sekitar 2 menit selama perangkat menyala ulang.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => bulk.mutate({ action: 'reboot', deviceIds: ids })}
+                    >
+                      Reboot ({ids.length})
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Button variant="outline" size="sm" className="h-8" onClick={() => setFwIds(ids)}>
                 <UploadCloudIcon className="size-4" />
                 Firmware
