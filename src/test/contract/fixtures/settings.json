@@ -1,0 +1,18 @@
+{
+  "company": {
+    "name": "PT Ashnet Nusantara",
+    "address": "Jl. Merdeka No. 10, Bandung",
+    "phone": "022-1234567",
+    "email": "billing@ashnet.id"
+  },
+  "billing": {
+    "lateFeeIdr": 25000,
+    "dueDays": 10,
+    "isolirGraceDays": 3
+  },
+  "tax": {
+    "pkp": true,
+    "npwp": "01.234.567.8-901.000",
+    "ppnRate": 0.11
+  }
+}

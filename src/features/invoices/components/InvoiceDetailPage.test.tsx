@@ -41,6 +41,8 @@ const DISCOUNTED_INVOICE = {
   dueDate: '2026-07-10',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 }
 
 describe('InvoiceDetailPage', () => {
@@ -92,5 +94,37 @@ describe('InvoiceDetailPage', () => {
     expect(screen.queryByText('Sudah dibayar')).toBeNull()
     const owedRow = screen.getByText('Sisa tagihan').parentElement
     expect(owedRow).toHaveTextContent('111.000')
+  })
+
+  it('shows the "Penyesuaian" badge and the note for an adjustment invoice', async () => {
+    server.use(
+      http.get('*/api/invoices/:id', () =>
+        HttpResponse.json({
+          ...DISCOUNTED_INVOICE,
+          type: 'adjustment',
+          note: 'Proration: Home 20 → Home 50',
+        }),
+      ),
+    )
+
+    renderWithProviders(<InvoiceDetailPage invoiceId={INVOICE_ID} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Penyesuaian')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Catatan penyesuaian')).toBeInTheDocument()
+    expect(screen.getByText('Proration: Home 20 → Home 50')).toBeInTheDocument()
+  })
+
+  it('omits the badge and note for a regular invoice', async () => {
+    server.use(http.get('*/api/invoices/:id', () => HttpResponse.json(DISCOUNTED_INVOICE)))
+
+    renderWithProviders(<InvoiceDetailPage invoiceId={INVOICE_ID} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Total tagihan')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Penyesuaian')).toBeNull()
+    expect(screen.queryByText('Catatan penyesuaian')).toBeNull()
   })
 })

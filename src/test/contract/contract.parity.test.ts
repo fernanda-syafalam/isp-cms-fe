@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { ALIGNED, KNOWN_DRIFT } from './registry'
 
-// FE↔BE list-schema parity (ADR-0011).
+// FE↔BE schema parity (ADR-0011).
 //
-// For every list endpoint the FE consumes, we parse a BE-DERIVED fixture (a
-// representative body that mirrors the real `isp-cms-be` response DTO on
+// For every endpoint the FE consumes — list, detail, and high-value non-list
+// surfaces (portal snapshot, oversight rollups) — we parse a BE-DERIVED fixture
+// (a representative body that mirrors the real `isp-cms-be` response DTO on
 // origin/main — NOT the MSW handler, which is built to match the FE and would
 // make this vacuous) with the FE zod schema the `api/*.ts` function actually
 // uses. If the FE schema rejects a shape the BE really returns, that is a
@@ -17,7 +18,7 @@ function issuePaths(error: { issues: readonly { path: readonly PropertyKey[] }[]
   return error.issues.map((issue) => issue.path.map(String).join('.'))
 }
 
-describe('FE↔BE list-schema parity (ADR-0011)', () => {
+describe('FE↔BE schema parity (ADR-0011)', () => {
   describe('aligned endpoints — BE-derived fixture must satisfy the FE schema', () => {
     for (const entry of ALIGNED) {
       it(`${entry.endpoint} parses with its FE list schema`, () => {
@@ -38,11 +39,11 @@ describe('FE↔BE list-schema parity (ADR-0011)', () => {
   // Any entry here has a real, still-open FE↔BE drift. Each test locks the
   // drift: it stays green while the BE gap exists and turns RED once the BE
   // returns the missing field and the fixture is re-derived — the cue to move
-  // the entry into ALIGNED. Currently EMPTY: BE PR #115 closed the last six, so
-  // every list endpoint is ALIGNED. This block re-arms automatically the moment
-  // a new drift is registered.
+  // the entry into ALIGNED. Currently EMPTY: every registered endpoint (list,
+  // detail, portal, oversight) is ALIGNED. This block re-arms automatically the
+  // moment a new drift is registered.
   describe('known drift — BE-derived fixture is expected to FAIL the FE schema (follow-up)', () => {
-    it('has no outstanding drift (all list endpoints aligned)', () => {
+    it('has no outstanding drift (all endpoints aligned)', () => {
       expect(KNOWN_DRIFT).toHaveLength(0)
     })
 

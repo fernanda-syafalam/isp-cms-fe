@@ -68,6 +68,8 @@ function buildMe({ status, holdReason, withUnpaid = true }: MeOptions) {
           dueDate: DUE_DATE,
           paidAt: null,
           lastRemindedAt: null,
+          type: 'regular' as const,
+          note: null,
         },
       ]
     : []

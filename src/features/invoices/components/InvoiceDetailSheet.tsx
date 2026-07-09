@@ -22,6 +22,7 @@ import { useInvoice } from '../hooks/useInvoices'
 import { InvoiceBreakdown } from './InvoiceBreakdown'
 import { InvoiceSheetActions } from './InvoiceSheetActions'
 import { InvoiceTimeline } from './InvoiceTimeline'
+import { InvoiceTypeBadge } from './InvoiceTypeBadge'
 
 type Props = {
   /** The invoice to show; the sheet is closed when null. */
@@ -50,7 +51,10 @@ function SheetBody({ invoiceId }: { invoiceId: string }) {
         title={<span className="font-mono">{invoice?.invoiceNo ?? 'Tagihan'}</span>}
         status={
           invoice ? (
-            <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+            <span className="flex items-center gap-1.5">
+              <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+              <InvoiceTypeBadge type={invoice.type} />
+            </span>
           ) : null
         }
         description={
@@ -102,6 +106,12 @@ function InvoiceBody({ invoice }: { invoice: Invoice }) {
           <DetailMeta label="Status">{statusLabel(invoice.status)}</DetailMeta>
         </DetailMetaGrid>
       </DetailSection>
+
+      {invoice.note ? (
+        <DetailSection title="Catatan penyesuaian">
+          <p className="text-sm">{invoice.note}</p>
+        </DetailSection>
+      ) : null}
 
       <InvoiceBreakdown invoice={invoice} />
 

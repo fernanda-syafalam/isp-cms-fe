@@ -56,6 +56,8 @@ function buildMe(options: { withIntent: boolean; invoiceStatus?: 'overdue' | 'pa
     dueDate: '2026-06-01',
     paidAt: invoiceStatus === 'paid' ? '2026-06-02T00:00:00.000Z' : null,
     lastRemindedAt: null,
+    type: 'regular' as const,
+    note: null,
   }
   const pendingIntents = options.withIntent
     ? [
