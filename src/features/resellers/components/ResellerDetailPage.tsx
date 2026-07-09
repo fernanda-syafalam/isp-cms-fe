@@ -17,7 +17,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { DataTable } from '@/components/shared/table/data-table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useCan } from '@/features/auth'
+import { useCan, useEffectiveRole } from '@/features/auth'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
 import { statusLabel } from '@/lib/status-label'
@@ -39,6 +39,11 @@ export function ResellerDetailPage({ resellerId }: Props) {
   const table = useTableQuery({ pageSize: 20 })
   const ledger = useResellerLedger(resellerId, table.params)
   const canManage = useCan('resellers.manage')
+  const role = useEffectiveRole()
+  // A mitra can self-request a cash-out of their own balance — request only.
+  // Approve/reject/disburse stay admin/staff (BE PR #133 enforces server-side
+  // ownership + entitlement). Admin/staff can also request on a reseller's behalf.
+  const canRequestPayout = canManage || role === 'mitra'
   const [dialogType, setDialogType] = useState<LedgerEntryType | null>(null)
   const [payoutOpen, setPayoutOpen] = useState(false)
 
@@ -87,11 +92,13 @@ export function ResellerDetailPage({ resellerId }: Props) {
                   <CoinsIcon className="size-4" />
                   Catat komisi
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setPayoutOpen(true)}>
-                  <HandCoinsIcon className="size-4" />
-                  Ajukan pencairan
-                </Button>
               </>
+            ) : null}
+            {canRequestPayout ? (
+              <Button variant="outline" size="sm" onClick={() => setPayoutOpen(true)}>
+                <HandCoinsIcon className="size-4" />
+                Ajukan pencairan
+              </Button>
             ) : null}
           </div>
         }

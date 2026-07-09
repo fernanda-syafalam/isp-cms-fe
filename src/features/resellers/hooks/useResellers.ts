@@ -228,22 +228,36 @@ export function useUpdateReseller(id: string) {
   })
 }
 
-// Real commission earned (P3.D.1): sum of the reseller's `commission` ledger
-// entries, replacing the old hardcoded-ARPU estimate. Pulls one max-size
-// ledger page (the ledger is small per reseller) and sums client-side.
-const COMMISSION_LEDGER_LIMIT = 200
+// Real commission earned (P3.D.1): the TRUE sum of the reseller's `commission`
+// ledger entries, replacing the old hardcoded-ARPU estimate. The ledger has no
+// server-side aggregate and no type filter, so we page through the whole log
+// (max-size pages) and sum client-side — a single 200-row page understated the
+// total for a reseller with a long ledger (flow-audit Low).
+const COMMISSION_LEDGER_PAGE_SIZE = 200
 
 export function useResellerCommissionTotal(id: string) {
   return useQuery({
     queryKey: resellerKeys.commissionTotal(id),
     queryFn: async () => {
-      const ledger = await listResellerLedger(id, {
-        limit: COMMISSION_LEDGER_LIMIT,
-        offset: 0,
-      })
-      return ledger.items
-        .filter((e) => e.type === 'commission')
-        .reduce((sum, e) => sum + e.amount, 0)
+      let offset = 0
+      let total = Number.POSITIVE_INFINITY
+      let sum = 0
+      // Walk the full ledger; `total` from the first page bounds the loop.
+      while (offset < total) {
+        const page = await listResellerLedger(id, {
+          limit: COMMISSION_LEDGER_PAGE_SIZE,
+          offset,
+        })
+        total = page.total
+        for (const entry of page.items) {
+          if (entry.type === 'commission') sum += entry.amount
+        }
+        // Guard against a page that returns fewer rows than `total` claims, so
+        // the loop always terminates instead of spinning on a stuck offset.
+        if (page.items.length === 0) break
+        offset += page.items.length
+      }
+      return sum
     },
   })
 }

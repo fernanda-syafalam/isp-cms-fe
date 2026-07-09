@@ -4167,6 +4167,15 @@ export const handlers = [
       })
     }
     const body = (await request.json()) as { amount: number; note?: string }
+    // Entitlement guard (BE PR #133): a mitra self-requesting can't ask for more
+    // than their available balance. Mirror the BE 422 so the demo shows the
+    // "Saldo tidak mencukupi…" toast instead of creating an over-balance request.
+    if (body.amount > reseller.balance) {
+      return new HttpResponse(
+        JSON.stringify({ message: 'Saldo tidak mencukupi untuk pencairan.' }),
+        { status: 422 },
+      )
+    }
     const now = new Date().toISOString()
     const payout: MockPayout = {
       id: crypto.randomUUID(),
