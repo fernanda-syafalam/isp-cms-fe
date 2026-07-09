@@ -20,6 +20,42 @@ export const LIFECYCLE_LABEL: Record<string, string> = {
 
 const ACCENT = '#2563eb'
 
+// Colorblind safety: a marker must not encode status by color alone. Each of the
+// five visual states gets its own SHAPE (silhouette) on top of its color, so a
+// colorblind NOC operator can tell an outage from unknown from maintenance
+// without relying on hue. This mirrors the tree's StatusGlyph vocabulary
+// (`TopologyTree.tsx`): up = filled circle, down = diamond, unknown = hollow
+// (ring) — and extends it to the two map-only overrides (suspended, maintenance)
+// that the tree does not render.
+type MarkerShape = {
+  // border-radius of the colored body: '9999px' = round family, small px = square
+  // family. A hollow (ring) variant carries the same radius on its inner cutout.
+  radius: string
+  // rotation (deg) of the colored body — 45° turns a square into a diamond.
+  rotate: number
+  // hollow = a ring/donut (colored body with a white center) instead of a solid.
+  hollow: boolean
+}
+
+const STATUS_SHAPE: Record<'up' | 'down' | 'unknown' | 'suspended' | 'maintenance', MarkerShape> = {
+  up: { radius: '9999px', rotate: 0, hollow: false }, // filled circle (mirrors tree)
+  down: { radius: '3px', rotate: 45, hollow: false }, // diamond (mirrors tree)
+  unknown: { radius: '9999px', rotate: 0, hollow: true }, // hollow circle / ring (mirrors tree)
+  suspended: { radius: '2px', rotate: 0, hollow: false }, // solid square
+  maintenance: { radius: '2px', rotate: 0, hollow: true }, // hollow square
+}
+
+// Escape a data string before it is interpolated into the divIcon HTML attribute
+// (Leaflet assigns this via innerHTML). The node name is user/customer data, so
+// it must be escaped to avoid breaking the markup or injecting HTML.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 // One-line technical summary shown under the node name on hover.
 export function tooltipMeta(node: NetworkNode): string | null {
   const m = node.meta
@@ -52,6 +88,11 @@ export function nodeIcon(
   job: boolean,
   suspended: boolean,
   maintenance: boolean,
+  // Accessible name for the marker, e.g. "Budi · Down · Pemeliharaan". Rendered
+  // as the divIcon's aria-label so the status is available to assistive tech as
+  // text — not only via the hover tooltip. Built by the caller from the existing
+  // Bahasa-Indonesia status labels.
+  accessibleName: string,
 ): L.DivIcon {
   const r = TYPE_RADIUS[node.type]
   const size = r * 2
@@ -61,22 +102,34 @@ export function nodeIcon(
     : '0 0 2px rgba(0,0,0,.5)'
   // Planned maintenance (sky) wins over billing-suspended (slate) and over the
   // network status color, so a node under scheduled work never reads as a fiber
-  // fault (red). Network status still drives every other node's color.
+  // fault (red). Network status still drives every other node's color. The same
+  // precedence chooses the marker SHAPE, so shape and color always agree.
+  const visual = maintenance ? 'maintenance' : suspended ? 'suspended' : node.status
   const fill = maintenance
     ? MAINTENANCE_COLOR
     : suspended
       ? SUSPEND_COLOR
       : STATUS_COLOR[node.status]
+  const shape = STATUS_SHAPE[visual]
+  // Hollow (ring) statuses get a white center cut out of the colored body, using
+  // the same radius family so a hollow circle stays round and a hollow square
+  // stays square.
+  const innerRadius = shape.radius === '9999px' ? '9999px' : '1px'
+  const hole = shape.hollow
+    ? `<span style="width:50%;height:50%;border-radius:${innerRadius};background:#ffffff"></span>`
+    : ''
+  const body = `<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:${shape.radius};background:${fill};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow};transform:rotate(${shape.rotate}deg)">${hole}</span>`
   // An amber badge marks a customer with an open work order / ticket — stays
   // fully opaque even when the node is dimmed so jobs stand out at a glance.
   const badge = job
     ? '<span style="position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:9999px;background:#f59e0b;border:1.5px solid #fff"></span>'
     : ''
+  const label = escapeHtml(accessibleName)
   return L.divIcon({
     className: 'topology-marker',
     iconSize: [size, size],
     iconAnchor: [r, r],
-    html: `<span style="position:relative;display:block;width:${size}px;height:${size}px"><span style="display:block;width:100%;height:100%;border-radius:9999px;background:${fill};border:${border};opacity:${dim ? 0.3 : 1};box-shadow:${shadow}"></span>${badge}</span>`,
+    html: `<span role="img" aria-label="${label}" style="position:relative;display:block;width:${size}px;height:${size}px">${body}${badge}</span>`,
   })
 }
 
