@@ -28,9 +28,14 @@ export const toCsvRow = (c: Customer) => ({
   Bergabung: formatDate(c.joinedAt),
 })
 
-// Static column defs (no component state). Sortable keys (customerNo/fullName/
-// areaName/status/joinedAt) match the backend sort whitelist; phone is plain.
-export const customerColumns: ColumnDef<Customer>[] = [
+// Column defs (no component state of their own). Sortable keys (customerNo/
+// fullName/areaName/status/joinedAt) match the backend sort whitelist; phone is
+// plain. A factory rather than a const so the row-actions menu can receive the
+// page's `onQuickView` callback, giving keyboard users a focusable trigger for
+// the quick-view drawer (the row `<tr>` click that opens it is mouse-only).
+export const customerColumns = (
+  onQuickView: (customer: Customer) => void,
+): ColumnDef<Customer>[] => [
   {
     accessorKey: 'customerNo',
     header: ({ column }) => <DataTableColumnHeader column={column} title="No." />,
@@ -80,6 +85,8 @@ export const customerColumns: ColumnDef<Customer>[] = [
     id: 'actions',
     meta: { align: 'right' },
     enableHiding: false,
-    cell: ({ row }) => <CustomerRowActions customer={row.original} />,
+    cell: ({ row }) => (
+      <CustomerRowActions customer={row.original} onQuickView={() => onQuickView(row.original)} />
+    ),
   },
 ]

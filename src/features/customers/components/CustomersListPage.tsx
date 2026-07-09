@@ -1,6 +1,6 @@
 import { getRouteApi, Link } from '@tanstack/react-router'
 import { DownloadIcon, UserPlusIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { CustomerFilter } from '@/api/customers'
@@ -36,6 +36,10 @@ export function CustomersListPage() {
   const navigate = routeApi.useNavigate()
   const [isExporting, setIsExporting] = useState(false)
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null)
+
+  // Both the mouse row-click and the keyboard-reachable "Lihat cepat" menu item
+  // open the same quick-view drawer via this one open-state target.
+  const columns = useMemo(() => customerColumns((c) => setOpenCustomerId(c.id)), [])
 
   // Status is a URL filter (deep-linkable/bookmarkable); changing it rewinds to
   // page 1 so the user is never stranded on an out-of-range page.
@@ -147,7 +151,7 @@ export function CustomersListPage() {
       </div>
 
       <DataTable
-        columns={customerColumns}
+        columns={columns}
         data={data?.items}
         isLoading={isLoading}
         isError={isError}
