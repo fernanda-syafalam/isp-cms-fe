@@ -197,17 +197,19 @@ describe('payout lifecycle', () => {
     expect(items.some((p) => p.id === requested.id && p.status === 'paid')).toBe(true)
   })
 
-  it('rejects disbursing more than the available balance (422)', async () => {
+  it('rejects requesting more than the available balance (422)', async () => {
     const before = await getReseller(RESELLER_ID)
-    const requested = await createPayout(RESELLER_ID, {
-      amount: 2_000_000_000,
-    })
-    await approvePayout(RESELLER_ID, requested.id)
-    await expect(disbursePayout(RESELLER_ID, requested.id)).rejects.toThrow()
+    const { total: totalBefore } = await listPayouts(RESELLER_ID)
 
-    // A failed disburse leaves the balance untouched.
+    // Entitlement guard (BE PR #133): a request above the balance is refused at
+    // request time, so an over-balance payout never enters the lifecycle.
+    await expect(createPayout(RESELLER_ID, { amount: 2_000_000_000 })).rejects.toThrow()
+
+    // The rejected request creates no payout and leaves the balance untouched.
     const after = await getReseller(RESELLER_ID)
     expect(after.balance).toBe(before.balance)
+    const { total: totalAfter } = await listPayouts(RESELLER_ID)
+    expect(totalAfter).toBe(totalBefore)
   })
 })
 
