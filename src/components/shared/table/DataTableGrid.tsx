@@ -29,16 +29,28 @@ export function DataTableGrid<T>({ table, rows, isLoading, onRowClick }: Props<T
         <TableHeader>
           {table.getHeaderGroups().map((group) => (
             <TableRow key={group.id} className="hover:bg-transparent">
-              {group.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={alignClass(header.column.columnDef.meta?.align)}
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
+              {group.headers.map((header) => {
+                const sorted = header.column.getIsSorted()
+                return (
+                  <TableHead
+                    key={header.id}
+                    aria-sort={
+                      header.column.getCanSort()
+                        ? sorted === 'asc'
+                          ? 'ascending'
+                          : sorted === 'desc'
+                            ? 'descending'
+                            : 'none'
+                        : undefined
+                    }
+                    className={alignClass(header.column.columnDef.meta?.align)}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                )
+              })}
             </TableRow>
           ))}
         </TableHeader>

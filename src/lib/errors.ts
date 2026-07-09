@@ -14,7 +14,7 @@ export class AppError extends Error {
 export function getErrorMessage(err: unknown): string {
   if (err instanceof AppError) return err.message
   if (err instanceof Error) return err.message
-  return 'An unexpected error occurred'
+  return 'Terjadi kesalahan tak terduga'
 }
 
 /**

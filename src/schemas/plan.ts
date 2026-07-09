@@ -38,10 +38,10 @@ export const PlanListSchema = z.object({
 })
 
 export const CreatePlanSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(80),
-  speedMbps: z.number().int().positive('Speed must be > 0'),
-  priceMonthly: z.number().int().nonnegative('Price must be >= 0'),
-  fupGb: z.number().int().nonnegative('FUP must be >= 0').optional(),
+  name: z.string().min(1, 'Nama wajib diisi').max(80),
+  speedMbps: z.number().int().positive('Kecepatan harus > 0'),
+  priceMonthly: z.number().int().nonnegative('Harga harus >= 0'),
+  fupGb: z.number().int().nonnegative('FUP harus >= 0').optional(),
   rateLimitProfile: z.string().max(40).optional(),
 })
 

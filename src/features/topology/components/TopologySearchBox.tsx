@@ -39,6 +39,7 @@ export function TopologySearchBox({ nodes, query, onQueryChange, onPick }: Props
         <CommandInput
           value={query}
           onValueChange={onQueryChange}
+          aria-label="Cari node topologi"
           placeholder="Cari nama, telepon, ONU, IP…"
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}

@@ -188,6 +188,7 @@ export function DataTable<T>({
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               className="h-11 pl-9 sm:h-8"
             />
           </div>

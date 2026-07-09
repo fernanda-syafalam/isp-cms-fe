@@ -20,9 +20,9 @@ export const UserListSchema = z.object({
 })
 
 export const CreateUserSchema = z.object({
-  email: z.email('Invalid email'),
-  fullName: z.string().min(1, 'Name is required').max(120),
-  password: z.string().min(12, 'Min 12 characters').max(128, 'Max 128 characters'),
+  email: z.email('Email tidak valid'),
+  fullName: z.string().min(1, 'Nama wajib diisi').max(120),
+  password: z.string().min(12, 'Minimal 12 karakter').max(128, 'Maksimal 128 karakter'),
   // No .default() here: the form always supplies a role (the Select is never
   // empty) and the backend applies its own default. Keeping input === output
   // also keeps the zodResolver generics sound under exactOptionalPropertyTypes.
@@ -32,7 +32,7 @@ export const CreateUserSchema = z.object({
 // Edit an existing staff account: name and/or role. Email and password are not
 // editable here (identity / credential changes are a separate concern).
 export const UpdateUserSchema = z.object({
-  fullName: z.string().min(1, 'Name is required').max(120).optional(),
+  fullName: z.string().min(1, 'Nama wajib diisi').max(120).optional(),
   role: UserRoleSchema.optional(),
 })
 

@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { userId } from '@/types/ids'
 
 export const LoginSchema = z.object({
-  email: z.email('Invalid email'),
-  password: z.string().min(8, 'Min 8 characters'),
+  email: z.email('Email tidak valid'),
+  password: z.string().min(8, 'Minimal 8 karakter'),
   // Only sent on the second submit of a 2FA-challenged login (ADR-0002).
   // The email/password form never sets it; the login challenge adds it
   // programmatically on resubmit, so it stays optional here.

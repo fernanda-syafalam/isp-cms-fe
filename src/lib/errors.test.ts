@@ -12,6 +12,6 @@ describe('getErrorMessage', () => {
   })
 
   it('falls back for unknown values', () => {
-    expect(getErrorMessage('weird')).toBe('An unexpected error occurred')
+    expect(getErrorMessage('weird')).toBe('Terjadi kesalahan tak terduga')
   })
 })
