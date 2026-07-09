@@ -1,12 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { InvoiceDetailPage } from '@/features/invoices'
-
-export const Route = createFileRoute('/_auth/invoices/$invoiceId')({
-  component: InvoiceDetailRoute,
-})
-
-function InvoiceDetailRoute() {
-  const { invoiceId } = Route.useParams()
-  return <InvoiceDetailPage invoiceId={invoiceId} />
-}
+// Route stub only — component is code-split into _auth.invoices.$invoiceId.lazy.tsx.
+export const Route = createFileRoute('/_auth/invoices/$invoiceId')({})

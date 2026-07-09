@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { InvoicesListPage } from '@/features/invoices'
 import { statusSearch } from '@/lib/search'
 
+// Route stub — component is code-split into _auth.invoices.index.lazy.tsx.
 export const Route = createFileRoute('/_auth/invoices/')({
-  component: InvoicesListPage,
   validateSearch: statusSearch,
 })

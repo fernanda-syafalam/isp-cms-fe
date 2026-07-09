@@ -74,7 +74,7 @@ const BootstrapRoute = BootstrapRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/_auth.lazy').then((d) => d.Route))
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -141,7 +141,9 @@ const AuthResellersRoute = AuthResellersRouteImport.update({
   id: '/resellers',
   path: '/resellers',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.resellers.lazy').then((d) => d.Route),
+)
 const AuthReportsRoute = AuthReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -151,7 +153,7 @@ const AuthPortalRoute = AuthPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() => import('./routes/_auth.portal.lazy').then((d) => d.Route))
 const AuthPlansRoute = AuthPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -180,17 +182,23 @@ const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.invoices.lazy').then((d) => d.Route),
+)
 const AuthInventoryRoute = AuthInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.inventory.lazy').then((d) => d.Route),
+)
 const AuthCustomersRoute = AuthCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.customers.lazy').then((d) => d.Route),
+)
 const AuthCoverageRoute = AuthCoverageRouteImport.update({
   id: '/coverage',
   path: '/coverage',
@@ -221,12 +229,16 @@ const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthTicketsRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.tickets.index.lazy').then((d) => d.Route),
+)
 const AuthResellersIndexRoute = AuthResellersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthResellersRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.resellers.index.lazy').then((d) => d.Route),
+)
 const AuthPortalIndexRoute = AuthPortalIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -238,27 +250,37 @@ const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthInvoicesRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.invoices.index.lazy').then((d) => d.Route),
+)
 const AuthInventoryIndexRoute = AuthInventoryIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthInventoryRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.inventory.index.lazy').then((d) => d.Route),
+)
 const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthCustomersRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.customers.index.lazy').then((d) => d.Route),
+)
 const AuthTicketsTicketIdRoute = AuthTicketsTicketIdRouteImport.update({
   id: '/$ticketId',
   path: '/$ticketId',
   getParentRoute: () => AuthTicketsRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.tickets.$ticketId.lazy').then((d) => d.Route),
+)
 const AuthResellersResellerIdRoute = AuthResellersResellerIdRouteImport.update({
   id: '/$resellerId',
   path: '/$resellerId',
   getParentRoute: () => AuthResellersRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.resellers.$resellerId.lazy').then((d) => d.Route),
+)
 const AuthNetworkUsageRoute = AuthNetworkUsageRouteImport.update({
   id: '/network/usage',
   path: '/network/usage',
@@ -298,12 +320,16 @@ const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
   id: '/$invoiceId',
   path: '/$invoiceId',
   getParentRoute: () => AuthInvoicesRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.invoices.$invoiceId.lazy').then((d) => d.Route),
+)
 const AuthInventoryMovementsRoute = AuthInventoryMovementsRouteImport.update({
   id: '/movements',
   path: '/movements',
   getParentRoute: () => AuthInventoryRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.inventory.movements.lazy').then((d) => d.Route),
+)
 const AuthCustomersOnboardingRoute = AuthCustomersOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -315,47 +341,73 @@ const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
   id: '/$customerId',
   path: '/$customerId',
   getParentRoute: () => AuthCustomersRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.customers.$customerId.lazy').then((d) => d.Route),
+)
 const AuthNetworkRoutersIndexRoute = AuthNetworkRoutersIndexRouteImport.update({
   id: '/network/routers/',
   path: '/network/routers/',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.network.routers.index.lazy').then((d) => d.Route),
+)
 const AuthNetworkDevicesIndexRoute = AuthNetworkDevicesIndexRouteImport.update({
   id: '/network/devices/',
   path: '/network/devices/',
   getParentRoute: () => AuthRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_auth.network.devices.index.lazy').then((d) => d.Route),
+)
 const AuthNetworkRoutersRouterIdRoute =
   AuthNetworkRoutersRouterIdRouteImport.update({
     id: '/network/routers/$routerId',
     path: '/network/routers/$routerId',
     getParentRoute: () => AuthRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_auth.network.routers.$routerId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthNetworkDevicesDeviceIdRoute =
   AuthNetworkDevicesDeviceIdRouteImport.update({
     id: '/network/devices/$deviceId',
     path: '/network/devices/$deviceId',
     getParentRoute: () => AuthRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_auth.network.devices.$deviceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthInvoicesPrintInvoiceIdRoute =
   AuthInvoicesPrintInvoiceIdRouteImport.update({
     id: '/print/$invoiceId',
     path: '/print/$invoiceId',
     getParentRoute: () => AuthInvoicesRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_auth.invoices.print.$invoiceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthResellersResellerIdCustomersCustomerIdRoute =
   AuthResellersResellerIdCustomersCustomerIdRouteImport.update({
     id: '/customers/$customerId',
     path: '/customers/$customerId',
     getParentRoute: () => AuthResellersResellerIdRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_auth.resellers.$resellerId.customers.$customerId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthPortalInvoicesInvoiceIdPrintRoute =
   AuthPortalInvoicesInvoiceIdPrintRouteImport.update({
     id: '/invoices/$invoiceId/print',
     path: '/invoices/$invoiceId/print',
     getParentRoute: () => AuthPortalRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_auth.portal.invoices.$invoiceId.print.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute

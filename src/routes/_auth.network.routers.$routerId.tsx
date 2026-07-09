@@ -1,12 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { RouterDetailPage } from '@/features/routers'
-
-export const Route = createFileRoute('/_auth/network/routers/$routerId')({
-  component: RouterDetailRoute,
-})
-
-function RouterDetailRoute() {
-  const { routerId } = Route.useParams()
-  return <RouterDetailPage routerId={routerId} />
-}
+// Route stub only — component is code-split into _auth.network.routers.$routerId.lazy.tsx.
+export const Route = createFileRoute('/_auth/network/routers/$routerId')({})
