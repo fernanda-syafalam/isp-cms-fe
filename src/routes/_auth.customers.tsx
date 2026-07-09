@@ -1,7 +1,4 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-// Layout for the customers section so the list (index) and detail ($customerId)
-// routes nest under /customers.
-export const Route = createFileRoute('/_auth/customers')({
-  component: Outlet,
-})
+// Route stub only — component is code-split into _auth.customers.lazy.tsx.
+export const Route = createFileRoute('/_auth/customers')({})

@@ -1,5 +1,4 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/_auth/inventory')({
-  component: Outlet,
-})
+// Route stub only — component is code-split into _auth.inventory.lazy.tsx.
+export const Route = createFileRoute('/_auth/inventory')({})
