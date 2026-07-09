@@ -20,9 +20,10 @@ export function DashboardPage() {
   const { data: recentPayments } = useRecentPayments()
   const { data: upcomingInstalls } = useUpcomingInstalls()
 
-  // Restricted roles land on their own home, not the ops dashboard.
+  // Restricted roles land on their own home, not the ops dashboard. admin/staff
+  // map to '/' (this route itself), so only redirect when home points elsewhere.
   const home = ROLE_HOME[role]
-  if (home) return <Navigate to={home} replace />
+  if (home && home !== '/') return <Navigate to={home} replace />
 
   const alerts: AttentionAlert[] = summary
     ? [
