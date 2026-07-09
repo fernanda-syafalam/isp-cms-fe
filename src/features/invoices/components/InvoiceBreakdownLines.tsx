@@ -11,11 +11,14 @@ type Props = {
   emphasizeBalanceDue?: boolean
 }
 
-// Itemised money breakdown for an invoice: DPP, PPN, late fee, discount (−),
-// the gross "total tagihan", the amount already paid (−), and the outstanding
-// `balanceDue` (Sisa tagihan) as the bottom-line amount owed. Discount and paid
-// rows show only when non-zero so a plain invoice stays clean; when a credit or
-// payment exists it is never invisible and the owed figure is net, matching the
+// Itemised money breakdown for an invoice: DPP, PPN and late fee foot into the
+// gross "total tagihan" subtotal; the discount (−) and the amount already paid
+// (−) then roll DOWN from that subtotal as deductions toward the outstanding
+// `balanceDue` (Sisa tagihan), the bottom-line amount owed. Keeping deductions
+// below the subtotal means a reader summing top-to-bottom never subtracts a
+// discount from a total that already excludes it. Discount and paid rows show
+// only when non-zero so a plain invoice stays clean; when a credit or payment
+// exists it is never invisible and the owed figure is net, matching the
 // backend's `balanceDue`.
 export function InvoiceBreakdownLines({ invoice, emphasizeBalanceDue = false }: Props) {
   const grossTotal = invoiceTotal(invoice)
@@ -28,13 +31,16 @@ export function InvoiceBreakdownLines({ invoice, emphasizeBalanceDue = false }: 
       {invoice.lateFee > 0 ? (
         <Row label="Denda keterlambatan" value={formatCurrency(invoice.lateFee)} danger />
       ) : null}
-      {invoice.discountAmount > 0 ? (
-        <Row label="Diskon" value={`- ${formatCurrency(invoice.discountAmount)}`} credit />
-      ) : null}
       <div className="flex items-center justify-between border-sidebar-border border-t pt-2">
         <span className="text-muted-foreground">Total tagihan</span>
         <span className="font-bold font-mono tabular-nums">{formatCurrency(grossTotal)}</span>
       </div>
+      {/* Deductions roll down below the gross subtotal toward Sisa tagihan, so a
+          reader summing top-to-bottom never subtracts a discount from a subtotal
+          that already excludes it. */}
+      {invoice.discountAmount > 0 ? (
+        <Row label="Diskon" value={`- ${formatCurrency(invoice.discountAmount)}`} credit />
+      ) : null}
       {invoice.paidAmount > 0 ? (
         <Row label="Sudah dibayar" value={`- ${formatCurrency(invoice.paidAmount)}`} credit />
       ) : null}

@@ -1,14 +1,21 @@
 import { useState } from 'react'
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { InvoiceSchema } from '@/schemas/invoice'
+import { PaymentIntentSchema } from '@/schemas/payment'
 import { renderWithProviders } from '@/test/helpers'
 import { server } from '@/test/msw/server'
 
 import { CheckoutDialog } from './CheckoutDialog'
+
+// Poll cadence mirrored from useCheckout: interval 3s, client-side timeout 120s.
+// Duplicated (not imported) so the test locks the observable contract — if the
+// hook's constants change, this test should be updated deliberately.
+const PORTAL_POLL_INTERVAL_MS = 3000
+const PORTAL_POLL_TIMEOUT_MS = 120_000
 
 // A seeded, still-unpaid invoice — its id matches an INVOICE_FIXTURES row so the
 // mock create-intent route resolves it (and the poll route can settle it).
@@ -32,6 +39,24 @@ const PORTAL_INVOICE = InvoiceSchema.parse({
   lastRemindedAt: null,
   type: 'regular',
   note: null,
+})
+
+// A pending intent for the invoice above — passed as `existingIntent` so the
+// portal poll starts on mount (no create click), letting the whole poll lifecycle
+// run under fake timers deterministically.
+const PENDING_INTENT = PaymentIntentSchema.parse({
+  id: 'dddddddd-2222-4222-8222-000000000002',
+  invoiceId: PORTAL_INVOICE.id,
+  invoiceNo: PORTAL_INVOICE.invoiceNo,
+  customerName: PORTAL_INVOICE.customerName,
+  amount: 555_000,
+  channel: 'qris',
+  status: 'pending',
+  vaNumber: null,
+  qrPayload: 'ID.MOCK.QRIS|qris|INV-2026-102|555000',
+  createdAt: '2026-05-01T00:00:00.000Z',
+  expiresAt: '2999-01-01T00:00:00.000Z',
+  paidAt: null,
 })
 
 // A dialog whose open state is driven by the component under test, so an
@@ -109,5 +134,82 @@ describe('CheckoutDialog (portal scope)', () => {
       screen.queryByRole('button', { name: /simulasikan pembayaran berhasil/i }),
     ).not.toBeInTheDocument()
     expect(seen.some((r) => /\/confirm$/.test(r))).toBe(false)
+  })
+
+  it('stops polling and shows the belum-settle waiting copy after the 120s timeout', async () => {
+    vi.useFakeTimers()
+    try {
+      const seen = trackRequests()
+      const pollCount = () =>
+        seen.filter((r) => /^GET \/api\/portal\/pay-intent\/[^/]+$/.test(r)).length
+
+      // The intent never settles, so only the client-side timeout can end the
+      // poll — exactly the branch under test.
+      server.use(
+        http.get('*/api/portal/pay-intent/:id', ({ params }) =>
+          HttpResponse.json({
+            id: params.id,
+            invoiceId: PORTAL_INVOICE.id,
+            invoiceNo: PORTAL_INVOICE.invoiceNo,
+            customerName: PORTAL_INVOICE.customerName,
+            amount: 555_000,
+            channel: 'qris',
+            status: 'pending',
+            vaNumber: null,
+            qrPayload: 'ID.MOCK.QRIS|qris|INV-2026-102|555000',
+            createdAt: '2026-05-01T00:00:00.000Z',
+            expiresAt: '2999-01-01T00:00:00.000Z',
+            paidAt: null,
+          }),
+        ),
+      )
+
+      // Seed the pending intent so the poll runs immediately on mount.
+      const dialog = (
+        <CheckoutDialog
+          invoice={PORTAL_INVOICE}
+          open
+          onOpenChange={() => {}}
+          scope="portal"
+          existingIntent={PENDING_INTENT}
+        />
+      )
+      const { rerender } = renderWithProviders(dialog)
+
+      // Before the timeout the customer sees the active waiting copy, not the
+      // give-up copy.
+      expect(screen.getByText(/menunggu konfirmasi pembayaran/i)).toBeInTheDocument()
+      expect(screen.queryByText(/belum menerima konfirmasi/i)).not.toBeInTheDocument()
+
+      // Advance past the timeout (plus one interval so the final scheduled poll
+      // fires and the refetchInterval then returns false, halting the poll).
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(PORTAL_POLL_TIMEOUT_MS + PORTAL_POLL_INTERVAL_MS + 100)
+      })
+
+      // The pending status never changes reference, so React Query's smart
+      // tracking does not re-render the dialog on its own; a normal re-render
+      // (as any live parent state would trigger) surfaces the now-true
+      // isTimedOut. This asserts the timeout branch, not a specific re-render
+      // cause.
+      rerender(dialog)
+
+      // (a) The give-up footer copy is now shown.
+      expect(screen.getByText(/belum menerima konfirmasi/i)).toBeInTheDocument()
+
+      // (b) Polling has stopped — the client-side timeout halted the poll, so
+      // advancing further triggers no more GETs.
+      const pollsAtTimeout = pollCount()
+      expect(pollsAtTimeout).toBeGreaterThan(0)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(PORTAL_POLL_INTERVAL_MS * 4)
+      })
+      expect(pollCount()).toBe(pollsAtTimeout)
+
+      // The self-settle route stays untouched throughout (SEC-H1).
+      expect(seen.some((r) => /\/confirm$/.test(r))).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
