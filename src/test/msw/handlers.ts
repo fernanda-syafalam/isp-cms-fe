@@ -239,7 +239,11 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
   const customer = CUSTOMER_FIXTURES[i % CUSTOMER_FIXTURES.length]
   // Widen to the full InvoiceStatus union so the store can later move an invoice
   // into 'partial'/'paid' at runtime (seed values are a narrow subset).
-  const status: InvoiceStatus = INVOICE_STATUS[i % INVOICE_STATUS.length] ?? 'pending'
+  // i === 1 is pelanggan1's invoice — the DEV_DEMO_CUSTOMER_EMAIL account shown
+  // by the "view as customer" role switcher — pinned to 'overdue' so the portal
+  // demo always has a real unpaid tagihan to show, independent of the cycle.
+  const status: InvoiceStatus =
+    i === 1 ? 'overdue' : (INVOICE_STATUS[i % INVOICE_STATUS.length] ?? 'pending')
   const amount = 200_000 + (i % 4) * 150_000
   const lateFee = status === 'overdue' ? 25_000 : 0
   const taxAmount = ppnOf(amount)
