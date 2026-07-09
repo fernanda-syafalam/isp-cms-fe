@@ -1,6 +1,17 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ClosureType } from '@/schemas/closure'
@@ -113,16 +124,37 @@ export function ClosureDetail({ nodeId, nodeType, canManage }: Props) {
                     {s.type} · {s.lossDb} dB
                   </span>
                   {canManage ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 text-muted-foreground hover:text-destructive"
-                      aria-label="Hapus sambungan"
-                      disabled={deleteSplice.isPending}
-                      onClick={() => deleteSplice.mutate(s.id)}
-                    >
-                      <Trash2Icon className="size-3.5" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 text-muted-foreground hover:text-destructive"
+                          aria-label="Hapus sambungan"
+                          disabled={deleteSplice.isPending}
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus sambungan?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Sambungan core #{s.outCoreNo} ({core.name}) akan dihapus permanen dari
+                            closure ini. Tindakan ini tidak dapat dibatalkan.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction
+                            variant="destructive"
+                            onClick={() => deleteSplice.mutate(s.id)}
+                          >
+                            Hapus
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   ) : null}
                 </li>
               )

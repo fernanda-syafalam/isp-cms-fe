@@ -3,6 +3,17 @@ import { RotateCwIcon, WifiIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -36,15 +47,27 @@ export function OnuActions({ customerId, ssid }: Props) {
   const reboot = useRebootOnu(customerId)
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={reboot.isPending}
-        onClick={() => reboot.mutate()}
-      >
-        <RotateCwIcon className="size-4" />
-        Reboot ONU
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="sm" disabled={reboot.isPending}>
+            <RotateCwIcon className="size-4" />
+            Reboot ONU
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reboot ONU pelanggan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ONU pelanggan akan dinyalakan ulang. Koneksi internet pelanggan terputus sekitar 2
+              menit selama perangkat menyala ulang.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => reboot.mutate()}>Reboot ONU</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <WifiDialog customerId={customerId} ssid={ssid} />
     </div>
   )

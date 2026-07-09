@@ -7,6 +7,17 @@ import {
   PowerOffIcon,
 } from 'lucide-react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
 import type { Customer } from '@/schemas/customer'
@@ -30,15 +41,30 @@ export function CustomerStatusAction({ customer }: { customer: Customer }) {
 
   if (customer.status === 'aktif') {
     return (
-      <Button
-        variant="destructive"
-        size="sm"
-        disabled={busy}
-        onClick={() => isolate.mutate(customer.id)}
-      >
-        <PowerOffIcon className="size-4" />
-        Isolir
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" disabled={busy}>
+            <PowerOffIcon className="size-4" />
+            Isolir
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Isolir pelanggan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Koneksi pelanggan "{customer.fullName}" akan diputus (isolir) dan tidak dapat
+              mengakses internet sampai diaktifkan kembali. Tindakan ini bisa dibalik lewat
+              aktivasi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => isolate.mutate(customer.id)}>
+              Isolir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     )
   }
   if (customer.status === 'isolir') {
