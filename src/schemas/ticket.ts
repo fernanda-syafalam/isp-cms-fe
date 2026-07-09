@@ -54,8 +54,8 @@ export const TicketListSchema = z.object({
 })
 
 export const CreateTicketSchema = z.object({
-  subject: z.string().min(1, 'Subject is required').max(160),
-  customerName: z.string().min(1, 'Customer is required').max(120),
+  subject: z.string().min(1, 'Subjek wajib diisi').max(160),
+  customerName: z.string().min(1, 'Pelanggan wajib dipilih').max(120),
   priority: TicketPrioritySchema,
 })
 

@@ -26,7 +26,7 @@ export function useCreateUser() {
     mutationFn: (input: CreateUserInput) => createUser(input),
     onSuccess: (user) => {
       qc.invalidateQueries({ queryKey: userKeys.all })
-      toast.success(`User "${user.fullName}" created`)
+      toast.success(`Staf "${user.fullName}" dibuat`)
     },
     onError: (err) => {
       toast.error(getErrorMessage(err))
