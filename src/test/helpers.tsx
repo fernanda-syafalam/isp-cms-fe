@@ -7,7 +7,7 @@ import {
   createRoute,
   createRouter,
 } from '@tanstack/react-router'
-import { render, type RenderOptions } from '@testing-library/react'
+import { act, render, type RenderOptions } from '@testing-library/react'
 
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { UserSchema, type User } from '@/schemas/auth'
@@ -57,7 +57,12 @@ export function renderWithProviders(ui: ReactElement, options: RenderWithProvide
 // Reset auth store between tests — Zustand stores live for the test process,
 // so leaving stale state in there causes cross-test pollution.
 export function resetAuthStore(): void {
-  useAuthStore.setState({ accessToken: null, user: null })
+  // Wrap in act(): a mounted hook may still be subscribed to the store when
+  // this runs in afterEach, so the store-driven re-render must be flushed
+  // synchronously to avoid an "update not wrapped in act(...)" warning.
+  act(() => {
+    useAuthStore.setState({ accessToken: null, user: null })
+  })
 }
 
 type RenderWithRouterOptions = {

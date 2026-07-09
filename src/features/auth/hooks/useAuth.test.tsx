@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { HttpResponse, http } from 'msw'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 
 import { TEST_USER, TestProviders, makeTestQueryClient, resetAuthStore } from '@/test/helpers'
 import { server } from '@/test/msw/server'
@@ -101,7 +101,9 @@ describe('useIsAuthenticated and useCurrentUser', () => {
     })
     expect(result.current).toBe(false)
 
-    useAuthStore.setState({ accessToken: 'token' })
+    act(() => {
+      useAuthStore.setState({ accessToken: 'token' })
+    })
     rerender()
     expect(result.current).toBe(true)
   })
@@ -113,7 +115,9 @@ describe('useIsAuthenticated and useCurrentUser', () => {
 
     expect(result.current.fetchStatus).toBe('idle')
 
-    useAuthStore.setState({ accessToken: 'token' })
+    act(() => {
+      useAuthStore.setState({ accessToken: 'token' })
+    })
     rerender()
 
     await waitFor(() => {
