@@ -1,0 +1,31 @@
+{
+  "id": "c1c1c1c1-1111-4111-8111-111111111111",
+  "customerNo": "CUST-2026-0001",
+  "fullName": "Budi Santoso",
+  "phone": "081234567890",
+  "email": "budi@example.com",
+  "address": "Jl. Merdeka No. 10, Bandung",
+  "areaId": null,
+  "areaName": null,
+  "planId": "b1a11111-1111-4111-8111-111111111111",
+  "planName": "Home 20 Mbps",
+  "status": "aktif",
+  "holdReason": null,
+  "outstanding": 0,
+  "billingAnchorDay": 1,
+  "npwp": null,
+  "ktp": null,
+  "consentAt": "2026-05-01T08:00:00.000Z",
+  "resellerName": null,
+  "connection": {
+    "type": "pppoe",
+    "pppoeUsername": "budi.s",
+    "profile": "Home 20 Mbps",
+    "ipAddress": "100.64.0.10",
+    "onuSerial": null,
+    "olt": null,
+    "ponPort": null,
+    "rxPower": null
+  },
+  "joinedAt": "2026-05-01T08:00:00.000Z"
+}

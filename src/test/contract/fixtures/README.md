@@ -1,13 +1,29 @@
 # BE-derived contract fixtures (ADR-0011)
 
-Each `*.json` here is a representative response body for one **list endpoint**,
-derived from the **real backend** (`isp-cms-be`) response DTO — **not** from the
-FE zod schema and **not** from the MSW handler.
+Each `*.json` here is a representative response body for one endpoint — a
+**list** endpoint (`*.list.json`), a **detail** endpoint (`*.detail.json`), or a
+high-value **non-list** surface (portal snapshot, WO completion, oversight
+rollups) — derived from the **real backend** (`isp-cms-be`) response DTO —
+**not** from the FE zod schema and **not** from the MSW handler.
 
 The parity test (`../contract.parity.test.ts`) parses each fixture with the FE
 zod schema the matching `src/api/*.ts` function uses. Because the fixture comes
 from the BE contract, this catches the class of drift where the FE schema and
 the BE DTO disagree (e.g. a missing `summary` block or a renamed field).
+
+## Coverage beyond list endpoints
+
+Parity was originally list-only; a flow-audit found the highest-risk surfaces
+uncovered. Now also covered (BE-derived fixtures):
+
+- `invoices.detail.json` → `GET /v1/invoices/:id` (incl. BE PR #134 `type`/`note`)
+- `customers.detail.json` → `GET /v1/customers/:id`
+- `work-orders.complete.json` → `POST /v1/work-orders/:id/complete` (field evidence)
+- `portal.me.json` → `GET /portal/me` (customer + invoices + payments + tickets +
+  pending intents — the highest-risk surface; one dropped field blanks the home)
+- `analytics.dashboard.json` → `GET /v1/analytics/dashboard`
+- `security.state.json` → `GET /v1/security`
+- `settings.json` → `GET /v1/settings`
 
 ## Why not derive the fixture from the FE schema or from MSW?
 
@@ -32,11 +48,13 @@ isp-cms-be/src/modules/<module>/dto/<x>-response.dto.ts
 
 The list envelope is `<X>ListResponseSchema` (`items` + `total` + `summary`).
 Copy the exact field set, types, nullability and enum values from the
-`*ResponseSchema` (item) and the `*SummarySchema` (summary). For endpoints whose
-controller does **not** apply `@ZodSerializerDto`, the wire shape is what the
-`*.repository.ts` / `*.service.ts` `list()` actually returns — read that instead
-of trusting the DTO comment. Use realistic but synthetic values (valid UUIDs,
-ISO datetimes, `YYYY-MM-DD` dates).
+`*ResponseSchema` (item) and the `*SummarySchema` (summary). A **detail** or
+other non-list surface uses the plain response DTO directly (the item
+`*ResponseSchema`, or a composed one like `PortalMeResponseSchema`) with no list
+envelope. For endpoints whose controller does **not** apply `@ZodSerializerDto`,
+the wire shape is what the `*.repository.ts` / `*.service.ts` actually returns —
+read that instead of trusting the DTO comment. Use realistic but synthetic
+values (valid UUIDs, ISO datetimes, `YYYY-MM-DD` dates).
 
 ## Manual sync point (the one honest cost — ADR-0001: no shared package)
 

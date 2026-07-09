@@ -51,6 +51,8 @@ const invoice = {
   dueDate: '2026-06-01',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 }
 
 const pendingIntent = {

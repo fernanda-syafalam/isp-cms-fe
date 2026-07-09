@@ -1,0 +1,21 @@
+{
+  "id": "44444444-4444-4444-8444-444444444444",
+  "invoiceNo": "INV-2026-ADJ9001",
+  "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+  "customerName": "Budi Santoso",
+  "periodStart": "2026-07-09",
+  "periodEnd": "2026-07-19",
+  "amount": 75000,
+  "lateFee": 0,
+  "taxAmount": 8250,
+  "discountAmount": 0,
+  "paidAmount": 0,
+  "balanceDue": 83250,
+  "taxInvoiceNo": null,
+  "status": "pending",
+  "dueDate": "2026-07-19",
+  "paidAt": null,
+  "lastRemindedAt": null,
+  "type": "adjustment",
+  "note": "Proration: Home 20 → Home 50"
+}

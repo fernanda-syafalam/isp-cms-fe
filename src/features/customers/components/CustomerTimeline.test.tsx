@@ -47,6 +47,8 @@ const invoice = InvoiceSchema.parse({
   dueDate: '2026-02-10',
   paidAt: '2026-02-05T08:00:00.000Z',
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 })
 
 const ticket = TicketSchema.parse({

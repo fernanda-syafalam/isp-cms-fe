@@ -267,6 +267,10 @@ const INVOICE_FIXTURES = Array.from({ length: 12 }, (_, i) => {
     paidAt: status === 'paid' ? iso(2026, 5, 3 + (i % 5)) : null,
     // Overdue invoices already had a first reminder; others none yet.
     lastRemindedAt: status === 'overdue' ? iso(2026, 5, 12) : null,
+    // One seed invoice is a proration adjustment so the FE badge/note surface
+    // has a live example; the rest are regular monthly invoices.
+    type: i === 1 ? ('adjustment' as const) : ('regular' as const),
+    note: i === 1 ? 'Proration: Home 20 → Home 50' : null,
   }
 })
 
@@ -2202,6 +2206,10 @@ export const handlers = [
         dueDate: due.toISOString().slice(0, 10),
         paidAt: null,
         lastRemindedAt: null,
+        // A plan upgrade mid-cycle bills the prorated difference as an
+        // adjustment, with a human note explaining the correction.
+        type: 'adjustment',
+        note: `Proration: ${oldPlan?.name ?? '—'} → ${newPlan.name}`,
       })
       found.outstanding += prorate
     }
@@ -3024,6 +3032,9 @@ export const handlers = [
         dueDate,
         paidAt: null,
         lastRemindedAt: null,
+        // A monthly billing run produces regular invoices, no note.
+        type: 'regular',
+        note: null,
       })
       created++
     }
@@ -3176,6 +3187,9 @@ export const handlers = [
         dueDate,
         paidAt: null,
         lastRemindedAt: null,
+        // A monthly billing run produces regular invoices, no note.
+        type: 'regular',
+        note: null,
       })
       created++
     }
@@ -3905,6 +3919,9 @@ export const handlers = [
           dueDate: due.toISOString().slice(0, 10),
           paidAt: null,
           lastRemindedAt: null,
+          // First invoice at install is a regular monthly charge.
+          type: 'regular',
+          note: null,
         })
       }
     }

@@ -30,6 +30,8 @@ const PORTAL_INVOICE = InvoiceSchema.parse({
   dueDate: '2026-05-10',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 })
 
 // A dialog whose open state is driven by the component under test, so an

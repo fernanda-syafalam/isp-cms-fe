@@ -1,0 +1,21 @@
+{
+  "id": "a1a1a1a1-1111-4111-8111-111111111113",
+  "code": "WO-2026-0003",
+  "type": "install",
+  "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+  "customerName": "Budi Santoso",
+  "technician": "Agus",
+  "scheduledAt": "2026-07-01T08:00:00.000Z",
+  "status": "done",
+  "ticketId": null,
+  "createdAt": "2026-06-30T10:00:00.000Z",
+  "scannedOnuSerial": "ZTEG12345678",
+  "measuredRxPower": -21.5,
+  "photos": ["https://cdn.example.com/wo/photo1.jpg"],
+  "signatureUrl": "https://cdn.example.com/wo/sign.png",
+  "gpsLat": -6.914744,
+  "gpsLng": 107.60981,
+  "completionNotes": "Instalasi selesai, redaman normal.",
+  "completedAt": "2026-07-01T10:30:00.000Z",
+  "completedBy": "Agus"
+}

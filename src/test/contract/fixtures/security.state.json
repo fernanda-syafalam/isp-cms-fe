@@ -1,0 +1,19 @@
+{
+  "twoFactorEnabled": true,
+  "sessions": [
+    {
+      "id": "sess-1",
+      "device": "Chrome on macOS",
+      "ip": "103.10.10.10",
+      "lastActiveAt": "2026-07-09T08:00:00.000Z",
+      "current": true
+    },
+    {
+      "id": "sess-2",
+      "device": "Safari on iPhone",
+      "ip": "103.10.10.20",
+      "lastActiveAt": "2026-07-08T21:15:00.000Z",
+      "current": false
+    }
+  ]
+}

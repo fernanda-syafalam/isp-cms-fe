@@ -25,6 +25,8 @@ const invoice = InvoiceSchema.parse({
   dueDate: '2026-05-10',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 })
 
 describe('LoketPayDialog', () => {

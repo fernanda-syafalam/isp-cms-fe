@@ -58,6 +58,8 @@ const INVOICE = InvoiceSchema.parse({
   dueDate: '2026-05-10',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 })
 
 function trackRequests() {

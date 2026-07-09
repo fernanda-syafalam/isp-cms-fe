@@ -20,6 +20,8 @@ const validInvoice = {
   dueDate: '2026-05-10',
   paidAt: null,
   lastRemindedAt: null,
+  type: 'regular',
+  note: null,
 }
 
 describe('InvoiceSchema', () => {
@@ -48,6 +50,20 @@ describe('InvoiceSchema', () => {
 
   it('rejects an unknown status', () => {
     expect(InvoiceSchema.safeParse({ ...validInvoice, status: 'void' }).success).toBe(false)
+  })
+
+  it('parses an adjustment invoice carrying a proration note', () => {
+    const parsed = InvoiceSchema.parse({
+      ...validInvoice,
+      type: 'adjustment',
+      note: 'Proration: Home 20 → Home 50',
+    })
+    expect(parsed.type).toBe('adjustment')
+    expect(parsed.note).toBe('Proration: Home 20 → Home 50')
+  })
+
+  it('rejects an unknown invoice type', () => {
+    expect(InvoiceSchema.safeParse({ ...validInvoice, type: 'credit' }).success).toBe(false)
   })
 })
 

@@ -6,6 +6,11 @@ import { customerId, invoiceId } from '@/types/ids'
 // payments / loket). It still owes `balanceDue` and is treated as unpaid.
 export const InvoiceStatusSchema = z.enum(['paid', 'partial', 'pending', 'overdue', 'draft'])
 
+// `adjustment` = a proration / SLA-credit correction row (BE PR #121/#134), as
+// opposed to a `regular` monthly billing-cycle invoice. Lets the FE label the
+// former so a one-day-period charge is not shown as an unexplained extra bill.
+export const InvoiceTypeSchema = z.enum(['regular', 'adjustment'])
+
 export const InvoiceSchema = z.object({
   id: invoiceId,
   invoiceNo: z.string(),
@@ -27,6 +32,11 @@ export const InvoiceSchema = z.object({
   paidAt: z.iso.datetime().nullable(),
   // Last time a payment reminder (dunning) was sent for this invoice.
   lastRemindedAt: z.iso.datetime().nullable(),
+  // `regular` vs `adjustment` (proration / SLA-credit correction) — BE PR #134.
+  type: InvoiceTypeSchema,
+  // Human explanation for an adjustment (e.g. "Proration: Home 20 → Home 50").
+  // Nullable on the BE; optional here to stay lenient to older cached payloads.
+  note: z.string().nullable().optional(),
 })
 
 // Accounts-receivable rollup over ALL invoices, computed before any status/q
@@ -57,6 +67,7 @@ export const InvoiceListSchema = z.object({
 })
 
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>
+export type InvoiceType = z.infer<typeof InvoiceTypeSchema>
 export type Invoice = z.infer<typeof InvoiceSchema>
 export type InvoiceSummary = z.infer<typeof InvoiceSummarySchema>
 export type InvoiceList = z.infer<typeof InvoiceListSchema>

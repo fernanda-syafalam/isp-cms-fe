@@ -1,0 +1,47 @@
+{
+  "activeSubscribers": 560,
+  "newThisMonth": 18,
+  "isolatedSubscribers": 30,
+  "mrr": 168000000,
+  "arOutstanding": 12500000,
+  "overdueAmount": 4200000,
+  "overdueCount": 22,
+  "openTickets": 6,
+  "slaCompliance": 0.94,
+  "devicesOnline": 118,
+  "devicesTotal": 125,
+  "revenueTrend": [
+    { "month": "2026-05", "revenue": 165000000 },
+    { "month": "2026-06", "revenue": 167500000 },
+    { "month": "2026-07", "revenue": 168000000 }
+  ],
+  "ticketsByStatus": [
+    { "label": "open", "count": 6 },
+    { "label": "in_progress", "count": 4 },
+    { "label": "resolved", "count": 4 },
+    { "label": "breached", "count": 1 }
+  ],
+  "subscriberTrend": [558, 559, 560],
+  "isolatedTrend": [31, 30, 30],
+  "arTrend": [12800000, 12600000, 12500000],
+  "commandCenter": {
+    "pipelineValue": 45000000,
+    "activeLeads": 12,
+    "churnRate": 0.02,
+    "slaCreditsPending": 3,
+    "devicesAlert": 7,
+    "odpFull": 2
+  },
+  "customerMix": [
+    { "label": "prospek", "count": 20 },
+    { "label": "instalasi", "count": 15 },
+    { "label": "aktif", "count": 560 },
+    { "label": "isolir", "count": 30 },
+    { "label": "berhenti", "count": 15 }
+  ],
+  "arAging": [
+    { "bucket": "0-30", "amount": 8300000 },
+    { "bucket": "31-60", "amount": 3000000 },
+    { "bucket": "61-90", "amount": 1200000 }
+  ]
+}

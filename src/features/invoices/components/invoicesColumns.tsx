@@ -9,6 +9,8 @@ import { invoiceTotal } from '@/lib/invoice'
 import { statusLabel } from '@/lib/status-label'
 import type { Invoice } from '@/schemas/invoice'
 
+import { InvoiceTypeBadge } from './InvoiceTypeBadge'
+
 export const toCsvRow = (inv: Invoice) => ({
   'No. Tagihan': inv.invoiceNo,
   Pelanggan: inv.customerName,
@@ -29,13 +31,16 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="No. Tagihan" />,
     meta: { title: 'No. Tagihan' },
     cell: ({ row }) => (
-      <Link
-        to="/invoices/$invoiceId"
-        params={{ invoiceId: row.original.id }}
-        className="font-medium font-mono text-sm hover:underline"
-      >
-        {row.original.invoiceNo}
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          to="/invoices/$invoiceId"
+          params={{ invoiceId: row.original.id }}
+          className="font-medium font-mono text-sm hover:underline"
+        >
+          {row.original.invoiceNo}
+        </Link>
+        <InvoiceTypeBadge type={row.original.type} />
+      </div>
     ),
   },
   {

@@ -15,6 +15,7 @@ import { statusLabel } from '@/lib/status-label'
 import { useInvoice } from '../hooks/useInvoices'
 import { InvoiceBreakdownLines } from './InvoiceBreakdownLines'
 import { OnlinePayButton, PayMenu, RemindButton } from './InvoicePageActions'
+import { InvoiceTypeBadge } from './InvoiceTypeBadge'
 
 type Props = {
   invoiceId: string
@@ -72,6 +73,7 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
           <div className="flex items-center gap-2">
             <CopyButton value={invoice.invoiceNo} label="No. tagihan disalin" />
             <StatusBadge tone={STATUS_TONE[invoice.status]} label={statusLabel(invoice.status)} />
+            <InvoiceTypeBadge type={invoice.type} />
             <Button asChild variant="outline" size="sm">
               <Link to="/invoices/print/$invoiceId" params={{ invoiceId: invoice.id }}>
                 <PrinterIcon className="size-4" />
@@ -89,6 +91,12 @@ export function InvoiceDetailPage({ invoiceId }: Props) {
           <CardTitle className="text-base">Detail tagihan</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {invoice.note ? (
+            <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-3">
+              <p className="font-medium text-muted-foreground text-xs">Catatan penyesuaian</p>
+              <p className="mt-1 text-sm">{invoice.note}</p>
+            </div>
+          ) : null}
           <dl className="grid gap-4 sm:grid-cols-2">
             {fields.map((f) => (
               <div key={f.label}>

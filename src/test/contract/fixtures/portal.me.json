@@ -1,0 +1,128 @@
+{
+  "customer": {
+    "id": "c1c1c1c1-1111-4111-8111-111111111111",
+    "customerNo": "CUST-2026-0001",
+    "fullName": "Budi Santoso",
+    "phone": "081234567890",
+    "email": "budi@example.com",
+    "address": "Jl. Merdeka No. 10, Bandung",
+    "areaId": null,
+    "areaName": null,
+    "planId": "b1a11111-1111-4111-8111-111111111111",
+    "planName": "Home 20 Mbps",
+    "status": "aktif",
+    "holdReason": null,
+    "outstanding": 222000,
+    "billingAnchorDay": 1,
+    "npwp": null,
+    "ktp": null,
+    "consentAt": "2026-05-01T08:00:00.000Z",
+    "resellerName": null,
+    "connection": {
+      "type": "pppoe",
+      "pppoeUsername": "budi.s",
+      "profile": "Home 20 Mbps",
+      "ipAddress": "100.64.0.10",
+      "onuSerial": null,
+      "olt": null,
+      "ponPort": null,
+      "rxPower": null
+    },
+    "joinedAt": "2026-05-01T08:00:00.000Z"
+  },
+  "invoices": [
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "invoiceNo": "INV-2026-0100",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "periodStart": "2026-06-01",
+      "periodEnd": "2026-06-30",
+      "amount": 200000,
+      "lateFee": 0,
+      "taxAmount": 22000,
+      "discountAmount": 0,
+      "paidAmount": 0,
+      "balanceDue": 222000,
+      "taxInvoiceNo": null,
+      "status": "pending",
+      "dueDate": "2026-07-10",
+      "paidAt": null,
+      "lastRemindedAt": null,
+      "type": "regular",
+      "note": null
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444445",
+      "invoiceNo": "INV-2026-ADJ9002",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "periodStart": "2026-06-15",
+      "periodEnd": "2026-06-30",
+      "amount": 75000,
+      "lateFee": 0,
+      "taxAmount": 8250,
+      "discountAmount": 0,
+      "paidAmount": 0,
+      "balanceDue": 83250,
+      "taxInvoiceNo": null,
+      "status": "pending",
+      "dueDate": "2026-07-10",
+      "paidAt": null,
+      "lastRemindedAt": null,
+      "type": "adjustment",
+      "note": "Proration: Home 20 → Home 50"
+    }
+  ],
+  "payments": [
+    {
+      "id": "e1e1e1e1-1111-4111-8111-111111111111",
+      "invoiceId": "44444444-4444-4444-8444-444444444440",
+      "invoiceNo": "INV-2026-0099",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "amount": 222000,
+      "method": "qris",
+      "source": "invoice",
+      "voucherId": null,
+      "tenderedAmount": null,
+      "changeAmount": null,
+      "paidAt": "2026-06-05T09:00:00.000Z"
+    }
+  ],
+  "tickets": [
+    {
+      "id": "71c11111-1111-4111-8111-111111111111",
+      "code": "TKT-2026-0007",
+      "subject": "Internet putus sejak pagi",
+      "customerId": "c1c1c1c1-1111-4111-8111-111111111111",
+      "customerName": "Budi Santoso",
+      "priority": "high",
+      "status": "open",
+      "assignee": "Dewi",
+      "slaDueAt": "2026-07-07T12:00:00.000Z",
+      "createdAt": "2026-07-07T06:00:00.000Z",
+      "category": "koneksi_putus",
+      "photoUrl": null,
+      "csatRating": null,
+      "csatComment": null,
+      "csatAt": null
+    }
+  ],
+  "pendingIntents": [
+    {
+      "id": "pi_01hzzz",
+      "invoiceId": "44444444-4444-4444-8444-444444444444",
+      "invoiceNo": "INV-2026-0100",
+      "customerName": "Budi Santoso",
+      "amount": 222000,
+      "channel": "va_bca",
+      "status": "pending",
+      "vaNumber": "88081234567890",
+      "qrPayload": null,
+      "createdAt": "2026-07-06T03:00:00.000Z",
+      "expiresAt": "2026-07-06T04:00:00.000Z",
+      "paidAt": null
+    }
+  ]
+}
