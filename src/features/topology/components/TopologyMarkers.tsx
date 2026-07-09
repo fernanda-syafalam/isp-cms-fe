@@ -44,6 +44,15 @@ export const TopologyMarkers = memo(function TopologyMarkers({
     const suspended =
       node.type === 'customer' && (lifecycle === 'isolir' || lifecycle === 'berhenti')
     const maintenance = node.meta?.maintenance === true
+    // Accessible marker name: node name + network status, plus the same override
+    // qualifier the tooltip shows (maintenance / lifecycle), reusing the existing
+    // Bahasa-Indonesia labels. So the status is text (aria-label), not color alone.
+    const statusSuffix = maintenance
+      ? ' · Pemeliharaan'
+      : suspended && lifecycle
+        ? ` · ${LIFECYCLE_LABEL[lifecycle] ?? lifecycle}`
+        : ''
+    const accessibleName = `${node.name} · ${STATUS_LABEL[node.status]}${statusSuffix}`
     return (
       <Marker
         key={node.id}
@@ -56,6 +65,7 @@ export const TopologyMarkers = memo(function TopologyMarkers({
           jobNodeIds.has(node.id),
           suspended,
           maintenance,
+          accessibleName,
         )}
         draggable={editMode}
         eventHandlers={{
