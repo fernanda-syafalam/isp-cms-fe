@@ -52,12 +52,6 @@ export const GenerateVoucherBatchSchema = z.object({
   resellerId: z.string().nullable().optional(),
 })
 
-// Redeem a single voucher. `resellerId` optionally overrides the batch's mitra
-// for this one redemption (loket voucher settlement, P3.D.3).
-export const RedeemVoucherSchema = z.object({
-  resellerId: z.string().nullable().optional(),
-})
-
 // Result of a batch generation: the shared batch id + how many were created.
 export const VoucherBatchResultSchema = z.object({
   batchId: z.string(),
@@ -70,4 +64,3 @@ export type VoucherSummary = z.infer<typeof VoucherSummarySchema>
 export type VoucherList = z.infer<typeof VoucherListSchema>
 export type GenerateVoucherBatchInput = z.infer<typeof GenerateVoucherBatchSchema>
 export type VoucherBatchResult = z.infer<typeof VoucherBatchResultSchema>
-export type RedeemVoucherInput = z.infer<typeof RedeemVoucherSchema>

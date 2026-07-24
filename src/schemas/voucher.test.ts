@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { GenerateVoucherBatchSchema, RedeemVoucherSchema, VoucherSchema } from './voucher'
+import { GenerateVoucherBatchSchema, VoucherSchema } from './voucher'
 
 const validVoucher = {
   id: '00000000-0000-4000-8000-000000000001',
@@ -61,19 +61,5 @@ describe('GenerateVoucherBatchSchema', () => {
   it('accepts a batch with no reseller (undefined/null)', () => {
     expect(GenerateVoucherBatchSchema.parse(base).resellerId).toBeUndefined()
     expect(GenerateVoucherBatchSchema.parse({ ...base, resellerId: null }).resellerId).toBeNull()
-  })
-})
-
-describe('RedeemVoucherSchema', () => {
-  it('accepts an empty body (carry the batch reseller)', () => {
-    expect(RedeemVoucherSchema.parse({}).resellerId).toBeUndefined()
-  })
-
-  it('accepts an override resellerId', () => {
-    expect(
-      RedeemVoucherSchema.parse({
-        resellerId: '00000000-0000-4000-8000-0000000000a3',
-      }).resellerId,
-    ).toBe('00000000-0000-4000-8000-0000000000a3')
   })
 })
