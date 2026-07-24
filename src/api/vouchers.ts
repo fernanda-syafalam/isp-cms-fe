@@ -1,7 +1,6 @@
 import { api } from './client'
 import {
   type GenerateVoucherBatchInput,
-  type RedeemVoucherInput,
   type Voucher,
   type VoucherBatchResult,
   VoucherBatchResultSchema,
@@ -43,10 +42,9 @@ export async function generateVoucherBatch(
   return VoucherBatchResultSchema.parse(json)
 }
 
-// Redeem a voucher — a real loket settlement (writes a payment, applies it to
-// the customer's unpaid invoices, posts a reseller commission). `input.resellerId`
-// optionally overrides the batch's mitra for this redemption.
-export async function redeemVoucher(id: string, input: RedeemVoucherInput = {}): Promise<Voucher> {
-  const json = await api.post(`vouchers/${id}/redeem`, { json: input }).json()
+// Redeem a voucher — a real loket settlement: mark it used and write a payment
+// applied to the customer's unpaid invoices. Takes no request body.
+export async function redeemVoucher(id: string): Promise<Voucher> {
+  const json = await api.post(`vouchers/${id}/redeem`).json()
   return VoucherSchema.parse(json)
 }

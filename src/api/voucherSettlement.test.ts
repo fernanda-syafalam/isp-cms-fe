@@ -4,11 +4,11 @@ import { listPayments } from './payments'
 import { listResellerLedger, listResellers } from './resellers'
 import { generateVoucherBatch, listVouchers, redeemVoucher } from './vouchers'
 
-// Loket voucher settlement (P3.D.3), end-to-end over the MSW layer (server from
+// Loket voucher settlement, end-to-end over the MSW layer (server from
 // test/setup.ts; resetMockDb runs before each test). Proves a batch can be
-// attributed to a mitra, that redeeming a reseller-attributed voucher records a
-// payment (source=voucher) plus a commission ledger entry, and that a second
-// redeem is idempotent (no double-post).
+// attributed to a mitra, that redeeming a voucher records a payment
+// (source=voucher) but posts NO reseller commission (reseller is off day-1,
+// ADR-0018), and that a second redeem is idempotent (no double-post).
 
 async function firstReseller(): Promise<{
   id: string
@@ -53,7 +53,7 @@ describe('voucher settlement', () => {
     expect(created.every((v) => v.resellerName === reseller.name)).toBe(true)
   })
 
-  it('records a voucher payment + a commission ledger entry on redeem', async () => {
+  it('records a voucher payment but posts no reseller commission on redeem', async () => {
     const voucher = await firstAttributedUnusedVoucher()
     const resellerId = voucher.resellerId
     if (!resellerId) throw new Error('voucher lost its reseller')
@@ -73,19 +73,21 @@ describe('voucher settlement', () => {
     expect(settlement?.customerId).toBeNull()
     expect(settlement?.changeAmount).toBe(0)
 
-    // A commission ledger entry for the attributed mitra.
+    // NO reseller commission is posted on redeem (reseller off day-1, ADR-0018):
+    // the ledger is unchanged even for a voucher attributed to a mitra.
     const afterLedger = await listResellerLedger(resellerId)
     const afterCommissions = afterLedger.items.filter((e) => e.type === 'commission').length
-    expect(afterCommissions).toBe(beforeCommissions + 1)
-    const commission = afterLedger.items.find((e) => e.note.includes(voucher.code))
-    expect(commission?.type).toBe('commission')
-    expect(commission?.amount).toBeGreaterThan(0)
+    expect(afterCommissions).toBe(beforeCommissions)
+    expect(afterLedger.items.length).toBe(beforeLedger.items.length)
+    expect(afterLedger.items.some((e) => e.note.includes(voucher.code))).toBe(false)
   })
 
   it('does not double-post the settlement on a second redeem', async () => {
     const voucher = await firstAttributedUnusedVoucher()
     const resellerId = voucher.resellerId
     if (!resellerId) throw new Error('voucher lost its reseller')
+
+    const beforeAny = await listResellerLedger(resellerId)
 
     await redeemVoucher(voucher.id)
     const afterFirst = await listResellerLedger(resellerId)
@@ -101,6 +103,8 @@ describe('voucher settlement', () => {
       (p) => p.voucherId === voucher.id,
     ).length
 
+    // No commission either time, so the ledger never grows across both redeems.
+    expect(afterFirst.items.length).toBe(beforeAny.items.length)
     expect(afterSecond.items.length).toBe(afterFirst.items.length)
     expect(voucherPaymentsAfterSecond).toBe(voucherPaymentsAfterFirst)
     expect(voucherPaymentsAfterSecond).toBe(1)

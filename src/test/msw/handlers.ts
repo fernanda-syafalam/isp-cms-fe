@@ -4360,10 +4360,11 @@ export const handlers = [
     persistDb()
     return HttpResponse.json({ batchId, created: count })
   }),
-  // Redeem a voucher — a real loket settlement (P3.D.3): mark it used, write a
-  // payment (source=voucher; no invoice/customer), and post the mitra a
-  // commission. Idempotent: an already-used voucher settles nothing again.
-  http.post('*/api/vouchers/:id/redeem', async ({ request, params }) => {
+  // Redeem a voucher — a real loket settlement: mark it used and write a payment
+  // (source=voucher; no invoice/customer). No reseller commission is posted
+  // (reseller is off day-1, ADR-0018). Idempotent: an already-used voucher
+  // settles nothing again. Takes no request body.
+  http.post('*/api/vouchers/:id/redeem', ({ params }) => {
     const found = VOUCHER_FIXTURES.find((v) => v.id === params.id)
     if (!found) {
       return new HttpResponse(JSON.stringify({ message: 'Not found' }), {
@@ -4373,9 +4374,6 @@ export const handlers = [
     // Already settled — return as-is without double-posting.
     if (found.status === 'used') return HttpResponse.json(found)
 
-    const body = (await request.json().catch(() => ({}))) as {
-      resellerId?: string | null
-    }
     const now = new Date().toISOString()
     found.status = 'used'
     found.usedAt = now
@@ -4398,27 +4396,6 @@ export const handlers = [
       voucherId: found.id,
     })
 
-    // Reseller commission: the redeem may override the batch mitra. Post only
-    // when the mitra has a commissionPct > 0.
-    const effectiveResellerId = body?.resellerId ?? found.resellerId ?? null
-    const reseller = effectiveResellerId
-      ? RESELLER_FIXTURES.find((r) => r.id === effectiveResellerId)
-      : undefined
-    if (reseller && reseller.commissionPct > 0) {
-      const commission = Math.round(found.priceIdr * reseller.commissionPct)
-      if (commission > 0) {
-        reseller.balance += commission
-        RESELLER_LEDGER_FIXTURES.unshift({
-          id: crypto.randomUUID(),
-          resellerId: reseller.id,
-          type: 'commission',
-          amount: commission,
-          note: `Komisi voucher ${found.code}`,
-          balanceAfter: reseller.balance,
-          at: now,
-        })
-      }
-    }
     recordAudit('voucher.redeem', 'Voucher', `Menukar voucher ${found.code}`)
     persistDb()
     return HttpResponse.json(found)
