@@ -17,6 +17,18 @@ import { paymentKeys } from '@/features/payments/queries/keys'
 import { topologyKeys } from '@/features/topology/queries/keys'
 import { getErrorMessage } from '@/lib/errors'
 
+// Surface a partial-failure warning when a batch completed but N customers
+// could not be enforced/billed. This is an operator-actionable condition, so
+// it must be visible (warning toast) — never swallowed behind the success one.
+function warnPartialFailure(failed: number, failedCustomerIds: string[]) {
+  if (failed <= 0) return
+  toast.warning(`Sebagian gagal: ${failed} pelanggan tidak dapat diproses`, {
+    description:
+      failedCustomerIds.length > 0 ? `ID pelanggan: ${failedCustomerIds.join(', ')}` : undefined,
+    duration: 10_000,
+  })
+}
+
 function useInvalidateBilling() {
   const qc = useQueryClient()
   return () => {
@@ -42,6 +54,7 @@ export function useRunBilling() {
           ? `Billing ${res.period}: ${res.created} tagihan dibuat`
           : `Billing ${res.period}: semua pelanggan sudah ditagih`,
       )
+      warnPartialFailure(res.failed, res.failedCustomerIds)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -58,6 +71,7 @@ export function useIsolirOverdue() {
           ? `${res.isolated} pelanggan diisolir (${res.markedOverdue} tagihan jatuh tempo)`
           : 'Tidak ada penunggak untuk diisolir',
       )
+      warnPartialFailure(res.failed, res.failedCustomerIds)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -86,6 +100,15 @@ export function useRunScheduler() {
       toast.success(
         `Siklus ${res.period}: ${res.created} tagihan, ${res.remindedUpcoming + res.remindedOverdue} pengingat, ${res.isolated} isolir`,
       )
+      if (res.billingFailed > 0 || res.isolationFailed > 0) {
+        const parts: string[] = []
+        if (res.billingFailed > 0) parts.push(`${res.billingFailed} tagihan gagal dibuat`)
+        if (res.isolationFailed > 0) parts.push(`${res.isolationFailed} pelanggan gagal diisolir`)
+        toast.warning('Sebagian siklus gagal', {
+          description: parts.join(' · '),
+          duration: 10_000,
+        })
+      }
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })

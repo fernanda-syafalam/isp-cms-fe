@@ -3044,7 +3044,7 @@ export const handlers = [
     }
     recordAudit('billing.run', 'Tagihan', `Billing ${period}: ${created} tagihan dibuat`)
     persistDb()
-    return HttpResponse.json({ period, created })
+    return HttpResponse.json({ period, created, failed: 0, failedCustomerIds: [] })
   }),
   // Bulk isolir: flag past-due invoices (+denda) then suspend owing actives.
   http.post('*/api/billing/isolir-overdue', () => {
@@ -3078,7 +3078,7 @@ export const handlers = [
     }
     recordAudit('billing.isolir', 'Pelanggan', `Isolir massal ${isolated} penunggak`)
     persistDb()
-    return HttpResponse.json({ markedOverdue, isolated })
+    return HttpResponse.json({ markedOverdue, isolated, failed: 0, failedCustomerIds: [] })
   }),
   // Dunning: stamp a reminder on unpaid invoices. With invoiceIds, only those
   // (unpaid) get reminded; without it, every overdue invoice is reminded.
@@ -3255,6 +3255,8 @@ export const handlers = [
       remindedUpcoming,
       remindedOverdue,
       isolated,
+      billingFailed: 0,
+      isolationFailed: 0,
     })
   }),
 

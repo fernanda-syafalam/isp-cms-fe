@@ -4,12 +4,18 @@ import { z } from 'zod'
 export const BillingRunResultSchema = z.object({
   period: z.string(), // e.g. "2026-06"
   created: z.number().int().nonnegative(),
+  // Partial failure: the run completed but N customers could not be billed.
+  failed: z.number().int().nonnegative(),
+  failedCustomerIds: z.array(z.string()),
 })
 
 // Result of bulk isolir: overdue invoices flagged + customers suspended.
 export const IsolirResultSchema = z.object({
   markedOverdue: z.number().int().nonnegative(),
   isolated: z.number().int().nonnegative(),
+  // Partial failure: the run completed but N customers could not be enforced.
+  failed: z.number().int().nonnegative(),
+  failedCustomerIds: z.array(z.string()),
 })
 
 // Result of a dunning run: how many invoices got a reminder + the channel used.
@@ -33,6 +39,9 @@ export const SchedulerRunResultSchema = z.object({
   remindedUpcoming: z.number().int().nonnegative(),
   remindedOverdue: z.number().int().nonnegative(),
   isolated: z.number().int().nonnegative(),
+  // Partial failure: the cycle completed but N billings / isolations failed.
+  billingFailed: z.number().int().nonnegative(),
+  isolationFailed: z.number().int().nonnegative(),
 })
 
 export type BillingRunResult = z.infer<typeof BillingRunResultSchema>
