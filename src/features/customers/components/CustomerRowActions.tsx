@@ -1,12 +1,4 @@
-import {
-  ArrowLeftRightIcon,
-  BanIcon,
-  EyeIcon,
-  MapPinIcon,
-  PauseIcon,
-  PencilIcon,
-  PlayIcon,
-} from 'lucide-react'
+import { ArrowLeftRightIcon, BanIcon, EyeIcon, PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -24,10 +16,9 @@ import { RowActions } from '@/components/shared/row-actions'
 import { useCan } from '@/features/auth'
 import type { Customer } from '@/schemas/customer'
 
-import { useResumeCustomer, useStopCustomer, useSuspendCustomer } from '../hooks/useCustomers'
+import { useStopCustomer } from '../hooks/useCustomers'
 import { ChangePlanDialog } from './ChangePlanDialog'
 import { EditCustomerDialog } from './EditCustomerDialog'
-import { RelocateCustomerDialog } from './RelocateCustomerDialog'
 
 type Props = {
   customer: Customer
@@ -44,19 +35,12 @@ type Props = {
 export function CustomerRowActions({ customer, onQuickView }: Props) {
   const [editOpen, setEditOpen] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
-  const [relocateOpen, setRelocateOpen] = useState(false)
   const [stopOpen, setStopOpen] = useState(false)
-  const [suspendOpen, setSuspendOpen] = useState(false)
   const canEdit = useCan('customers.manage')
   const canDelete = useCan('records.delete')
   const stop = useStopCustomer()
-  const suspend = useSuspendCustomer()
-  const resume = useResumeCustomer()
 
   const canStop = canDelete && customer.status !== 'berhenti'
-  const canRelocate = canEdit && customer.status !== 'berhenti'
-  const canSuspend = canEdit && customer.status === 'aktif'
-  const canResume = canEdit && customer.status === 'isolir'
   if (!canEdit && !canStop && !onQuickView) return null
 
   return (
@@ -80,24 +64,6 @@ export function CustomerRowActions({ customer, onQuickView }: Props) {
             Ganti paket
           </DropdownMenuItem>
         ) : null}
-        {canRelocate ? (
-          <DropdownMenuItem onSelect={() => setRelocateOpen(true)}>
-            <MapPinIcon className="size-4" />
-            Mutasi alamat
-          </DropdownMenuItem>
-        ) : null}
-        {canSuspend ? (
-          <DropdownMenuItem onSelect={() => setSuspendOpen(true)}>
-            <PauseIcon className="size-4" />
-            Berhenti sementara
-          </DropdownMenuItem>
-        ) : null}
-        {canResume ? (
-          <DropdownMenuItem onSelect={() => resume.mutate(customer.id)}>
-            <PlayIcon className="size-4" />
-            Aktifkan kembali
-          </DropdownMenuItem>
-        ) : null}
         {canStop ? (
           <DropdownMenuItem
             onSelect={() => setStopOpen(true)}
@@ -115,32 +81,6 @@ export function CustomerRowActions({ customer, onQuickView }: Props) {
       {canEdit ? (
         <ChangePlanDialog customer={customer} open={planOpen} onOpenChange={setPlanOpen} />
       ) : null}
-      {canRelocate ? (
-        <RelocateCustomerDialog
-          customer={customer}
-          open={relocateOpen}
-          onOpenChange={setRelocateOpen}
-        />
-      ) : null}
-
-      <AlertDialog open={suspendOpen} onOpenChange={setSuspendOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Berhenti sementara?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Pelanggan "{customer.fullName}" akan dijeda sementara dan koneksinya dinonaktifkan.
-              Tindakan ini bisa dibalik lewat aktivasi kembali.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={() => suspend.mutate(customer.id)}>
-              Berhenti sementara
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <AlertDialog open={stopOpen} onOpenChange={setStopOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

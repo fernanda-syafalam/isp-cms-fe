@@ -1,45 +1,29 @@
-import { RouterIcon } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 import { RevenueChart } from '@/components/shared/revenue-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/format'
+import { formatCurrency, formatNumber } from '@/lib/format'
 import type { DashboardSummary } from '@/schemas/analytics'
 
-// The dashboard's analytics visualisations: revenue trend + network status,
+// The dashboard's analytics visualisations: revenue trend,
 // customer mix + AR aging, and tickets-by-status. Rendered as a fragment so
 // each row stays a direct child of the page's vertical stack.
 export function DashboardCharts({ summary }: { summary: DashboardSummary | undefined }) {
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Pendapatan (6 bulan terakhir)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {summary ? (
-              <RevenueChart data={summary.revenueTrend} />
-            ) : (
-              <Skeleton className="h-[280px] w-full" />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status jaringan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {summary ? (
-              <NetworkStatus online={summary.devicesOnline} total={summary.devicesTotal} />
-            ) : (
-              <Skeleton className="h-24 w-full" />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pendapatan (6 bulan terakhir)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {summary ? (
+            <RevenueChart data={summary.revenueTrend} />
+          ) : (
+            <Skeleton className="h-[280px] w-full" />
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -189,35 +173,5 @@ function TicketsByStatusChart({ data }: { data: Array<{ label: string; count: nu
         <Bar dataKey="count" name="Tiket" fill="var(--color-chart-1)" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
-  )
-}
-
-function NetworkStatus({ online, total }: { online: number; total: number }) {
-  const offline = Math.max(0, total - online)
-  const ratio = total > 0 ? online / total : 0
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <RouterIcon className="size-5" />
-        </span>
-        <div>
-          <p className="font-bold text-2xl tracking-tight">{formatPercent(ratio)}</p>
-          <p className="text-muted-foreground text-xs">perangkat online</p>
-        </div>
-      </div>
-      <dl className="grid grid-cols-2 gap-2 text-sm">
-        <div className="rounded-md bg-muted p-2">
-          <dt className="text-muted-foreground text-xs">Online</dt>
-          <dd className="font-medium text-emerald-600 dark:text-emerald-400">
-            {formatNumber(online)}
-          </dd>
-        </div>
-        <div className="rounded-md bg-muted p-2">
-          <dt className="text-muted-foreground text-xs">Offline</dt>
-          <dd className="font-medium text-red-600 dark:text-red-400">{formatNumber(offline)}</dd>
-        </div>
-      </dl>
-    </div>
   )
 }

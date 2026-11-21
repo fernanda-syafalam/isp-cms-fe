@@ -1,5 +1,5 @@
-import { getRouteApi, Link } from '@tanstack/react-router'
-import { DownloadIcon, UserPlusIcon } from 'lucide-react'
+import { getRouteApi } from '@tanstack/react-router'
+import { DownloadIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -9,7 +9,6 @@ import { PageHeader } from '@/components/shared/page-header'
 import { DataTable } from '@/components/shared/table/data-table'
 import { Button } from '@/components/ui/button'
 import { useCan } from '@/features/auth'
-import { scopeAreas, useBranchScope } from '@/features/branches'
 import { useTableQuery } from '@/hooks/useTableQuery'
 import { downloadCsv } from '@/lib/csv'
 import { getErrorMessage } from '@/lib/errors'
@@ -28,7 +27,6 @@ export function CustomersListPage() {
   const canManage = useCan('customers.manage')
   const canNetwork = useCan('network.manage')
   const bulkStatus = useBulkCustomerStatus()
-  const scope = useBranchScope((s) => s.scope)
   const table = useTableQuery({ pageSize: 20 })
   const exportCustomers = useExportCustomers()
   const { status: statusParam } = routeApi.useSearch()
@@ -48,18 +46,8 @@ export function CustomersListPage() {
     table.resetPage()
   }
 
-  // The branch scope is owned by a global switcher, not this page. When it
-  // changes, the result set changes too, so reset to the first page (React's
-  // sanctioned "adjust state during render" pattern keyed on the scope id).
-  const [prevScopeId, setPrevScopeId] = useState<string | null>(scope?.id ?? null)
-  if ((scope?.id ?? null) !== prevScopeId) {
-    setPrevScopeId(scope?.id ?? null)
-    table.resetPage()
-  }
-
   const baseFilter: CustomerFilter = {
     status: status === 'all' ? undefined : status,
-    area: scopeAreas(scope) ?? undefined,
     q: table.params.q,
     sort: table.params.sort,
     order: table.params.order,
@@ -98,11 +86,7 @@ export function CustomersListPage() {
     <div className="space-y-6">
       <PageHeader
         title="Pelanggan"
-        description={
-          scope
-            ? `Pelanggan & paket aktif — cabang ${scope.name}.`
-            : 'Pelanggan dan paket aktif mereka.'
-        }
+        description="Pelanggan dan paket aktif mereka."
         actions={
           <>
             <Button
@@ -115,14 +99,6 @@ export function CustomersListPage() {
               <DownloadIcon className="size-4" />
               <span className="hidden sm:inline">Ekspor</span>
             </Button>
-            {canManage ? (
-              <Button asChild variant="outline" size="sm" className="h-8">
-                <Link to="/customers/onboarding">
-                  <UserPlusIcon className="size-4" />
-                  <span className="hidden sm:inline">Onboarding</span>
-                </Link>
-              </Button>
-            ) : null}
             {canManage ? <CreateCustomerDialog /> : null}
           </>
         }

@@ -1,5 +1,5 @@
 import { Navigate } from '@tanstack/react-router'
-import { LifeBuoyIcon, RouterIcon, TriangleAlertIcon, WrenchIcon } from 'lucide-react'
+import { LifeBuoyIcon, TriangleAlertIcon, WrenchIcon } from 'lucide-react'
 
 import { ROLE_HOME } from '@/components/shared/nav'
 import { useCurrentUser, useEffectiveRole } from '@/features/auth'
@@ -54,15 +54,6 @@ export function DashboardPage() {
           to: '/work-orders',
           search: { status: 'scheduled' },
           tone: 'info',
-        },
-        {
-          key: 'offline',
-          icon: RouterIcon,
-          label: 'Perangkat offline',
-          count: summary.devicesTotal - summary.devicesOnline,
-          to: '/network/devices',
-          search: { status: 'offline' },
-          tone: 'danger',
         },
       ]
     : []

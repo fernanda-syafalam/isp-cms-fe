@@ -13,7 +13,7 @@ export type AttentionAlert = {
   label: string
   count: number
   hint?: string
-  to: '/invoices' | '/tickets' | '/work-orders' | '/network/devices'
+  to: '/invoices' | '/tickets' | '/work-orders'
   search?: { status?: string }
   tone: Tone
 }
