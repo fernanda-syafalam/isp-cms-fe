@@ -8,8 +8,6 @@
   "overdueCount": 22,
   "openTickets": 6,
   "slaCompliance": 0.94,
-  "devicesOnline": 118,
-  "devicesTotal": 125,
   "revenueTrend": [
     { "month": "2026-05", "revenue": 165000000 },
     { "month": "2026-06", "revenue": 167500000 },
@@ -25,12 +23,8 @@
   "isolatedTrend": [31, 30, 30],
   "arTrend": [12800000, 12600000, 12500000],
   "commandCenter": {
-    "pipelineValue": 45000000,
-    "activeLeads": 12,
     "churnRate": 0.02,
-    "slaCreditsPending": 3,
-    "devicesAlert": 7,
-    "odpFull": 2
+    "slaCreditsPending": 3
   },
   "customerMix": [
     { "label": "prospek", "count": 20 },

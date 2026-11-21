@@ -482,8 +482,6 @@ const DASHBOARD_SUMMARY = {
   overdueCount: 23,
   openTickets: 9,
   slaCompliance: 0.94,
-  devicesOnline: 142,
-  devicesTotal: 150,
   revenueTrend: REVENUE_TREND,
   ticketsByStatus: [
     { label: 'Terbuka', count: 9 },
@@ -1955,7 +1953,6 @@ export const handlers = [
     const routersCount = ROUTER_FIXTURES.length
     const profilesCount = MIKROTIK_PROFILE_FIXTURES.length
     const poolsCount = MIKROTIK_POOL_FIXTURES.length
-    const branchesCount = BRANCH_FIXTURES.length
     const companyName = SETTINGS_FIXTURE.company.name
     // Parity with BE: only admin/staff roles count, and "done" needs more than
     // the bootstrap admin alone (> 1) — portal customers share the users table.
@@ -1975,7 +1972,6 @@ export const handlers = [
         profilesCount,
         poolsCount,
       },
-      branches: { done: branchesCount > 0, branchesCount },
       settings: { done: companyName.trim().length > 0, companyName },
       staff: { done: staffCount > 1, staffCount },
       onboarding: {
@@ -4946,19 +4942,14 @@ export const handlers = [
   http.get('*/api/analytics/dashboard', () => {
     // Cross-module rollup computed at request time (fixtures defined below the
     // static summary), so the dashboard "command center" stays in one query.
-    const activeLeads = LEAD_FIXTURES.filter((l) => ['new', 'survey', 'quote'].includes(l.stage))
     const atRisk = CUSTOMER_FIXTURES.filter(
       (c) => c.status === 'isolir' || c.outstanding > 0,
     ).length
     const commandCenter = {
-      pipelineValue: activeLeads.reduce((s, l) => s + l.estValue, 0),
-      activeLeads: activeLeads.length,
       churnRate: CUSTOMER_FIXTURES.length
         ? Math.round((atRisk / CUSTOMER_FIXTURES.length) * 1000) / 1000
         : 0,
       slaCreditsPending: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'pending').length,
-      devicesAlert: MONITORING_ALERT_FIXTURES.filter((a) => !a.acknowledged).length,
-      odpFull: ODP_FIXTURES.filter((o) => o.usedPorts >= o.totalPorts).length,
     }
 
     // Subscriber lifecycle distribution.

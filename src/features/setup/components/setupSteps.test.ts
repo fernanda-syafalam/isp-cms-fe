@@ -6,7 +6,6 @@ import { buildSteps } from './setupSteps'
 const ALL_DONE: SetupStatus = {
   catalogue: { done: true, plansCount: 3 },
   network: { done: true, routersCount: 2, profilesCount: 8, poolsCount: 2 },
-  branches: { done: true, branchesCount: 3 },
   settings: { done: true, companyName: 'Jepara Net' },
   staff: { done: true, staffCount: 5 },
   onboarding: { done: true, instalasiCount: 1, aktifCount: 4 },
@@ -17,7 +16,6 @@ const ALL_DONE: SetupStatus = {
 const NONE_DONE: SetupStatus = {
   catalogue: { done: false, plansCount: 0 },
   network: { done: false, routersCount: 0, profilesCount: 0, poolsCount: 0 },
-  branches: { done: false, branchesCount: 0 },
   settings: { done: false, companyName: '' },
   staff: { done: false, staffCount: 0 },
   onboarding: { done: false, instalasiCount: 0, aktifCount: 0 },
@@ -26,16 +24,15 @@ const NONE_DONE: SetupStatus = {
 }
 
 describe('buildSteps', () => {
-  it('maps the payload to the eight FLOWS §3.1 steps in order', () => {
+  it('maps the payload to the seven FLOWS §3.1 steps in order', () => {
     const steps = buildSteps(ALL_DONE)
-    expect(steps).toHaveLength(8)
+    expect(steps).toHaveLength(7)
     expect(steps.map((s) => s.cta.to)).toEqual([
       '/plans',
       '/network/routers',
-      '/branches',
       '/settings',
       '/staff',
-      '/customers/onboarding',
+      '/customers',
       '/work-orders',
       '/customers',
     ])
@@ -60,7 +57,7 @@ describe('buildSteps', () => {
   })
 
   it('falls back when the company name is empty', () => {
-    const settings = buildSteps(NONE_DONE)[3]
+    const settings = buildSteps(NONE_DONE)[2]
     expect(settings?.status).toBe('Nama perusahaan belum diisi')
   })
 })

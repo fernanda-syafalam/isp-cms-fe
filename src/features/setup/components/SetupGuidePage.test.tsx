@@ -22,7 +22,6 @@ vi.mock('@tanstack/react-router', () => ({
 const PARTIAL_STATUS = {
   catalogue: { done: true, plansCount: 3 },
   network: { done: false, routersCount: 1, profilesCount: 0, poolsCount: 0 },
-  branches: { done: false, branchesCount: 0 },
   settings: { done: false, companyName: '' },
   staff: { done: false, staffCount: 0 },
   onboarding: { done: false, instalasiCount: 0, aktifCount: 0 },
@@ -37,8 +36,8 @@ describe('SetupGuidePage', () => {
     await waitFor(() => {
       expect(screen.getByText(/Setup selesai/)).toBeInTheDocument()
     })
-    // All eight steps read "Selesai" and none is flagged as next.
-    expect(screen.getAllByText('Selesai')).toHaveLength(8)
+    // All seven steps read "Selesai" and none is flagged as next.
+    expect(screen.getAllByText('Selesai')).toHaveLength(7)
     expect(screen.queryByText('Berikutnya')).toBeNull()
   })
 
@@ -48,7 +47,7 @@ describe('SetupGuidePage', () => {
     renderWithProviders(<SetupGuidePage />)
 
     await waitFor(() => {
-      expect(screen.getByText('1 dari 8 langkah selesai')).toBeInTheDocument()
+      expect(screen.getByText('1 dari 7 langkah selesai')).toBeInTheDocument()
     })
     // Network is the first not-done step → surfaced as "Berikutnya" + honest count.
     expect(screen.getByText('Berikutnya')).toBeInTheDocument()
