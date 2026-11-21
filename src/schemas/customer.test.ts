@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CreateCustomerSchema, CustomerSchema } from './customer'
+import { CreateCustomerSchema, CustomerSchema, UpdateCustomerSchema } from './customer'
 
 const validCustomer = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -99,5 +99,13 @@ describe('CreateCustomerSchema (referral attribution)', () => {
         resellerId: 'not-a-uuid',
       }).success,
     ).toBe(false)
+  })
+})
+
+describe('UpdateCustomerSchema', () => {
+  it('drops planId from the parsed output even when the input carries one', () => {
+    const parsed = UpdateCustomerSchema.parse(validCreate)
+    expect(parsed).not.toHaveProperty('planId')
+    expect(parsed.fullName).toBe('Budi Santoso')
   })
 })

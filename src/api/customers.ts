@@ -2,6 +2,7 @@ import { api } from './client'
 import {
   type ChangePlanInput,
   type CreateCustomerInput,
+  type UpdateCustomerInput,
   type Customer,
   CustomerListSchema,
   CustomerSchema,
@@ -57,7 +58,7 @@ export async function createCustomer(input: CreateCustomerInput): Promise<Custom
   return CustomerSchema.parse(json)
 }
 
-export async function updateCustomer(id: string, input: CreateCustomerInput): Promise<Customer> {
+export async function updateCustomer(id: string, input: UpdateCustomerInput): Promise<Customer> {
   const json = await api.patch(`customers/${id}`, { json: input }).json()
   return CustomerSchema.parse(json)
 }

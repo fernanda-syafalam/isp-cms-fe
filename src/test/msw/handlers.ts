@@ -2135,19 +2135,16 @@ export const handlers = [
       phone?: string
       email?: string
       address?: string
-      planId?: string
+    }
+    // Mirrors the BE contract: UpdateCustomerSchema is strict and omits planId
+    // (plan changes go through POST /customers/:id/change-plan).
+    if (Object.hasOwn(body, 'planId')) {
+      return HttpResponse.json({ message: 'planId not allowed' }, { status: 400 })
     }
     if (body.fullName !== undefined) found.fullName = body.fullName
     if (body.phone !== undefined) found.phone = body.phone
     if (body.email !== undefined) found.email = body.email === '' ? null : body.email
     if (body.address !== undefined) found.address = body.address
-    if (body.planId !== undefined) {
-      const plan = PLAN_FIXTURES.find((p) => p.id === body.planId)
-      if (plan) {
-        found.planId = plan.id
-        found.planName = plan.name
-      }
-    }
     persistDb()
     return HttpResponse.json(found)
   }),
