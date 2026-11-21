@@ -1,33 +1,20 @@
 import {
-  ActivityIcon,
-  BarChart3Icon,
-  BookTextIcon,
   BoxesIcon,
   BriefcaseBusinessIcon,
-  Building2Icon,
-  CpuIcon,
-  GaugeIcon,
   HandCoinsIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   LifeBuoyIcon,
-  MapPinIcon,
   MessageCircleIcon,
   NetworkIcon,
   PackageIcon,
   ReceiptTextIcon,
   RouteIcon,
-  RouterIcon,
   ScrollTextIcon,
   ServerIcon,
   SettingsIcon,
   ShieldCheckIcon,
-  SmilePlusIcon,
-  SmartphoneIcon,
-  SplitIcon,
   StoreIcon,
-  TargetIcon,
-  TicketIcon,
   UsersIcon,
   WalletIcon,
   WrenchIcon,
@@ -75,16 +62,13 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Operasional',
     icon: BriefcaseBusinessIcon,
     items: [
-      { to: '/leads', label: 'Prospek', icon: TargetIcon },
       { to: '/customers', label: 'Pelanggan', icon: UsersIcon },
       { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
       { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
       { to: '/payments', label: 'Pembayaran', icon: WalletIcon },
       { to: '/sla-credits', label: 'Kredit SLA', icon: HandCoinsIcon },
-      { to: '/vouchers', label: 'Voucher', icon: TicketIcon },
       { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
       { to: '/resellers', label: 'Reseller', icon: StoreIcon },
-      { to: '/portal', label: 'Portal Pelanggan', icon: SmartphoneIcon },
     ],
   },
   {
@@ -98,25 +82,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Jaringan',
     icon: NetworkIcon,
-    items: [
-      { to: '/network/topology', label: 'Topologi', icon: NetworkIcon },
-      { to: '/network/devices', label: 'Perangkat', icon: RouterIcon },
-      { to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon },
-      { to: '/network/usage', label: 'Pemakaian & FUP', icon: ActivityIcon },
-      { to: '/network/monitoring', label: 'Monitoring NOC', icon: GaugeIcon },
-      { to: '/network/ftth', label: 'FTTH / ODP', icon: SplitIcon },
-      { to: '/network/acs', label: 'ONU (TR-069)', icon: CpuIcon },
-      { to: '/coverage', label: 'Cakupan', icon: MapPinIcon },
-    ],
-  },
-  {
-    label: 'Analitik',
-    icon: BarChart3Icon,
-    items: [
-      { to: '/reports', label: 'Laporan', icon: BarChart3Icon },
-      { to: '/satisfaction', label: 'Kepuasan & Churn', icon: SmilePlusIcon },
-      { to: '/accounting', label: 'Akuntansi (GL)', icon: BookTextIcon },
-    ],
+    items: [{ to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon }],
   },
   {
     label: 'Admin',
@@ -130,7 +96,6 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: ShieldCheckIcon,
         permission: 'staff.manage',
       },
-      { to: '/branches', label: 'Cabang', icon: Building2Icon },
       { to: '/notifications', label: 'Notifikasi WA', icon: MessageCircleIcon },
       {
         to: '/security',
@@ -193,26 +158,39 @@ export function resolveBreadcrumb(pathname: string): BreadcrumbTrail {
 // Roles with a restricted workspace see only these routes; admin/staff (omitted)
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
-  teknisi: [
-    '/work-orders',
-    '/tickets',
-    '/customers',
-    '/network/topology',
-    '/network/devices',
-    '/network/acs',
-    '/network/monitoring',
-  ],
+  teknisi: ['/work-orders', '/tickets', '/customers'],
   // A partner only manages their own storefront (its detail lists their
   // customers + ledger); they don't get the org-wide customer/lead lists.
   mitra: ['/resellers'],
-  customer: ['/portal'],
+  // Customer self-service is hidden; the root shows an access-unavailable screen.
+  customer: [],
 }
 
-// Whether a role may visit a path. Enforces two gates so deep-links/bookmarks
-// respect the same rules as the sidebar (P3.E.4): the ROLE_ROUTES allowlist for
-// restricted roles, and the per-item `permission` gate (which also hides
+// Non-MVP domains: code kept, routes blocked for every role. Remove an entry to re-enable a domain.
+export const MVP_HIDDEN_ROUTES = [
+  '/network/topology',
+  '/network/devices',
+  '/network/acs',
+  '/network/usage',
+  '/network/monitoring',
+  '/network/ftth',
+  '/coverage',
+  '/portal',
+  '/reports',
+  '/satisfaction',
+  '/accounting',
+  '/vouchers',
+  '/leads',
+  '/branches',
+  '/customers/onboarding',
+] as const
+
+// Whether a role may visit a path. Enforces three gates so deep-links/bookmarks
+// respect the same rules as the sidebar (P3.E.4): the MVP_HIDDEN_ROUTES blocklist
+// (any role), the ROLE_ROUTES allowlist for restricted roles, and the per-item `permission` gate (which also hides
 // admin-only surfaces from staff).
 export function isRouteAllowed(role: Role, pathname: string): boolean {
+  if (MVP_HIDDEN_ROUTES.some((route) => isNavItemActive(pathname, route))) return false
   const allow = ROLE_ROUTES[role]
   if (allow && !allow.some((route) => isNavItemActive(pathname, route))) {
     return false
@@ -235,7 +213,6 @@ export const ROLE_HOME: Partial<Record<Role, string>> = {
   staff: '/',
   teknisi: '/work-orders',
   mitra: '/resellers',
-  customer: '/portal',
 }
 
 // Navigation groups visible to a role (empty groups dropped). Applies both the

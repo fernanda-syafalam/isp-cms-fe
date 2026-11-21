@@ -10,8 +10,7 @@ import { Reveal } from '@/components/shared/reveal'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { useEffectiveRole, useIsAuthenticated } from '@/features/auth'
-import { PortalShell } from '@/features/portal'
+import { useEffectiveRole, useIsAuthenticated, useLogout } from '@/features/auth'
 
 type RouterContext = {
   queryClient: QueryClient
@@ -24,6 +23,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   const isAuthed = useIsAuthenticated()
   const role = useEffectiveRole()
+  const logout = useLogout()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   // The bell only shows where the notifications route is reachable (admin/staff).
   const canNotify = isRouteAllowed(role, '/notifications')
@@ -47,14 +47,23 @@ function RootLayout() {
     )
   }
 
-  // Customers get a slim consumer shell (no sidebar / ⌘K / bell) instead of the
-  // ops chrome. E.4 already restricts them to /portal, so this only ever wraps
-  // the portal. The #main-content focus effect above works for this branch too.
+  // Customer self-service is not part of this release; customers see a
+  // dead-end screen with a way to sign out instead of the ops chrome.
   if (role === 'customer') {
     return (
-      <PortalShell>
-        <Outlet />
-      </PortalShell>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center text-foreground outline-none"
+      >
+        <h1 className="font-semibold text-2xl tracking-tight">Akses tidak tersedia</h1>
+        <p className="max-w-sm text-muted-foreground text-sm">
+          Akun Anda belum memiliki akses ke aplikasi ini. Silakan keluar atau hubungi operator.
+        </p>
+        <Button onClick={() => logout.mutate()} disabled={logout.isPending}>
+          Keluar
+        </Button>
+      </main>
     )
   }
 

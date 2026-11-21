@@ -26,9 +26,7 @@ export const PAGES = [
   { name: 'invoices', path: '/invoices' },
   { name: 'tickets', path: '/tickets' },
   { name: 'work-orders', path: '/work-orders' },
-  { name: 'topology', path: '/network/topology' },
   { name: 'routers', path: '/network/routers' },
-  { name: 'reports', path: '/reports' },
   { name: 'settings', path: '/settings' },
 ] as const
 
