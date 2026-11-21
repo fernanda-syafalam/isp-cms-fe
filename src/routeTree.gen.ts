@@ -9,195 +9,95 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as BootstrapRouteImport } from './routes/bootstrap'
 import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as BootstrapRouteImport } from './routes/bootstrap'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthIndexRouteImport } from './routes/_auth.index'
-import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
-import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
-import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
-import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
-import { Route as AuthSlaCreditsRouteImport } from './routes/_auth.sla-credits'
-import { Route as AuthSetupRouteImport } from './routes/_auth.setup'
-import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
-import { Route as AuthSecurityRouteImport } from './routes/_auth.security'
-import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
-import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
-import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
-import { Route as AuthPortalRouteImport } from './routes/_auth.portal'
-import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
-import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
-import { Route as AuthNotificationsRouteImport } from './routes/_auth.notifications'
-import { Route as AuthLeadsRouteImport } from './routes/_auth.leads'
-import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
-import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
-import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
-import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
-import { Route as AuthBranchesRouteImport } from './routes/_auth.branches'
-import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
 import { Route as AuthAccountingRouteImport } from './routes/_auth.accounting'
-import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
-import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
-import { Route as AuthPortalIndexRouteImport } from './routes/_auth.portal.index'
-import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
-import { Route as AuthInventoryIndexRouteImport } from './routes/_auth.inventory.index'
+import { Route as AuthAuditRouteImport } from './routes/_auth.audit'
+import { Route as AuthBranchesRouteImport } from './routes/_auth.branches'
+import { Route as AuthCoverageRouteImport } from './routes/_auth.coverage'
+import { Route as AuthCustomersRouteImport } from './routes/_auth.customers'
+import { Route as AuthInventoryRouteImport } from './routes/_auth.inventory'
+import { Route as AuthInvoicesRouteImport } from './routes/_auth.invoices'
+import { Route as AuthLeadsRouteImport } from './routes/_auth.leads'
+import { Route as AuthNotificationsRouteImport } from './routes/_auth.notifications'
+import { Route as AuthPaymentsRouteImport } from './routes/_auth.payments'
+import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
+import { Route as AuthPortalRouteImport } from './routes/_auth.portal'
+import { Route as AuthReportsRouteImport } from './routes/_auth.reports'
+import { Route as AuthResellersRouteImport } from './routes/_auth.resellers'
+import { Route as AuthSatisfactionRouteImport } from './routes/_auth.satisfaction'
+import { Route as AuthSecurityRouteImport } from './routes/_auth.security'
+import { Route as AuthSettingsRouteImport } from './routes/_auth.settings'
+import { Route as AuthSetupRouteImport } from './routes/_auth.setup'
+import { Route as AuthSlaCreditsRouteImport } from './routes/_auth.sla-credits'
+import { Route as AuthStaffRouteImport } from './routes/_auth.staff'
+import { Route as AuthTicketsRouteImport } from './routes/_auth.tickets'
+import { Route as AuthVouchersRouteImport } from './routes/_auth.vouchers'
+import { Route as AuthWorkOrdersRouteImport } from './routes/_auth.work-orders'
 import { Route as AuthCustomersIndexRouteImport } from './routes/_auth.customers.index'
-import { Route as AuthTicketsTicketIdRouteImport } from './routes/_auth.tickets.$ticketId'
-import { Route as AuthResellersResellerIdRouteImport } from './routes/_auth.resellers.$resellerId'
-import { Route as AuthNetworkUsageRouteImport } from './routes/_auth.network.usage'
-import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
-import { Route as AuthNetworkMonitoringRouteImport } from './routes/_auth.network.monitoring'
-import { Route as AuthNetworkFtthRouteImport } from './routes/_auth.network.ftth'
-import { Route as AuthNetworkAcsRouteImport } from './routes/_auth.network.acs'
-import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
-import { Route as AuthInventoryMovementsRouteImport } from './routes/_auth.inventory.movements'
-import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
 import { Route as AuthCustomersCustomerIdRouteImport } from './routes/_auth.customers.$customerId'
-import { Route as AuthNetworkRoutersIndexRouteImport } from './routes/_auth.network.routers.index'
-import { Route as AuthNetworkDevicesIndexRouteImport } from './routes/_auth.network.devices.index'
-import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
-import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
+import { Route as AuthCustomersOnboardingRouteImport } from './routes/_auth.customers.onboarding'
+import { Route as AuthInventoryIndexRouteImport } from './routes/_auth.inventory.index'
+import { Route as AuthInventoryMovementsRouteImport } from './routes/_auth.inventory.movements'
+import { Route as AuthInvoicesIndexRouteImport } from './routes/_auth.invoices.index'
+import { Route as AuthInvoicesInvoiceIdRouteImport } from './routes/_auth.invoices.$invoiceId'
+import { Route as AuthNetworkAcsRouteImport } from './routes/_auth.network.acs'
+import { Route as AuthNetworkFtthRouteImport } from './routes/_auth.network.ftth'
+import { Route as AuthNetworkMonitoringRouteImport } from './routes/_auth.network.monitoring'
+import { Route as AuthNetworkTopologyRouteImport } from './routes/_auth.network.topology'
+import { Route as AuthNetworkUsageRouteImport } from './routes/_auth.network.usage'
+import { Route as AuthPortalIndexRouteImport } from './routes/_auth.portal.index'
+import { Route as AuthResellersIndexRouteImport } from './routes/_auth.resellers.index'
+import { Route as AuthResellersResellerIdRouteImport } from './routes/_auth.resellers.$resellerId'
+import { Route as AuthTicketsIndexRouteImport } from './routes/_auth.tickets.index'
+import { Route as AuthTicketsTicketIdRouteImport } from './routes/_auth.tickets.$ticketId'
 import { Route as AuthInvoicesPrintInvoiceIdRouteImport } from './routes/_auth.invoices.print.$invoiceId'
-import { Route as AuthResellersResellerIdCustomersCustomerIdRouteImport } from './routes/_auth.resellers.$resellerId.customers.$customerId'
+import { Route as AuthNetworkDevicesIndexRouteImport } from './routes/_auth.network.devices.index'
+import { Route as AuthNetworkDevicesDeviceIdRouteImport } from './routes/_auth.network.devices.$deviceId'
+import { Route as AuthNetworkRoutersIndexRouteImport } from './routes/_auth.network.routers.index'
+import { Route as AuthNetworkRoutersRouterIdRouteImport } from './routes/_auth.network.routers.$routerId'
 import { Route as AuthPortalInvoicesInvoiceIdPrintRouteImport } from './routes/_auth.portal.invoices.$invoiceId.print'
+import { Route as AuthResellersResellerIdCustomersCustomerIdRouteImport } from './routes/_auth.resellers.$resellerId.customers.$customerId'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/_auth.lazy').then((d) => d.Route))
 const BootstrapRoute = BootstrapRouteImport.update({
   id: '/bootstrap',
   path: '/bootstrap',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/bootstrap.lazy').then((d) => d.Route))
-const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/_auth.lazy').then((d) => d.Route))
+} as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() => import('./routes/_auth.index.lazy').then((d) => d.Route))
-const AuthWorkOrdersRoute = AuthWorkOrdersRouteImport.update({
-  id: '/work-orders',
-  path: '/work-orders',
+const AuthAccountingRoute = AuthAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.work-orders.lazy').then((d) => d.Route),
+  import('./routes/_auth.accounting.lazy').then((d) => d.Route),
 )
-const AuthVouchersRoute = AuthVouchersRouteImport.update({
-  id: '/vouchers',
-  path: '/vouchers',
+const AuthAuditRoute = AuthAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.audit.lazy').then((d) => d.Route))
+const AuthBranchesRoute = AuthBranchesRouteImport.update({
+  id: '/branches',
+  path: '/branches',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.vouchers.lazy').then((d) => d.Route),
-)
-const AuthTicketsRoute = AuthTicketsRouteImport.update({
-  id: '/tickets',
-  path: '/tickets',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthStaffRoute = AuthStaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.staff.lazy').then((d) => d.Route))
-const AuthSlaCreditsRoute = AuthSlaCreditsRouteImport.update({
-  id: '/sla-credits',
-  path: '/sla-credits',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.sla-credits.lazy').then((d) => d.Route),
-)
-const AuthSetupRoute = AuthSetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.setup.lazy').then((d) => d.Route))
-const AuthSettingsRoute = AuthSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.settings.lazy').then((d) => d.Route),
-)
-const AuthSecurityRoute = AuthSecurityRouteImport.update({
-  id: '/security',
-  path: '/security',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.security.lazy').then((d) => d.Route),
-)
-const AuthSatisfactionRoute = AuthSatisfactionRouteImport.update({
-  id: '/satisfaction',
-  path: '/satisfaction',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.satisfaction.lazy').then((d) => d.Route),
-)
-const AuthResellersRoute = AuthResellersRouteImport.update({
-  id: '/resellers',
-  path: '/resellers',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.resellers.lazy').then((d) => d.Route),
-)
-const AuthReportsRoute = AuthReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.reports.lazy').then((d) => d.Route))
-const AuthPortalRoute = AuthPortalRouteImport.update({
-  id: '/portal',
-  path: '/portal',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.portal.lazy').then((d) => d.Route))
-const AuthPlansRoute = AuthPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.plans.lazy').then((d) => d.Route))
-const AuthPaymentsRoute = AuthPaymentsRouteImport.update({
-  id: '/payments',
-  path: '/payments',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.payments.lazy').then((d) => d.Route),
-)
-const AuthNotificationsRoute = AuthNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.notifications.lazy').then((d) => d.Route),
-)
-const AuthLeadsRoute = AuthLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.leads.lazy').then((d) => d.Route))
-const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.invoices.lazy').then((d) => d.Route),
-)
-const AuthInventoryRoute = AuthInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.inventory.lazy').then((d) => d.Route),
-)
-const AuthCustomersRoute = AuthCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.customers.lazy').then((d) => d.Route),
+  import('./routes/_auth.branches.lazy').then((d) => d.Route),
 )
 const AuthCoverageRoute = AuthCoverageRouteImport.update({
   id: '/coverage',
@@ -206,59 +106,124 @@ const AuthCoverageRoute = AuthCoverageRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.coverage.lazy').then((d) => d.Route),
 )
-const AuthBranchesRoute = AuthBranchesRouteImport.update({
-  id: '/branches',
-  path: '/branches',
+const AuthCustomersRoute = AuthCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.branches.lazy').then((d) => d.Route),
+  import('./routes/_auth.customers.lazy').then((d) => d.Route),
 )
-const AuthAuditRoute = AuthAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() => import('./routes/_auth.audit.lazy').then((d) => d.Route))
-const AuthAccountingRoute = AuthAccountingRouteImport.update({
-  id: '/accounting',
-  path: '/accounting',
+const AuthInventoryRoute = AuthInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.accounting.lazy').then((d) => d.Route),
+  import('./routes/_auth.inventory.lazy').then((d) => d.Route),
 )
-const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthTicketsRoute,
+const AuthInvoicesRoute = AuthInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.tickets.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.invoices.lazy').then((d) => d.Route),
 )
-const AuthResellersIndexRoute = AuthResellersIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthResellersRoute,
+const AuthLeadsRoute = AuthLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.leads.lazy').then((d) => d.Route))
+const AuthNotificationsRoute = AuthNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.resellers.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.notifications.lazy').then((d) => d.Route),
 )
-const AuthPortalIndexRoute = AuthPortalIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthPortalRoute,
+const AuthPaymentsRoute = AuthPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.portal.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.payments.lazy').then((d) => d.Route),
 )
-const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthInvoicesRoute,
+const AuthPlansRoute = AuthPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.plans.lazy').then((d) => d.Route))
+const AuthPortalRoute = AuthPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.portal.lazy').then((d) => d.Route))
+const AuthReportsRoute = AuthReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.reports.lazy').then((d) => d.Route))
+const AuthResellersRoute = AuthResellersRouteImport.update({
+  id: '/resellers',
+  path: '/resellers',
+  getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.invoices.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.resellers.lazy').then((d) => d.Route),
 )
-const AuthInventoryIndexRoute = AuthInventoryIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthInventoryRoute,
+const AuthSatisfactionRoute = AuthSatisfactionRouteImport.update({
+  id: '/satisfaction',
+  path: '/satisfaction',
+  getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.inventory.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.satisfaction.lazy').then((d) => d.Route),
+)
+const AuthSecurityRoute = AuthSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.security.lazy').then((d) => d.Route),
+)
+const AuthSettingsRoute = AuthSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.settings.lazy').then((d) => d.Route),
+)
+const AuthSetupRoute = AuthSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.setup.lazy').then((d) => d.Route))
+const AuthSlaCreditsRoute = AuthSlaCreditsRouteImport.update({
+  id: '/sla-credits',
+  path: '/sla-credits',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.sla-credits.lazy').then((d) => d.Route),
+)
+const AuthStaffRoute = AuthStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() => import('./routes/_auth.staff.lazy').then((d) => d.Route))
+const AuthTicketsRoute = AuthTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthVouchersRoute = AuthVouchersRouteImport.update({
+  id: '/vouchers',
+  path: '/vouchers',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.vouchers.lazy').then((d) => d.Route),
+)
+const AuthWorkOrdersRoute = AuthWorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.work-orders.lazy').then((d) => d.Route),
 )
 const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
   id: '/',
@@ -267,68 +232,12 @@ const AuthCustomersIndexRoute = AuthCustomersIndexRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.customers.index.lazy').then((d) => d.Route),
 )
-const AuthTicketsTicketIdRoute = AuthTicketsTicketIdRouteImport.update({
-  id: '/$ticketId',
-  path: '/$ticketId',
-  getParentRoute: () => AuthTicketsRoute,
+const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
+  id: '/$customerId',
+  path: '/$customerId',
+  getParentRoute: () => AuthCustomersRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.tickets.$ticketId.lazy').then((d) => d.Route),
-)
-const AuthResellersResellerIdRoute = AuthResellersResellerIdRouteImport.update({
-  id: '/$resellerId',
-  path: '/$resellerId',
-  getParentRoute: () => AuthResellersRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.resellers.$resellerId.lazy').then((d) => d.Route),
-)
-const AuthNetworkUsageRoute = AuthNetworkUsageRouteImport.update({
-  id: '/network/usage',
-  path: '/network/usage',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.network.usage.lazy').then((d) => d.Route),
-)
-const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
-  id: '/network/topology',
-  path: '/network/topology',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.network.topology.lazy').then((d) => d.Route),
-)
-const AuthNetworkMonitoringRoute = AuthNetworkMonitoringRouteImport.update({
-  id: '/network/monitoring',
-  path: '/network/monitoring',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.network.monitoring.lazy').then((d) => d.Route),
-)
-const AuthNetworkFtthRoute = AuthNetworkFtthRouteImport.update({
-  id: '/network/ftth',
-  path: '/network/ftth',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.network.ftth.lazy').then((d) => d.Route),
-)
-const AuthNetworkAcsRoute = AuthNetworkAcsRouteImport.update({
-  id: '/network/acs',
-  path: '/network/acs',
-  getParentRoute: () => AuthRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.network.acs.lazy').then((d) => d.Route),
-)
-const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
-  id: '/$invoiceId',
-  path: '/$invoiceId',
-  getParentRoute: () => AuthInvoicesRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.invoices.$invoiceId.lazy').then((d) => d.Route),
-)
-const AuthInventoryMovementsRoute = AuthInventoryMovementsRouteImport.update({
-  id: '/movements',
-  path: '/movements',
-  getParentRoute: () => AuthInventoryRoute,
-} as any).lazy(() =>
-  import('./routes/_auth.inventory.movements.lazy').then((d) => d.Route),
+  import('./routes/_auth.customers.$customerId.lazy').then((d) => d.Route),
 )
 const AuthCustomersOnboardingRoute = AuthCustomersOnboardingRouteImport.update({
   id: '/onboarding',
@@ -337,26 +246,137 @@ const AuthCustomersOnboardingRoute = AuthCustomersOnboardingRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_auth.customers.onboarding.lazy').then((d) => d.Route),
 )
-const AuthCustomersCustomerIdRoute = AuthCustomersCustomerIdRouteImport.update({
-  id: '/$customerId',
-  path: '/$customerId',
-  getParentRoute: () => AuthCustomersRoute,
+const AuthInventoryIndexRoute = AuthInventoryIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthInventoryRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.customers.$customerId.lazy').then((d) => d.Route),
+  import('./routes/_auth.inventory.index.lazy').then((d) => d.Route),
 )
-const AuthNetworkRoutersIndexRoute = AuthNetworkRoutersIndexRouteImport.update({
-  id: '/network/routers/',
-  path: '/network/routers/',
+const AuthInventoryMovementsRoute = AuthInventoryMovementsRouteImport.update({
+  id: '/movements',
+  path: '/movements',
+  getParentRoute: () => AuthInventoryRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.inventory.movements.lazy').then((d) => d.Route),
+)
+const AuthInvoicesIndexRoute = AuthInvoicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthInvoicesRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.invoices.index.lazy').then((d) => d.Route),
+)
+const AuthInvoicesInvoiceIdRoute = AuthInvoicesInvoiceIdRouteImport.update({
+  id: '/$invoiceId',
+  path: '/$invoiceId',
+  getParentRoute: () => AuthInvoicesRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.invoices.$invoiceId.lazy').then((d) => d.Route),
+)
+const AuthNetworkAcsRoute = AuthNetworkAcsRouteImport.update({
+  id: '/network/acs',
+  path: '/network/acs',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
-  import('./routes/_auth.network.routers.index.lazy').then((d) => d.Route),
+  import('./routes/_auth.network.acs.lazy').then((d) => d.Route),
 )
+const AuthNetworkFtthRoute = AuthNetworkFtthRouteImport.update({
+  id: '/network/ftth',
+  path: '/network/ftth',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.ftth.lazy').then((d) => d.Route),
+)
+const AuthNetworkMonitoringRoute = AuthNetworkMonitoringRouteImport.update({
+  id: '/network/monitoring',
+  path: '/network/monitoring',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.monitoring.lazy').then((d) => d.Route),
+)
+const AuthNetworkTopologyRoute = AuthNetworkTopologyRouteImport.update({
+  id: '/network/topology',
+  path: '/network/topology',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.topology.lazy').then((d) => d.Route),
+)
+const AuthNetworkUsageRoute = AuthNetworkUsageRouteImport.update({
+  id: '/network/usage',
+  path: '/network/usage',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.usage.lazy').then((d) => d.Route),
+)
+const AuthPortalIndexRoute = AuthPortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthPortalRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.portal.index.lazy').then((d) => d.Route),
+)
+const AuthResellersIndexRoute = AuthResellersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthResellersRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.resellers.index.lazy').then((d) => d.Route),
+)
+const AuthResellersResellerIdRoute = AuthResellersResellerIdRouteImport.update({
+  id: '/$resellerId',
+  path: '/$resellerId',
+  getParentRoute: () => AuthResellersRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.resellers.$resellerId.lazy').then((d) => d.Route),
+)
+const AuthTicketsIndexRoute = AuthTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthTicketsRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.tickets.index.lazy').then((d) => d.Route),
+)
+const AuthTicketsTicketIdRoute = AuthTicketsTicketIdRouteImport.update({
+  id: '/$ticketId',
+  path: '/$ticketId',
+  getParentRoute: () => AuthTicketsRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.tickets.$ticketId.lazy').then((d) => d.Route),
+)
+const AuthInvoicesPrintInvoiceIdRoute =
+  AuthInvoicesPrintInvoiceIdRouteImport.update({
+    id: '/print/$invoiceId',
+    path: '/print/$invoiceId',
+    getParentRoute: () => AuthInvoicesRoute,
+  } as any).lazy(() =>
+    import('./routes/_auth.invoices.print.$invoiceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthNetworkDevicesIndexRoute = AuthNetworkDevicesIndexRouteImport.update({
   id: '/network/devices/',
   path: '/network/devices/',
   getParentRoute: () => AuthRoute,
 } as any).lazy(() =>
   import('./routes/_auth.network.devices.index.lazy').then((d) => d.Route),
+)
+const AuthNetworkDevicesDeviceIdRoute =
+  AuthNetworkDevicesDeviceIdRouteImport.update({
+    id: '/network/devices/$deviceId',
+    path: '/network/devices/$deviceId',
+    getParentRoute: () => AuthRoute,
+  } as any).lazy(() =>
+    import('./routes/_auth.network.devices.$deviceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const AuthNetworkRoutersIndexRoute = AuthNetworkRoutersIndexRouteImport.update({
+  id: '/network/routers/',
+  path: '/network/routers/',
+  getParentRoute: () => AuthRoute,
+} as any).lazy(() =>
+  import('./routes/_auth.network.routers.index.lazy').then((d) => d.Route),
 )
 const AuthNetworkRoutersRouterIdRoute =
   AuthNetworkRoutersRouterIdRouteImport.update({
@@ -368,23 +388,13 @@ const AuthNetworkRoutersRouterIdRoute =
       (d) => d.Route,
     ),
   )
-const AuthNetworkDevicesDeviceIdRoute =
-  AuthNetworkDevicesDeviceIdRouteImport.update({
-    id: '/network/devices/$deviceId',
-    path: '/network/devices/$deviceId',
-    getParentRoute: () => AuthRoute,
+const AuthPortalInvoicesInvoiceIdPrintRoute =
+  AuthPortalInvoicesInvoiceIdPrintRouteImport.update({
+    id: '/invoices/$invoiceId/print',
+    path: '/invoices/$invoiceId/print',
+    getParentRoute: () => AuthPortalRoute,
   } as any).lazy(() =>
-    import('./routes/_auth.network.devices.$deviceId.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-const AuthInvoicesPrintInvoiceIdRoute =
-  AuthInvoicesPrintInvoiceIdRouteImport.update({
-    id: '/print/$invoiceId',
-    path: '/print/$invoiceId',
-    getParentRoute: () => AuthInvoicesRoute,
-  } as any).lazy(() =>
-    import('./routes/_auth.invoices.print.$invoiceId.lazy').then(
+    import('./routes/_auth.portal.invoices.$invoiceId.print.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -395,16 +405,6 @@ const AuthResellersResellerIdCustomersCustomerIdRoute =
     getParentRoute: () => AuthResellersResellerIdRoute,
   } as any).lazy(() =>
     import('./routes/_auth.resellers.$resellerId.customers.$customerId.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-const AuthPortalInvoicesInvoiceIdPrintRoute =
-  AuthPortalInvoicesInvoiceIdPrintRouteImport.update({
-    id: '/invoices/$invoiceId/print',
-    path: '/invoices/$invoiceId/print',
-    getParentRoute: () => AuthPortalRoute,
-  } as any).lazy(() =>
-    import('./routes/_auth.portal.invoices.$invoiceId.print.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -723,11 +723,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bootstrap': {
@@ -737,11 +737,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/': {
@@ -751,151 +751,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/work-orders': {
-      id: '/_auth/work-orders'
-      path: '/work-orders'
-      fullPath: '/work-orders'
-      preLoaderRoute: typeof AuthWorkOrdersRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/vouchers': {
-      id: '/_auth/vouchers'
-      path: '/vouchers'
-      fullPath: '/vouchers'
-      preLoaderRoute: typeof AuthVouchersRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/tickets': {
-      id: '/_auth/tickets'
-      path: '/tickets'
-      fullPath: '/tickets'
-      preLoaderRoute: typeof AuthTicketsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/staff': {
-      id: '/_auth/staff'
-      path: '/staff'
-      fullPath: '/staff'
-      preLoaderRoute: typeof AuthStaffRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/sla-credits': {
-      id: '/_auth/sla-credits'
-      path: '/sla-credits'
-      fullPath: '/sla-credits'
-      preLoaderRoute: typeof AuthSlaCreditsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/setup': {
-      id: '/_auth/setup'
-      path: '/setup'
-      fullPath: '/setup'
-      preLoaderRoute: typeof AuthSetupRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/settings': {
-      id: '/_auth/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthSettingsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/security': {
-      id: '/_auth/security'
-      path: '/security'
-      fullPath: '/security'
-      preLoaderRoute: typeof AuthSecurityRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/satisfaction': {
-      id: '/_auth/satisfaction'
-      path: '/satisfaction'
-      fullPath: '/satisfaction'
-      preLoaderRoute: typeof AuthSatisfactionRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/resellers': {
-      id: '/_auth/resellers'
-      path: '/resellers'
-      fullPath: '/resellers'
-      preLoaderRoute: typeof AuthResellersRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/reports': {
-      id: '/_auth/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthReportsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/portal': {
-      id: '/_auth/portal'
-      path: '/portal'
-      fullPath: '/portal'
-      preLoaderRoute: typeof AuthPortalRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/plans': {
-      id: '/_auth/plans'
-      path: '/plans'
-      fullPath: '/plans'
-      preLoaderRoute: typeof AuthPlansRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/payments': {
-      id: '/_auth/payments'
-      path: '/payments'
-      fullPath: '/payments'
-      preLoaderRoute: typeof AuthPaymentsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/notifications': {
-      id: '/_auth/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthNotificationsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/leads': {
-      id: '/_auth/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof AuthLeadsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/invoices': {
-      id: '/_auth/invoices'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof AuthInvoicesRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/inventory': {
-      id: '/_auth/inventory'
-      path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof AuthInventoryRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/customers': {
-      id: '/_auth/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof AuthCustomersRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/coverage': {
-      id: '/_auth/coverage'
-      path: '/coverage'
-      fullPath: '/coverage'
-      preLoaderRoute: typeof AuthCoverageRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/branches': {
-      id: '/_auth/branches'
-      path: '/branches'
-      fullPath: '/branches'
-      preLoaderRoute: typeof AuthBranchesRouteImport
+    '/_auth/accounting': {
+      id: '/_auth/accounting'
+      path: '/accounting'
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AuthAccountingRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/audit': {
@@ -905,123 +765,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuditRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/accounting': {
-      id: '/_auth/accounting'
-      path: '/accounting'
-      fullPath: '/accounting'
-      preLoaderRoute: typeof AuthAccountingRouteImport
+    '/_auth/branches': {
+      id: '/_auth/branches'
+      path: '/branches'
+      fullPath: '/branches'
+      preLoaderRoute: typeof AuthBranchesRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/tickets/': {
-      id: '/_auth/tickets/'
-      path: '/'
-      fullPath: '/tickets/'
-      preLoaderRoute: typeof AuthTicketsIndexRouteImport
-      parentRoute: typeof AuthTicketsRoute
+    '/_auth/coverage': {
+      id: '/_auth/coverage'
+      path: '/coverage'
+      fullPath: '/coverage'
+      preLoaderRoute: typeof AuthCoverageRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/resellers/': {
-      id: '/_auth/resellers/'
-      path: '/'
-      fullPath: '/resellers/'
-      preLoaderRoute: typeof AuthResellersIndexRouteImport
-      parentRoute: typeof AuthResellersRoute
+    '/_auth/customers': {
+      id: '/_auth/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AuthCustomersRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/portal/': {
-      id: '/_auth/portal/'
-      path: '/'
-      fullPath: '/portal/'
-      preLoaderRoute: typeof AuthPortalIndexRouteImport
-      parentRoute: typeof AuthPortalRoute
+    '/_auth/inventory': {
+      id: '/_auth/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AuthInventoryRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/invoices/': {
-      id: '/_auth/invoices/'
-      path: '/'
-      fullPath: '/invoices/'
-      preLoaderRoute: typeof AuthInvoicesIndexRouteImport
-      parentRoute: typeof AuthInvoicesRoute
+    '/_auth/invoices': {
+      id: '/_auth/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthInvoicesRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/inventory/': {
-      id: '/_auth/inventory/'
-      path: '/'
-      fullPath: '/inventory/'
-      preLoaderRoute: typeof AuthInventoryIndexRouteImport
-      parentRoute: typeof AuthInventoryRoute
+    '/_auth/leads': {
+      id: '/_auth/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthLeadsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/notifications': {
+      id: '/_auth/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthNotificationsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/payments': {
+      id: '/_auth/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthPaymentsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/plans': {
+      id: '/_auth/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthPlansRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/portal': {
+      id: '/_auth/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof AuthPortalRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports': {
+      id: '/_auth/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthReportsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/resellers': {
+      id: '/_auth/resellers'
+      path: '/resellers'
+      fullPath: '/resellers'
+      preLoaderRoute: typeof AuthResellersRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/satisfaction': {
+      id: '/_auth/satisfaction'
+      path: '/satisfaction'
+      fullPath: '/satisfaction'
+      preLoaderRoute: typeof AuthSatisfactionRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/security': {
+      id: '/_auth/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AuthSecurityRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/setup': {
+      id: '/_auth/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthSetupRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sla-credits': {
+      id: '/_auth/sla-credits'
+      path: '/sla-credits'
+      fullPath: '/sla-credits'
+      preLoaderRoute: typeof AuthSlaCreditsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/staff': {
+      id: '/_auth/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AuthStaffRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/tickets': {
+      id: '/_auth/tickets'
+      path: '/tickets'
+      fullPath: '/tickets'
+      preLoaderRoute: typeof AuthTicketsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/vouchers': {
+      id: '/_auth/vouchers'
+      path: '/vouchers'
+      fullPath: '/vouchers'
+      preLoaderRoute: typeof AuthVouchersRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/work-orders': {
+      id: '/_auth/work-orders'
+      path: '/work-orders'
+      fullPath: '/work-orders'
+      preLoaderRoute: typeof AuthWorkOrdersRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/customers/': {
       id: '/_auth/customers/'
       path: '/'
       fullPath: '/customers/'
       preLoaderRoute: typeof AuthCustomersIndexRouteImport
-      parentRoute: typeof AuthCustomersRoute
-    }
-    '/_auth/tickets/$ticketId': {
-      id: '/_auth/tickets/$ticketId'
-      path: '/$ticketId'
-      fullPath: '/tickets/$ticketId'
-      preLoaderRoute: typeof AuthTicketsTicketIdRouteImport
-      parentRoute: typeof AuthTicketsRoute
-    }
-    '/_auth/resellers/$resellerId': {
-      id: '/_auth/resellers/$resellerId'
-      path: '/$resellerId'
-      fullPath: '/resellers/$resellerId'
-      preLoaderRoute: typeof AuthResellersResellerIdRouteImport
-      parentRoute: typeof AuthResellersRoute
-    }
-    '/_auth/network/usage': {
-      id: '/_auth/network/usage'
-      path: '/network/usage'
-      fullPath: '/network/usage'
-      preLoaderRoute: typeof AuthNetworkUsageRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/topology': {
-      id: '/_auth/network/topology'
-      path: '/network/topology'
-      fullPath: '/network/topology'
-      preLoaderRoute: typeof AuthNetworkTopologyRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/monitoring': {
-      id: '/_auth/network/monitoring'
-      path: '/network/monitoring'
-      fullPath: '/network/monitoring'
-      preLoaderRoute: typeof AuthNetworkMonitoringRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/ftth': {
-      id: '/_auth/network/ftth'
-      path: '/network/ftth'
-      fullPath: '/network/ftth'
-      preLoaderRoute: typeof AuthNetworkFtthRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/acs': {
-      id: '/_auth/network/acs'
-      path: '/network/acs'
-      fullPath: '/network/acs'
-      preLoaderRoute: typeof AuthNetworkAcsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/invoices/$invoiceId': {
-      id: '/_auth/invoices/$invoiceId'
-      path: '/$invoiceId'
-      fullPath: '/invoices/$invoiceId'
-      preLoaderRoute: typeof AuthInvoicesInvoiceIdRouteImport
-      parentRoute: typeof AuthInvoicesRoute
-    }
-    '/_auth/inventory/movements': {
-      id: '/_auth/inventory/movements'
-      path: '/movements'
-      fullPath: '/inventory/movements'
-      preLoaderRoute: typeof AuthInventoryMovementsRouteImport
-      parentRoute: typeof AuthInventoryRoute
-    }
-    '/_auth/customers/onboarding': {
-      id: '/_auth/customers/onboarding'
-      path: '/onboarding'
-      fullPath: '/customers/onboarding'
-      preLoaderRoute: typeof AuthCustomersOnboardingRouteImport
       parentRoute: typeof AuthCustomersRoute
     }
     '/_auth/customers/$customerId': {
@@ -1031,25 +926,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCustomersCustomerIdRouteImport
       parentRoute: typeof AuthCustomersRoute
     }
-    '/_auth/network/routers/': {
-      id: '/_auth/network/routers/'
-      path: '/network/routers'
-      fullPath: '/network/routers/'
-      preLoaderRoute: typeof AuthNetworkRoutersIndexRouteImport
+    '/_auth/customers/onboarding': {
+      id: '/_auth/customers/onboarding'
+      path: '/onboarding'
+      fullPath: '/customers/onboarding'
+      preLoaderRoute: typeof AuthCustomersOnboardingRouteImport
+      parentRoute: typeof AuthCustomersRoute
+    }
+    '/_auth/inventory/': {
+      id: '/_auth/inventory/'
+      path: '/'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AuthInventoryIndexRouteImport
+      parentRoute: typeof AuthInventoryRoute
+    }
+    '/_auth/inventory/movements': {
+      id: '/_auth/inventory/movements'
+      path: '/movements'
+      fullPath: '/inventory/movements'
+      preLoaderRoute: typeof AuthInventoryMovementsRouteImport
+      parentRoute: typeof AuthInventoryRoute
+    }
+    '/_auth/invoices/': {
+      id: '/_auth/invoices/'
+      path: '/'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthInvoicesIndexRouteImport
+      parentRoute: typeof AuthInvoicesRoute
+    }
+    '/_auth/invoices/$invoiceId': {
+      id: '/_auth/invoices/$invoiceId'
+      path: '/$invoiceId'
+      fullPath: '/invoices/$invoiceId'
+      preLoaderRoute: typeof AuthInvoicesInvoiceIdRouteImport
+      parentRoute: typeof AuthInvoicesRoute
+    }
+    '/_auth/network/acs': {
+      id: '/_auth/network/acs'
+      path: '/network/acs'
+      fullPath: '/network/acs'
+      preLoaderRoute: typeof AuthNetworkAcsRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_auth/network/ftth': {
+      id: '/_auth/network/ftth'
+      path: '/network/ftth'
+      fullPath: '/network/ftth'
+      preLoaderRoute: typeof AuthNetworkFtthRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/network/monitoring': {
+      id: '/_auth/network/monitoring'
+      path: '/network/monitoring'
+      fullPath: '/network/monitoring'
+      preLoaderRoute: typeof AuthNetworkMonitoringRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/network/topology': {
+      id: '/_auth/network/topology'
+      path: '/network/topology'
+      fullPath: '/network/topology'
+      preLoaderRoute: typeof AuthNetworkTopologyRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/network/usage': {
+      id: '/_auth/network/usage'
+      path: '/network/usage'
+      fullPath: '/network/usage'
+      preLoaderRoute: typeof AuthNetworkUsageRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/portal/': {
+      id: '/_auth/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof AuthPortalIndexRouteImport
+      parentRoute: typeof AuthPortalRoute
+    }
+    '/_auth/resellers/': {
+      id: '/_auth/resellers/'
+      path: '/'
+      fullPath: '/resellers/'
+      preLoaderRoute: typeof AuthResellersIndexRouteImport
+      parentRoute: typeof AuthResellersRoute
+    }
+    '/_auth/resellers/$resellerId': {
+      id: '/_auth/resellers/$resellerId'
+      path: '/$resellerId'
+      fullPath: '/resellers/$resellerId'
+      preLoaderRoute: typeof AuthResellersResellerIdRouteImport
+      parentRoute: typeof AuthResellersRoute
+    }
+    '/_auth/tickets/': {
+      id: '/_auth/tickets/'
+      path: '/'
+      fullPath: '/tickets/'
+      preLoaderRoute: typeof AuthTicketsIndexRouteImport
+      parentRoute: typeof AuthTicketsRoute
+    }
+    '/_auth/tickets/$ticketId': {
+      id: '/_auth/tickets/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/tickets/$ticketId'
+      preLoaderRoute: typeof AuthTicketsTicketIdRouteImport
+      parentRoute: typeof AuthTicketsRoute
+    }
+    '/_auth/invoices/print/$invoiceId': {
+      id: '/_auth/invoices/print/$invoiceId'
+      path: '/print/$invoiceId'
+      fullPath: '/invoices/print/$invoiceId'
+      preLoaderRoute: typeof AuthInvoicesPrintInvoiceIdRouteImport
+      parentRoute: typeof AuthInvoicesRoute
     }
     '/_auth/network/devices/': {
       id: '/_auth/network/devices/'
       path: '/network/devices'
       fullPath: '/network/devices/'
       preLoaderRoute: typeof AuthNetworkDevicesIndexRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/network/routers/$routerId': {
-      id: '/_auth/network/routers/$routerId'
-      path: '/network/routers/$routerId'
-      fullPath: '/network/routers/$routerId'
-      preLoaderRoute: typeof AuthNetworkRoutersRouterIdRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/network/devices/$deviceId': {
@@ -1059,19 +1052,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthNetworkDevicesDeviceIdRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/invoices/print/$invoiceId': {
-      id: '/_auth/invoices/print/$invoiceId'
-      path: '/print/$invoiceId'
-      fullPath: '/invoices/print/$invoiceId'
-      preLoaderRoute: typeof AuthInvoicesPrintInvoiceIdRouteImport
-      parentRoute: typeof AuthInvoicesRoute
+    '/_auth/network/routers/': {
+      id: '/_auth/network/routers/'
+      path: '/network/routers'
+      fullPath: '/network/routers/'
+      preLoaderRoute: typeof AuthNetworkRoutersIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/resellers/$resellerId/customers/$customerId': {
-      id: '/_auth/resellers/$resellerId/customers/$customerId'
-      path: '/customers/$customerId'
-      fullPath: '/resellers/$resellerId/customers/$customerId'
-      preLoaderRoute: typeof AuthResellersResellerIdCustomersCustomerIdRouteImport
-      parentRoute: typeof AuthResellersResellerIdRoute
+    '/_auth/network/routers/$routerId': {
+      id: '/_auth/network/routers/$routerId'
+      path: '/network/routers/$routerId'
+      fullPath: '/network/routers/$routerId'
+      preLoaderRoute: typeof AuthNetworkRoutersRouterIdRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/portal/invoices/$invoiceId/print': {
       id: '/_auth/portal/invoices/$invoiceId/print'
@@ -1079,6 +1072,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/invoices/$invoiceId/print'
       preLoaderRoute: typeof AuthPortalInvoicesInvoiceIdPrintRouteImport
       parentRoute: typeof AuthPortalRoute
+    }
+    '/_auth/resellers/$resellerId/customers/$customerId': {
+      id: '/_auth/resellers/$resellerId/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/resellers/$resellerId/customers/$customerId'
+      preLoaderRoute: typeof AuthResellersResellerIdCustomersCustomerIdRouteImport
+      parentRoute: typeof AuthResellersResellerIdRoute
     }
   }
 }
