@@ -31,6 +31,7 @@ import type {
   ChangePlanInput,
   Customer,
   CreateCustomerInput,
+  UpdateCustomerInput,
   RelocateCustomerInput,
   SetWifiInput,
   UpdateKycInput,
@@ -130,7 +131,7 @@ export function useBulkCustomerStatus() {
 export function useUpdateCustomer(id: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: CreateCustomerInput) => updateCustomer(id, input),
+    mutationFn: (input: UpdateCustomerInput) => updateCustomer(id, input),
     onSuccess: (customer) => {
       syncCustomerCaches(qc, customer)
       toast.success(`Pelanggan "${customer.fullName}" diperbarui`)

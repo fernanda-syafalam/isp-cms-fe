@@ -19,10 +19,9 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { CreateCustomerSchema, type CreateCustomerInput, type Customer } from '@/schemas/customer'
+import { UpdateCustomerSchema, type Customer, type UpdateCustomerInput } from '@/schemas/customer'
 
 import { useUpdateCustomer } from '../hooks/useCustomers'
-import { PlanSelectField } from './PlanSelectField'
 
 type Props = {
   customer: Customer
@@ -33,14 +32,13 @@ type Props = {
 export function EditCustomerDialog({ customer, open, onOpenChange }: Props) {
   const updateMutation = useUpdateCustomer(customer.id)
 
-  const form = useForm<CreateCustomerInput>({
-    resolver: zodResolver(CreateCustomerSchema),
+  const form = useForm<UpdateCustomerInput>({
+    resolver: zodResolver(UpdateCustomerSchema),
     values: {
       fullName: customer.fullName,
       phone: customer.phone,
       email: customer.email ?? '',
       address: customer.address,
-      planId: customer.planId,
     },
   })
 
@@ -114,7 +112,6 @@ export function EditCustomerDialog({ customer, open, onOpenChange }: Props) {
                 </FormItem>
               )}
             />
-            <PlanSelectField control={form.control} name="planId" />
             <DialogFooter>
               <Button
                 type="button"

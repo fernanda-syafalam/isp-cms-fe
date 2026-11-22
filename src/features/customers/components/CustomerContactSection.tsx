@@ -31,7 +31,6 @@ export function CustomerContact({ customer }: { customer: Customer }) {
     try {
       await update.mutateAsync({
         fullName: customer.fullName,
-        planId: customer.planId,
         phone: phone.trim(),
         email: email.trim(),
         address: address.trim(),

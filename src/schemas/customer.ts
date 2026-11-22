@@ -92,6 +92,9 @@ export const CreateCustomerSchema = z.object({
   resellerId: z.uuid('Reseller tidak valid').nullable().optional(),
 })
 
+// Plan changes go through change-plan; the BE rejects planId on PATCH.
+export const UpdateCustomerSchema = CreateCustomerSchema.omit({ planId: true })
+
 export const ChangePlanSchema = z.object({
   planId: z.string().min(1, 'Paket wajib dipilih'),
 })
@@ -115,6 +118,7 @@ export type Customer = z.infer<typeof CustomerSchema>
 export type CustomerSummary = z.infer<typeof CustomerSummarySchema>
 export type CustomerList = z.infer<typeof CustomerListSchema>
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>
+export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>
 export type SetWifiInput = z.infer<typeof SetWifiSchema>
 export type ChangePlanInput = z.infer<typeof ChangePlanSchema>
 export type RelocateCustomerInput = z.infer<typeof RelocateCustomerSchema>
