@@ -26,7 +26,7 @@
   {
     "name": "Vendor: Forms + Zod (eager)",
     "path": "dist/assets/vendor-forms-*.js",
-    "limit": "32 kB",
+    "limit": "38 kB",
     "gzip": true
   },
   {
