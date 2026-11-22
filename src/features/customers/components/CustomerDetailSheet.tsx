@@ -20,7 +20,6 @@ import type { Customer } from '@/schemas/customer'
 
 import { useCustomer } from '../hooks/useCustomers'
 import {
-  CustomerMapButton,
   CustomerNavigateButton,
   CustomerStatusAction,
   CustomerWhatsappButton,
@@ -29,7 +28,6 @@ import { CustomerContact } from './CustomerContactSection'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { RecentInvoices, RecentTickets } from './CustomerRecentLists'
-import { OnuActions } from './OnuActions'
 
 type Props = {
   customerId: string | null
@@ -97,7 +95,6 @@ function CustomerBody({ customer }: { customer: Customer }) {
       <DetailActionBar>
         <CustomerStatusAction customer={customer} />
         <CustomerWhatsappButton customerId={customer.id} />
-        <CustomerMapButton customer={customer} />
         <CustomerNavigateButton customer={customer} />
         <CustomerRowActions customer={customer} />
       </DetailActionBar>
@@ -110,21 +107,18 @@ function CustomerBody({ customer }: { customer: Customer }) {
 
       <DetailSection title="Koneksi">
         {conn ? (
-          <>
-            <DetailMetaGrid>
-              <DetailMeta label="Tipe">{conn.type.toUpperCase()}</DetailMeta>
-              <DetailMeta label="PPPoE">{conn.pppoeUsername}</DetailMeta>
-              <DetailMeta label="IP">{conn.ipAddress}</DetailMeta>
-              <DetailMeta label="ONU">{conn.onuSerial ?? '—'}</DetailMeta>
-              <DetailMeta label="OLT / PON">
-                {conn.olt ? `${conn.olt}${conn.ponPort ? ` · ${conn.ponPort}` : ''}` : '—'}
-              </DetailMeta>
-              <DetailMeta label="Redaman">
-                {conn.rxPower != null ? `${formatNumber(conn.rxPower)} dBm` : '—'}
-              </DetailMeta>
-            </DetailMetaGrid>
-            <OnuActions customerId={customer.id} ssid={`WiFi-${conn.pppoeUsername}`} />
-          </>
+          <DetailMetaGrid>
+            <DetailMeta label="Tipe">{conn.type.toUpperCase()}</DetailMeta>
+            <DetailMeta label="PPPoE">{conn.pppoeUsername}</DetailMeta>
+            <DetailMeta label="IP">{conn.ipAddress}</DetailMeta>
+            <DetailMeta label="ONU">{conn.onuSerial ?? '—'}</DetailMeta>
+            <DetailMeta label="OLT / PON">
+              {conn.olt ? `${conn.olt}${conn.ponPort ? ` · ${conn.ponPort}` : ''}` : '—'}
+            </DetailMeta>
+            <DetailMeta label="Redaman">
+              {conn.rxPower != null ? `${formatNumber(conn.rxPower)} dBm` : '—'}
+            </DetailMeta>
+          </DetailMetaGrid>
         ) : (
           <p className="flex items-center gap-2 text-muted-foreground text-sm">
             <PlugZapIcon className="size-4" />

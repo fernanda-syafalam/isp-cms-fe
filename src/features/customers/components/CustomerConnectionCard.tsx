@@ -1,20 +1,10 @@
-import { Link } from '@tanstack/react-router'
-
 import { rxDiagnosis, rxTone } from '@/components/shared/optical-health'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { statusLabel } from '@/lib/status-label'
 import type { Connection } from '@/schemas/customer'
 
-import { OnuActions } from './OnuActions'
-
-export function ConnectionCard({
-  customerId,
-  connection,
-}: {
-  customerId: string
-  connection: Connection | null
-}) {
+export function ConnectionCard({ connection }: { connection: Connection | null }) {
   return (
     <Card>
       <CardHeader>
@@ -32,15 +22,6 @@ export function ConnectionCard({
                 <dt className="text-muted-foreground text-xs">ONU Serial</dt>
                 <dd className="mt-1 flex items-center gap-2 text-sm">
                   <span className="font-mono">{connection.onuSerial ?? '—'}</span>
-                  {connection.onuSerial ? (
-                    <Link
-                      to="/network/acs"
-                      search={{ q: connection.onuSerial }}
-                      className="text-primary text-xs hover:underline"
-                    >
-                      Kelola ONU
-                    </Link>
-                  ) : null}
                 </dd>
               </div>
               <Field label="OLT" value={connection.olt ?? '—'} />
@@ -79,11 +60,6 @@ export function ConnectionCard({
             Belum ada koneksi — pelanggan masih tahap prospek/instalasi.
           </p>
         )}
-        {connection?.onuSerial ? (
-          <div className="border-border border-t pt-4">
-            <OnuActions customerId={customerId} ssid={`WiFi-${connection.pppoeUsername}`} />
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   )

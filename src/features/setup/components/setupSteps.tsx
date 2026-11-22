@@ -1,5 +1,4 @@
 import {
-  Building2Icon,
   PackageIcon,
   RouteIcon,
   ServerIcon,
@@ -22,11 +21,11 @@ export type Step = {
   cta: { to: string; label: string }
 }
 
-// The eight-step launch flow (docs/FLOWS.md §3.1 order). Every `done` comes from
+// The seven-step launch flow (docs/FLOWS.md §3.1 order). Every `done` comes from
 // the server flag — never faked from a proxy signal — and the status subtext is
 // the honest per-step count so the operator sees exactly what is still missing.
 export function buildSteps(status: SetupStatus): Step[] {
-  const { catalogue, network, branches, settings, staff, onboarding, workOrders, active } = status
+  const { catalogue, network, settings, staff, onboarding, workOrders, active } = status
   return [
     {
       icon: PackageIcon,
@@ -46,16 +45,8 @@ export function buildSteps(status: SetupStatus): Step[] {
       cta: { to: '/network/routers', label: 'Kelola router' },
     },
     {
-      icon: Building2Icon,
-      title: '3. Daftarkan cabang',
-      description: 'Tambahkan cabang/POP sebagai unit operasional dan lokasi layanan.',
-      status: `${formatNumber(branches.branchesCount)} cabang`,
-      done: branches.done,
-      cta: { to: '/branches', label: 'Kelola cabang' },
-    },
-    {
       icon: SettingsIcon,
-      title: '4. Lengkapi profil perusahaan',
+      title: '3. Lengkapi profil perusahaan',
       description:
         'Isi identitas perusahaan (nama, alamat, pajak) untuk penagihan dan dokumen resmi.',
       status: settings.companyName
@@ -66,7 +57,7 @@ export function buildSteps(status: SetupStatus): Step[] {
     },
     {
       icon: UsersIcon,
-      title: '5. Undang tim',
+      title: '4. Undang tim',
       description: 'Tambahkan staf (operasional, billing, NOC) beserta perannya masing-masing.',
       status: `${formatNumber(staff.staffCount)} anggota tim`,
       done: staff.done,
@@ -74,15 +65,15 @@ export function buildSteps(status: SetupStatus): Step[] {
     },
     {
       icon: UserPlusIcon,
-      title: '6. Onboarding pelanggan',
-      description: 'Daftarkan pelanggan, pilih paket, tandai lokasi di peta, jadwalkan instalasi.',
+      title: '5. Onboarding pelanggan',
+      description: 'Daftarkan pelanggan, pilih paket, dan jadwalkan instalasi.',
       status: `${formatNumber(onboarding.instalasiCount)} instalasi, ${formatNumber(onboarding.aktifCount)} aktif`,
       done: onboarding.done,
-      cta: { to: '/customers/onboarding', label: 'Mulai onboarding' },
+      cta: { to: '/customers', label: 'Tambah pelanggan' },
     },
     {
       icon: WrenchIcon,
-      title: '7. Selesaikan instalasi (Work Order)',
+      title: '6. Selesaikan instalasi (Work Order)',
       description: 'Teknisi menuntaskan WO: pelanggan aktif, ONU terpasang, secret PPPoE dibuat.',
       status: `${formatNumber(workOrders.installDoneCount)} instalasi selesai`,
       done: workOrders.done,
@@ -90,8 +81,8 @@ export function buildSteps(status: SetupStatus): Step[] {
     },
     {
       icon: RouteIcon,
-      title: '8. Pelanggan aktif & tertagih',
-      description: 'Pelanggan tampil di topologi (hijau), tagihan pertama terbit, siap ditagih.',
+      title: '7. Pelanggan aktif & tertagih',
+      description: 'Tagihan pertama terbit, siap ditagih.',
       status: `${formatNumber(active.activeCount)} pelanggan aktif`,
       done: active.done,
       cta: { to: '/customers', label: 'Lihat pelanggan' },

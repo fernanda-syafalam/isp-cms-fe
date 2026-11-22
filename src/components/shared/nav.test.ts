@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isNavItemActive,
   isRouteAllowed,
+  MVP_HIDDEN_ROUTES,
   navGroupsForRole,
   resolveBreadcrumb,
   ROLE_HOME,
@@ -45,8 +46,13 @@ describe('isRouteAllowed (shares the segment-aware matcher)', () => {
   })
 
   it('does not grant a sibling that only shares a prefix', () => {
-    expect(isRouteAllowed('customer', '/portal')).toBe(true)
-    expect(isRouteAllowed('customer', '/portal-admin')).toBe(false)
+    expect(isRouteAllowed('mitra', '/resellers')).toBe(true)
+    expect(isRouteAllowed('mitra', '/resellers-admin')).toBe(false)
+  })
+
+  it('denies the customer role every route (self-service is hidden)', () => {
+    expect(isRouteAllowed('customer', '/')).toBe(false)
+    expect(isRouteAllowed('customer', '/customers')).toBe(false)
   })
 
   it('grants mitra the reseller-scoped customer detail but not the org-wide list (P3.D.5)', () => {
@@ -72,7 +78,7 @@ describe('navGroupsForRole', () => {
     }
     // Staff keep their operational surfaces.
     expect(staffPaths).toContain('/customers')
-    expect(staffPaths).toContain('/branches')
+    expect(staffPaths).toContain('/payments')
   })
 
   it('admin still sees the admin surfaces', () => {
@@ -93,7 +99,7 @@ describe('isRouteAllowed (permission gate, P3.E.4)', () => {
 
   it('still allows staff their operational routes', () => {
     expect(isRouteAllowed('staff', '/customers')).toBe(true)
-    expect(isRouteAllowed('staff', '/branches')).toBe(true)
+    expect(isRouteAllowed('staff', '/payments')).toBe(true)
   })
 })
 
@@ -148,9 +154,9 @@ describe('resolveBreadcrumb', () => {
       label: 'Pelanggan',
       hasDetail: true,
     })
-    expect(resolveBreadcrumb('/network/topology/abc')).toEqual({
-      to: '/network/topology',
-      label: 'Topologi',
+    expect(resolveBreadcrumb('/network/routers/abc')).toEqual({
+      to: '/network/routers',
+      label: 'Router (Mikrotik)',
       hasDetail: true,
     })
   })
@@ -166,5 +172,18 @@ describe('resolveBreadcrumb', () => {
       label: null,
       hasDetail: false,
     })
+  })
+})
+
+describe('isRouteAllowed (MVP hidden routes)', () => {
+  it.each(MVP_HIDDEN_ROUTES)('denies admin on %s and its sub-paths', (prefix) => {
+    expect(isRouteAllowed('admin', prefix)).toBe(false)
+    expect(isRouteAllowed('admin', `${prefix}/abc`)).toBe(false)
+  })
+
+  it('still allows kept routes that share a segment with hidden ones', () => {
+    for (const path of ['/customers', '/customers/abc', '/network/routers', '/invoices']) {
+      expect(isRouteAllowed('admin', path)).toBe(true)
+    }
   })
 })

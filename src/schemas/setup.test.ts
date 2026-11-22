@@ -5,7 +5,6 @@ import { SetupStatusSchema } from './setup'
 const VALID_PAYLOAD = {
   catalogue: { done: true, plansCount: 3 },
   network: { done: false, routersCount: 1, profilesCount: 0, poolsCount: 0 },
-  branches: { done: true, branchesCount: 2 },
   settings: { done: true, companyName: 'Jepara Net' },
   staff: { done: true, staffCount: 5 },
   onboarding: { done: false, instalasiCount: 0, aktifCount: 0 },

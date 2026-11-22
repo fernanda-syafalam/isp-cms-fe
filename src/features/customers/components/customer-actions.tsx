@@ -1,11 +1,4 @@
-import { Link } from '@tanstack/react-router'
-import {
-  MapPinIcon,
-  MessageCircleIcon,
-  NavigationIcon,
-  PlugZapIcon,
-  PowerOffIcon,
-} from 'lucide-react'
+import { MessageCircleIcon, NavigationIcon, PlugZapIcon, PowerOffIcon } from 'lucide-react'
 
 import {
   AlertDialog,
@@ -106,19 +99,6 @@ export function CustomerNavigateButton({ customer }: { customer: Customer }) {
         <NavigationIcon className="size-4" />
         <span className="hidden sm:inline">Navigasi</span>
       </a>
-    </Button>
-  )
-}
-
-/** Focus the subscriber's node on the network map (hidden while prospek). */
-export function CustomerMapButton({ customer }: { customer: Customer }) {
-  if (customer.status === 'prospek') return null
-  return (
-    <Button asChild variant="outline" size="sm">
-      <Link to="/network/topology" search={{ focus: `${customer.id}-node` }}>
-        <MapPinIcon className="size-4" />
-        <span className="hidden sm:inline">Lihat di peta</span>
-      </Link>
     </Button>
   )
 }

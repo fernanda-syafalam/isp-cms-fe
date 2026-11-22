@@ -13,7 +13,6 @@ export const SetupStatusSchema = z.object({
     profilesCount: count,
     poolsCount: count,
   }),
-  branches: z.object({ done: z.boolean(), branchesCount: count }),
   settings: z.object({ done: z.boolean(), companyName: z.string() }),
   staff: z.object({ done: z.boolean(), staffCount: count }),
   onboarding: z.object({

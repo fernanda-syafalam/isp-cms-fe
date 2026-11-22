@@ -14,7 +14,6 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { UserMenu, useEffectiveRole } from '@/features/auth'
-import { BranchScopeSwitcher } from '@/features/branches'
 import { useDashboardSummary } from '@/hooks/useAnalytics'
 
 import { type Badge, NavGroupSection } from './AppSidebarNav'
@@ -28,7 +27,6 @@ export function AppSidebar() {
   const role = useEffectiveRole()
   const groups = navGroupsForRole(role)
   const home = ROLE_HOME[role] ?? '/'
-  const canScopeBranch = role === 'admin' || role === 'staff'
 
   // Live attention counts, mirrored onto the matching nav targets as pills.
   const badges = useNavBadges()
@@ -78,8 +76,6 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        {canScopeBranch ? <BranchScopeSwitcher variant="card" /> : null}
       </SidebarHeader>
 
       <SidebarContent>
@@ -128,7 +124,5 @@ function useNavBadges(): Record<string, Badge> {
   const badges: Record<string, Badge> = {}
   if (data.openTickets > 0) badges['/tickets'] = { value: data.openTickets, tone: 'default' }
   if (data.overdueCount > 0) badges['/invoices'] = { value: data.overdueCount, tone: 'danger' }
-  const offline = data.devicesTotal - data.devicesOnline
-  if (offline > 0) badges['/network/devices'] = { value: offline, tone: 'danger' }
   return badges
 }

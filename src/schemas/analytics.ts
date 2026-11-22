@@ -20,8 +20,6 @@ export const DashboardSummarySchema = z.object({
   overdueCount: z.number().int().nonnegative(),
   openTickets: z.number().int().nonnegative(),
   slaCompliance: z.number().min(0).max(1),
-  devicesOnline: z.number().int().nonnegative(), // ONU online
-  devicesTotal: z.number().int().nonnegative(),
   revenueTrend: z.array(MonthRevenueSchema),
   ticketsByStatus: z.array(StatusCountSchema),
   // Short trend series powering KPI sparklines.
@@ -30,12 +28,8 @@ export const DashboardSummarySchema = z.object({
   arTrend: z.array(z.number()),
   // Cross-module rollup surfaced as the dashboard "command center".
   commandCenter: z.object({
-    pipelineValue: z.number().int().nonnegative(), // nilai prospek aktif (IDR)
-    activeLeads: z.number().int().nonnegative(),
     churnRate: z.number().min(0).max(1),
     slaCreditsPending: z.number().int().nonnegative(),
-    devicesAlert: z.number().int().nonnegative(), // alert NOC belum ditangani
-    odpFull: z.number().int().nonnegative(), // ODP tanpa slot kosong
   }),
   // Subscriber distribution by lifecycle status (operational mix).
   customerMix: z.array(StatusCountSchema),

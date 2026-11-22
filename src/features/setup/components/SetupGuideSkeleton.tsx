@@ -2,11 +2,11 @@ import { PageHeaderSkeleton } from '@/components/shared/skeletons'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-// Stable keys for the fixed eight-step placeholder list (mirrors the real steps).
-const STEP_ROWS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const
+// Stable keys for the fixed seven-step placeholder list (mirrors the real steps).
+const STEP_ROWS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const
 
 // Loading placeholder shaped like {@link SetupGuidePage}: header, a progress
-// card, and the eight step rows. Skeleton over spinner so the layout holds while
+// card, and the seven step rows. Skeleton over spinner so the layout holds while
 // the setup-status query settles.
 export function SetupGuideSkeleton() {
   return (

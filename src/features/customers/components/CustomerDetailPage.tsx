@@ -14,7 +14,6 @@ import { useCustomer } from '../hooks/useCustomers'
 import { useCustomerInvoices } from '../hooks/useCustomerInvoices'
 import { useCustomerTickets } from '../hooks/useCustomerTickets'
 import {
-  CustomerMapButton,
   CustomerNavigateButton,
   CustomerStatusAction,
   CustomerWhatsappButton,
@@ -25,7 +24,6 @@ import { ProfileCard, SubscriptionCard } from './CustomerProfileCards'
 import { CustomerRowActions } from './CustomerRowActions'
 import { CustomerSummary } from './CustomerSummary'
 import { CustomerTimeline } from './CustomerTimeline'
-import { ContractTab } from '@/features/contracts'
 import { PrivacyTab } from './PrivacyTab'
 
 type Props = {
@@ -70,7 +68,6 @@ export function CustomerDetailPage({ customerId }: Props) {
               tone={STATUS_TONE[customer.status]}
               label={customerStatusLabel(customer.status, customer.holdReason)}
             />
-            <CustomerMapButton customer={customer} />
             <CustomerNavigateButton customer={customer} />
             <CustomerWhatsappButton customerId={customer.id} />
             <CustomerStatusAction customer={customer} />
@@ -88,7 +85,6 @@ export function CustomerDetailPage({ customerId }: Props) {
           <TabsTrigger value="koneksi">Koneksi</TabsTrigger>
           <TabsTrigger value="tagihan">Tagihan</TabsTrigger>
           <TabsTrigger value="tiket">Tiket</TabsTrigger>
-          <TabsTrigger value="kontrak">Kontrak</TabsTrigger>
           <TabsTrigger value="privasi">Privasi</TabsTrigger>
         </TabsList>
         <TabsContent value="ringkasan">
@@ -101,16 +97,13 @@ export function CustomerDetailPage({ customerId }: Props) {
           <CustomerTimeline customer={customer} invoices={invoices} tickets={tickets} />
         </TabsContent>
         <TabsContent value="koneksi">
-          <ConnectionCard customerId={customer.id} connection={customer.connection} />
+          <ConnectionCard connection={customer.connection} />
         </TabsContent>
         <TabsContent value="tagihan">
           <InvoicesCard invoices={invoices} />
         </TabsContent>
         <TabsContent value="tiket">
           <TicketsCard tickets={tickets} />
-        </TabsContent>
-        <TabsContent value="kontrak">
-          <ContractTab customer={customer} />
         </TabsContent>
         <TabsContent value="privasi">
           <PrivacyTab customer={customer} invoices={invoices} tickets={tickets} />
