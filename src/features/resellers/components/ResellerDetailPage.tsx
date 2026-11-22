@@ -162,7 +162,7 @@ export function ResellerDetailPage({ resellerId }: Props) {
         }}
       />
 
-      <PayoutsCard resellerId={reseller.id} canManage={canManage} />
+      <PayoutsCard resellerId={reseller.id} resellerName={reseller.name} canManage={canManage} />
 
       {dialogType ? (
         <LedgerEntryDialog

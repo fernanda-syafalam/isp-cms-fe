@@ -1,10 +1,12 @@
+import { useRef, useState } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge, type StatusTone } from '@/components/shared/status-badge'
 import { ErrorState } from '@/components/shared/error-state'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDateTime } from '@/lib/format'
-import type { PayoutStatus } from '@/schemas/reseller'
+import type { Payout, PayoutStatus } from '@/schemas/reseller'
 
 import {
   useApprovePayout,
@@ -12,6 +14,7 @@ import {
   usePayouts,
   useRejectPayout,
 } from '../hooks/useResellers'
+import { type PayoutAction, PayoutConfirmDialog } from './PayoutConfirmDialog'
 
 // Display-boundary maps for the payout lifecycle. Kept local so `paid` reads as
 // "Dicairkan" here rather than colliding with the invoice "Lunas" label.
@@ -30,15 +33,36 @@ const PAYOUT_TONE: Record<PayoutStatus, StatusTone> = {
 
 type Props = {
   resellerId: string
+  resellerName: string
   canManage: boolean
 }
 
-export function PayoutsCard({ resellerId, canManage }: Props) {
+export function PayoutsCard({ resellerId, resellerName, canManage }: Props) {
   const { data, isLoading, isError, refetch } = usePayouts(resellerId)
   const approve = useApprovePayout(resellerId)
   const reject = useRejectPayout(resellerId)
   const disburse = useDisbursePayout(resellerId)
   const isBusy = approve.isPending || reject.isPending || disburse.isPending
+  // `target` is kept after close so the dialog text doesn't flash during the exit animation.
+  const [target, setTarget] = useState<{ payout: Payout; action: PayoutAction } | null>(null)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const isSubmitting = useRef(false)
+
+  const mutations = { approve, reject, disburse }
+  const handleConfirm = () => {
+    if (!target || isSubmitting.current) return
+    isSubmitting.current = true
+    mutations[target.action].mutate(target.payout.id, {
+      onSettled: () => {
+        isSubmitting.current = false
+        setIsConfirmOpen(false)
+      },
+    })
+  }
+  const openConfirm = (payout: Payout, action: PayoutAction) => {
+    setTarget({ payout, action })
+    setIsConfirmOpen(true)
+  }
 
   return (
     <Card>
@@ -74,9 +98,9 @@ export function PayoutsCard({ resellerId, canManage }: Props) {
                     <PayoutActions
                       status={payout.status}
                       disabled={isBusy}
-                      onApprove={() => approve.mutate(payout.id)}
-                      onReject={() => reject.mutate(payout.id)}
-                      onDisburse={() => disburse.mutate(payout.id)}
+                      onApprove={() => openConfirm(payout, 'approve')}
+                      onReject={() => openConfirm(payout, 'reject')}
+                      onDisburse={() => openConfirm(payout, 'disburse')}
                     />
                   ) : null}
                 </div>
@@ -85,6 +109,17 @@ export function PayoutsCard({ resellerId, canManage }: Props) {
           </ul>
         )}
       </CardContent>
+      {target ? (
+        <PayoutConfirmDialog
+          open={isConfirmOpen}
+          action={target.action}
+          amount={target.payout.amount}
+          resellerName={resellerName}
+          isPending={isBusy}
+          onConfirm={handleConfirm}
+          onClose={() => setIsConfirmOpen(false)}
+        />
+      ) : null}
     </Card>
   )
 }
