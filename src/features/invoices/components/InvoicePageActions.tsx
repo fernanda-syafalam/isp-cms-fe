@@ -2,21 +2,12 @@ import { BellRingIcon, CreditCardIcon, WalletIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useCan } from '@/features/auth'
-import { statusLabel } from '@/lib/status-label'
 import type { Invoice } from '@/schemas/invoice'
-import { PaymentMethodSchema } from '@/schemas/payment'
 
 import { useRemindOverdue } from '../hooks/useBilling'
-import { usePayInvoice } from '../hooks/useInvoices'
 import { CheckoutDialog } from './CheckoutDialog'
+import { LoketPayDialog } from './LoketPayDialog'
 
 // Header action buttons for the full invoice page. Rendered individually so the
 // page header can lay them out alongside copy/print; the sheet uses its own
@@ -53,23 +44,14 @@ export function OnlinePayButton({ invoice }: { invoice: Invoice }) {
 }
 
 export function PayMenu({ invoice }: { invoice: Invoice }) {
-  const pay = usePayInvoice(invoice.id)
+  const [open, setOpen] = useState(false)
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={pay.isPending}>
-          <WalletIcon className="size-4" />
-          Catat manual
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Metode</DropdownMenuLabel>
-        {PaymentMethodSchema.options.map((method) => (
-          <DropdownMenuItem key={method} onSelect={() => pay.mutate({ method })}>
-            {statusLabel(method)}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <WalletIcon className="size-4" />
+        Catat manual
+      </Button>
+      <LoketPayDialog invoice={invoice} open={open} onOpenChange={setOpen} />
+    </>
   )
 }
