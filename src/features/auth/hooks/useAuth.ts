@@ -11,6 +11,7 @@ import type { BootstrapInput, LoginInput } from '@/schemas/auth'
 const TOTP_CHALLENGE_CODES = new Set(['totp_required', 'totp_invalid', 'totp_locked'])
 
 import { useAuthStore } from '../store/authStore'
+import { useRoleStore } from '../store/roleStore'
 
 export function useCurrentUser() {
   const accessToken = useAuthStore((s) => s.accessToken)
@@ -75,6 +76,9 @@ export function useLogout() {
       // Always clear local state — even if the server logout call fails,
       // the user has chosen to leave.
       clear()
+      // A surviving dev role override keeps AuthLayout bouncing to "/" and undoes the
+      // navigation to /login via silent refresh.
+      useRoleStore.getState().setOverride(null)
       qc.clear()
     },
   })
