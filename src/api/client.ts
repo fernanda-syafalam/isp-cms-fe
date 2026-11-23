@@ -2,7 +2,7 @@ import type { HTTPError } from 'ky'
 import ky from 'ky'
 
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { AppError } from '@/lib/errors'
+import { AppError, normalizeFieldErrors } from '@/lib/errors'
 import { SessionSchema } from '@/schemas/auth'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -30,6 +30,18 @@ async function refreshAccessToken(): Promise<string | null> {
   })()
 
   return refreshPromise
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+// RFC 7807 `detail` first, then `title`; `message` covers legacy/mock bodies.
+function pickMessage(body: Record<string, unknown>): string | undefined {
+  for (const candidate of [body.detail, body.title, body.message]) {
+    if (typeof candidate === 'string' && candidate !== '') return candidate
+  }
+  return undefined
 }
 
 export const api = ky.create({
@@ -60,17 +72,25 @@ export const api = ky.create({
       async (error: HTTPError) => {
         const { response } = error
         let message = error.message
-        let body: unknown = error
+        let cause: unknown = error
         try {
-          const parsed = (await response.json()) as { message?: string }
-          body = parsed
-          if (parsed?.message) message = parsed.message
+          const parsed: unknown = await response.json()
+          if (isRecord(parsed)) {
+            message = pickMessage(parsed) ?? message
+            cause = {
+              ...parsed,
+              status: response.status,
+              fieldErrors: normalizeFieldErrors(parsed.errors),
+            }
+          } else {
+            cause = parsed
+          }
         } catch {
           // body is not JSON — keep default message and the original error as cause
         }
-        // Pass the parsed body as cause so callers can map structured field
-        // errors (e.g. { fieldErrors: { email: [...] } }) onto a form.
-        throw new AppError('HTTP_ERROR', message, body)
+        // Cause carries the problem+json body plus normalized `fieldErrors`
+        // so callers can map them onto a form.
+        throw new AppError('HTTP_ERROR', message, cause)
       },
     ],
   },

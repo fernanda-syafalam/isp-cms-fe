@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { AppError } from '@/lib/errors'
+import { getFieldErrors } from '@/lib/errors'
 import { CreateUserSchema, UserRoleSchema, type CreateUserInput } from '@/schemas/user'
 
 import { useCreateUser } from '../hooks/useUsers'
@@ -38,20 +38,12 @@ import { useCreateUser } from '../hooks/useUsers'
 const ROLE_OPTIONS = UserRoleSchema.options
 const FIELD_NAMES = ['email', 'fullName', 'password', 'role'] as const
 
-// Server-side field errors arrive shaped { fieldErrors: { field: string[] } }
-// (NestJS class-validator style). Narrow the unknown error cause without
-// casting, then map any matching field error onto RHF so it renders inline.
-function extractFieldErrors(cause: unknown): Partial<Record<keyof CreateUserInput, string>> {
-  if (typeof cause !== 'object' || cause === null || !('fieldErrors' in cause)) return {}
-  const { fieldErrors } = cause
-  if (typeof fieldErrors !== 'object' || fieldErrors === null) return {}
-
+function extractFieldErrors(err: unknown): Partial<Record<keyof CreateUserInput, string>> {
+  const fieldErrors = getFieldErrors(err)
   const result: Partial<Record<keyof CreateUserInput, string>> = {}
   for (const name of FIELD_NAMES) {
-    if (!(name in fieldErrors)) continue
-    const messages = Reflect.get(fieldErrors, name)
-    const first = Array.isArray(messages) ? messages[0] : undefined
-    if (typeof first === 'string') result[name] = first
+    const first = fieldErrors[name]?.[0]
+    if (first !== undefined) result[name] = first
   }
   return result
 }
@@ -73,11 +65,9 @@ export function CreateUserDialog() {
     } catch (err) {
       // useCreateUser.onError surfaces a toast. Additionally map any
       // structured field errors onto the form so they render inline.
-      if (err instanceof AppError) {
-        const fieldErrors = extractFieldErrors(err.cause)
-        for (const [field, message] of Object.entries(fieldErrors)) {
-          form.setError(field as keyof CreateUserInput, { message })
-        }
+      const fieldErrors = extractFieldErrors(err)
+      for (const [field, message] of Object.entries(fieldErrors)) {
+        form.setError(field as keyof CreateUserInput, { message })
       }
     }
   })
