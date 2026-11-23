@@ -183,3 +183,38 @@ describe('isRouteAllowed (MVP hidden routes)', () => {
     }
   })
 })
+
+describe('network map (Peta Jaringan)', () => {
+  it('is allowed for admin, staff and teknisi, including sub-paths', () => {
+    for (const role of ['admin', 'staff', 'teknisi'] as const) {
+      expect(isRouteAllowed(role, '/network/topology')).toBe(true)
+      expect(isRouteAllowed(role, '/network/topology/abc')).toBe(true)
+    }
+  })
+
+  it('is denied for mitra and customer', () => {
+    for (const role of ['mitra', 'customer'] as const) {
+      expect(isRouteAllowed(role, '/network/topology')).toBe(false)
+    }
+  })
+
+  it('keeps the other network routes blocked', () => {
+    for (const path of [
+      '/network/devices',
+      '/network/acs',
+      '/network/usage',
+      '/network/monitoring',
+      '/network/ftth',
+    ]) {
+      expect(isRouteAllowed('admin', path)).toBe(false)
+      expect(isRouteAllowed('teknisi', path)).toBe(false)
+    }
+  })
+
+  it('appears in the nav of admin, staff and teknisi', () => {
+    for (const role of ['admin', 'staff', 'teknisi'] as const) {
+      const labels = navGroupsForRole(role).flatMap((g) => g.items.map((i) => i.label))
+      expect(labels).toContain('Peta Jaringan')
+    }
+  })
+})
