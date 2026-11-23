@@ -2898,7 +2898,10 @@ export const handlers = [
         draft: countStatus('draft'),
       },
     }
-    const filtered = filterByStatus(INVOICE_FIXTURES, url.searchParams.get('status'))
+    const invoiceCustomerId = url.searchParams.get('customerId')
+    const filtered = filterByStatus(INVOICE_FIXTURES, url.searchParams.get('status')).filter(
+      (i) => !invoiceCustomerId || i.customerId === invoiceCustomerId,
+    )
     const { items, total } = applyListQuery(filtered, url.searchParams, {
       searchFields: ['invoiceNo', 'customerName'],
       sortAccessors: {
@@ -4549,7 +4552,10 @@ export const handlers = [
     }
     // Equality filter first (status), then the shared search/sort/page engine
     // mirrors the backend list contract.
-    const rows = filterByStatus(TICKET_FIXTURES, url.searchParams.get('status'))
+    const ticketCustomerId = url.searchParams.get('customerId')
+    const rows = filterByStatus(TICKET_FIXTURES, url.searchParams.get('status')).filter(
+      (t) => !ticketCustomerId || t.customerId === ticketCustomerId,
+    )
     const result = applyListQuery(rows, url.searchParams, {
       searchFields: ['code', 'subject', 'customerName'],
       sortAccessors: {
