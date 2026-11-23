@@ -4,6 +4,7 @@ import {
   KeyRoundIcon,
   LayoutDashboardIcon,
   LifeBuoyIcon,
+  MapIcon,
   MessageCircleIcon,
   NetworkIcon,
   PackageIcon,
@@ -78,7 +79,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Jaringan',
     icon: NetworkIcon,
-    items: [{ to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon }],
+    items: [
+      { to: '/network/topology', label: 'Peta Jaringan', icon: MapIcon },
+      { to: '/network/routers', label: 'Router (Mikrotik)', icon: ServerIcon },
+    ],
   },
   {
     label: 'Admin',
@@ -154,7 +158,7 @@ export function resolveBreadcrumb(pathname: string): BreadcrumbTrail {
 // Roles with a restricted workspace see only these routes; admin/staff (omitted)
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
-  teknisi: ['/work-orders', '/tickets', '/customers'],
+  teknisi: ['/work-orders', '/tickets', '/customers', '/network/topology'],
   // Partner and customer workspaces are hidden; the root shows an access-unavailable screen.
   mitra: [],
   customer: [],
@@ -162,7 +166,6 @@ const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
 
 // Non-MVP domains: code kept, routes blocked for every role. Remove an entry to re-enable a domain.
 export const MVP_HIDDEN_ROUTES = [
-  '/network/topology',
   '/network/devices',
   '/network/acs',
   '/network/usage',

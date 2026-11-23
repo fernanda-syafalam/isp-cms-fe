@@ -55,8 +55,14 @@ export function RecentInvoices({ customerId }: { customerId: string }) {
 }
 
 // Recent tickets for this subscriber (top 8); rows link to the full ticket.
-export function RecentTickets({ customerName }: { customerName: string }) {
-  const { data, isLoading } = useCustomerTickets(customerName)
+export function RecentTickets({
+  customerId,
+  customerName,
+}: {
+  customerId: string
+  customerName: string
+}) {
+  const { data, isLoading } = useCustomerTickets(customerId, customerName)
   return (
     <DetailSection title="Tiket terbaru">
       {isLoading ? (

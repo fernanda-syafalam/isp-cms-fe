@@ -129,7 +129,7 @@ function CustomerBody({ customer }: { customer: Customer }) {
 
       <RecentInvoices customerId={customer.id} />
 
-      <RecentTickets customerName={customer.fullName} />
+      <RecentTickets customerId={customer.id} customerName={customer.fullName} />
 
       <DetailSection title="Tertaut">
         <Link

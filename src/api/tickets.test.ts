@@ -68,3 +68,15 @@ describe('listTickets', () => {
     expect(second.items.map((t) => t.code)).toEqual(all.items.slice(3, 6).map((t) => t.code))
   })
 })
+
+describe('listTickets customerId filter', () => {
+  it('returns only that customer rows, with total reflecting the filter', async () => {
+    const all = await listTickets()
+    const target = all.items.find((t) => t.customerId !== null)
+    if (!target?.customerId) throw new Error('seed has no linked tickets')
+    const res = await listTickets({ customerId: target.customerId })
+    expect(res.items.length).toBeGreaterThan(0)
+    expect(res.items.every((t) => t.customerId === target.customerId)).toBe(true)
+    expect(res.total).toBe(all.items.filter((t) => t.customerId === target.customerId).length)
+  })
+})

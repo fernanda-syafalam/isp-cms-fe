@@ -15,6 +15,7 @@ import { type WorkOrder, WorkOrderSchema } from '@/schemas/workorder'
 export type TicketFilter = {
   q?: string | undefined
   status?: string | undefined
+  customerId?: string | undefined
   sort?: string | undefined
   order?: 'asc' | 'desc' | undefined
   limit?: number | undefined
@@ -29,6 +30,7 @@ export async function listTickets(filter: TicketFilter = {}): Promise<TicketList
   const searchParams = new URLSearchParams()
   if (filter.q) searchParams.set('q', filter.q)
   if (filter.status) searchParams.set('status', filter.status)
+  if (filter.customerId) searchParams.set('customerId', filter.customerId)
   if (filter.sort) searchParams.set('sort', filter.sort)
   if (filter.order) searchParams.set('order', filter.order)
   if (filter.limit !== undefined) searchParams.set('limit', String(filter.limit))
