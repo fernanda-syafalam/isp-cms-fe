@@ -1,3 +1,4 @@
+export { AccessUnavailable } from './components/AccessUnavailable'
 export { BootstrapForm } from './components/BootstrapForm'
 export { LoginForm } from './components/LoginForm'
 export { RoleGuard } from './components/RoleGuard'
