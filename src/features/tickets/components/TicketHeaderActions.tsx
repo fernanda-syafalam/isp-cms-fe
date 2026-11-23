@@ -1,5 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
-import { CheckCircle2Icon, HandCoinsIcon, PlayIcon, PlusIcon } from 'lucide-react'
+import { CheckCircle2Icon, PlayIcon, PlusIcon } from 'lucide-react'
 
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ticketStatusTone as STATUS_TONE } from '@/components/shared/status-tone'
@@ -12,11 +11,9 @@ import type { Ticket } from '@/schemas/ticket'
 import { useCreateWorkOrderFromTicket, useUpdateTicket } from '../hooks/useTickets'
 
 // SLA + status badges and the ticket workflow actions (start, resolve, create
-// work order, SLA credit) for the detail page header.
+// work order) for the detail page header.
 export function TicketHeaderActions({ ticket }: { ticket: Ticket }) {
   const canManage = useCan('tickets.manage')
-  const canBill = useCan('billing.run')
-  const navigate = useNavigate()
   const update = useUpdateTicket(ticket.id)
   const createWo = useCreateWorkOrderFromTicket(ticket.id)
 
@@ -60,24 +57,6 @@ export function TicketHeaderActions({ ticket }: { ticket: Ticket }) {
             Buat Work Order
           </Button>
         </>
-      ) : null}
-      {canBill ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            navigate({
-              to: '/sla-credits',
-              search: {
-                customer: ticket.customerName,
-                ticket: ticket.code,
-              },
-            })
-          }
-        >
-          <HandCoinsIcon className="size-4" />
-          Kredit SLA
-        </Button>
       ) : null}
     </div>
   )

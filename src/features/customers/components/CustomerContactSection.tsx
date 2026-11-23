@@ -108,7 +108,6 @@ export function CustomerContact({ customer }: { customer: Customer }) {
         <DetailMetaGrid>
           <DetailMeta label="Telepon">{customer.phone}</DetailMeta>
           <DetailMeta label="Email">{customer.email ?? '—'}</DetailMeta>
-          <DetailMeta label="Reseller">{customer.resellerName ?? '—'}</DetailMeta>
           <DetailMeta label="Alamat">{customer.address}</DetailMeta>
         </DetailMetaGrid>
       )}

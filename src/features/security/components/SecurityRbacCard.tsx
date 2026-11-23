@@ -3,11 +3,11 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { ROLE_LABEL, type Role } from '@/lib/permissions'
 
 const ROLE_DESCRIPTION: Record<Role, string> = {
-  admin: 'Akses penuh: katalog, mitra, staf, pengaturan, hapus/reset data.',
+  admin: 'Akses penuh: katalog, staf, pengaturan, hapus/reset data.',
   staff: 'Operasional: pelanggan, tiket, billing. Tanpa kelola katalog/mitra/staf.',
   teknisi: 'Lapangan: work order, topologi, perangkat, dan update tiket.',
-  mitra: 'Kemitraan: pantau pelanggan & prospek yang didaftarkan, saldo komisi.',
-  customer: 'Portal mandiri: tagihan & laporan sendiri saja.',
+  mitra: 'Tidak tersedia pada rilis ini.',
+  customer: 'Tidak tersedia pada rilis ini.',
 }
 
 // Role-based access reference: the operator's current role plus a per-role

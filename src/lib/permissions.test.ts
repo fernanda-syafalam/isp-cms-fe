@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { type Permission, ROLES, can, isRole } from './permissions'
+import { ASSIGNABLE_ROLES, type Permission, ROLES, can, isRole } from './permissions'
 
 describe('isRole', () => {
   it('accepts every known role', () => {
@@ -57,5 +57,13 @@ describe('can', () => {
       expect(can('mitra', p)).toBe(false)
       expect(can('customer', p)).toBe(false)
     }
+  })
+})
+
+describe('ASSIGNABLE_ROLES', () => {
+  it('excludes mitra and customer but stays within ROLES', () => {
+    expect(ASSIGNABLE_ROLES).not.toContain('mitra')
+    expect(ASSIGNABLE_ROLES).not.toContain('customer')
+    for (const role of ASSIGNABLE_ROLES) expect(ROLES).toContain(role)
   })
 })

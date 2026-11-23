@@ -1,5 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
-import { CheckCircle2Icon, HandCoinsIcon, PlayIcon, PlusIcon } from 'lucide-react'
+import { CheckCircle2Icon, PlayIcon, PlusIcon } from 'lucide-react'
 
 import { DetailActionBar } from '@/components/shared/detail-sheet'
 import { Button } from '@/components/ui/button'
@@ -9,16 +8,14 @@ import type { Ticket } from '@/schemas/ticket'
 import { useCreateWorkOrderFromTicket, useUpdateTicket } from '../hooks/useTickets'
 
 // Workflow action bar for the ticket quick-view drawer: start, resolve, create
-// work order (gated tickets.manage), and SLA credit (gated billing.run).
-// Renders nothing when the viewer can do neither.
+// work order (gated tickets.manage).
+// Renders nothing when the viewer cannot manage tickets.
 export function TicketSheetActions({ ticket }: { ticket: Ticket }) {
   const canManage = useCan('tickets.manage')
-  const canBill = useCan('billing.run')
-  const navigate = useNavigate()
   const update = useUpdateTicket(ticket.id)
   const createWo = useCreateWorkOrderFromTicket(ticket.id)
 
-  if (!canManage && !canBill) return null
+  if (!canManage) return null
 
   const canStart = ticket.status === 'open'
   const canResolve = ticket.status === 'open' || ticket.status === 'in_progress'
@@ -57,24 +54,6 @@ export function TicketSheetActions({ ticket }: { ticket: Ticket }) {
             Work Order
           </Button>
         </>
-      ) : null}
-      {canBill ? (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            navigate({
-              to: '/sla-credits',
-              search: {
-                customer: ticket.customerName,
-                ticket: ticket.code,
-              },
-            })
-          }
-        >
-          <HandCoinsIcon className="size-4" />
-          Kredit SLA
-        </Button>
       ) : null}
     </DetailActionBar>
   )

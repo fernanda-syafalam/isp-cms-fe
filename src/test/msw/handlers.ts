@@ -4937,18 +4937,6 @@ export const handlers = [
 
   // Analytics
   http.get('*/api/analytics/dashboard', () => {
-    // Cross-module rollup computed at request time (fixtures defined below the
-    // static summary), so the dashboard "command center" stays in one query.
-    const atRisk = CUSTOMER_FIXTURES.filter(
-      (c) => c.status === 'isolir' || c.outstanding > 0,
-    ).length
-    const commandCenter = {
-      churnRate: CUSTOMER_FIXTURES.length
-        ? Math.round((atRisk / CUSTOMER_FIXTURES.length) * 1000) / 1000
-        : 0,
-      slaCreditsPending: SLA_CREDIT_FIXTURES.filter((c) => c.status === 'pending').length,
-    }
-
     // Subscriber lifecycle distribution.
     const mixOrder: Array<[string, string]> = [
       ['prospek', 'Prospek'],
@@ -4983,7 +4971,6 @@ export const handlers = [
 
     return HttpResponse.json({
       ...DASHBOARD_SUMMARY,
-      commandCenter,
       customerMix,
       arAging,
     })

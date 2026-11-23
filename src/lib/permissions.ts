@@ -7,6 +7,11 @@ export type Role = 'admin' | 'staff' | 'teknisi' | 'mitra' | 'customer'
 // All roles, in switcher/display order.
 export const ROLES: Role[] = ['admin', 'staff', 'teknisi', 'mitra', 'customer']
 
+// Roles an admin may assign when creating/editing a staff user. mitra and
+// customer stay in the Role union (existing users still render) but the
+// backend refuses their login in the MVP.
+export const ASSIGNABLE_ROLES = ['admin', 'staff', 'teknisi'] as const satisfies readonly Role[]
+
 export function isRole(value: string | null | undefined): value is Role {
   return (
     value === 'admin' ||

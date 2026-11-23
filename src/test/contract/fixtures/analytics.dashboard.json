@@ -22,10 +22,6 @@
   "subscriberTrend": [558, 559, 560],
   "isolatedTrend": [31, 30, 30],
   "arTrend": [12800000, 12600000, 12500000],
-  "commandCenter": {
-    "churnRate": 0.02,
-    "slaCreditsPending": 3
-  },
   "customerMix": [
     { "label": "prospek", "count": 20 },
     { "label": "instalasi", "count": 15 },

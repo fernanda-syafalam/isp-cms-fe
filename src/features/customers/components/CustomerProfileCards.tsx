@@ -12,7 +12,6 @@ export function ProfileCard({ customer }: { customer: Customer }) {
     { label: 'Alamat', value: customer.address },
     { label: 'Area', value: customer.areaName ?? '—' },
     { label: 'NPWP', value: customer.npwp ?? '—', copy: true },
-    { label: 'Reseller', value: customer.resellerName ?? '—' },
     { label: 'Bergabung', value: formatDate(customer.joinedAt) },
   ]
   return (

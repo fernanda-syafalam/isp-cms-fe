@@ -1,4 +1,7 @@
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
+
+import { server } from '@/test/msw/server'
 
 import { createCustomer, listCustomers } from './customers'
 import { convertLead, createLead, listLeads } from './leads'
@@ -7,8 +10,9 @@ import { listResellers } from './resellers'
 
 // Referral/reseller attribution (P3.D.2), end-to-end over the MSW layer (server
 // from test/setup.ts; resetMockDb runs before each test). Proves the picked
-// reseller is persisted onto the created customer (as resolved resellerName) on
-// direct create + onboarding, that a lead stores its resellerId, and that
+// reseller is persisted onto the customer (as resolved resellerName) on
+// onboarding, that direct create sends no resellerId (hidden in the MVP), that
+// a lead stores its resellerId, and that
 // converting a reseller-sourced lead carries the reseller onto the new customer.
 
 async function firstReseller(): Promise<{ id: string; name: string }> {
@@ -19,29 +23,23 @@ async function firstReseller(): Promise<{ id: string; name: string }> {
 }
 
 describe('referral attribution', () => {
-  it('persists the reseller name on a directly created customer', async () => {
-    const reseller = await firstReseller()
-    const customer = await createCustomer({
-      fullName: 'Pelanggan Referral',
-      phone: '081200000001',
-      email: '',
-      address: 'Jl. Referral 1',
-      planId: '',
-      resellerId: reseller.id,
-    })
-    expect(customer.resellerName).toBe(reseller.name)
-  })
-
-  it('leaves resellerName null when no reseller is chosen', async () => {
-    const customer = await createCustomer({
+  it('sends no resellerId on a directly created customer', async () => {
+    let body: Record<string, unknown> | null = null
+    server.use(
+      http.post('*/api/customers', async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ error: 'captured' }, { status: 500 })
+      }),
+    )
+    await createCustomer({
       fullName: 'Pelanggan Tanpa Mitra',
       phone: '081200000002',
       email: '',
       address: 'Jl. Mandiri 2',
       planId: '',
-      resellerId: null,
-    })
-    expect(customer.resellerName).toBeNull()
+    }).catch(() => undefined)
+    expect(body).not.toBeNull()
+    expect(body).not.toHaveProperty('resellerId')
   })
 
   it('persists the reseller name through onboarding', async () => {

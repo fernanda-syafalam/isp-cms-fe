@@ -45,30 +45,26 @@ describe('isRouteAllowed (shares the segment-aware matcher)', () => {
     expect(isRouteAllowed('teknisi', '/invoices')).toBe(false)
   })
 
-  it('does not grant a sibling that only shares a prefix', () => {
-    expect(isRouteAllowed('mitra', '/resellers')).toBe(true)
-    expect(isRouteAllowed('mitra', '/resellers-admin')).toBe(false)
+  it('denies the customer and mitra roles every route (workspaces are hidden)', () => {
+    for (const role of ['customer', 'mitra'] as const) {
+      expect(isRouteAllowed(role, '/')).toBe(false)
+      expect(isRouteAllowed(role, '/customers')).toBe(false)
+      expect(isRouteAllowed(role, '/resellers')).toBe(false)
+      expect(ROLE_HOME[role] ?? '/').toBe('/')
+    }
   })
 
-  it('denies the customer role every route (self-service is hidden)', () => {
-    expect(isRouteAllowed('customer', '/')).toBe(false)
-    expect(isRouteAllowed('customer', '/customers')).toBe(false)
-  })
-
-  it('grants mitra the reseller-scoped customer detail but not the org-wide list (P3.D.5)', () => {
-    // The scoped detail nests under /resellers, so it is inside the mitra
-    // allowlist by construction — no ROLE_ROUTES change needed.
-    expect(isRouteAllowed('mitra', '/resellers/r1/customers/c1')).toBe(true)
-    // The org-wide customer surface stays denied — the scope is not widened.
-    expect(isRouteAllowed('mitra', '/customers/c1')).toBe(false)
+  it('blocks /resellers and /sla-credits for admin', () => {
+    for (const path of ['/resellers', '/resellers/r1', '/sla-credits']) {
+      expect(isRouteAllowed('admin', path)).toBe(false)
+    }
   })
 })
 
 describe('navGroupsForRole', () => {
   it('drops groups with no visible items for a restricted role', () => {
-    const groups = navGroupsForRole('mitra')
-    expect(groups).toHaveLength(1)
-    expect(groups[0]?.items.map((i) => i.to)).toEqual(['/resellers'])
+    expect(navGroupsForRole('mitra')).toHaveLength(0)
+    expect(navGroupsForRole('teknisi').length).toBeGreaterThan(0)
   })
 
   it('hides admin-only surfaces from staff (P3.E.4)', () => {
@@ -127,7 +123,7 @@ describe('deep-link guard inputs (A1 route-guard bypass)', () => {
       expect(isRouteAllowed('mitra', path)).toBe(false)
     }
     expect(ROLE_HOME.teknisi ?? '/').toBe('/work-orders')
-    expect(ROLE_HOME.mitra ?? '/').toBe('/resellers')
+    expect(ROLE_HOME.mitra ?? '/').toBe('/')
   })
 })
 

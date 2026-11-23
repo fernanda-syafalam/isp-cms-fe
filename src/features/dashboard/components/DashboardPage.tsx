@@ -10,7 +10,6 @@ import { useRecentPayments, useUpcomingInstalls } from '../hooks/useDashboardLis
 import { AttentionPanel, type AttentionAlert } from './AttentionPanel'
 import { DashboardActivity } from './DashboardActivity'
 import { DashboardCharts } from './DashboardCharts'
-import { DashboardCommandCenter } from './DashboardCommandCenter'
 import { DashboardKpis } from './DashboardKpis'
 
 export function DashboardPage() {
@@ -76,8 +75,6 @@ export function DashboardPage() {
       {summary ? <AttentionPanel alerts={alerts} /> : null}
 
       <DashboardKpis summary={summary} isLoading={isLoading} isError={isError} />
-
-      {summary ? <DashboardCommandCenter summary={summary} /> : null}
 
       <DashboardCharts summary={summary} />
 

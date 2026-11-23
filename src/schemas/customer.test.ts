@@ -75,30 +75,13 @@ const validCreate = {
   planId: '33333333-3333-4333-8333-333333333333',
 }
 
-describe('CreateCustomerSchema (referral attribution)', () => {
-  it('accepts an optional reseller id (P3.D.2)', () => {
+describe('CreateCustomerSchema (no reseller attribution in MVP)', () => {
+  it('strips resellerId so it is never sent to the backend', () => {
     const parsed = CreateCustomerSchema.parse({
       ...validCreate,
       resellerId: '00000000-0000-4000-8000-000000000001',
     })
-    expect(parsed.resellerId).toBe('00000000-0000-4000-8000-000000000001')
-  })
-
-  it('treats resellerId as optional (omitted is valid)', () => {
-    expect(CreateCustomerSchema.safeParse(validCreate).success).toBe(true)
-  })
-
-  it('accepts an explicit null resellerId', () => {
-    expect(CreateCustomerSchema.parse({ ...validCreate, resellerId: null }).resellerId).toBeNull()
-  })
-
-  it('rejects a non-uuid resellerId', () => {
-    expect(
-      CreateCustomerSchema.safeParse({
-        ...validCreate,
-        resellerId: 'not-a-uuid',
-      }).success,
-    ).toBe(false)
+    expect('resellerId' in parsed).toBe(false)
   })
 })
 
