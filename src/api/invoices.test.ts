@@ -73,3 +73,15 @@ describe('listInvoices', () => {
     expect(second.items.map((i) => i.id)).toEqual(all.items.slice(2, 4).map((i) => i.id))
   })
 })
+
+describe('listInvoices customerId filter', () => {
+  it('returns only that customer rows, with total reflecting the filter', async () => {
+    const all = await listInvoices()
+    const target = all.items[0]
+    if (!target) throw new Error('seed has no invoices')
+    const res = await listInvoices({ customerId: target.customerId })
+    expect(res.items.length).toBeGreaterThan(0)
+    expect(res.items.every((i) => i.customerId === target.customerId)).toBe(true)
+    expect(res.total).toBe(all.items.filter((i) => i.customerId === target.customerId).length)
+  })
+})

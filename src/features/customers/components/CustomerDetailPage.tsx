@@ -33,7 +33,7 @@ type Props = {
 export function CustomerDetailPage({ customerId }: Props) {
   const { data: customer, isLoading, isError, refetch } = useCustomer(customerId)
   const { data: invoices } = useCustomerInvoices(customerId)
-  const { data: tickets } = useCustomerTickets(customer?.fullName)
+  const { data: tickets } = useCustomerTickets(customer?.id, customer?.fullName)
 
   if (isLoading) {
     return (
