@@ -31,11 +31,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { getFieldErrors } from '@/lib/errors'
-import { CreateUserSchema, UserRoleSchema, type CreateUserInput } from '@/schemas/user'
+import { ASSIGNABLE_ROLES } from '@/lib/permissions'
+import { CreateUserSchema, type CreateUserInput } from '@/schemas/user'
 
 import { useCreateUser } from '../hooks/useUsers'
 
-const ROLE_OPTIONS = UserRoleSchema.options
+const ROLE_OPTIONS = ASSIGNABLE_ROLES
 const FIELD_NAMES = ['email', 'fullName', 'password', 'role'] as const
 
 function extractFieldErrors(err: unknown): Partial<Record<keyof CreateUserInput, string>> {
@@ -54,7 +55,7 @@ export function CreateUserDialog() {
 
   const form = useForm<CreateUserInput>({
     resolver: zodResolver(CreateUserSchema),
-    defaultValues: { email: '', fullName: '', password: '', role: 'customer' },
+    defaultValues: { email: '', fullName: '', password: '', role: 'staff' },
   })
 
   const handleSubmit = form.handleSubmit(async (values) => {

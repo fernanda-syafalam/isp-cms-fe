@@ -21,7 +21,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { ResellerSelectField } from '@/features/resellers/components/ResellerSelectField'
 import { CreateCustomerSchema, type CreateCustomerInput } from '@/schemas/customer'
 
 import { useCreateCustomer } from '../hooks/useCustomers'
@@ -39,7 +38,6 @@ export function CreateCustomerDialog() {
       email: '',
       address: '',
       planId: '',
-      resellerId: null,
     },
   })
 
@@ -118,7 +116,6 @@ export function CreateCustomerDialog() {
               )}
             />
             <PlanSelectField control={form.control} name="planId" />
-            <ResellerSelectField control={form.control} name="resellerId" />
             <DialogFooter>
               <Button
                 type="button"

@@ -1,7 +1,6 @@
 import {
   BoxesIcon,
   BriefcaseBusinessIcon,
-  HandCoinsIcon,
   KeyRoundIcon,
   LayoutDashboardIcon,
   LifeBuoyIcon,
@@ -14,7 +13,6 @@ import {
   ServerIcon,
   SettingsIcon,
   ShieldCheckIcon,
-  StoreIcon,
   UsersIcon,
   WalletIcon,
   WrenchIcon,
@@ -66,9 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/plans', label: 'Paket Layanan', icon: PackageIcon },
       { to: '/invoices', label: 'Tagihan', icon: ReceiptTextIcon },
       { to: '/payments', label: 'Pembayaran', icon: WalletIcon },
-      { to: '/sla-credits', label: 'Kredit SLA', icon: HandCoinsIcon },
       { to: '/tickets', label: 'Tiket', icon: LifeBuoyIcon },
-      { to: '/resellers', label: 'Reseller', icon: StoreIcon },
     ],
   },
   {
@@ -159,10 +155,8 @@ export function resolveBreadcrumb(pathname: string): BreadcrumbTrail {
 // see the full navigation.
 const ROLE_ROUTES: Partial<Record<Role, string[]>> = {
   teknisi: ['/work-orders', '/tickets', '/customers'],
-  // A partner only manages their own storefront (its detail lists their
-  // customers + ledger); they don't get the org-wide customer/lead lists.
-  mitra: ['/resellers'],
-  // Customer self-service is hidden; the root shows an access-unavailable screen.
+  // Partner and customer workspaces are hidden; the root shows an access-unavailable screen.
+  mitra: [],
   customer: [],
 }
 
@@ -183,6 +177,8 @@ export const MVP_HIDDEN_ROUTES = [
   '/leads',
   '/branches',
   '/customers/onboarding',
+  '/resellers',
+  '/sla-credits',
 ] as const
 
 // Whether a role may visit a path. Enforces three gates so deep-links/bookmarks
@@ -212,7 +208,6 @@ export const ROLE_HOME: Partial<Record<Role, string>> = {
   admin: '/',
   staff: '/',
   teknisi: '/work-orders',
-  mitra: '/resellers',
 }
 
 // Navigation groups visible to a role (empty groups dropped). Applies both the

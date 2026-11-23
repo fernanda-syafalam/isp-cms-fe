@@ -1,6 +1,10 @@
 import { z } from 'zod'
 
+import { ASSIGNABLE_ROLES } from '@/lib/permissions'
 import { userId } from '@/types/ids'
+
+// Roles selectable on create (single source: ASSIGNABLE_ROLES).
+export const AssignableRoleSchema = z.enum(ASSIGNABLE_ROLES)
 
 export const UserRoleSchema = z.enum(['admin', 'staff', 'customer', 'teknisi', 'mitra'])
 
@@ -26,7 +30,7 @@ export const CreateUserSchema = z.object({
   // No .default() here: the form always supplies a role (the Select is never
   // empty) and the backend applies its own default. Keeping input === output
   // also keeps the zodResolver generics sound under exactOptionalPropertyTypes.
-  role: UserRoleSchema,
+  role: AssignableRoleSchema,
 })
 
 // Edit an existing staff account: name and/or role. Email and password are not

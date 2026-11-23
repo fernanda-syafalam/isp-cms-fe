@@ -47,9 +47,9 @@ function RootLayout() {
     )
   }
 
-  // Customer self-service is not part of this release; customers see a
+  // Customer and partner (mitra) workspaces are not part of this release; they see a
   // dead-end screen with a way to sign out instead of the ops chrome.
-  if (role === 'customer') {
+  if (role === 'customer' || role === 'mitra') {
     return (
       <main
         id="main-content"

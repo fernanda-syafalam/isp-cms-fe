@@ -26,17 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ASSIGNABLE_ROLES } from '@/lib/permissions'
 import { statusLabel } from '@/lib/status-label'
-import {
-  type AppUser,
-  type UpdateUserInput,
-  UpdateUserSchema,
-  UserRoleSchema,
-} from '@/schemas/user'
+import { type AppUser, type UpdateUserInput, UpdateUserSchema } from '@/schemas/user'
 
 import { useUpdateUser } from '../hooks/useUsers'
 
-const ROLE_OPTIONS = UserRoleSchema.options
+const ROLE_OPTIONS = ASSIGNABLE_ROLES
 
 type Props = {
   user: AppUser
@@ -48,6 +44,7 @@ type Props = {
 // the identity and isn't editable here).
 export function EditUserDialog({ user, open, onOpenChange }: Props) {
   const update = useUpdateUser()
+  const isAssignable = ROLE_OPTIONS.some((r) => r === user.role)
   const form = useForm<UpdateUserInput>({
     resolver: zodResolver(UpdateUserSchema),
     values: { fullName: user.fullName, role: user.role },
@@ -55,7 +52,11 @@ export function EditUserDialog({ user, open, onOpenChange }: Props) {
 
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      await update.mutateAsync({ id: user.id, input: values })
+      // Only send role when changed: a legacy mitra/customer user keeps its
+      // role, and the backend rejects those values.
+      const { role, ...rest } = values
+      const input: UpdateUserInput = form.formState.dirtyFields.role ? { ...rest, role } : rest
+      await update.mutateAsync({ id: user.id, input })
       onOpenChange(false)
     } catch {
       // useUpdateUser surfaces the error toast
@@ -97,6 +98,11 @@ export function EditUserDialog({ user, open, onOpenChange }: Props) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      {isAssignable ? null : (
+                        <SelectItem value={user.role} disabled>
+                          {statusLabel(user.role)}
+                        </SelectItem>
+                      )}
                       {ROLE_OPTIONS.map((role) => (
                         <SelectItem key={role} value={role}>
                           {statusLabel(role)}
