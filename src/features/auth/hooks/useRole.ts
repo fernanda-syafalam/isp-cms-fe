@@ -14,6 +14,16 @@ export function useEffectiveRole(): Role {
   return user?.role ?? 'staff'
 }
 
+// `isResolving` is true while the role is still unknown (first /auth/me load, no
+// dev override) so guards can wait instead of acting on the 'staff' fallback.
+export function useRoleStatus(): { role: Role; isResolving: boolean } {
+  const { isLoading } = useCurrentUser()
+  const role = useEffectiveRole()
+  const override = useRoleStore((s) => s.override)
+  const hasOverride = import.meta.env.DEV && override !== null
+  return { role, isResolving: isLoading && !hasOverride }
+}
+
 export function useCan(permission: Permission): boolean {
   return can(useEffectiveRole(), permission)
 }

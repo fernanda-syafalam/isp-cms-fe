@@ -5,7 +5,7 @@ import { TestProviders, resetAuthStore } from '@/test/helpers'
 import { useAuthStore } from '@/features/auth/store/authStore'
 
 import { useRoleStore } from '../store/roleStore'
-import { useEffectiveRole } from './useRole'
+import { useEffectiveRole, useRoleStatus } from './useRole'
 
 afterEach(() => {
   resetAuthStore()
@@ -38,5 +38,36 @@ describe('useEffectiveRole', () => {
     const { result } = renderHook(() => useEffectiveRole(), { wrapper })
 
     expect(result.current).toBe('customer')
+  })
+})
+
+describe('useRoleStatus', () => {
+  it('is resolving while /auth/me is pending, then settles with the real role', async () => {
+    vi.stubEnv('DEV', false)
+    useAuthStore.setState({ accessToken: 'token' })
+
+    const { result } = renderHook(() => useRoleStatus(), { wrapper })
+
+    expect(result.current.isResolving).toBe(true)
+    await waitFor(() => expect(result.current.isResolving).toBe(false))
+    expect(result.current.role).toBe('admin')
+  })
+
+  it('is not resolving with a dev role override', () => {
+    vi.stubEnv('DEV', true)
+    useRoleStore.setState({ override: 'customer' })
+    useAuthStore.setState({ accessToken: 'token' })
+
+    const { result } = renderHook(() => useRoleStatus(), { wrapper })
+
+    expect(result.current).toEqual({ role: 'customer', isResolving: false })
+  })
+
+  it('is not resolving when there is no token (query disabled)', () => {
+    vi.stubEnv('DEV', false)
+
+    const { result } = renderHook(() => useRoleStatus(), { wrapper })
+
+    expect(result.current.isResolving).toBe(false)
   })
 })
